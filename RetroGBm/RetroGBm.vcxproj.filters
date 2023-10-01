@@ -20,6 +20,11 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="pokemon-crystal.gbc" />
+    <CopyFileToFolders Include="Resources\Tetris.gb" />
+    <CopyFileToFolders Include="Resources\Super Mario Land.gb" />
+    <CopyFileToFolders Include="Resources\pokemon-crystal.gbc" />
+    <CopyFileToFolders Include="Resources\dmg_boot.bin">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>
