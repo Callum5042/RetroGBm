@@ -28,5 +28,7 @@ int main(int argc, char** argv)
 	std::cout << "> License: " << cartridge.header.license << '\n';
 	std::cout << "> Version: " << cartridge.header.version << '\n';
 
+	std::cout << "Checksum: " << (CartridgeChecksum(cartridge) ? "Passed" : "Failed") << '\n';
+
 	return 0;
 }
