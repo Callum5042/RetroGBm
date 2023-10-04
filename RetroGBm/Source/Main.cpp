@@ -28,7 +28,50 @@ int main(int argc, char** argv)
 	std::cout << "> License: " << cartridge.header.license << '\n';
 	std::cout << "> Version: " << cartridge.header.version << '\n';
 
-	std::cout << "Checksum: " << (CartridgeChecksum(cartridge) ? "Passed" : "Failed") << '\n';
+	std::cout << "Checksum: " << (CartridgeChecksum(cartridge) ? "Passed" : "Failed") << '\n' << '\n';
+
+	// Registers
+	int program_counter = 0x100;
+	int flag_Z = 0;
+
+	int register_A = 0;
+
+	// Loop
+	while (true)
+	{
+		uint8_t op = cartridge.data[program_counter++];
+
+		// NOP
+		if (op == 0x0)
+		{
+			std::cout << "OpCode: " << std::hex << std::showbase << static_cast<int>(op) << '\n';
+		}
+		else if (op == 0xC3)
+		{
+			// JP a16
+			uint8_t low = cartridge.data[program_counter];
+			uint8_t high = cartridge.data[program_counter + 1];
+			uint16_t data = low | (high << 8);
+
+			program_counter = data;
+
+			std::cout << (int)op << ": JP\t" << "(" << (int)op << " " << (int)high << " " << (int)low << ")" << '\n';
+		}
+		else if (op == 0xAF)
+		{
+			// XOR A, A
+			register_A ^= register_A;
+
+			flag_Z = 1;
+
+			std::cout << (int)op << ": XOR\t" << "(" << (int)op <<  ")" << '\n';
+		}
+		else
+		{
+			std::cout << "NOT IMPLEMENTED: " << std::hex << std::showbase << static_cast<int>(op) << '\n';
+			return -1;
+		}
+	}
 
 	return 0;
 }
