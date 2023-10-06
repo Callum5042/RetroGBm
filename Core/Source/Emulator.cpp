@@ -39,54 +39,68 @@ void Emulator::Run()
 {
 	while (m_Running)
 	{
-		// Fetch
-		// const uint16_t pc = m_Cpu->ProgramCounter;
-		std::cout << "0x" << std::hex << m_Cpu->ProgramCounter << ": ";
-
-		const uint8_t opcode = ReadFromBus();
-		std::string opcode_name = "NOT SET";
-
-		// Execute instruction
-		if (opcode == 0x0)
+		const int CYCLES_PER_SCANLINE = 80;
+		if (m_Cycles >= CYCLES_PER_SCANLINE)
 		{
-			// NOP
-			opcode_name = "NOP (0x0)";
-		}
-		else if (opcode == 0xC3)
-		{
-			// JP a16
-			uint8_t low = ReadFromBus();
-			uint8_t high = ReadFromBus();
-			uint16_t data = low | (high << 8);
-
-			m_Cpu->ProgramCounter = data;
-			opcode_name = std::format("JP a16 (0xC3 0x{:x} 0x{:x})", low, high);
-		}
-		else if (opcode == 0xAF)
-		{
-			// XOR A, A
-			uint8_t reg = m_Cpu->GetRegister(RegisterType8::REG_A);
-			m_Cpu->SetRegister(RegisterType8::REG_A, reg ^ reg);
-			m_Cpu->SetFlag(CpuFlag::Zero, true);
-
-			opcode_name = "XOR (0xAF)";
-		}
-		else if (opcode == 0x21)
-		{
-			// LD HL, n16
-			uint8_t low = ReadFromBus();
-			uint8_t high = ReadFromBus();
-			m_Cpu->SetRegister(RegisterType16::REG_HL, high, low);
-
-			opcode_name = std::format("LD HL, n16 (0xC3 0x{:x} 0x{:x})", low, high);
+			m_Cycles = 0;
 		}
 		else
 		{
-			throw std::exception(std::format("Instruction not implemented: 0x{:x}", opcode).c_str());
-		}
+			// Fetch
+			std::cout << "0x" << std::hex << m_Cpu->ProgramCounter << ": ";
 
-		// Display CPU details
-		std::cout << opcode_name << " - " << m_Cpu->Details() << '\n';
+			const uint8_t opcode = ReadFromBus();
+			std::string opcode_name = "NOT SET";
+
+			// Execute instruction
+			if (opcode == 0x0)
+			{
+				// NOP
+				opcode_name = "NOP (0x0)";
+				m_Cycles += 4;
+			}
+			else if (opcode == 0xC3)
+			{
+				// Op::JumpA16(&cpu, &bus, &message);
+
+				// JP a16
+				uint8_t low = ReadFromBus();
+				uint8_t high = ReadFromBus();
+				uint16_t data = low | (high << 8);
+
+				m_Cpu->ProgramCounter = data;
+				m_Cycles += 16;
+
+				opcode_name = std::format("JP a16 (0xC3 0x{:x} 0x{:x})", low, high);
+			}
+			else if (opcode == 0xAF)
+			{
+				// XOR A, A
+				uint8_t reg = m_Cpu->GetRegister(RegisterType8::REG_A);
+				m_Cpu->SetRegister(RegisterType8::REG_A, reg ^ reg);
+				m_Cpu->SetFlag(CpuFlag::Zero, true);
+				m_Cycles += 4;
+
+				opcode_name = "XOR (0xAF)";
+			}
+			else if (opcode == 0x21)
+			{
+				// LD HL, n16
+				uint8_t low = ReadFromBus();
+				uint8_t high = ReadFromBus();
+				m_Cpu->SetRegister(RegisterType16::REG_HL, high, low);
+				m_Cycles += 12;
+
+				opcode_name = std::format("LD HL, n16 (0xC3 0x{:x} 0x{:x})", low, high);
+			}
+			else
+			{
+				throw std::exception(std::format("Instruction not implemented: 0x{:x}", opcode).c_str());
+			}
+
+			// Display CPU details
+			std::cout << opcode_name << " - " << m_Cpu->Details() << '\n';
+		}
 	}
 }
 

@@ -19,6 +19,8 @@ public:
 private:
 	bool m_Running = false;
 
+	int m_Cycles = 0;
+
 	CartridgeInfo m_CartridgeInfo;
 	std::unique_ptr<Cpu> m_Cpu = nullptr;
 
