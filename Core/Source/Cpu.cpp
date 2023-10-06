@@ -1,5 +1,6 @@
 #include "Cpu.h"
 #include <exception>
+#include <sstream>
 
 void Cpu::SetRegister(RegisterType8 type, uint8_t data)
 {
@@ -122,4 +123,30 @@ bool Cpu::GetFlag(CpuFlag flag) const
 
 	// TODO: Should this should throw an exception or just log and continue
 	return false;
+}
+
+std::string Cpu::Details()
+{
+	std::stringstream ss;
+	ss.setf(std::ios_base::hex, std::ios_base::basefield);
+
+	ss << "Registers("
+		<< " A: 0x" << +GetRegister(RegisterType8::REG_A)
+		<< " F: 0x" << +GetRegister(RegisterType8::REG_F)
+		<< " B: 0x" << +GetRegister(RegisterType8::REG_B)
+		<< " C: 0x" << +GetRegister(RegisterType8::REG_C)
+		<< " D: 0x" << +GetRegister(RegisterType8::REG_D)
+		<< " E: 0x" << +GetRegister(RegisterType8::REG_E)
+		<< " H: 0x" << +GetRegister(RegisterType8::REG_H)
+		<< " L: 0x" << +GetRegister(RegisterType8::REG_L)
+		<< " )";
+
+	ss << " Flags("
+		<< " Z: 0x" << GetFlag(CpuFlag::Zero)
+		<< " N: 0x" << GetFlag(CpuFlag::Subtraction)
+		<< " H: 0x" << GetFlag(CpuFlag::HalfCarry)
+		<< " C: 0x" << GetFlag(CpuFlag::Carry)
+		<< " )";
+
+	return ss.str();
 }

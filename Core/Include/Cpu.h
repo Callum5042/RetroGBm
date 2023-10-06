@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <string>
 
 enum class RegisterType8
 {
@@ -35,6 +36,8 @@ public:
 	Cpu() = default;
 	virtual ~Cpu() = default;
 
+	uint16_t ProgramCounter = 0;
+
 	// Registers
 	void SetRegister(RegisterType8 type, uint8_t data);
 	void SetRegister(RegisterType16 type, uint16_t data);
@@ -46,6 +49,9 @@ public:
 	// Flags
 	void SetFlag(CpuFlag flag, bool data);
 	bool GetFlag(CpuFlag flag) const;
+
+	// Build debug string
+	std::string Details();
 
 private:
 	std::map<RegisterType8, uint8_t> m_Registers;

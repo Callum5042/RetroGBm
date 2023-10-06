@@ -21,12 +21,18 @@
     <ClInclude Include="Include\Cpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Include\Emulator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Cartridge.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Cpu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Emulator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -21,10 +21,12 @@
   <ItemGroup>
     <ClInclude Include="Include\Cartridge.h" />
     <ClInclude Include="Include\Cpu.h" />
+    <ClInclude Include="Include\Emulator.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Cartridge.cpp" />
     <ClCompile Include="Source\Cpu.cpp" />
+    <ClCompile Include="Source\Emulator.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -129,7 +131,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -149,7 +151,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
