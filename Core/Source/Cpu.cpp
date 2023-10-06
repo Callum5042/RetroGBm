@@ -1,0 +1,125 @@
+#include "Cpu.h"
+#include <exception>
+
+void Cpu::SetRegister(RegisterType8 type, uint8_t data)
+{
+	m_Registers[type] = data;
+}
+
+void Cpu::SetRegister(RegisterType16 type, uint16_t data)
+{
+	uint8_t high = (data >> 8) & 0xFF;
+	uint8_t low = data & 0xFF;
+
+	SetRegister(type, high, low);
+}
+
+void Cpu::SetRegister(RegisterType16 type, uint8_t data_high, uint8_t data_low)
+{
+	switch (type)
+	{
+		case RegisterType16::REG_BC:
+			m_Registers[RegisterType8::REG_B] = data_high;
+			m_Registers[RegisterType8::REG_C] = data_low;
+			break;
+
+		case RegisterType16::REG_DE:
+			m_Registers[RegisterType8::REG_D] = data_high;
+			m_Registers[RegisterType8::REG_E] = data_low;
+			break;
+
+		case RegisterType16::REG_HL:
+			m_Registers[RegisterType8::REG_H] = data_high;
+			m_Registers[RegisterType8::REG_L] = data_low;
+			break;
+	}
+}
+
+uint8_t Cpu::GetRegister(RegisterType8 type) const
+{
+	auto it = m_Registers.find(type);
+	if (it == m_Registers.end())
+	{
+		// TODO: Should this should throw an exception or just log and continue
+		return 0;
+	}
+
+	return it->second;
+}
+
+uint16_t Cpu::GetRegister(RegisterType16 type) const
+{
+	uint8_t data_high = 0;
+	uint8_t data_low = 0;
+
+	switch (type)
+	{
+		case RegisterType16::REG_BC:
+			data_high = GetRegister(RegisterType8::REG_B);
+			data_low = GetRegister(RegisterType8::REG_C);
+			break;
+
+		case RegisterType16::REG_DE:
+			data_high = GetRegister(RegisterType8::REG_D);
+			data_low = GetRegister(RegisterType8::REG_E);
+			break;
+
+		case RegisterType16::REG_HL:
+			data_high = GetRegister(RegisterType8::REG_H);
+			data_low = GetRegister(RegisterType8::REG_L);
+			break;
+	}
+
+	uint16_t data = data_low | (data_high << 8);
+	return data;
+}
+
+void Cpu::SetFlag(CpuFlag flag, bool data)
+{
+	const uint8_t bit = data ? 1 : 0;
+
+	switch (flag)
+	{
+		case CpuFlag::Zero:
+			m_Registers[RegisterType8::REG_F] |= (bit << 6);
+			break;
+
+		case CpuFlag::Subtraction:
+			m_Registers[RegisterType8::REG_F] |= (bit << 5);
+			break;
+
+		case CpuFlag::HalfCarry:
+			m_Registers[RegisterType8::REG_F] |= (bit << 4);
+			break;
+
+		case CpuFlag::Carry:
+			m_Registers[RegisterType8::REG_F] |= (bit << 3);
+			break;
+
+		default:
+			throw std::exception("Tried to set to unsupported flag");
+	}
+}
+
+bool Cpu::GetFlag(CpuFlag flag) const
+{
+	uint8_t flag_register = GetRegister(RegisterType8::REG_F);
+
+	switch (flag)
+	{
+		case CpuFlag::Zero:
+			return ((flag_register >> 6) & 1) != 0;
+
+		case CpuFlag::Subtraction:
+			return ((flag_register >> 5) & 1) != 0;
+
+		case CpuFlag::HalfCarry:
+			return ((flag_register >> 4) & 1) != 0;
+
+		case CpuFlag::Carry:
+			return ((flag_register >> 3) & 1) != 0;
+	}
+
+	// TODO: Should this should throw an exception or just log and continue
+	return false;
+}

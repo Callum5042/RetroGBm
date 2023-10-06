@@ -32,19 +32,44 @@ int main(int argc, char** argv)
 
 	// Registers
 	int program_counter = 0x100;
+	int ticks = 0;
+
 	int flag_Z = 0;
 
 	int register_A = 0;
 
+	int register_B = 0;
+	int register_C = 0;
+
+	int register_H = 0;
+	int register_L = 0;
+
 	// Loop
 	while (true)
 	{
-		uint8_t op = cartridge.data[program_counter++];
+		uint8_t op = cartridge.data[program_counter];
+
+		ticks++;
+		program_counter++;
 
 		// NOP
 		if (op == 0x0)
 		{
 			std::cout << "OpCode: " << std::hex << std::showbase << static_cast<int>(op) << '\n';
+		}
+		else if (op == 0x01)
+		{
+			// LD BC, n16
+			uint8_t low = cartridge.data[program_counter];
+			uint8_t high = cartridge.data[program_counter + 1];
+
+			register_B = high;
+			register_C = low;
+
+			ticks += 2;
+			program_counter += 2;
+
+			std::cout << (int)op << ": LD\t" << "(" << (int)op << " " << (int)high << " " << (int)low << ")" << '\n';
 		}
 		else if (op == 0xC3)
 		{
@@ -53,6 +78,7 @@ int main(int argc, char** argv)
 			uint8_t high = cartridge.data[program_counter + 1];
 			uint16_t data = low | (high << 8);
 
+			ticks += 2;
 			program_counter = data;
 
 			std::cout << (int)op << ": JP\t" << "(" << (int)op << " " << (int)high << " " << (int)low << ")" << '\n';
@@ -60,11 +86,29 @@ int main(int argc, char** argv)
 		else if (op == 0xAF)
 		{
 			// XOR A, A
-			register_A ^= register_A;
+			register_A ^= register_A; 
 
 			flag_Z = 1;
 
 			std::cout << (int)op << ": XOR\t" << "(" << (int)op <<  ")" << '\n';
+		}
+		else if (op == 0x20)
+		{
+
+		}
+		else if (op == 0x21)
+		{
+			// LD HL, n16
+			uint8_t low = cartridge.data[program_counter];
+			uint8_t high = cartridge.data[program_counter + 1];
+
+			register_H = high;
+			register_L = low;
+
+			ticks += 2;
+			program_counter += 2;
+
+			std::cout << (int)op << ": LD\t" << "(" << (int)op << " " << (int)high << " " << (int)low << ")" << '\n';
 		}
 		else
 		{
