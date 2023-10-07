@@ -2,9 +2,18 @@
 
 #include <filesystem>
 #include <memory>
-#include "Cartridge.h"
+#include <unordered_map>
+#include <functional>
 
 class Cpu;
+struct CartridgeInfo;
+
+struct EmulatorContext
+{
+	int cycles = 0;
+	std::unique_ptr<CartridgeInfo> cartridge = nullptr;
+	std::unique_ptr<Cpu> cpu = nullptr;
+};
 
 class Emulator
 {
@@ -19,10 +28,9 @@ public:
 private:
 	bool m_Running = false;
 
-	int m_Cycles = 0;
+	EmulatorContext m_Context;
 
-	CartridgeInfo m_CartridgeInfo;
-	std::unique_ptr<Cpu> m_Cpu = nullptr;
+	std::string Execute(const uint8_t opcode);
 
-	const uint8_t ReadFromBus();
+	// std::unordered_map<uint8_t, std::function<std::string()>> m_OpCodeTable;
 };

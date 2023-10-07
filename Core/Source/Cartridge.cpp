@@ -219,12 +219,12 @@ bool LoadCartridge(const std::filesystem::path& path, CartridgeInfo* cartridge_i
 	return true;
 }
 
-bool CartridgeChecksum(const CartridgeInfo& info)
+bool CartridgeChecksum(const CartridgeInfo* info)
 {
     uint8_t checksum = 0;
     for (uint16_t address = 0x0134; address <= 0x014C; address++)
     {
-        checksum = checksum - info.data[address] - 1;
+        checksum = checksum - info->data[address] - 1;
     }
 
     return (checksum & 0xFF);

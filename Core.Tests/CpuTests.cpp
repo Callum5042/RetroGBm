@@ -1,11 +1,13 @@
 #include "CppUnitTest.h"
 #include <Cpu.h>
+#include <vector>
+#include <tuple>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace CoreTests
 {
-	TEST_CLASS(CoreTests)
+	TEST_CLASS(CpuTests)
 	{
 	public:
 
@@ -365,6 +367,105 @@ namespace CoreTests
 			// Assert
 			bool flag = _cpu.GetFlag(CpuFlag::Carry);
 			Assert::IsTrue(flag);
+		}
+
+		TEST_METHOD(RegisterTypeString16_RegisterHL_StringIsBC)
+		{
+			// Act
+			std::string name = RegisterTypeString16(RegisterType16::REG_BC);
+
+			// Assert
+			Assert::AreEqual("BC", name.c_str());
+		}
+
+		TEST_METHOD(RegisterTypeString16_RegisterHL_StringIsDE)
+		{
+			// Act
+			std::string name = RegisterTypeString16(RegisterType16::REG_DE);
+
+			// Assert
+			Assert::AreEqual("DE", name.c_str());
+		}
+
+		TEST_METHOD(RegisterTypeString16_RegisterHL_StringIsHL)
+		{
+			// Act
+			std::string name = RegisterTypeString16(RegisterType16::REG_HL);
+
+			// Assert
+			Assert::AreEqual("HL", name.c_str());
+		}
+
+		TEST_METHOD(RegisterTypeString8_RegisterA_StringIsA)
+		{
+			// Act
+			std::string name = RegisterTypeString8(RegisterType8::REG_A);
+
+			// Assert
+			Assert::AreEqual("A", name.c_str());
+		}
+
+		TEST_METHOD(RegisterTypeString8_RegisterF_StringIsF)
+		{
+			// Act
+			std::string name = RegisterTypeString8(RegisterType8::REG_F);
+
+			// Assert
+			Assert::AreEqual("F", name.c_str());
+		}
+
+		TEST_METHOD(RegisterTypeString8_RegisterB_StringIsB)
+		{
+			// Act
+			std::string name = RegisterTypeString8(RegisterType8::REG_B);
+
+			// Assert
+			Assert::AreEqual("B", name.c_str());
+		}
+
+		TEST_METHOD(RegisterTypeString8_RegisterC_StringIsC)
+		{
+			// Act
+			std::string name = RegisterTypeString8(RegisterType8::REG_C);
+
+			// Assert
+			Assert::AreEqual("C", name.c_str());
+		}
+
+		TEST_METHOD(RegisterTypeString8_RegisterD_StringIsD)
+		{
+			// Act
+			std::string name = RegisterTypeString8(RegisterType8::REG_D);
+
+			// Assert
+			Assert::AreEqual("D", name.c_str());
+		}
+
+		TEST_METHOD(RegisterTypeString8_RegisterE_StringIsE)
+		{
+			// Act
+			std::string name = RegisterTypeString8(RegisterType8::REG_E);
+
+			// Assert
+			Assert::AreEqual("E", name.c_str());
+		}
+
+		TEST_METHOD(RegisterTypeString8_RegisterH_StringIsH)
+		{
+			// Act
+			std::string name = RegisterTypeString8(RegisterType8::REG_H);
+
+			// Assert
+			Assert::AreEqual("H", name.c_str());
+		}
+
+		TEST_METHOD(RegisterTypeString8_RegisterL_StringIsL)
+		{
+			// Act
+			std::string name = RegisterTypeString8(RegisterType8::REG_L);
+
+			// Assert
+			Assert::AreEqual("L", name.c_str());
 		}
 	};
 }

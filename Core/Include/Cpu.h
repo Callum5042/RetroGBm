@@ -56,3 +56,7 @@ public:
 private:
 	std::map<RegisterType8, uint8_t> m_Registers;
 };
+
+std::string RegisterTypeString16(RegisterType16 type);
+
+std::string RegisterTypeString8(RegisterType8 type);

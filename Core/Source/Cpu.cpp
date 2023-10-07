@@ -150,3 +150,52 @@ std::string Cpu::Details()
 
 	return ss.str();
 }
+
+std::string RegisterTypeString16(RegisterType16 type)
+{
+	switch (type)
+	{
+		case RegisterType16::REG_BC:
+			return "BC";
+
+		case RegisterType16::REG_DE:
+			return "DE";
+
+		case RegisterType16::REG_HL:
+			return "HL";
+	}
+
+	throw std::exception("unsupported RegisterType16 in function RegisterTypeString16");
+}
+
+std::string RegisterTypeString8(RegisterType8 type)
+{
+	switch (type)
+	{
+		case RegisterType8::REG_A:
+			return "A";
+
+		case RegisterType8::REG_F:
+			return "F";
+
+		case RegisterType8::REG_B:
+			return "B";
+
+		case RegisterType8::REG_C:
+			return "C";
+
+		case RegisterType8::REG_D:
+			return "D";
+
+		case RegisterType8::REG_E:
+			return "E";
+
+		case RegisterType8::REG_H:
+			return "H";
+
+		case RegisterType8::REG_L:
+			return "L";
+	}
+
+	throw std::exception("unsupported RegisterType16 in function RegisterTypeString8");
+}

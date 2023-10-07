@@ -57,4 +57,4 @@ struct CartridgeInfo
 
 bool LoadCartridge(const std::filesystem::path& path, CartridgeInfo* cartridge_info);
 
-bool CartridgeChecksum(const CartridgeInfo& info);
+bool CartridgeChecksum(const CartridgeInfo* info);
