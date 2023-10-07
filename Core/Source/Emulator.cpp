@@ -74,10 +74,132 @@ std::string Emulator::Execute(const uint8_t opcode)
 	{
 		case 0x0:
 			return Op::Nop(&m_Context);
+		case 0x01:
+			return Op::LoadN16(&m_Context, RegisterType16::REG_BC);
+		case 0x06:
+			return Op::LoadN8(&m_Context, RegisterType8::REG_B);
+		case 0x0E:
+			return Op::LoadN8(&m_Context, RegisterType8::REG_C);
+		case 0x11:
+			return Op::LoadN16(&m_Context, RegisterType16::REG_DE);
+		case 0x16:
+			return Op::LoadN8(&m_Context, RegisterType8::REG_D);
+		case 0x1E:
+			return Op::LoadN8(&m_Context, RegisterType8::REG_E);
+		case 0x26:
+			return Op::LoadN8(&m_Context, RegisterType8::REG_H);
+		case 0x2E:
+			return Op::LoadN8(&m_Context, RegisterType8::REG_L);
+		case 0x3E:
+			return Op::LoadN8(&m_Context, RegisterType8::REG_A);
 		case 0xC3:
 			return Op::JumpN16(&m_Context);
 		case 0x21:
 			return Op::LoadN16(&m_Context, RegisterType16::REG_HL);
+		case 0x22:
+			return Op::LoadIncrementHL(&m_Context);
+		case 0x31:
+			return Op::LoadN16(&m_Context, RegisterType16::REG_SP);
+		case 0x32:
+			return Op::LoadDecrementHL(&m_Context);
+		case 0x40:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_B);
+		case 0x41:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_C);
+		case 0x42:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_D);
+		case 0x43:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_E);
+		case 0x44:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_H);
+		case 0x45:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_L);
+		case 0x47:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_A);
+		case 0x48:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_B);
+		case 0x49:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_C);
+		case 0x4A:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_D);
+		case 0x4B:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_E);
+		case 0x4C:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_H);
+		case 0x4D:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_L);
+		case 0x4F:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_A);
+		case 0x50:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_B);
+		case 0x51:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_C);
+		case 0x52:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_D);
+		case 0x53:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_E);
+		case 0x54:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_H);
+		case 0x55:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_L);
+		case 0x57:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_A);
+		case 0x58:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_B);
+		case 0x59:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_C);
+		case 0x5A:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_D);
+		case 0x5B:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_E);
+		case 0x5C:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_H);
+		case 0x5D:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_L);
+		case 0x5F:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_A);
+		case 0x60:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_B);
+		case 0x61:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_C);
+		case 0x62:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_D);
+		case 0x63:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_E);
+		case 0x64:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_H);
+		case 0x65:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_L);
+		case 0x67:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_A);
+		case 0x68:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_B);
+		case 0x69:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_C);
+		case 0x6A:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_D);
+		case 0x6B:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_E);
+		case 0x6C:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_H);
+		case 0x6D:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_L);
+		case 0x6F:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_A);
+		case 0x78:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_B);
+		case 0x79:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_C);
+		case 0x7A:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_D);
+		case 0x7B:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_E);
+		case 0x7C:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_H);
+		case 0x7D:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_L);
+		case 0x7F:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_A);
 		case 0xA8:
 			return Op::XorR8(&m_Context, RegisterType8::REG_B);
 		case 0xA9:
@@ -99,4 +221,4 @@ std::string Emulator::Execute(const uint8_t opcode)
 		default:
 			throw std::exception(std::format("Instruction not implemented: 0x{:x}", opcode).c_str());
 	}
-}	
+}

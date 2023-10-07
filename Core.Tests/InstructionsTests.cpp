@@ -108,28 +108,6 @@ namespace CoreTests
 			Assert::IsTrue(flag);
 		}
 
-		TEST_METHOD(LoadN16_IncreaseCyclesBy12_SetRegisterToResult)
-		{
-			// Arrange
-			EmulatorContext context;
-			context.cycles = 0;
-			context.cpu = std::make_unique<Cpu>();
-			context.cartridge = std::make_unique<CartridgeInfo>();
-
-			context.cartridge->data.push_back(0x20);
-			context.cartridge->data.push_back(0x50);
-
-			// Act
-			Op::LoadN16(&context, RegisterType16::REG_HL);
-
-			// Assert
-			Assert::AreEqual(12, context.cycles);
-			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
-
-			uint16_t reg = context.cpu->GetRegister(RegisterType16::REG_HL);
-			Assert::AreEqual(0x5020, static_cast<int>(reg));
-		}
-
 		TEST_METHOD(XorN8_IncreaseCyclesBy8_IncreaseProgramCounterBy1_SetRegA_ZeroFlagTrue)
 		{
 			// Arrange

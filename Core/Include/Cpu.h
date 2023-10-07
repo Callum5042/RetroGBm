@@ -19,7 +19,8 @@ enum class RegisterType16
 {
 	REG_BC,
 	REG_DE,
-	REG_HL
+	REG_HL,
+	REG_SP
 };
 
 enum class CpuFlag
@@ -55,6 +56,8 @@ public:
 
 private:
 	std::map<RegisterType8, uint8_t> m_Registers;
+
+	uint16_t m_StackPointer = 0;
 };
 
 std::string RegisterTypeString16(RegisterType16 type);

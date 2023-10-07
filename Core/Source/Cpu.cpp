@@ -33,6 +33,10 @@ void Cpu::SetRegister(RegisterType16 type, uint8_t data_high, uint8_t data_low)
 			m_Registers[RegisterType8::REG_H] = data_high;
 			m_Registers[RegisterType8::REG_L] = data_low;
 			break;
+
+		case RegisterType16::REG_SP:
+			m_StackPointer = data_low | (data_high << 8);
+			break;
 	}
 }
 
@@ -69,6 +73,9 @@ uint16_t Cpu::GetRegister(RegisterType16 type) const
 			data_high = GetRegister(RegisterType8::REG_H);
 			data_low = GetRegister(RegisterType8::REG_L);
 			break;
+
+		case RegisterType16::REG_SP:
+			return m_StackPointer;
 	}
 
 	uint16_t data = data_low | (data_high << 8);
@@ -163,6 +170,9 @@ std::string RegisterTypeString16(RegisterType16 type)
 
 		case RegisterType16::REG_HL:
 			return "HL";
+
+		case RegisterType16::REG_SP:
+			return "SP";
 	}
 
 	throw std::exception("unsupported RegisterType16 in function RegisterTypeString16");

@@ -72,13 +72,63 @@ std::string Op::XorR16(EmulatorContext* context, RegisterType16 type)
 	return opcode_name;
 }
 
-std::string Op::LoadN16(EmulatorContext* context, RegisterType16 reg)
+std::string Op::LoadR8(EmulatorContext* context, RegisterType8 reg1, RegisterType8 reg2)
+{
+	uint8_t data = context->cpu->GetRegister(reg2);
+	context->cpu->SetRegister(reg1, data);
+
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("LD {}, {}", RegisterTypeString8(reg1), RegisterTypeString8(reg2));
+	return opcode_name;
+}
+
+std::string Op::LoadN8(EmulatorContext* context, RegisterType8 type)
+{
+	uint8_t data = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+	context->cpu->SetRegister(type, data);
+
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("LD {}, n8 (0x{:x})", RegisterTypeString8(type), data);
+	return opcode_name;
+}
+
+std::string Op::LoadN16(EmulatorContext* context, RegisterType16 type)
 {
 	uint8_t low = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
 	uint8_t high = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
-	context->cpu->SetRegister(reg, high, low);
+	context->cpu->SetRegister(type, high, low);
 	context->cycles += 12;
 
-	std::string opcode_name = std::format("LD {}, n16 (0xC3 0x{:x} 0x{:x})", RegisterTypeString16(reg), low, high);
+	std::string opcode_name = std::format("LD {}, n16 (0xC3 0x{:x} 0x{:x})", RegisterTypeString16(type), low, high);
+	return opcode_name;
+}
+
+std::string Op::LoadIncrementHL(EmulatorContext* context)
+{
+	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
+	WriteToBus(context->cartridge.get(), address, data);
+
+	context->cpu->SetRegister(RegisterType16::REG_HL, address + 1);
+
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("LDI [{}], r8", RegisterTypeString16(RegisterType16::REG_HL));
+	return opcode_name;
+}
+
+std::string Op::LoadDecrementHL(EmulatorContext* context)
+{
+	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
+	WriteToBus(context->cartridge.get(), address, data);
+
+	context->cpu->SetRegister(RegisterType16::REG_HL, address - 1);
+
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("LDD [{}], r8", RegisterTypeString16(RegisterType16::REG_HL));
 	return opcode_name;
 }

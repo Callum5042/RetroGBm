@@ -12,3 +12,15 @@ const uint8_t ReadFromBus(const CartridgeInfo* cartridge, const uint16_t address
 
 	throw std::exception("Not implemented");
 }
+
+void WriteToBus(CartridgeInfo* cartridge, uint16_t address, uint8_t data)
+{
+	if (address < 0x8000)
+	{
+		// Read from ROM
+		cartridge->data[address] = data;
+		return;
+	}
+
+	throw std::exception("Not implemented");
+}

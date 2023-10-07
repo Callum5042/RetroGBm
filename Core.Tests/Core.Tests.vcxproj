@@ -161,6 +161,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CpuTests.cpp" />
+    <ClCompile Include="InstructionsLoadTests.cpp" />
     <ClCompile Include="InstructionsTests.cpp" />
   </ItemGroup>
   <ItemGroup>
