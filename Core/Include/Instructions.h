@@ -15,5 +15,9 @@ namespace Op
 
 	std::string XorR8(EmulatorContext* context, RegisterType8 type);
 
+	std::string XorN8(EmulatorContext* context);
+
+	std::string XorR16(EmulatorContext* context, RegisterType16 type);
+
 	std::string LoadN16(EmulatorContext* context, RegisterType16 reg);
 }

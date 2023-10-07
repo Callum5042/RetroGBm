@@ -76,11 +76,27 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::Nop(&m_Context);
 		case 0xC3:
 			return Op::JumpN16(&m_Context);
-		case 0xAF:
-			return Op::XorR8(&m_Context, RegisterType8::REG_A);
 		case 0x21:
 			return Op::LoadN16(&m_Context, RegisterType16::REG_HL);
+		case 0xA8:
+			return Op::XorR8(&m_Context, RegisterType8::REG_B);
+		case 0xA9:
+			return Op::XorR8(&m_Context, RegisterType8::REG_C);
+		case 0xAA:
+			return Op::XorR8(&m_Context, RegisterType8::REG_D);
+		case 0xAB:
+			return Op::XorR8(&m_Context, RegisterType8::REG_E);
+		case 0xAC:
+			return Op::XorR8(&m_Context, RegisterType8::REG_H);
+		case 0xAD:
+			return Op::XorR8(&m_Context, RegisterType8::REG_L);
+		case 0xAE:
+			return Op::XorR16(&m_Context, RegisterType16::REG_HL);
+		case 0xAF:
+			return Op::XorR8(&m_Context, RegisterType8::REG_A);
+		case 0xEE:
+			return Op::XorN8(&m_Context);
 		default:
 			throw std::exception(std::format("Instruction not implemented: 0x{:x}", opcode).c_str());
 	}
-}
+}	

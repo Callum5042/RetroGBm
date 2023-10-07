@@ -29,14 +29,46 @@ std::string Op::XorR8(EmulatorContext* context, RegisterType8 type)
 {
 	uint8_t reg_a = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t reg_b = context->cpu->GetRegister(type);
-	context->cpu->SetRegister(RegisterType8::REG_A, reg_a ^ reg_b);
 
-	reg_a = context->cpu->GetRegister(RegisterType8::REG_A);
-	context->cpu->SetFlag(CpuFlag::Zero, reg_a == 0x0);
+	uint8_t result = reg_a ^ reg_b;
+	context->cpu->SetRegister(RegisterType8::REG_A, result);
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0x0);
 
 	context->cycles += 4;
 
-	std::string opcode_name = "XOR (0xAF)";
+	std::string opcode_name = "XOR r8 (0xAF)";
+	return opcode_name;
+}
+
+std::string Op::XorN8(EmulatorContext* context)
+{
+	uint8_t reg_a = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t data = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+
+	uint8_t result = reg_a ^ data;
+	context->cpu->SetRegister(RegisterType8::REG_A, result);
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
+
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("XOR n8 (0xEE 0x{:x})", data);
+	return opcode_name;
+}
+
+std::string Op::XorR16(EmulatorContext* context, RegisterType16 type)
+{
+	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+	uint8_t data = ReadFromBus(context->cartridge.get(), address);
+
+	uint8_t reg_a = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t result = reg_a ^ data;
+
+	context->cpu->SetRegister(RegisterType8::REG_A, result);
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
+
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("XOR r16 (0xEE 0x{:x})", data);
 	return opcode_name;
 }
 
