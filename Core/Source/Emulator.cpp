@@ -76,12 +76,16 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::Nop(&m_Context);
 		case 0x01:
 			return Op::LoadN16(&m_Context, RegisterType16::REG_BC);
+		case 0x02:
+			return Op::StoreR8(&m_Context, RegisterType8::REG_A, RegisterType16::REG_BC);
 		case 0x06:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_B);
 		case 0x0E:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_C);
 		case 0x11:
 			return Op::LoadN16(&m_Context, RegisterType16::REG_DE);
+		case 0x12:
+			return Op::StoreR8(&m_Context, RegisterType8::REG_A, RegisterType16::REG_DE);
 		case 0x16:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_D);
 		case 0x1E:
@@ -102,6 +106,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::LoadN16(&m_Context, RegisterType16::REG_SP);
 		case 0x32:
 			return Op::LoadDecrementHL(&m_Context);
+		case 0x36:
+			return Op::StoreN8(&m_Context, RegisterType16::REG_HL);
 		case 0x40:
 			return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_B);
 		case 0x41:
@@ -186,6 +192,20 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_L);
 		case 0x6F:
 			return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_A);
+		case 0x70:
+			return Op::StoreR8(&m_Context, RegisterType8::REG_B, RegisterType16::REG_HL);
+		case 0x71:
+			return Op::StoreR8(&m_Context, RegisterType8::REG_C, RegisterType16::REG_HL);
+		case 0x72:
+			return Op::StoreR8(&m_Context, RegisterType8::REG_D, RegisterType16::REG_HL);
+		case 0x73:
+			return Op::StoreR8(&m_Context, RegisterType8::REG_E, RegisterType16::REG_HL);
+		case 0x74:
+			return Op::StoreR8(&m_Context, RegisterType8::REG_H, RegisterType16::REG_HL);
+		case 0x75:
+			return Op::StoreR8(&m_Context, RegisterType8::REG_L, RegisterType16::REG_HL);
+		case 0x77:
+			return Op::StoreR8(&m_Context, RegisterType8::REG_A, RegisterType16::REG_HL);
 		case 0x78:
 			return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_B);
 		case 0x79:

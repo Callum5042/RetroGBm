@@ -132,3 +132,27 @@ std::string Op::LoadDecrementHL(EmulatorContext* context)
 	std::string opcode_name = std::format("LDD [{}], r8", RegisterTypeString16(RegisterType16::REG_HL));
 	return opcode_name;
 }
+
+std::string Op::StoreR8(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg_pointer)
+{
+	uint8_t data = context->cpu->GetRegister(reg);
+	uint16_t address = context->cpu->GetRegister(reg_pointer);
+	WriteToBus(context->cartridge.get(), address, data);
+
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("LD [{}], r8", RegisterTypeString16(reg_pointer));
+	return opcode_name;
+}
+
+std::string Op::StoreN8(EmulatorContext* context, RegisterType16 reg_pointer)
+{
+	uint8_t data = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+	uint16_t address = context->cpu->GetRegister(reg_pointer);
+	WriteToBus(context->cartridge.get(), address, data);
+
+	context->cycles += 12;
+
+	std::string opcode_name = std::format("LD [{}], n8 (0x{:x})", RegisterTypeString16(reg_pointer), data);
+	return opcode_name;
+}
