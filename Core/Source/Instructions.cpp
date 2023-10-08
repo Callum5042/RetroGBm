@@ -194,3 +194,34 @@ std::string Op::LoadIndirectAC(EmulatorContext* context)
 	std::string opcode_name = std::format("LD A, [C] (0x{:x})", data);
 	return opcode_name;
 }
+
+std::string Op::StoreIndirectA16(EmulatorContext* context)
+{
+	// Opcode: 0xEA
+	uint8_t low = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+	uint8_t high = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+	uint16_t address = low | (high << 8);
+
+	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
+	WriteToBus(context->cartridge.get(), address, data);
+
+	context->cycles += 16;
+
+	std::string opcode_name = std::format("LD [a16], A (0x{:x} 0x{:x})", low, high);
+	return opcode_name;
+}
+
+std::string Op::LoadIndirectA16(EmulatorContext* context)
+{
+	// Opcode: 0xFA
+	uint8_t low = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+	uint8_t high = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+	uint16_t address = low | (high << 8);
+
+	uint8_t data = ReadFromBus(context->cartridge.get(), address);
+	context->cpu->SetRegister(RegisterType8::REG_A, data);
+	context->cycles += 16;
+
+	std::string opcode_name = std::format("LD A, [a16] (0x{:x} 0x{:x} 0x{:x})", low, high, data);
+	return opcode_name;
+}

@@ -38,4 +38,8 @@ namespace Op
 	std::string StoreIndirectAC(EmulatorContext* context);
 
 	std::string LoadIndirectAC(EmulatorContext* context);
+
+	std::string StoreIndirectA16(EmulatorContext* context);
+
+	std::string LoadIndirectA16(EmulatorContext* context);
 }

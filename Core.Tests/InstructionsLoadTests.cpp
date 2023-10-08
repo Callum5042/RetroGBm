@@ -268,5 +268,49 @@ namespace CoreTests
 			uint8_t result = context.cpu->GetRegister(RegisterType8::REG_A);
 			Assert::AreEqual(0x50, static_cast<int>(result));
 		}
+
+		TEST_METHOD(StoreIndirectA16_IncreaseCyclesby16)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.resize(0x10);
+			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
+			context.cartridge->data[0x5] = 0x50;
+
+			context.cpu->SetRegister(RegisterType8::REG_C, 0x5);
+
+			// Act
+			Op::StoreIndirectA16(&context);
+
+			// Assert
+			Assert::AreEqual(16, context.cycles);
+			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
+		}
+
+		TEST_METHOD(LoadIndirectA16_IncreaseCyclesby16)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.resize(0x10);
+			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
+			context.cartridge->data[0x5] = 0x50;
+
+			context.cpu->SetRegister(RegisterType8::REG_C, 0x5);
+
+			// Act
+			Op::LoadIndirectA16(&context);
+
+			// Assert
+			Assert::AreEqual(16, context.cycles);
+			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
+		}
 	};
 }
