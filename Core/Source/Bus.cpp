@@ -22,5 +22,5 @@ void WriteToBus(CartridgeInfo* cartridge, uint16_t address, uint8_t data)
 		return;
 	}
 
-	throw std::exception("Not implemented 'ReadFromBus'");
+	throw std::exception("Not implemented 'WriteToBus'");
 }
