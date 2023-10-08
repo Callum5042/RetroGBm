@@ -196,5 +196,77 @@ namespace CoreTests
 			Assert::AreEqual(1, static_cast<int>(context.cpu->ProgramCounter));
 			Assert::AreEqual(0x50, static_cast<int>(context.cartridge->data[0x5]));
 		}
+
+		TEST_METHOD(LoadIndirectR16_IncreaseCyclesBy8_SetRegister)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.resize(0x10);
+			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
+			context.cartridge->data[0x5] = 0x50;
+
+			context.cpu->SetRegister(RegisterType16::REG_HL, 0x5);
+
+			// Act
+			Op::LoadIndirectR16(&context, RegisterType8::REG_B, RegisterType16::REG_HL);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+			Assert::AreEqual(0x50, static_cast<int>(context.cartridge->data[0x5]));
+
+			uint8_t result = context.cpu->GetRegister(RegisterType8::REG_B);
+			Assert::AreEqual(0x50, static_cast<int>(result));
+		}
+
+		TEST_METHOD(StoreIndirectAC_IncreaseCycleBy8_WriteToAddress)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.resize(0x10);
+			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
+			context.cartridge->data[0x5] = 0x0;
+
+			context.cpu->SetRegister(RegisterType8::REG_A, 0x20);
+			context.cpu->SetRegister(RegisterType8::REG_C, 0x5);
+
+			// Act
+			Op::StoreIndirectAC(&context);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+			Assert::AreEqual(0x20, static_cast<int>(context.cartridge->data[0x5]));
+		}
+
+		TEST_METHOD(LoadIndirectAC_IncreaseCyclesBy8_SetRegisterA)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.resize(0x10);
+			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
+			context.cartridge->data[0x5] = 0x50;
+
+			context.cpu->SetRegister(RegisterType8::REG_C, 0x5);
+
+			// Act
+			Op::LoadIndirectAC(&context);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+
+			uint8_t result = context.cpu->GetRegister(RegisterType8::REG_A);
+			Assert::AreEqual(0x50, static_cast<int>(result));
+		}
 	};
 }

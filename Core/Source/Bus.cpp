@@ -10,7 +10,7 @@ const uint8_t ReadFromBus(const CartridgeInfo* cartridge, const uint16_t address
 		return cartridge->data[address];
 	}
 
-	throw std::exception("Not implemented");
+	throw std::exception("Not implemented 'ReadFromBus'");
 }
 
 void WriteToBus(CartridgeInfo* cartridge, uint16_t address, uint8_t data)
@@ -22,5 +22,5 @@ void WriteToBus(CartridgeInfo* cartridge, uint16_t address, uint8_t data)
 		return;
 	}
 
-	throw std::exception("Not implemented");
+	throw std::exception("Not implemented 'ReadFromBus'");
 }

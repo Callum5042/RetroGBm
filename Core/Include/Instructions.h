@@ -32,4 +32,10 @@ namespace Op
 	std::string StoreR8(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg_pointer);
 
 	std::string StoreN8(EmulatorContext* context, RegisterType16 reg_pointer);
+
+	std::string LoadIndirectR16(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg_pointer);
+
+	std::string StoreIndirectAC(EmulatorContext* context);
+
+	std::string LoadIndirectAC(EmulatorContext* context);
 }
