@@ -274,6 +274,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::AddN8(&m_Context);
 		case 0xE2:
 			return Op::StoreIndirectAC(&m_Context);
+		case 0xE8:
+			return Op::AddSP(&m_Context);
 		case 0xEE:
 			return Op::XorN8(&m_Context);
 		case 0xF2:

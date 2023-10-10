@@ -48,4 +48,6 @@ namespace Op
 	std::string AddN8(EmulatorContext* context);
 
 	std::string AddIndirectHL(EmulatorContext* context);
+
+	std::string AddSP(EmulatorContext* context);
 }

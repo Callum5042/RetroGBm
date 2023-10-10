@@ -317,3 +317,32 @@ std::string Op::AddIndirectHL(EmulatorContext* context)
 	std::string opcode_name = std::format("ADD A, [HL]");
 	return opcode_name;
 }
+
+std::string Op::AddSP(EmulatorContext* context)
+{
+	// 0xE8
+	uint16_t reg_sp = context->cpu->GetRegister(RegisterType16::REG_SP);
+	int8_t data = static_cast<int8_t>(ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++));
+
+	uint16_t result = reg_sp + data;
+	context->cpu->SetRegister(RegisterType16::REG_SP, result);
+
+	if (result > 0xFF)
+	{
+		context->cpu->SetFlag(CpuFlag::Carry, true);
+	}
+	else
+	{
+		context->cpu->SetFlag(CpuFlag::Carry, false);
+	}
+
+	bool half_carry = (((reg_sp & 0xF) + (data & 0xF)) & 0x10) == 0x10;
+	context->cpu->SetFlag(CpuFlag::HalfCarry, half_carry);
+
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::Zero, false);
+	context->cycles += 16;
+
+	std::string opcode_name = std::format("ADD SP, e8");
+	return opcode_name;
+}

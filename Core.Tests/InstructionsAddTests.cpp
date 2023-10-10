@@ -207,5 +207,36 @@ namespace InstructionsTests
 			bool subtract_flag = context.cpu->GetFlag(CpuFlag::Subtraction);
 			Assert::IsFalse(subtract_flag);
 		}
+
+		TEST_METHOD(AddSP_IncreaseCyclesBy16_SetFlagZeroAndSubtractFalse_AddResultToSP)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.push_back(static_cast<uint8_t>(1));
+			context.cpu->SetRegister(RegisterType16::REG_SP, 0x2);
+
+			context.cpu->SetFlag(CpuFlag::Zero, true);
+			context.cpu->SetFlag(CpuFlag::Subtraction, true);
+
+			// Act
+			Op::AddSP(&context);
+
+			// Assert
+			Assert::AreEqual(16, context.cycles);
+			Assert::AreEqual(1, static_cast<int>(context.cpu->ProgramCounter));
+
+			uint16_t result = context.cpu->GetRegister(RegisterType16::REG_SP);
+			Assert::AreEqual(0x3, static_cast<int>(result));
+
+			bool subtract_flag = context.cpu->GetFlag(CpuFlag::Subtraction);
+			Assert::IsFalse(subtract_flag);
+
+			bool zero_flag = context.cpu->GetFlag(CpuFlag::Zero);
+			Assert::IsFalse(subtract_flag);
+		}
 	};
 }
