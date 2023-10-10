@@ -225,3 +225,33 @@ std::string Op::LoadIndirectA16(EmulatorContext* context)
 	std::string opcode_name = std::format("LD A, [a16] (0x{:x} 0x{:x} 0x{:x})", low, high, data);
 	return opcode_name;
 }
+
+std::string Op::AddR8(EmulatorContext* context, RegisterType8 reg)
+{
+	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t result_b = context->cpu->GetRegister(reg);
+
+	uint16_t result = result_a + result_b;
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0x0);
+
+	if (result > 0xFF)
+	{
+		context->cpu->SetFlag(CpuFlag::Carry, true);
+		result -= 0xFF;
+	}
+	else
+	{
+		context->cpu->SetFlag(CpuFlag::Carry, false);
+	}
+
+	bool half_carry = (((result_a & 0xF) + (result_b & 0xF)) & 0x10) == 0x10;
+	context->cpu->SetFlag(CpuFlag::HalfCarry, half_carry);
+
+	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result));
+
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("ADD A, {}", RegisterTypeString8(reg));
+	return opcode_name;
+}

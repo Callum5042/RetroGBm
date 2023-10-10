@@ -4,7 +4,7 @@
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
-namespace CoreTests
+namespace InstructionsTests
 {
 	TEST_CLASS(InstructionsLoadTests)
 	{

@@ -42,4 +42,6 @@ namespace Op
 	std::string StoreIndirectA16(EmulatorContext* context);
 
 	std::string LoadIndirectA16(EmulatorContext* context);
+
+	std::string AddR8(EmulatorContext* context, RegisterType8 reg);
 }
