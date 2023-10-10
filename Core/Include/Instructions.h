@@ -46,4 +46,6 @@ namespace Op
 	std::string AddR8(EmulatorContext* context, RegisterType8 reg);
 
 	std::string AddN8(EmulatorContext* context);
+
+	std::string AddIndirectHL(EmulatorContext* context);
 }

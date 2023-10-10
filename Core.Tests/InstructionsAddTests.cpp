@@ -149,7 +149,7 @@ namespace InstructionsTests
 			Assert::IsTrue(flag);
 		}
 
-		TEST_METHOD(AddR8_IncreaseCyclesBy8_IncreaseProgramCounterBy1_AddResultToRegA)
+		TEST_METHOD(AddN8_IncreaseCyclesBy8_IncreaseProgramCounterBy1_AddResultToRegA)
 		{
 			// Arrange
 			EmulatorContext context;
@@ -159,10 +159,9 @@ namespace InstructionsTests
 
 			context.cartridge->data.resize(0x10);
 			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
-			context.cartridge->data[0x5] = 0x50;
+			context.cartridge->data[0x0] = 0x50;
 
 			context.cpu->SetRegister(RegisterType8::REG_A, 0x15);
-			context.cpu->SetRegister(RegisterType16::REG_HL, 0x5);
 			context.cpu->SetFlag(CpuFlag::Subtraction, true);
 
 			// Act
@@ -179,7 +178,7 @@ namespace InstructionsTests
 			Assert::IsFalse(subtract_flag);
 		}
 
-		TEST_METHOD(AddR8_ResultIsZero_SetZeroFlag)
+		TEST_METHOD(AddIndirectHL_IncreaseCyclesBy8_IncreaseProgramCounterBy1_AddResultToRegA)
 		{
 			// Arrange
 			EmulatorContext context;
@@ -189,24 +188,24 @@ namespace InstructionsTests
 
 			context.cartridge->data.resize(0x10);
 			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
-			context.cartridge->data[0x5] = 0x0;
+			context.cartridge->data[0x5] = 0x50;
 
-			context.cpu->SetRegister(RegisterType8::REG_A, 0x0);
+			context.cpu->SetRegister(RegisterType8::REG_A, 0x15);
 			context.cpu->SetRegister(RegisterType16::REG_HL, 0x5);
-			context.cpu->SetFlag(CpuFlag::Zero, false);
+			context.cpu->SetFlag(CpuFlag::Subtraction, true);
 
 			// Act
-			Op::AddN8(&context);
+			Op::AddIndirectHL(&context);
 
 			// Assert
 			Assert::AreEqual(8, context.cycles);
-			Assert::AreEqual(1, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(0, static_cast<int>(context.cpu->ProgramCounter));
 
 			uint8_t result = context.cpu->GetRegister(RegisterType8::REG_A);
-			Assert::AreEqual(0x0, static_cast<int>(result));
+			Assert::AreEqual(0x65, static_cast<int>(result));
 
-			bool flag = context.cpu->GetFlag(CpuFlag::Zero);
-			Assert::IsTrue(flag);
+			bool subtract_flag = context.cpu->GetFlag(CpuFlag::Subtraction);
+			Assert::IsFalse(subtract_flag);
 		}
 	};
 }

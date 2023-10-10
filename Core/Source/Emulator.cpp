@@ -250,6 +250,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::AddR8(&m_Context, RegisterType8::REG_H);
 		case 0x85:
 			return Op::AddR8(&m_Context, RegisterType8::REG_L);
+		case 0x86:
+			return Op::AddIndirectHL(&m_Context);
 		case 0x87:
 			return Op::AddR8(&m_Context, RegisterType8::REG_A);
 		case 0xA8:
