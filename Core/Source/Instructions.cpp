@@ -225,3 +225,152 @@ std::string Op::LoadIndirectA16(EmulatorContext* context)
 	std::string opcode_name = std::format("LD A, [a16] (0x{:x} 0x{:x} 0x{:x})", low, high, data);
 	return opcode_name;
 }
+
+std::string Op::AddR8(EmulatorContext* context, RegisterType8 reg)
+{
+	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t result_b = context->cpu->GetRegister(reg);
+
+	uint16_t result = result_a + result_b;
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0x0);
+
+	if (result > 0xFF)
+	{
+		context->cpu->SetFlag(CpuFlag::Carry, true);
+		result -= 0xFF;
+	}
+	else
+	{
+		context->cpu->SetFlag(CpuFlag::Carry, false);
+	}
+
+	bool half_carry = (((result_a & 0xF) + (result_b & 0xF)) & 0x10) == 0x10;
+	context->cpu->SetFlag(CpuFlag::HalfCarry, half_carry);
+
+	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result));
+
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("ADD A, {}", RegisterTypeString8(reg));
+	return opcode_name;
+}
+
+std::string Op::AddN8(EmulatorContext* context)
+{
+	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t result_b = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+
+	uint16_t result = result_a + result_b;
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0x0);
+
+	if (result > 0xFF)
+	{
+		context->cpu->SetFlag(CpuFlag::Carry, true);
+		result -= 0xFF;
+	}
+	else
+	{
+		context->cpu->SetFlag(CpuFlag::Carry, false);
+	}
+
+	bool half_carry = (((result_a & 0xF) + (result_b & 0xF)) & 0x10) == 0x10;
+	context->cpu->SetFlag(CpuFlag::HalfCarry, half_carry);
+
+	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result));
+
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("ADD A, n8");
+	return opcode_name;
+}
+
+std::string Op::AddIndirectHL(EmulatorContext* context)
+{
+	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+
+	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t result_b = ReadFromBus(context->cartridge.get(), address);
+
+	uint16_t result = result_a + result_b;
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0x0);
+
+	if (result > 0xFF)
+	{
+		context->cpu->SetFlag(CpuFlag::Carry, true);
+		result -= 0xFF;
+	}
+	else
+	{
+		context->cpu->SetFlag(CpuFlag::Carry, false);
+	}
+
+	bool half_carry = (((result_a & 0xF) + (result_b & 0xF)) & 0x10) == 0x10;
+	context->cpu->SetFlag(CpuFlag::HalfCarry, half_carry);
+
+	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result));
+
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("ADD A, [HL]");
+	return opcode_name;
+}
+
+std::string Op::AddSP(EmulatorContext* context)
+{
+	// 0xE8
+	uint16_t reg_sp = context->cpu->GetRegister(RegisterType16::REG_SP);
+	int8_t data = static_cast<int8_t>(ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++));
+
+	uint16_t result = reg_sp + data;
+	context->cpu->SetRegister(RegisterType16::REG_SP, result);
+
+	if (result > 0xFF)
+	{
+		context->cpu->SetFlag(CpuFlag::Carry, true);
+	}
+	else
+	{
+		context->cpu->SetFlag(CpuFlag::Carry, false);
+	}
+
+	bool half_carry = (((reg_sp & 0xF) + (data & 0xF)) & 0x10) == 0x10;
+	context->cpu->SetFlag(CpuFlag::HalfCarry, half_carry);
+
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::Zero, false);
+	context->cycles += 16;
+
+	std::string opcode_name = std::format("ADD SP, e8");
+	return opcode_name;
+}
+
+std::string Op::AddR16(EmulatorContext* context, RegisterType16 reg)
+{
+	uint16_t result_a = context->cpu->GetRegister(RegisterType16::REG_HL);
+	uint16_t result_b = context->cpu->GetRegister(reg);
+
+	uint32_t result = result_a + result_b;
+	context->cpu->SetRegister(RegisterType16::REG_HL, result);
+
+	context->cpu->SetFlag(CpuFlag::Carry, result > 0xFFFF);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+
+	if (((result_a & 0x0FFF) + (result_b & 0x0FFF) > 0x0FFF))
+	{
+		// Set the half-carry flag if there's a carry from low nibble to high nibble
+		context->cpu->SetFlag(CpuFlag::HalfCarry, true);
+	}
+	else
+	{
+		// Clear the half-carry flag if there's no carry
+		context->cpu->SetFlag(CpuFlag::HalfCarry, false);
+	}
+
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("ADD HL, {}", RegisterTypeString16(reg));
+	return opcode_name;
+}

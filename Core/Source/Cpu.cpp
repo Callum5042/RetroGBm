@@ -84,28 +84,53 @@ uint16_t Cpu::GetRegister(RegisterType16 type) const
 
 void Cpu::SetFlag(CpuFlag flag, bool data)
 {
-	const uint8_t bit = data ? 1 : 0;
-
-	switch (flag)
+	if (data)
 	{
-		case CpuFlag::Zero:
-			m_Registers[RegisterType8::REG_F] |= (bit << 6);
-			break;
+		switch (flag)
+		{
+			case CpuFlag::Zero:
+				m_Registers[RegisterType8::REG_F] |= (1 << 6);
+				break;
 
-		case CpuFlag::Subtraction:
-			m_Registers[RegisterType8::REG_F] |= (bit << 5);
-			break;
+			case CpuFlag::Subtraction:
+				m_Registers[RegisterType8::REG_F] |= (1 << 5);
+				break;
 
-		case CpuFlag::HalfCarry:
-			m_Registers[RegisterType8::REG_F] |= (bit << 4);
-			break;
+			case CpuFlag::HalfCarry:
+				m_Registers[RegisterType8::REG_F] |= (1 << 4);
+				break;
 
-		case CpuFlag::Carry:
-			m_Registers[RegisterType8::REG_F] |= (bit << 3);
-			break;
+			case CpuFlag::Carry:
+				m_Registers[RegisterType8::REG_F] |= (1 << 3);
+				break;
 
-		default:
-			throw std::exception("Tried to set to unsupported flag");
+			default:
+				throw std::exception("Tried to set to unsupported flag");
+		}
+	}
+	else
+	{
+		switch (flag)
+		{
+			case CpuFlag::Zero:
+				m_Registers[RegisterType8::REG_F] &= ~(1 << 6);
+				break;
+
+			case CpuFlag::Subtraction:
+				m_Registers[RegisterType8::REG_F] &= ~(1 << 5);
+				break;
+
+			case CpuFlag::HalfCarry:
+				m_Registers[RegisterType8::REG_F] &= ~(1 << 4);
+				break;
+
+			case CpuFlag::Carry:
+				m_Registers[RegisterType8::REG_F] &= ~(1 << 3);
+				break;
+
+			default:
+				throw std::exception("Tried to set to unsupported flag");
+		}
 	}
 }
 

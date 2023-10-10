@@ -355,6 +355,23 @@ namespace CoreTests
 			Assert::IsFalse(flag);
 		}
 
+		TEST_METHOD(SetFlag_FlagIsSet_SetToFalse)
+		{
+			// Arrange
+			Cpu _cpu;
+			_cpu.SetFlag(CpuFlag::Carry, true);
+
+			// Act
+			_cpu.SetFlag(CpuFlag::Carry, false);
+
+			// Assert
+			uint8_t register_F = _cpu.GetRegister(RegisterType8::REG_F);
+			Assert::AreEqual(register_F, static_cast<uint8_t>(0));
+
+			bool flag = _cpu.GetFlag(CpuFlag::Carry);
+			Assert::IsFalse(flag);
+		}
+
 		TEST_METHOD(SetFlag_FlagCarry_RegisterFHasData_FlagIsTrue)
 		{
 			// Arrange
