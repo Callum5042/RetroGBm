@@ -238,6 +238,20 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_A, RegisterType16::REG_HL);
 		case 0x7F:
 			return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_A);
+		case 0x80:
+			return Op::AddR8(&m_Context, RegisterType8::REG_B);
+		case 0x81:
+			return Op::AddR8(&m_Context, RegisterType8::REG_C);
+		case 0x82:
+			return Op::AddR8(&m_Context, RegisterType8::REG_D);
+		case 0x83:
+			return Op::AddR8(&m_Context, RegisterType8::REG_E);
+		case 0x84:
+			return Op::AddR8(&m_Context, RegisterType8::REG_H);
+		case 0x85:
+			return Op::AddR8(&m_Context, RegisterType8::REG_L);
+		case 0x87:
+			return Op::AddR8(&m_Context, RegisterType8::REG_A);
 		case 0xA8:
 			return Op::XorR8(&m_Context, RegisterType8::REG_B);
 		case 0xA9:
