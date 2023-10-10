@@ -80,6 +80,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::StoreR8(&m_Context, RegisterType8::REG_A, RegisterType16::REG_BC);
 		case 0x06:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_B);
+		case 0x09:
+			return Op::AddR16(&m_Context, RegisterType16::REG_BC);
 		case 0x0A:
 			return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_A, RegisterType16::REG_BC);
 		case 0x0E:
@@ -90,12 +92,16 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::StoreR8(&m_Context, RegisterType8::REG_A, RegisterType16::REG_DE);
 		case 0x16:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_D);
+		case 0x19:
+			return Op::AddR16(&m_Context, RegisterType16::REG_DE);
 		case 0x1A:
 			return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_A, RegisterType16::REG_DE);
 		case 0x1E:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_E);
 		case 0x26:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_H);
+		case 0x29:
+			return Op::AddR16(&m_Context, RegisterType16::REG_HL);
 		case 0x2E:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_L);
 		case 0x3E:
@@ -112,6 +118,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::LoadDecrementHL(&m_Context);
 		case 0x36:
 			return Op::StoreN8(&m_Context, RegisterType16::REG_HL);
+		case 0x39:
+			return Op::AddR16(&m_Context, RegisterType16::REG_SP);
 		case 0x40:
 			return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_B);
 		case 0x41:

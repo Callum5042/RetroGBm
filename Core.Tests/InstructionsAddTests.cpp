@@ -238,5 +238,52 @@ namespace InstructionsTests
 			bool zero_flag = context.cpu->GetFlag(CpuFlag::Zero);
 			Assert::IsFalse(subtract_flag);
 		}
+
+		TEST_METHOD(AddR16_IncreasedCyclesBy8_SetSubtractionFlagToFalse_AddResultsToHL)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cpu->SetFlag(CpuFlag::Subtraction, true);
+			context.cpu->SetRegister(RegisterType16::REG_BC, 0x15);
+			context.cpu->SetRegister(RegisterType16::REG_HL, 0x10);
+
+			// Act
+			Op::AddR16(&context, RegisterType16::REG_BC);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+
+			uint16_t result = context.cpu->GetRegister(RegisterType16::REG_HL);
+			Assert::AreEqual(0x25, static_cast<int>(result));
+
+			bool subtract_flag = context.cpu->GetFlag(CpuFlag::Subtraction);
+			Assert::IsFalse(subtract_flag);
+		}
+
+		TEST_METHOD(AddR16_ResultOverflows_SetCarryFlag)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cpu->SetFlag(CpuFlag::Subtraction, true);
+			context.cpu->SetRegister(RegisterType16::REG_BC, 0xFFAA);
+			context.cpu->SetRegister(RegisterType16::REG_HL, 0xFFAA);
+
+			// Act
+			Op::AddR16(&context, RegisterType16::REG_BC);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+
+			bool subtract_flag = context.cpu->GetFlag(CpuFlag::Carry);
+			Assert::IsTrue(subtract_flag);
+		}
 	};
 }

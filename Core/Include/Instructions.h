@@ -50,4 +50,6 @@ namespace Op
 	std::string AddIndirectHL(EmulatorContext* context);
 
 	std::string AddSP(EmulatorContext* context);
+
+	std::string AddR16(EmulatorContext* context, RegisterType16 reg);
 }

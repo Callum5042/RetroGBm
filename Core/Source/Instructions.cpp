@@ -346,3 +346,31 @@ std::string Op::AddSP(EmulatorContext* context)
 	std::string opcode_name = std::format("ADD SP, e8");
 	return opcode_name;
 }
+
+std::string Op::AddR16(EmulatorContext* context, RegisterType16 reg)
+{
+	uint16_t result_a = context->cpu->GetRegister(RegisterType16::REG_HL);
+	uint16_t result_b = context->cpu->GetRegister(reg);
+
+	uint32_t result = result_a + result_b;
+	context->cpu->SetRegister(RegisterType16::REG_HL, result);
+
+	context->cpu->SetFlag(CpuFlag::Carry, result > 0xFFFF);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+
+	if (((result_a & 0x0FFF) + (result_b & 0x0FFF) > 0x0FFF))
+	{
+		// Set the half-carry flag if there's a carry from low nibble to high nibble
+		context->cpu->SetFlag(CpuFlag::HalfCarry, true);
+	}
+	else
+	{
+		// Clear the half-carry flag if there's no carry
+		context->cpu->SetFlag(CpuFlag::HalfCarry, false);
+	}
+
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("ADD HL, {}", RegisterTypeString16(reg));
+	return opcode_name;
+}
