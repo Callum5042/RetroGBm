@@ -25,7 +25,7 @@ const uint8_t ReadFromBus(EmulatorContext* context, const uint16_t address)
 	else if (address < 0xA000)
 	{
 		// VRAM (video RAM)
-		throw std::exception("Not implemented 'ReadFromBus' VRAM");
+		return context->video_ram[address - 0x8000];
 	}
 	else if (address < 0xC000)
 	{
@@ -82,7 +82,8 @@ void WriteToBus(EmulatorContext* context, uint16_t address, uint8_t data)
 	else if (address < 0xA000)
 	{
 		// VRAM (video RAM)
-		throw std::exception("Not implemented 'WriteToBus' VRAM");
+		context->video_ram[address - 0x8000] = data;
+		return;
 	}
 	else if (address < 0xC000)
 	{

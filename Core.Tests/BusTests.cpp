@@ -27,22 +27,43 @@ namespace CoreTests
 			Assert::AreEqual(0x30, static_cast<int>(result));
 		}
 
-		//TEST_METHOD(BusRead_ReadFromVideoRAM)
-		//{
-		//	// Arrange
-		//	EmulatorContext context;
-		//	context.cartridge = std::make_unique<CartridgeInfo>();
+		TEST_METHOD(BusRead_ReadFromVideoRAM)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cartridge = std::make_unique<CartridgeInfo>();
 
-		//	context.cartridge->data.resize(0x10);
-		//	std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
-		//	context.cartridge->data[0x5] = 0x30;
+			context.video_ram.resize(8000);
+			std::fill(context.video_ram.begin(), context.video_ram.end(), 0x0);
 
-		//	// Act
-		//	uint16_t result = ReadFromBus(&context, 0x5);
+			uint16_t address = 0x8000;
+			context.video_ram[address - 0x8000] = 0x52;
 
-		//	// Assert
-		//	Assert::AreEqual(0x30, static_cast<int>(result));
-		//}
+			// Act
+			uint16_t result = ReadFromBus(&context, address);
+
+			// Assert
+			Assert::AreEqual(0x52, static_cast<int>(result));
+		}
+
+		TEST_METHOD(BusRead_WriteToVideoRAM)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.video_ram.resize(8000);
+			std::fill(context.video_ram.begin(), context.video_ram.end(), 0x0);
+
+			uint16_t address = 0x8000;
+			context.video_ram[address - 0x8000] = 0x0;
+
+			// Act
+			WriteToBus(&context, address, 0x52);
+
+			// Assert
+			Assert::AreEqual(0x52, static_cast<int>(context.video_ram[address - 0x8000]));
+		}
 
 		TEST_METHOD(BusRead_StartOfWorkRAM_ReadFromWorkRAM)
 		{

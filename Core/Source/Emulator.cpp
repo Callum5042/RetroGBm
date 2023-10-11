@@ -14,6 +14,9 @@ Emulator::Emulator()
 	m_Context.work_ram.resize(8000);
 	std::fill(m_Context.work_ram.begin(), m_Context.work_ram.end(), 0x0);
 
+	m_Context.video_ram.resize(8000);
+	std::fill(m_Context.video_ram.begin(), m_Context.video_ram.end(), 0x0);
+
 	// Build opcode table
 	/*m_OpCodeTable[0x0] = [&]() { return Op::Nop(&m_Context); };
 	m_OpCodeTable[0xC3] = [&]() { return Op::JumpN16(&m_Context); };
