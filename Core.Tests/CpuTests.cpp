@@ -11,6 +11,26 @@ namespace CoreTests
 	{
 	public:
 
+		TEST_METHOD(CpuConstructor_SetDefaultValues)
+		{
+			// Act
+			Cpu _cpu;
+
+			// Assert
+			Assert::AreEqual(0x1, static_cast<int>(_cpu.GetRegister(RegisterType8::REG_A)));
+			Assert::AreEqual(0x0, static_cast<int>(_cpu.GetRegister(RegisterType8::REG_B)));
+			Assert::AreEqual(0x13, static_cast<int>(_cpu.GetRegister(RegisterType8::REG_C)));
+			Assert::AreEqual(0x0, static_cast<int>(_cpu.GetRegister(RegisterType8::REG_D)));
+			Assert::AreEqual(0xD8, static_cast<int>(_cpu.GetRegister(RegisterType8::REG_E)));
+			Assert::AreEqual(0x1, static_cast<int>(_cpu.GetRegister(RegisterType8::REG_H)));
+			Assert::AreEqual(0x4D, static_cast<int>(_cpu.GetRegister(RegisterType8::REG_L)));
+
+			Assert::AreEqual(0xFFFE, static_cast<int>(_cpu.GetRegister(RegisterType16::REG_SP)));
+
+			Assert::IsTrue(_cpu.GetFlag(CpuFlag::Zero));
+			Assert::IsFalse(_cpu.GetFlag(CpuFlag::Subtraction));
+		}
+
 		TEST_METHOD(SetRegister_RegA_ValueIs100)
 		{
 			// Arrange
@@ -250,6 +270,7 @@ namespace CoreTests
 		{
 			// Arrange
 			Cpu _cpu;
+			_cpu.SetRegister(RegisterType8::REG_F, 0x0);
 
 			// Act
 			_cpu.SetFlag(CpuFlag::Subtraction, false);
@@ -296,6 +317,7 @@ namespace CoreTests
 		{
 			// Arrange
 			Cpu _cpu;
+			_cpu.SetRegister(RegisterType8::REG_F, 0x0);
 
 			// Act
 			_cpu.SetFlag(CpuFlag::HalfCarry, false);
@@ -343,6 +365,7 @@ namespace CoreTests
 		{
 			// Arrange
 			Cpu _cpu;
+			_cpu.SetRegister(RegisterType8::REG_F, 0x0);
 
 			// Act
 			_cpu.SetFlag(CpuFlag::Carry, false);
@@ -359,6 +382,7 @@ namespace CoreTests
 		{
 			// Arrange
 			Cpu _cpu;
+			_cpu.SetRegister(RegisterType8::REG_F, 0x0);
 			_cpu.SetFlag(CpuFlag::Carry, true);
 
 			// Act
