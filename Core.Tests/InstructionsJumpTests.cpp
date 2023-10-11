@@ -229,5 +229,101 @@ namespace CoreTests
 			Assert::AreEqual(12, context.cycles);
 			Assert::AreEqual(0x7, static_cast<int>(context.cpu->ProgramCounter));
 		}
+
+		TEST_METHOD(JumpRelativeFlagN8_ZeroFlagNotSet_IncreaseCyclesBy12_JumpToRelativeAddress)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.resize(0x10);
+			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
+			context.cartridge->data[0x5] = 0x5;
+
+			context.cpu->ProgramCounter = 0x5;
+			context.cpu->SetFlag(CpuFlag::Zero, false);
+
+			// Act
+			Op::JumpRelativeFlagN8(&context, CpuFlag::Zero, false);
+
+			// Assert
+			Assert::AreEqual(12, context.cycles);
+			Assert::AreEqual(0xA, static_cast<int>(context.cpu->ProgramCounter));
+		}
+
+		TEST_METHOD(JumpRelativeFlagN8_ZeroFlagSet_IncreaseCyclesBy8_IncreaseProgramCounterBy1)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.resize(0x10);
+			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
+			context.cartridge->data[0x5] = 0x5;
+
+			context.cpu->ProgramCounter = 0x5;
+			context.cpu->SetFlag(CpuFlag::Zero, true);
+
+			// Act
+			Op::JumpRelativeFlagN8(&context, CpuFlag::Zero, false);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+			Assert::AreEqual(0x6, static_cast<int>(context.cpu->ProgramCounter));
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+
+		TEST_METHOD(JumpRelativeFlagN8_ZeroFlagSet_IncreaseCyclesBy12_JumpToRelativeAddress)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.resize(0x10);
+			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
+			context.cartridge->data[0x5] = 0x5;
+
+			context.cpu->ProgramCounter = 0x5;
+			context.cpu->SetFlag(CpuFlag::Zero, true);
+
+			// Act
+			Op::JumpRelativeFlagN8(&context, CpuFlag::Zero, true);
+
+			// Assert
+			Assert::AreEqual(12, context.cycles);
+			Assert::AreEqual(0xA, static_cast<int>(context.cpu->ProgramCounter));
+		}
+
+		TEST_METHOD(JumpRelativeFlagN8_ZeroFlagNotSet_IncreaseCyclesBy8_IncreaseProgramCounterBy1)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.resize(0x10);
+			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
+			context.cartridge->data[0x5] = 0x5;
+
+			context.cpu->ProgramCounter = 0x5;
+			context.cpu->SetFlag(CpuFlag::Zero, false);
+
+			// Act
+			Op::JumpRelativeFlagN8(&context, CpuFlag::Zero, true);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+			Assert::AreEqual(0x6, static_cast<int>(context.cpu->ProgramCounter));
+		}
 	};
 }

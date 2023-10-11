@@ -100,12 +100,20 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_A, RegisterType16::REG_DE);
 		case 0x1E:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_E);
+		case 0x20:
+			return Op::JumpRelativeFlagN8(&m_Context, CpuFlag::Zero, false);
 		case 0x26:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_H);
+		case 0x28:
+			return Op::JumpRelativeFlagN8(&m_Context, CpuFlag::Zero, true);
 		case 0x29:
 			return Op::AddR16(&m_Context, RegisterType16::REG_HL);
 		case 0x2E:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_L);
+		case 0x30:
+			return Op::JumpRelativeFlagN8(&m_Context, CpuFlag::Carry, false);
+		case 0x38:
+			return Op::JumpRelativeFlagN8(&m_Context, CpuFlag::Carry, true);
 		case 0x3E:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_A);
 		case 0xC3:

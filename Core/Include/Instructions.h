@@ -19,6 +19,8 @@ namespace Op
 
 	std::string JumpRelativeN8(EmulatorContext* context);
 
+	std::string JumpRelativeFlagN8(EmulatorContext* context, CpuFlag flag, bool condition);
+
 	std::string XorR8(EmulatorContext* context, RegisterType8 type);
 
 	std::string XorN8(EmulatorContext* context);

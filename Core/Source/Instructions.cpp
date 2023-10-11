@@ -21,7 +21,7 @@ std::string Op::JumpN16(EmulatorContext* context)
 	context->cpu->ProgramCounter = data;
 	context->cycles += 16;
 
-	std::string opcode_name = std::format("JP n16 (0xC3 0x{:x} 0x{:x})", low, high);
+	std::string opcode_name = std::format("JP n16 (0x{:x} 0x{:x})", low, high);
 	return opcode_name;
 }
 
@@ -42,7 +42,7 @@ std::string Op::JumpFlagN16(EmulatorContext* context, CpuFlag flag, bool conditi
 		context->cycles += 12;
 	}
 
-	std::string opcode_name = std::format("JP {}{}, n16 (0xC3 0x{:x} 0x{:x})", (condition ? "" : "N"), FlagString(flag), low, high);
+	std::string opcode_name = std::format("JP {}{}, n16 (0x{:x} 0x{:x})", (condition ? "" : "N"), FlagString(flag), low, high);
 	return opcode_name;
 }
 
@@ -64,6 +64,26 @@ std::string Op::JumpRelativeN8(EmulatorContext* context)
 	context->cycles += 12;
 
 	std::string opcode_name = std::format("JR e8");
+	return opcode_name;
+}
+
+std::string Op::JumpRelativeFlagN8(EmulatorContext* context, CpuFlag flag, bool condition)
+{
+	int8_t data = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter);
+
+	bool enabled = context->cpu->GetFlag(flag);
+	if (enabled == condition)
+	{
+		context->cpu->ProgramCounter += data;
+		context->cycles += 12;
+	}
+	else
+	{
+		context->cpu->ProgramCounter++;
+		context->cycles += 8;
+	}
+
+	std::string opcode_name = std::format("JR {}{}, e8", (condition ? "" : "N"), FlagString(flag));
 	return opcode_name;
 }
 
