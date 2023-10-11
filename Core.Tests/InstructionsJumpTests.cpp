@@ -207,5 +207,27 @@ namespace CoreTests
 			Assert::AreEqual(4, context.cycles);
 			Assert::AreEqual(0x5020, static_cast<int>(context.cpu->ProgramCounter));
 		}
+
+		TEST_METHOD(JumpRelativeN8_IncreaseCyclesBy12_SetProgramCounter)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.resize(0x10);
+			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
+			context.cartridge->data[0x5] = 0x2;
+
+			context.cpu->ProgramCounter = 0x5;
+
+			// Act
+			Op::JumpRelativeN8(&context);
+
+			// Assert
+			Assert::AreEqual(12, context.cycles);
+			Assert::AreEqual(0x7, static_cast<int>(context.cpu->ProgramCounter));
+		}
 	};
 }

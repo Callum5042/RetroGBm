@@ -56,6 +56,17 @@ std::string Op::JumpHL(EmulatorContext* context)
 	return opcode_name;
 }
 
+std::string Op::JumpRelativeN8(EmulatorContext* context)
+{
+	int8_t data = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter);
+
+	context->cpu->ProgramCounter += data;
+	context->cycles += 12;
+
+	std::string opcode_name = std::format("JR e8");
+	return opcode_name;
+}
+
 std::string Op::XorR8(EmulatorContext* context, RegisterType8 type)
 {
 	uint8_t reg_a = context->cpu->GetRegister(RegisterType8::REG_A);

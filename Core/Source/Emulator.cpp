@@ -92,6 +92,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::StoreR8(&m_Context, RegisterType8::REG_A, RegisterType16::REG_DE);
 		case 0x16:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_D);
+		case 0x18:
+			return Op::JumpRelativeN8(&m_Context);
 		case 0x19:
 			return Op::AddR16(&m_Context, RegisterType16::REG_DE);
 		case 0x1A:
