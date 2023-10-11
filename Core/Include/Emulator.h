@@ -13,6 +13,7 @@ struct EmulatorContext
 	int cycles = 0;
 	std::unique_ptr<CartridgeInfo> cartridge = nullptr;
 	std::unique_ptr<Cpu> cpu = nullptr;
+	std::vector<uint8_t> work_ram;
 };
 
 class Emulator

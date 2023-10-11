@@ -35,7 +35,7 @@ const uint8_t ReadFromBus(EmulatorContext* context, const uint16_t address)
 	else if (address < 0x0E000)
 	{
 		// WRAM (working RAM)
-		throw std::exception("Not implemented 'ReadFromBus' WRAM");
+		return context->work_ram[address - 0xC000];
 	}
 	else if (address < 0xFE00)
 	{
@@ -93,7 +93,8 @@ void WriteToBus(EmulatorContext* context, uint16_t address, uint8_t data)
 	else if (address < 0x0E000)
 	{
 		// WRAM (working RAM)
-		throw std::exception("Not implemented 'WriteToBus' WRAM");
+		context->work_ram[address - 0xC000] = data;
+		return;
 	}
 	else if (address < 0xFE00)
 	{
