@@ -70,7 +70,7 @@ void Emulator::Run()
 			std::string opcode_name = Execute(opcode);
 
 			// Display CPU details
-			std::cout << opcode_name << " - " << m_Context.cpu->Details() << '\n';
+			std::cout << std::setw(30) << std::left << opcode_name << std::right << std::right << m_Context.cpu->Details() << '\n';
 		}
 	}
 }

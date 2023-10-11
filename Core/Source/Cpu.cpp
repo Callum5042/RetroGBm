@@ -1,6 +1,7 @@
 #include "Cpu.h"
 #include <exception>
 #include <sstream>
+#include <iomanip>
 
 Cpu::Cpu()
 {
@@ -23,7 +24,14 @@ Cpu::Cpu()
 
 void Cpu::SetRegister(RegisterType8 type, uint8_t data)
 {
-	m_Registers[type] = data;
+	if (type == RegisterType8::REG_L)
+	{
+		m_Registers[type] = data;
+	}
+	else
+	{
+		m_Registers[type] = data;
+	}
 }
 
 void Cpu::SetRegister(RegisterType16 type, uint16_t data)
@@ -182,22 +190,22 @@ std::string Cpu::Details()
 	ss.setf(std::ios_base::hex, std::ios_base::basefield);
 
 	ss << "Registers("
-		<< " A: 0x" << +GetRegister(RegisterType8::REG_A)
-		<< " F: 0x" << +GetRegister(RegisterType8::REG_F)
-		<< " B: 0x" << +GetRegister(RegisterType8::REG_B)
-		<< " C: 0x" << +GetRegister(RegisterType8::REG_C)
-		<< " D: 0x" << +GetRegister(RegisterType8::REG_D)
-		<< " E: 0x" << +GetRegister(RegisterType8::REG_E)
-		<< " H: 0x" << +GetRegister(RegisterType8::REG_H)
-		<< " L: 0x" << +GetRegister(RegisterType8::REG_L)
-		<< " )";
+		<< "A:" << +GetRegister(RegisterType8::REG_A)
+		<< " F:" << +GetRegister(RegisterType8::REG_F)
+		<< " B:" << +GetRegister(RegisterType8::REG_B)
+		<< " C:" << +GetRegister(RegisterType8::REG_C)
+		<< " D:" << +GetRegister(RegisterType8::REG_D)
+		<< " E:" << +GetRegister(RegisterType8::REG_E)
+		<< " H:" << +GetRegister(RegisterType8::REG_H)
+		<< " L:" << +GetRegister(RegisterType8::REG_L)
+		<< ")";
 
 	ss << " Flags("
-		<< " Z: 0x" << GetFlag(CpuFlag::Zero)
-		<< " N: 0x" << GetFlag(CpuFlag::Subtraction)
-		<< " H: 0x" << GetFlag(CpuFlag::HalfCarry)
-		<< " C: 0x" << GetFlag(CpuFlag::Carry)
-		<< " )";
+		<< "Z:" << GetFlag(CpuFlag::Zero)
+		<< " N:" << GetFlag(CpuFlag::Subtraction)
+		<< " H:" << GetFlag(CpuFlag::HalfCarry)
+		<< " C:" << GetFlag(CpuFlag::Carry)
+		<< ")";
 
 	return ss.str();
 }
