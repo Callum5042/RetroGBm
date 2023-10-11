@@ -7,7 +7,7 @@ using namespace Op;
 std::string Op::Nop(EmulatorContext* context)
 {
 	context->cycles += 4;
-	std::string opcode_name = "NOP (0x0)";
+	std::string opcode_name = "NOP";
 
 	return opcode_name;
 }
@@ -58,17 +58,19 @@ std::string Op::JumpHL(EmulatorContext* context)
 
 std::string Op::JumpRelativeN8(EmulatorContext* context)
 {
+	uint16_t current_pc = context->cpu->ProgramCounter;
 	int8_t data = ReadFromBus(context, context->cpu->ProgramCounter);
 
 	context->cpu->ProgramCounter += data;
 	context->cycles += 12;
 
-	std::string opcode_name = std::format("JR e8");
+	std::string opcode_name = std::format("JR e8 0x{:x} (0x:{:x})", current_pc + data, data);
 	return opcode_name;
 }
 
 std::string Op::JumpRelativeFlagN8(EmulatorContext* context, CpuFlag flag, bool condition)
 {
+	uint16_t current_pc = context->cpu->ProgramCounter;
 	int8_t data = ReadFromBus(context, context->cpu->ProgramCounter);
 
 	bool enabled = context->cpu->GetFlag(flag);
@@ -83,7 +85,7 @@ std::string Op::JumpRelativeFlagN8(EmulatorContext* context, CpuFlag flag, bool 
 		context->cycles += 8;
 	}
 
-	std::string opcode_name = std::format("JR {}{}, e8", (condition ? "" : "N"), FlagString(flag));
+	std::string opcode_name = std::format("JR {}{}, e8 0x{:x} (0x{:x})", (condition ? "" : "N"), FlagString(flag), current_pc + data, static_cast<uint8_t>(data));
 	return opcode_name;
 }
 
@@ -98,7 +100,7 @@ std::string Op::XorR8(EmulatorContext* context, RegisterType8 type)
 
 	context->cycles += 4;
 
-	std::string opcode_name = "XOR r8 (0xAF)";
+	std::string opcode_name = "XOR r8";
 	return opcode_name;
 }
 
@@ -113,7 +115,7 @@ std::string Op::XorN8(EmulatorContext* context)
 
 	context->cycles += 8;
 
-	std::string opcode_name = std::format("XOR n8 (0xEE 0x{:x})", data);
+	std::string opcode_name = std::format("XOR n8 (0x{:x})", data);
 	return opcode_name;
 }
 
@@ -130,7 +132,7 @@ std::string Op::XorR16(EmulatorContext* context, RegisterType16 type)
 
 	context->cycles += 8;
 
-	std::string opcode_name = std::format("XOR r16 (0xEE 0x{:x})", data);
+	std::string opcode_name = std::format("XOR r16 (0x{:x})", data);
 	return opcode_name;
 }
 
@@ -191,7 +193,7 @@ std::string Op::LoadDecrementHL(EmulatorContext* context)
 
 	context->cycles += 8;
 
-	std::string opcode_name = std::format("LDD [{}], r8", RegisterTypeString16(RegisterType16::REG_HL));
+	std::string opcode_name = std::format("LDD [{}], r8 (0x{:x})", RegisterTypeString16(RegisterType16::REG_HL), data);
 	return opcode_name;
 }
 
@@ -405,7 +407,7 @@ std::string Op::AddSP(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Zero, false);
 	context->cycles += 16;
 
-	std::string opcode_name = std::format("ADD SP, e8");
+	std::string opcode_name = std::format("ADD SP, e8 0x{:x} (0x:{:x})", result, static_cast<uint8_t>(data));
 	return opcode_name;
 }
 
