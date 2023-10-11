@@ -35,7 +35,7 @@ bool Emulator::LoadRom(const std::filesystem::path& path)
 	// Print cartridge info
 	std::cout << "Cartidge loaded\n";
 	std::cout << "> Title: " << m_Context.cartridge->title << '\n';
-	std::cout << "> Cartridge Type: " << static_cast<int>(m_Context.cartridge->header.cartridge_type) << '\n';
+	std::cout << "> Cartridge Type: " << m_Context.cartridge->header.cartridge_type << std::format(" (0x{:x})", static_cast<int>(m_Context.cartridge->header.cartridge_type_code)) << '\n';
 	std::cout << "> ROM size: " << m_Context.cartridge->header.rom_size << '\n';
 	std::cout << "> ROM banks: " << m_Context.cartridge->header.rom_banks << '\n';
 	std::cout << "> RAM size: " << m_Context.cartridge->header.ram_size << '\n';
@@ -64,6 +64,7 @@ void Emulator::Run()
 			// Fetch
 			std::cout << "0x" << std::hex << m_Context.cpu->ProgramCounter << ": ";
 			const uint8_t opcode = ReadFromBus(&m_Context, m_Context.cpu->ProgramCounter++);
+			m_CurrentOpCode = opcode;
 
 			// Execute
 			std::string opcode_name = Execute(opcode);
@@ -72,6 +73,11 @@ void Emulator::Run()
 			std::cout << opcode_name << " - " << m_Context.cpu->Details() << '\n';
 		}
 	}
+}
+
+uint8_t Emulator::GetOpCode() const
+{
+	return m_CurrentOpCode;
 }
 
 std::string Emulator::Execute(const uint8_t opcode)

@@ -27,12 +27,16 @@ public:
 
 	void Run();
 
+	uint8_t GetOpCode() const;
+
 private:
 	bool m_Running = false;
 
 	EmulatorContext m_Context;
 
 	std::string Execute(const uint8_t opcode);
+
+	uint8_t m_CurrentOpCode = 0x0;
 
 	// std::unordered_map<uint8_t, std::function<std::string()>> m_OpCodeTable;
 };

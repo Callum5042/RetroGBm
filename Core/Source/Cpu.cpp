@@ -2,6 +2,23 @@
 #include <exception>
 #include <sstream>
 
+Cpu::Cpu()
+{
+	SetRegister(RegisterType8::REG_A, 0);
+	SetRegister(RegisterType8::REG_F, 0);
+	SetRegister(RegisterType8::REG_B, 0);
+	SetRegister(RegisterType8::REG_C, 0);
+	SetRegister(RegisterType8::REG_D, 0);
+	SetRegister(RegisterType8::REG_E, 0);
+	SetRegister(RegisterType8::REG_H, 0);
+	SetRegister(RegisterType8::REG_L, 0);
+
+	SetFlag(CpuFlag::Zero, false);
+	SetFlag(CpuFlag::Subtraction, false);
+	SetFlag(CpuFlag::Carry, false);
+	SetFlag(CpuFlag::HalfCarry, false);
+}
+
 void Cpu::SetRegister(RegisterType8 type, uint8_t data)
 {
 	m_Registers[type] = data;

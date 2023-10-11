@@ -20,22 +20,22 @@ const uint8_t ReadFromBus(EmulatorContext* context, const uint16_t address)
 	if (address < 0x8000)
 	{
 		// Read from ROM
-		return context->cartridge->data[address];
+		return context->cartridge->data.at(address);
 	}
 	else if (address < 0xA000)
 	{
 		// VRAM (video RAM)
-		return context->video_ram[address - 0x8000];
+		return context->video_ram.at(address - 0x8000);
 	}
 	else if (address < 0xC000)
 	{
 		// Read from RAM
-		return context->cartridge->data[address];
+		return context->cartridge->data.at(address);
 	}
 	else if (address < 0x0E000)
 	{
 		// WRAM (working RAM)
-		return context->work_ram[address - 0xC000];
+		return context->work_ram.at(address - 0xC000);
 	}
 	else if (address < 0xFE00)
 	{
@@ -76,25 +76,25 @@ void WriteToBus(EmulatorContext* context, uint16_t address, uint8_t data)
 	if (address < 0x8000)
 	{
 		// Write to ROM
-		context->cartridge->data[address] = data;
+		context->cartridge->data.at(address) = data;
 		return;
 	}
 	else if (address < 0xA000)
 	{
 		// VRAM (video RAM)
-		context->video_ram[address - 0x8000] = data;
+		context->video_ram.at(address - 0x8000) = data;
 		return;
 	}
 	else if (address < 0xC000)
 	{
 		// Write to RAM
-		context->cartridge->data[address] = data;
+		context->cartridge->data.at(address) = data;
 		return;
 	}
 	else if (address < 0x0E000)
 	{
 		// WRAM (working RAM)
-		context->work_ram[address - 0xC000] = data;
+		context->work_ram.at(address - 0xC000) = data;
 		return;
 	}
 	else if (address < 0xFE00)
