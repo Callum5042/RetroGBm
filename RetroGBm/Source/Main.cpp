@@ -13,10 +13,10 @@
 int main(int argc, char** argv)
 {
 	std::cout << "RetroGBm\n";
+	std::unique_ptr<Emulator> emulator = std::make_unique<Emulator>();
 
 	try
 	{
-		std::unique_ptr<Emulator> emulator = std::make_unique<Emulator>();
 		emulator->LoadRom("Tetris.gb");
 		emulator->Run();
 	}
@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 
 		// Set to red and print error
 		SetConsoleTextAttribute(hConsole, FOREGROUND_INTENSITY | FOREGROUND_RED);
-		std::cerr << "Fatal error: " << ex.what() << '\n';
+		std::cerr << std::format("Fatal error (0x{:x}): {}", emulator->GetOpCode(), ex.what()) << '\n';
 
 		// Reset attributes
 		SetConsoleTextAttribute(hConsole, console_info.wAttributes);

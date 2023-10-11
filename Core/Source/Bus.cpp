@@ -1,5 +1,6 @@
 #include "Bus.h"
 #include <exception>
+#include "Cartridge.h"
 
 // 0000	3FFF	16 KiB ROM bank 00	From cartridge, usually a fixed bank
 // 4000	7FFF	16 KiB ROM Bank 01~NN	From cartridge, switchable bank via mapper(if any)
@@ -14,27 +15,27 @@
 // FF80	FFFE	High RAM(HRAM)
 // FFFF	FFFF	Interrupt Enable register (IE)
 
-const uint8_t ReadFromBus(const CartridgeInfo* cartridge, const uint16_t address)
+const uint8_t ReadFromBus(EmulatorContext* context, const uint16_t address)
 {
 	if (address < 0x8000)
 	{
 		// Read from ROM
-		return cartridge->data[address];  
+		return context->cartridge->data.at(address);
 	}
 	else if (address < 0xA000)
 	{
 		// VRAM (video RAM)
-		throw std::exception("Not implemented 'ReadFromBus' VRAM");
+		return context->video_ram.at(address - 0x8000);
 	}
 	else if (address < 0xC000)
 	{
 		// Read from RAM
-		return cartridge->data[address];
+		return context->cartridge->data.at(address);
 	}
 	else if (address < 0x0E000)
 	{
 		// WRAM (working RAM)
-		throw std::exception("Not implemented 'ReadFromBus' WRAM");
+		return context->work_ram.at(address - 0xC000);
 	}
 	else if (address < 0xFE00)
 	{
@@ -70,29 +71,31 @@ const uint8_t ReadFromBus(const CartridgeInfo* cartridge, const uint16_t address
 	throw std::exception(std::format("Not implemented 'ReadFromBus' 0x{:x}", address).c_str());
 }
 
-void WriteToBus(CartridgeInfo* cartridge, uint16_t address, uint8_t data)
+void WriteToBus(EmulatorContext* context, uint16_t address, uint8_t data)
 {
 	if (address < 0x8000)
 	{
 		// Write to ROM
-		cartridge->data[address] = data;
+		context->cartridge->data.at(address) = data;
 		return;
 	}
 	else if (address < 0xA000)
 	{
 		// VRAM (video RAM)
-		throw std::exception("Not implemented 'WriteToBus' VRAM");
+		context->video_ram.at(address - 0x8000) = data;
+		return;
 	}
 	else if (address < 0xC000)
 	{
 		// Write to RAM
-		cartridge->data[address] = data;
+		context->cartridge->data.at(address) = data;
 		return;
 	}
 	else if (address < 0x0E000)
 	{
 		// WRAM (working RAM)
-		throw std::exception("Not implemented 'WriteToBus' WRAM");
+		context->work_ram.at(address - 0xC000) = data;
+		return;
 	}
 	else if (address < 0xFE00)
 	{

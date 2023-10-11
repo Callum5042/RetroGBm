@@ -34,7 +34,7 @@ enum class CpuFlag
 class Cpu
 {
 public:
-	Cpu() = default;
+	Cpu();
 	virtual ~Cpu() = default;
 
 	uint16_t ProgramCounter = 0;

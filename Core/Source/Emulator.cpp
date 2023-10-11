@@ -11,6 +11,12 @@ Emulator::Emulator()
 	m_Context.cpu = std::make_unique<Cpu>();
 	m_Context.cartridge = std::make_unique<CartridgeInfo>();
 
+	m_Context.work_ram.resize(1024 * 8);
+	std::fill(m_Context.work_ram.begin(), m_Context.work_ram.end(), 0x0);
+
+	m_Context.video_ram.resize(1024 * 8);
+	std::fill(m_Context.video_ram.begin(), m_Context.video_ram.end(), 0x0);
+
 	// Build opcode table
 	/*m_OpCodeTable[0x0] = [&]() { return Op::Nop(&m_Context); };
 	m_OpCodeTable[0xC3] = [&]() { return Op::JumpN16(&m_Context); };
@@ -29,7 +35,7 @@ bool Emulator::LoadRom(const std::filesystem::path& path)
 	// Print cartridge info
 	std::cout << "Cartidge loaded\n";
 	std::cout << "> Title: " << m_Context.cartridge->title << '\n';
-	std::cout << "> Cartridge Type: " << static_cast<int>(m_Context.cartridge->header.cartridge_type) << '\n';
+	std::cout << "> Cartridge Type: " << m_Context.cartridge->header.cartridge_type << std::format(" (0x{:x})", static_cast<int>(m_Context.cartridge->header.cartridge_type_code)) << '\n';
 	std::cout << "> ROM size: " << m_Context.cartridge->header.rom_size << '\n';
 	std::cout << "> ROM banks: " << m_Context.cartridge->header.rom_banks << '\n';
 	std::cout << "> RAM size: " << m_Context.cartridge->header.ram_size << '\n';
@@ -57,7 +63,8 @@ void Emulator::Run()
 		{
 			// Fetch
 			std::cout << "0x" << std::hex << m_Context.cpu->ProgramCounter << ": ";
-			const uint8_t opcode = ReadFromBus(m_Context.cartridge.get(), m_Context.cpu->ProgramCounter++);
+			const uint8_t opcode = ReadFromBus(&m_Context, m_Context.cpu->ProgramCounter++);
+			m_CurrentOpCode = opcode;
 
 			// Execute
 			std::string opcode_name = Execute(opcode);
@@ -66,6 +73,11 @@ void Emulator::Run()
 			std::cout << opcode_name << " - " << m_Context.cpu->Details() << '\n';
 		}
 	}
+}
+
+uint8_t Emulator::GetOpCode() const
+{
+	return m_CurrentOpCode;
 }
 
 std::string Emulator::Execute(const uint8_t opcode)

@@ -14,8 +14,8 @@ std::string Op::Nop(EmulatorContext* context)
 
 std::string Op::JumpN16(EmulatorContext* context)
 {
-	uint8_t low = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
-	uint8_t high = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter++);
 	uint16_t data = low | (high << 8);
 
 	context->cpu->ProgramCounter = data;
@@ -27,8 +27,8 @@ std::string Op::JumpN16(EmulatorContext* context)
 
 std::string Op::JumpFlagN16(EmulatorContext* context, CpuFlag flag, bool condition)
 {
-	uint8_t low = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
-	uint8_t high = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter++);
 	uint16_t data = low | (high << 8);
 
 	bool enabled = context->cpu->GetFlag(flag);
@@ -58,7 +58,7 @@ std::string Op::JumpHL(EmulatorContext* context)
 
 std::string Op::JumpRelativeN8(EmulatorContext* context)
 {
-	int8_t data = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter);
+	int8_t data = ReadFromBus(context, context->cpu->ProgramCounter);
 
 	context->cpu->ProgramCounter += data;
 	context->cycles += 12;
@@ -69,7 +69,7 @@ std::string Op::JumpRelativeN8(EmulatorContext* context)
 
 std::string Op::JumpRelativeFlagN8(EmulatorContext* context, CpuFlag flag, bool condition)
 {
-	int8_t data = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter);
+	int8_t data = ReadFromBus(context, context->cpu->ProgramCounter);
 
 	bool enabled = context->cpu->GetFlag(flag);
 	if (enabled == condition)
@@ -105,7 +105,7 @@ std::string Op::XorR8(EmulatorContext* context, RegisterType8 type)
 std::string Op::XorN8(EmulatorContext* context)
 {
 	uint8_t reg_a = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t data = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter++);
 
 	uint8_t result = reg_a ^ data;
 	context->cpu->SetRegister(RegisterType8::REG_A, result);
@@ -120,7 +120,7 @@ std::string Op::XorN8(EmulatorContext* context)
 std::string Op::XorR16(EmulatorContext* context, RegisterType16 type)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
-	uint8_t data = ReadFromBus(context->cartridge.get(), address);
+	uint8_t data = ReadFromBus(context, address);
 
 	uint8_t reg_a = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t result = reg_a ^ data;
@@ -147,7 +147,7 @@ std::string Op::LoadR8(EmulatorContext* context, RegisterType8 reg1, RegisterTyp
 
 std::string Op::LoadN8(EmulatorContext* context, RegisterType8 type)
 {
-	uint8_t data = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter++);
 	context->cpu->SetRegister(type, data);
 
 	context->cycles += 8;
@@ -158,8 +158,8 @@ std::string Op::LoadN8(EmulatorContext* context, RegisterType8 type)
 
 std::string Op::LoadN16(EmulatorContext* context, RegisterType16 type)
 {
-	uint8_t low = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
-	uint8_t high = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter++);
 	context->cpu->SetRegister(type, high, low);
 	context->cycles += 12;
 
@@ -171,7 +171,7 @@ std::string Op::LoadIncrementHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
-	WriteToBus(context->cartridge.get(), address, data);
+	WriteToBus(context, address, data);
 
 	context->cpu->SetRegister(RegisterType16::REG_HL, address + 1);
 
@@ -185,7 +185,7 @@ std::string Op::LoadDecrementHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
-	WriteToBus(context->cartridge.get(), address, data);
+	WriteToBus(context, address, data);
 
 	context->cpu->SetRegister(RegisterType16::REG_HL, address - 1);
 
@@ -199,7 +199,7 @@ std::string Op::StoreR8(EmulatorContext* context, RegisterType8 reg, RegisterTyp
 {
 	uint8_t data = context->cpu->GetRegister(reg);
 	uint16_t address = context->cpu->GetRegister(reg_pointer);
-	WriteToBus(context->cartridge.get(), address, data);
+	WriteToBus(context, address, data);
 
 	context->cycles += 8;
 
@@ -209,9 +209,9 @@ std::string Op::StoreR8(EmulatorContext* context, RegisterType8 reg, RegisterTyp
 
 std::string Op::StoreN8(EmulatorContext* context, RegisterType16 reg_pointer)
 {
-	uint8_t data = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter++);
 	uint16_t address = context->cpu->GetRegister(reg_pointer);
-	WriteToBus(context->cartridge.get(), address, data);
+	WriteToBus(context, address, data);
 
 	context->cycles += 12;
 
@@ -222,7 +222,7 @@ std::string Op::StoreN8(EmulatorContext* context, RegisterType16 reg_pointer)
 std::string Op::LoadIndirectR16(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg_pointer)
 {
 	uint16_t address = context->cpu->GetRegister(reg_pointer);
-	uint8_t data = ReadFromBus(context->cartridge.get(), address);
+	uint8_t data = ReadFromBus(context, address);
 	context->cpu->SetRegister(reg, data);
 
 	context->cycles += 8;
@@ -236,7 +236,7 @@ std::string Op::StoreIndirectAC(EmulatorContext* context)
 	// Opcode: 0xE2
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint16_t address = context->cpu->GetRegister(RegisterType8::REG_C);
-	WriteToBus(context->cartridge.get(), address, data);
+	WriteToBus(context, address, data);
 	
 	context->cycles += 8;
 
@@ -248,7 +248,7 @@ std::string Op::LoadIndirectAC(EmulatorContext* context)
 {
 	// Opcode: 0xF2
 	uint16_t address = context->cpu->GetRegister(RegisterType8::REG_C);
-	uint8_t data = ReadFromBus(context->cartridge.get(), address);
+	uint8_t data = ReadFromBus(context, address);
 	context->cpu->SetRegister(RegisterType8::REG_A, data);
 
 	context->cycles += 8;
@@ -260,12 +260,12 @@ std::string Op::LoadIndirectAC(EmulatorContext* context)
 std::string Op::StoreIndirectA16(EmulatorContext* context)
 {
 	// Opcode: 0xEA
-	uint8_t low = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
-	uint8_t high = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter++);
 	uint16_t address = low | (high << 8);
 
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
-	WriteToBus(context->cartridge.get(), address, data);
+	WriteToBus(context, address, data);
 
 	context->cycles += 16;
 
@@ -276,11 +276,11 @@ std::string Op::StoreIndirectA16(EmulatorContext* context)
 std::string Op::LoadIndirectA16(EmulatorContext* context)
 {
 	// Opcode: 0xFA
-	uint8_t low = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
-	uint8_t high = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter++);
 	uint16_t address = low | (high << 8);
 
-	uint8_t data = ReadFromBus(context->cartridge.get(), address);
+	uint8_t data = ReadFromBus(context, address);
 	context->cpu->SetRegister(RegisterType8::REG_A, data);
 	context->cycles += 16;
 
@@ -321,7 +321,7 @@ std::string Op::AddR8(EmulatorContext* context, RegisterType8 reg)
 std::string Op::AddN8(EmulatorContext* context)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t result_b = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+	uint8_t result_b = ReadFromBus(context, context->cpu->ProgramCounter++);
 
 	uint16_t result = result_a + result_b;
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0x0);
@@ -353,7 +353,7 @@ std::string Op::AddIndirectHL(EmulatorContext* context)
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t result_b = ReadFromBus(context->cartridge.get(), address);
+	uint8_t result_b = ReadFromBus(context, address);
 
 	uint16_t result = result_a + result_b;
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0x0);
@@ -384,7 +384,7 @@ std::string Op::AddSP(EmulatorContext* context)
 {
 	// 0xE8
 	uint16_t reg_sp = context->cpu->GetRegister(RegisterType16::REG_SP);
-	int8_t data = static_cast<int8_t>(ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++));
+	int8_t data = static_cast<int8_t>(ReadFromBus(context, context->cpu->ProgramCounter++));
 
 	uint16_t result = reg_sp + data;
 	context->cpu->SetRegister(RegisterType16::REG_SP, result);
