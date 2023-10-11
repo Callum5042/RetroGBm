@@ -162,6 +162,7 @@
   <ItemGroup>
     <ClCompile Include="BusTests.cpp" />
     <ClCompile Include="CpuTests.cpp" />
+    <ClCompile Include="InstructionsIncTests.cpp" />
     <ClCompile Include="InstructionsJumpTests.cpp" />
     <ClCompile Include="InstructionsLoadTests.cpp" />
     <ClCompile Include="InstructionsTests.cpp" />
