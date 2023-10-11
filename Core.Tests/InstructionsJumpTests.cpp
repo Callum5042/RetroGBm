@@ -147,10 +147,6 @@ namespace CoreTests
 			Assert::AreEqual(12, context.cycles);
 			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
 		}
-
-		/// <summary>
-		/// 
-		/// </summary>
 		
 		TEST_METHOD(JumpFlagN16_ZeroFlagSet_IncreaseCyclesBy16_ChangeProgramCounterToAddress)
 		{

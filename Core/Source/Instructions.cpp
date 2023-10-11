@@ -436,3 +436,35 @@ std::string Op::AddR16(EmulatorContext* context, RegisterType16 reg)
 	std::string opcode_name = std::format("ADD HL, {}", RegisterTypeString16(reg));
 	return opcode_name;
 }
+
+std::string Op::IncR8(EmulatorContext* context, RegisterType8 reg)
+{
+	uint8_t data = context->cpu->GetRegister(reg);
+	uint8_t result = data + 1;
+
+	context->cpu->SetRegister(reg, result);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (result & 0x0F) > 0x0F);
+
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("INC {}", RegisterTypeString8(reg));
+	return opcode_name;
+}
+
+std::string Op::DecR8(EmulatorContext* context, RegisterType8 reg)
+{
+	uint8_t data = context->cpu->GetRegister(reg);
+	uint8_t result = data - 1;
+
+	context->cpu->SetRegister(reg, result);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (result & 0x0F) > 0x0F);
+
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("DEC {}", RegisterTypeString8(reg));
+	return opcode_name;
+}
