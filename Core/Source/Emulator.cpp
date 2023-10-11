@@ -57,7 +57,7 @@ void Emulator::Run()
 		{
 			// Fetch
 			std::cout << "0x" << std::hex << m_Context.cpu->ProgramCounter << ": ";
-			const uint8_t opcode = ReadFromBus(m_Context.cartridge.get(), m_Context.cpu->ProgramCounter++);
+			const uint8_t opcode = ReadFromBus(&m_Context, m_Context.cpu->ProgramCounter++);
 
 			// Execute
 			std::string opcode_name = Execute(opcode);
