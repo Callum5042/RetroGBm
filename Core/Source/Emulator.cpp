@@ -11,10 +11,10 @@ Emulator::Emulator()
 	m_Context.cpu = std::make_unique<Cpu>();
 	m_Context.cartridge = std::make_unique<CartridgeInfo>();
 
-	m_Context.work_ram.resize(8000);
+	m_Context.work_ram.resize(1024 * 8);
 	std::fill(m_Context.work_ram.begin(), m_Context.work_ram.end(), 0x0);
 
-	m_Context.video_ram.resize(8000);
+	m_Context.video_ram.resize(1024 * 8);
 	std::fill(m_Context.video_ram.begin(), m_Context.video_ram.end(), 0x0);
 
 	// Build opcode table
