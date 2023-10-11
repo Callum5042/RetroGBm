@@ -51,13 +51,18 @@ public:
 	void SetFlag(CpuFlag flag, bool data);
 	bool GetFlag(CpuFlag flag) const;
 
+	// Interrupts
+	void EnableInterrupts();
+	void DisableInterrupts();
+	bool GetInterruptMasterFlag() const;
+
 	// Build debug string
 	std::string Details();
 
 private:
 	std::map<RegisterType8, uint8_t> m_Registers;
-
 	uint16_t m_StackPointer = 0;
+	bool m_InterruptMasterFlag = false;
 };
 
 std::string RegisterTypeString16(RegisterType16 type);

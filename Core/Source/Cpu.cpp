@@ -281,3 +281,18 @@ std::string FlagString(CpuFlag flag)
 
 	throw std::exception("unsupported CpuFlag in function FlagString");
 }
+
+void Cpu::EnableInterrupts()
+{
+	m_InterruptMasterFlag = true;
+}
+
+void Cpu::DisableInterrupts()
+{
+	m_InterruptMasterFlag = false;
+}
+
+bool Cpu::GetInterruptMasterFlag() const
+{
+	return m_InterruptMasterFlag;
+}

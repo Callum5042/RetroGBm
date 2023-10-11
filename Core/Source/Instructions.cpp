@@ -12,6 +12,24 @@ std::string Op::Nop(EmulatorContext* context)
 	return opcode_name;
 }
 
+std::string Op::EnableInterrupts(EmulatorContext* context)
+{
+	context->cpu->EnableInterrupts();
+	context->cycles += 4;
+
+	std::string opcode_name = "EI";
+	return opcode_name;
+}
+
+std::string Op::DisableInterrupts(EmulatorContext* context)
+{
+	context->cpu->DisableInterrupts();
+	context->cycles += 4;
+
+	std::string opcode_name = "DI";
+	return opcode_name;
+}
+
 std::string Op::JumpN16(EmulatorContext* context)
 {
 	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter++);
