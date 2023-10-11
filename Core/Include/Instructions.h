@@ -62,4 +62,6 @@ namespace Op
 	std::string AddR16(EmulatorContext* context, RegisterType16 reg);
 
 	std::string IncR8(EmulatorContext* context, RegisterType8 reg);
+
+	std::string DecR8(EmulatorContext* context, RegisterType8 reg);
 }
