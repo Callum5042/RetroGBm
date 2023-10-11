@@ -25,6 +25,27 @@ std::string Op::JumpN16(EmulatorContext* context)
 	return opcode_name;
 }
 
+std::string Op::JumpFlagN16(EmulatorContext* context, CpuFlag flag, bool condition)
+{
+	uint8_t low = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+	uint8_t high = ReadFromBus(context->cartridge.get(), context->cpu->ProgramCounter++);
+	uint16_t data = low | (high << 8);
+
+	bool enabled = context->cpu->GetFlag(flag);
+	if (enabled == condition)
+	{
+		context->cycles += 16;
+		context->cpu->ProgramCounter = data;
+	}
+	else
+	{
+		context->cycles += 12;
+	}
+
+	std::string opcode_name = std::format("JP {}{}, n16 (0xC3 0x{:x} 0x{:x})", (condition ? "" : "N"), FlagString(flag), low, high);
+	return opcode_name;
+}
+
 std::string Op::XorR8(EmulatorContext* context, RegisterType8 type)
 {
 	uint8_t reg_a = context->cpu->GetRegister(RegisterType8::REG_A);

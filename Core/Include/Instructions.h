@@ -13,6 +13,8 @@ namespace Op
 
 	std::string JumpN16(EmulatorContext* context);
 
+	std::string JumpFlagN16(EmulatorContext* context, CpuFlag flag, bool condition);
+
 	std::string XorR8(EmulatorContext* context, RegisterType8 type);
 
 	std::string XorN8(EmulatorContext* context);

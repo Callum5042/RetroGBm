@@ -278,8 +278,16 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::XorR16(&m_Context, RegisterType16::REG_HL);
 		case 0xAF:
 			return Op::XorR8(&m_Context, RegisterType8::REG_A);
+		case 0xC2:
+			return Op::JumpFlagN16(&m_Context, CpuFlag::Zero, false);
+		case 0xCA:
+			return Op::JumpFlagN16(&m_Context, CpuFlag::Zero, true);
 		case 0xC6:
 			return Op::AddN8(&m_Context);
+		case 0xD2:
+			return Op::JumpFlagN16(&m_Context, CpuFlag::Carry, false);
+		case 0xDA:
+			return Op::JumpFlagN16(&m_Context, CpuFlag::Carry, true);
 		case 0xE2:
 			return Op::StoreIndirectAC(&m_Context);
 		case 0xE8:

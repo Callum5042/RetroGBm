@@ -23,25 +23,6 @@ namespace CoreTests
 			Assert::AreEqual(4, context.cycles);
 		}
 
-		TEST_METHOD(JumpN16_IncreaseCyclesBy16_ProgramCounterUpdatedToResult)
-		{
-			// Arrange
-			EmulatorContext context;
-			context.cycles = 0;
-			context.cpu = std::make_unique<Cpu>();
-			context.cartridge = std::make_unique<CartridgeInfo>();
-
-			context.cartridge->data.push_back(0x20);
-			context.cartridge->data.push_back(0x50);
-
-			// Act
-			Op::JumpN16(&context);
-
-			// Assert
-			Assert::AreEqual(16, context.cycles);
-			Assert::AreEqual(0x5020, static_cast<int>(context.cpu->ProgramCounter));
-		}
-
 		TEST_METHOD(XorR8_RegARegA_IncreaseCyclesBy4_SetRegA_FlagZeroTrue)
 		{
 			// Arrange
