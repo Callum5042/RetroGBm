@@ -11,6 +11,10 @@ namespace Op
 {
 	std::string Nop(EmulatorContext* context);
 
+	std::string EnableInterrupts(EmulatorContext* context);
+
+	std::string DisableInterrupts(EmulatorContext* context);
+
 	std::string JumpN16(EmulatorContext* context);
 
 	std::string JumpFlagN16(EmulatorContext* context, CpuFlag flag, bool condition);

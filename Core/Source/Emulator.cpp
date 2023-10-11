@@ -348,6 +348,10 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::XorN8(&m_Context);
 		case 0xF2:
 			return Op::LoadIndirectAC(&m_Context);
+		case 0xF3:
+			return Op::DisableInterrupts(&m_Context);
+		case 0xFB:
+			return Op::EnableInterrupts(&m_Context);
 		default:
 			throw std::exception(std::format("Instruction not implemented: 0x{:x}", opcode).c_str());
 	}

@@ -23,6 +23,42 @@ namespace CoreTests
 			Assert::AreEqual(4, context.cycles);
 		}
 
+		TEST_METHOD(EnableInterrupts_IncreaseCyclesBy4_SetInterruptMasterFlag)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cpu->DisableInterrupts();
+
+			// Act
+			Op::EnableInterrupts(&context);
+
+			// Assert
+			Assert::AreEqual(0x4, context.cycles);
+
+			bool result = context.cpu->GetInterruptMasterFlag();
+			Assert::IsTrue(result);
+		}
+
+		TEST_METHOD(DisableInterrupts_IncreaseCyclesBy4_SetInterruptMasterFlag)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cpu->EnableInterrupts();
+
+			// Act
+			Op::DisableInterrupts(&context);
+
+			// Assert
+			Assert::AreEqual(0x4, context.cycles);
+
+			bool result = context.cpu->GetInterruptMasterFlag();
+			Assert::IsFalse(result);
+		}
+
 		TEST_METHOD(XorR8_RegARegA_IncreaseCyclesBy4_SetRegA_FlagZeroTrue)
 		{
 			// Arrange
