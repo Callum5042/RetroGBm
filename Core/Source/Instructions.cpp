@@ -46,6 +46,16 @@ std::string Op::JumpFlagN16(EmulatorContext* context, CpuFlag flag, bool conditi
 	return opcode_name;
 }
 
+std::string Op::JumpHL(EmulatorContext* context)
+{
+	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+	context->cpu->ProgramCounter = address;
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("JP HL");
+	return opcode_name;
+}
+
 std::string Op::XorR8(EmulatorContext* context, RegisterType8 type)
 {
 	uint8_t reg_a = context->cpu->GetRegister(RegisterType8::REG_A);

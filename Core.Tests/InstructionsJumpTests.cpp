@@ -191,5 +191,21 @@ namespace CoreTests
 			Assert::AreEqual(12, context.cycles);
 			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
 		}
+
+		TEST_METHOD(JumpHL_IncreaseCyclesBy4_SetProgramCounter)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cpu->SetRegister(RegisterType16::REG_HL, 0x5020);
+
+			// Act
+			Op::JumpHL(&context);
+
+			// Assert
+			Assert::AreEqual(4, context.cycles);
+			Assert::AreEqual(0x5020, static_cast<int>(context.cpu->ProgramCounter));
+		}
 	};
 }
