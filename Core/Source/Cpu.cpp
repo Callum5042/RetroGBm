@@ -234,3 +234,23 @@ std::string RegisterTypeString8(RegisterType8 type)
 
 	throw std::exception("unsupported RegisterType16 in function RegisterTypeString8");
 }
+
+std::string FlagString(CpuFlag flag)
+{
+	switch (flag)
+	{
+		case CpuFlag::Zero:
+			return "Z";
+
+		case CpuFlag::Subtraction:
+			return "N";
+
+		case CpuFlag::Carry:
+			return "C";
+
+		case CpuFlag::HalfCarry:
+			return "H";
+	}
+
+	throw std::exception("unsupported CpuFlag in function FlagString");
+}

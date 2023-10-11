@@ -63,3 +63,5 @@ private:
 std::string RegisterTypeString16(RegisterType16 type);
 
 std::string RegisterTypeString8(RegisterType8 type);
+
+std::string FlagString(CpuFlag flag);
