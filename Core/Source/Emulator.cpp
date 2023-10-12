@@ -50,28 +50,25 @@ bool Emulator::LoadRom(const std::filesystem::path& path)
 	return true;
 }
 
-void Emulator::Run()
+void Emulator::Tick()
 {
-	while (m_Running)
+	const int CYCLES_PER_SCANLINE = 80;
+	if (m_Context.cycles >= CYCLES_PER_SCANLINE)
 	{
-		const int CYCLES_PER_SCANLINE = 80;
-		if (m_Context.cycles >= CYCLES_PER_SCANLINE)
-		{
-			m_Context.cycles = 0;
-		}
-		else
-		{
-			// Fetch
-			std::cout << "0x" << std::hex << m_Context.cpu->ProgramCounter << ": ";
-			const uint8_t opcode = ReadFromBus(&m_Context, m_Context.cpu->ProgramCounter++);
-			m_CurrentOpCode = opcode;
+		m_Context.cycles = 0;
+	}
+	else
+	{
+		// Fetch
+		std::cout << "0x" << std::hex << m_Context.cpu->ProgramCounter << ": ";
+		const uint8_t opcode = ReadFromBus(&m_Context, m_Context.cpu->ProgramCounter++);
+		m_CurrentOpCode = opcode;
 
-			// Execute
-			std::string opcode_name = Execute(opcode);
+		// Execute
+		std::string opcode_name = Execute(opcode);
 
-			// Display CPU details
-			std::cout << std::setw(30) << std::left << opcode_name << std::right << std::right << m_Context.cpu->Details() << '\n';
-		}
+		// Display CPU details
+		std::cout << std::setw(30) << std::left << opcode_name << std::right << std::right << m_Context.cpu->Details() << '\n';
 	}
 }
 

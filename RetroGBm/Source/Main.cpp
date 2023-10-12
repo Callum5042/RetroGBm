@@ -4,6 +4,8 @@
 #include "Emulator.h"
 #include <Windows.h>
 
+#include <SDL.h>
+
 // Useful docs
 // https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
 // https://rgbds.gbdev.io/docs/v0.5.1/gbz80.7/#HALT
@@ -12,13 +14,62 @@
 
 int main(int argc, char** argv)
 {
-	std::cout << "RetroGBm\n";
-	std::unique_ptr<Emulator> emulator = std::make_unique<Emulator>();
+	// Setup SDL
+	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+	{
+		SDL_ShowSimpleMessageBox(NULL, "Error", "SDL_Init failed", nullptr);
+		return -1;
+	}
 
+	SDL_Window* window = SDL_CreateWindow("RetroGBm", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_SHOWN);
+	if (window == nullptr)
+	{
+		SDL_ShowSimpleMessageBox(NULL, "Error", "SDL_CreateWindow failed", nullptr);
+		return -1;
+	}
+
+	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+	if (renderer == nullptr)
+	{
+		SDL_ShowSimpleMessageBox(NULL, "Error", "SDL_CreateWindow failed", nullptr);
+		return -1;
+	}
+
+	// Setup emulator
+	std::unique_ptr<Emulator> emulator = std::make_unique<Emulator>();
+	emulator->LoadRom("Tetris.gb");
+
+	// Message loop
 	try
 	{
-		emulator->LoadRom("Tetris.gb");
-		emulator->Run();
+		bool running = true;
+		while (running)
+		{
+			SDL_Event e = {};
+			if (SDL_PollEvent(&e))
+			{
+				// Handle inputs
+				switch (e.type)
+				{
+					case SDL_QUIT:
+						running = false;
+						break;
+
+					default:
+						break;
+				}
+			}
+			else
+			{
+				// Emulator cycle
+				emulator->Tick();
+
+				// Render
+				SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+				SDL_RenderClear(renderer);
+				SDL_RenderPresent(renderer);
+			}
+		}
 	}
 	catch (const std::exception& ex)
 	{
@@ -37,5 +88,9 @@ int main(int argc, char** argv)
 		SetConsoleTextAttribute(hConsole, console_info.wAttributes);
 	}
 
+	// Clean up and exit
+	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(window);
+	SDL_Quit();
 	return 0;
 }
