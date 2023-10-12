@@ -28,59 +28,69 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-
-	// Message loop
-	bool running = true;
-	while (running)
+	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+	if (renderer == nullptr)
 	{
-		SDL_Event e = {};
-		if (SDL_PollEvent(&e))
-		{
-			// Handle inputs
-			switch (e.type)
-			{
-				case SDL_QUIT:
-					running = false;
-					break;
-
-				default:
-					break;
-			}
-		}
-		else
-		{
-			// Emulator cycle
-
-
-			// Render
-		}
+		SDL_ShowSimpleMessageBox(NULL, "Error", "SDL_CreateWindow failed", nullptr);
+		return -1;
 	}
 
+	// Setup emulator
+	std::unique_ptr<Emulator> emulator = std::make_unique<Emulator>();
+	emulator->LoadRom("Tetris.gb");
 
-	//std::cout << "RetroGBm\n";
-	//std::unique_ptr<Emulator> emulator = std::make_unique<Emulator>();
+	// Message loop
+	try
+	{
+		bool running = true;
+		while (running)
+		{
+			SDL_Event e = {};
+			if (SDL_PollEvent(&e))
+			{
+				// Handle inputs
+				switch (e.type)
+				{
+					case SDL_QUIT:
+						running = false;
+						break;
 
-	//try
-	//{
-	//	emulator->LoadRom("Tetris.gb");
-	//	emulator->Run();
-	//}
-	//catch (const std::exception& ex)
-	//{
-	//	// TODO: Update this to use a properly logging framework then dealing with Win32 stuff
-	//	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+					default:
+						break;
+				}
+			}
+			else
+			{
+				// Emulator cycle
+				emulator->Tick();
 
-	//	// Get currently console window attributes
-	//	CONSOLE_SCREEN_BUFFER_INFO console_info;
-	//	GetConsoleScreenBufferInfo(hConsole, &console_info);
+				// Render
+				SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+				SDL_RenderClear(renderer);
+				SDL_RenderPresent(renderer);
+			}
+		}
+	}
+	catch (const std::exception& ex)
+	{
+		// TODO: Update this to use a properly logging framework then dealing with Win32 stuff
+		HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
-	//	// Set to red and print error
-	//	SetConsoleTextAttribute(hConsole, FOREGROUND_INTENSITY | FOREGROUND_RED);
-	//	std::cerr << std::format("Fatal error (0x{:x}): {}", emulator->GetOpCode(), ex.what()) << '\n';
+		// Get currently console window attributes
+		CONSOLE_SCREEN_BUFFER_INFO console_info;
+		GetConsoleScreenBufferInfo(hConsole, &console_info);
 
-	//	// Reset attributes
-	//	SetConsoleTextAttribute(hConsole, console_info.wAttributes);
-	//}
+		// Set to red and print error
+		SetConsoleTextAttribute(hConsole, FOREGROUND_INTENSITY | FOREGROUND_RED);
+		std::cerr << std::format("Fatal error (0x{:x}): {}", emulator->GetOpCode(), ex.what()) << '\n';
 
+		// Reset attributes
+		SetConsoleTextAttribute(hConsole, console_info.wAttributes);
+	}
+
+	// Clean up and exit
+	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(window);
+	SDL_Quit();
 	return 0;
 }

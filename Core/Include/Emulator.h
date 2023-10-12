@@ -25,7 +25,7 @@ public:
 
 	bool LoadRom(const std::filesystem::path& path);
 
-	void Run();
+	void Tick();
 
 	uint8_t GetOpCode() const;
 
