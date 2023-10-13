@@ -368,5 +368,58 @@ namespace InstructionsTests
 			uint16_t reg_hl = context.cpu->GetRegister(RegisterType16::REG_HL);
 			Assert::AreEqual(0x4, static_cast<int>(reg_hl));
 		}
+
+		TEST_METHOD(StoreIndirectR8_IncreaseCyclesBy16_WriteToAddress)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.resize(0x10);
+			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
+			context.cartridge->data[0x0] = 0x5;
+			context.cartridge->data[0x1] = 0x0;
+			context.cartridge->data[0x5] = 0x1;
+
+			context.cpu->SetRegister(RegisterType8::REG_A, 0x32);
+
+			// Act
+			Op::StoreIndirectR8(&context, RegisterType8::REG_A);
+
+			// Assert
+			Assert::AreEqual(16, context.cycles);
+			Assert::AreEqual(0x2, static_cast<int>(context.cpu->ProgramCounter));
+
+			Assert::AreEqual(0x32, static_cast<int>(context.cartridge->data[0x5]));
+		}
+
+		TEST_METHOD(LoadIndirectR8_IncreaseCyclesBy16_WriteToRegister)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.resize(0x10);
+			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
+			context.cartridge->data[0x0] = 0x5;
+			context.cartridge->data[0x1] = 0x0;
+			context.cartridge->data[0x5] = 0x32;
+
+			context.cpu->SetRegister(RegisterType8::REG_A, 0x0);
+
+			// Act
+			Op::LoadIndirectR8(&context, RegisterType8::REG_A);
+
+			// Assert
+			Assert::AreEqual(16, context.cycles);
+			Assert::AreEqual(0x2, static_cast<int>(context.cpu->ProgramCounter));
+
+			uint8_t result = context.cpu->GetRegister(RegisterType8::REG_A);
+			Assert::AreEqual(0x32, static_cast<int>(result));
+		}
 	};
 }
