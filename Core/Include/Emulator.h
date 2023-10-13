@@ -11,6 +11,14 @@
 class Cpu;
 struct CartridgeInfo;
 
+struct TimerContext
+{
+	uint16_t div;
+	uint8_t tima;
+	uint8_t tma;
+	uint8_t tac;
+};
+
 struct EmulatorContext
 {
 	int cycles = 0;
@@ -19,6 +27,8 @@ struct EmulatorContext
 	std::vector<uint8_t> video_ram;
 	std::vector<uint8_t> work_ram;
 	std::array<char, 2> serial_data;
+
+	TimerContext timer;
 };
 
 class Emulator

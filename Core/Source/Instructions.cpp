@@ -25,7 +25,7 @@ std::string Op::Stop(EmulatorContext* context)
 
 std::string Op::EnableInterrupts(EmulatorContext* context)
 {
-	context->cpu->EnableInterrupts();
+	context->cpu->EnableMasterInterrupts();
 	context->cycles += 4;
 
 	std::string opcode_name = "EI";
@@ -34,7 +34,7 @@ std::string Op::EnableInterrupts(EmulatorContext* context)
 
 std::string Op::DisableInterrupts(EmulatorContext* context)
 {
-	context->cpu->DisableInterrupts();
+	context->cpu->DisableMasterInterrupts();
 	context->cycles += 4;
 
 	std::string opcode_name = "DI";

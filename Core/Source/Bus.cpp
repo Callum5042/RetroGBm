@@ -2,6 +2,8 @@
 #include <exception>
 #include "Cartridge.h"
 
+#include <Cpu.h>
+
 // 0000	3FFF	16 KiB ROM bank 00	From cartridge, usually a fixed bank
 // 4000	7FFF	16 KiB ROM Bank 01~NN	From cartridge, switchable bank via mapper(if any)
 // 8000	9FFF	8 KiB Video RAM(VRAM)	In CGB mode, switchable bank 0 / 1
@@ -63,6 +65,24 @@ const uint8_t ReadFromBus(EmulatorContext* context, const uint16_t address)
 		{
 			return context->serial_data[1];
 		}
+		else if (address >= 0xFF04 && address <= 0xFF07)
+		{
+			switch (address)
+			{
+				case 0xFF04:
+					return context->timer.div >> 8;
+				case 0xFF05:
+					return context->timer.tima;
+				case 0xFF06:
+					return context->timer.tma;
+				case 0xFF07:
+					return context->timer.tac;
+			}
+		}
+		else if (address == 0xFF0F)
+		{
+
+		}
 
 		throw std::exception("Not implemented 'ReadFromBus' I/O registers");
 	}
@@ -74,7 +94,7 @@ const uint8_t ReadFromBus(EmulatorContext* context, const uint16_t address)
 	else if (address == 0xFFFF)
 	{
 		// Interrupt Enable register (IE)
-		throw std::exception("Not implemented 'ReadFromBus' Interrupt Enable register (IE)");
+		return context->cpu->GetInterruptEnable();
 	}
 
 	throw std::exception(std::format("Not implemented 'ReadFromBus' 0x{:x}", address).c_str());
@@ -134,8 +154,34 @@ void WriteToBus(EmulatorContext* context, uint16_t address, uint8_t data)
 			context->serial_data[1] = data;
 			return;
 		}
+		else if (address >= 0xFF04 && address <= 0xFF07)
+		{
+			switch (address)
+			{
+				case 0xFF04:
+					context->timer.div = 0;
+					break;
+				case 0xFF05:
+					context->timer.tima = data;
+					break;
+				case 0xFF06:
+					context->timer.tma = data;
+					break;
+				case 0xFF07:
+					context->timer.tac = data;
+					break;
+			}
 
-		throw std::exception("Not implemented 'ReadFromBus' I/O registers");
+			return;
+		}
+		else if (address == 0xFF0F)
+		{
+			context->cpu->SetInterrupt(data);
+			return;
+		}
+
+		return;
+		// throw std::exception("Not implemented 'WriteToBus' I/O registers");
 	}
 	else if (address < 0xFFFF)
 	{
@@ -145,7 +191,8 @@ void WriteToBus(EmulatorContext* context, uint16_t address, uint8_t data)
 	else if (address == 0xFFFF)
 	{
 		// Interrupt Enable register (IE)
-		throw std::exception("Not implemented 'WriteToBus' Interrupt Enable register (IE)");
+		context->cpu->InterruptEnable(data);
+		return;
 	}
 
 	throw std::exception(std::format("Not implemented 'WriteToBus' 0x{:x}", address).c_str());
