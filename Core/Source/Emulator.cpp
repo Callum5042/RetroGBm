@@ -69,6 +69,23 @@ void Emulator::Tick()
 
 		// Display CPU details
 		std::cout << std::setw(30) << std::left << opcode_name << std::right << std::right << m_Context.cpu->Details() << '\n';
+
+		// Debug
+		{
+			uint8_t data = ReadFromBus(&m_Context, 0xFF02);
+			if (data == 0x81)
+			{
+				uint8_t c = ReadFromBus(&m_Context, 0xFF01);
+
+				m_DebugMessage += static_cast<char>(c);
+				WriteToBus(&m_Context, 0xFF02, 0);
+			}
+
+			if (!m_DebugMessage.empty())
+			{
+				std::cout << "DEBUG: " << m_DebugMessage << '\n';
+			}
+		}
 	}
 }
 
