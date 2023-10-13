@@ -580,3 +580,19 @@ std::string Op::DecR8(EmulatorContext* context, RegisterType8 reg)
 	std::string opcode_name = std::format("DEC {}", RegisterTypeString8(reg));
 	return opcode_name;
 }
+
+std::string Op::CallN16(EmulatorContext* context)
+{
+	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint16_t address = low | (high << 8);
+
+	WriteToBus(context, context->cpu->StackPointer--, low);
+	WriteToBus(context, context->cpu->StackPointer--, high);
+	context->cpu->ProgramCounter = address;
+
+	context->cycles += 24;
+
+	std::string opcode_name = std::format("CALL n16 (0x{:x} 0x{:x})", low, high);
+	return opcode_name;
+}

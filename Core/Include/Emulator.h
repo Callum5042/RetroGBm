@@ -26,6 +26,7 @@ struct EmulatorContext
 	std::unique_ptr<Cpu> cpu = nullptr;
 	std::vector<uint8_t> video_ram;
 	std::vector<uint8_t> work_ram;
+	std::array<uint8_t, 127> high_ram;
 	std::array<char, 2> serial_data;
 
 	TimerContext timer;

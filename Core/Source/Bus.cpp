@@ -89,7 +89,7 @@ const uint8_t ReadFromBus(EmulatorContext* context, const uint16_t address)
 	else if (address < 0xFFFF)
 	{
 		// HRAM (high RAM)
-		throw std::exception("Not implemented 'ReadFromBus' HRAM");
+		return context->high_ram[address - 0xFF80];
 	}
 	else if (address == 0xFFFF)
 	{
@@ -186,7 +186,8 @@ void WriteToBus(EmulatorContext* context, uint16_t address, uint8_t data)
 	else if (address < 0xFFFF)
 	{
 		// HRAM (high RAM)
-		throw std::exception("Not implemented 'WriteToBus' HRAM");
+		context->high_ram[address - 0xFF80] = data;
+		return;
 	}
 	else if (address == 0xFFFF)
 	{
