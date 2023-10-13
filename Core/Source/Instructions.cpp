@@ -187,7 +187,7 @@ std::string Op::LoadN16(EmulatorContext* context, RegisterType16 type)
 	return opcode_name;
 }
 
-std::string Op::LoadIncrementHL(EmulatorContext* context)
+std::string Op::StoreIncrementHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
@@ -201,7 +201,7 @@ std::string Op::LoadIncrementHL(EmulatorContext* context)
 	return opcode_name;
 }
 
-std::string Op::LoadDecrementHL(EmulatorContext* context)
+std::string Op::StoreDecrementHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);

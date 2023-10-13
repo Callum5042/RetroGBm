@@ -94,7 +94,7 @@ namespace InstructionsTests
 			Assert::AreEqual(0x5020, static_cast<int>(reg));
 		}
 
-		TEST_METHOD(LoadIncrementHL_IncreaseCyclesBy8_WriteToAddress)
+		TEST_METHOD(StoreIncrementHL_IncreaseCyclesBy8_WriteToAddress)
 		{
 			// Arrange
 			EmulatorContext context;
@@ -110,7 +110,7 @@ namespace InstructionsTests
 			context.cpu->SetRegister(RegisterType8::REG_A, 0x10);
 
 			// Act
-			Op::LoadIncrementHL(&context);
+			Op::StoreIncrementHL(&context);
 
 			// Assert
 			Assert::AreEqual(8, context.cycles);
@@ -123,7 +123,7 @@ namespace InstructionsTests
 			Assert::AreEqual(0x20, static_cast<int>(address_data));
 		}
 
-		TEST_METHOD(LoadDecrementHL_IncreaseCyclesBy8_WriteToAddress)
+		TEST_METHOD(StoreDecrementHL_IncreaseCyclesBy8_WriteToAddress)
 		{
 			// Arrange
 			EmulatorContext context;
@@ -139,7 +139,7 @@ namespace InstructionsTests
 			context.cpu->SetRegister(RegisterType8::REG_A, 0x10);
 
 			// Act
-			Op::LoadDecrementHL(&context);
+			Op::StoreDecrementHL(&context);
 
 			// Assert
 			Assert::AreEqual(8, context.cycles);

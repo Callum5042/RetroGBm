@@ -171,11 +171,11 @@ std::string Emulator::Execute(const uint8_t opcode)
 		case 0x21:
 			return Op::LoadN16(&m_Context, RegisterType16::REG_HL);
 		case 0x22:
-			return Op::LoadIncrementHL(&m_Context);
+			return Op::StoreIncrementHL(&m_Context);
 		case 0x31:
 			return Op::LoadN16(&m_Context, RegisterType16::REG_SP);
 		case 0x32:
-			return Op::LoadDecrementHL(&m_Context);
+			return Op::StoreDecrementHL(&m_Context);
 		case 0x36:
 			return Op::StoreN8(&m_Context, RegisterType16::REG_HL);
 		case 0x39:
