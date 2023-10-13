@@ -273,6 +273,30 @@ std::string Op::LoadIndirectR8(EmulatorContext* context, RegisterType8 reg)
 	return opcode_name;
 }
 
+std::string Op::StoreHighRam(EmulatorContext* context)
+{
+	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint8_t reg_data = context->cpu->GetRegister(RegisterType8::REG_A);
+
+	WriteToBus(context, 0xFF00 + data, reg_data);
+	context->cycles += 12;
+
+	std::string opcode_name = std::format("LDH [a8], A (0x{:x})", data);
+	return opcode_name;
+}
+
+std::string Op::LoadHighRam(EmulatorContext* context)
+{
+	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint8_t result = ReadFromBus(context, 0xFF00 + data);
+
+	context->cpu->SetRegister(RegisterType8::REG_A, result);
+	context->cycles += 12;
+
+	std::string opcode_name = std::format("LDH A, [a8] (0x{:x} 0x{:x})", data, result);
+	return opcode_name;
+}
+
 std::string Op::StoreR8(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg_pointer)
 {
 	uint8_t data = context->cpu->GetRegister(reg);

@@ -421,5 +421,52 @@ namespace InstructionsTests
 			uint8_t result = context.cpu->GetRegister(RegisterType8::REG_A);
 			Assert::AreEqual(0x32, static_cast<int>(result));
 		}
+
+		TEST_METHOD(StoreHighRam_IncreaseCyclesBy16_WriteToHighRAM)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.resize(0x10);
+			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
+			context.cartridge->data[0x0] = 0x1;
+
+			// Act
+			Op::StoreHighRam(&context);
+
+			// Assert
+			Assert::AreEqual(12, context.cycles);
+			Assert::AreEqual(0x1, static_cast<int>(context.cpu->ProgramCounter));
+
+			Assert::AreEqual(0x1, static_cast<int>(context.serial_data[0]));
+		}
+
+		TEST_METHOD(LoadHighRam_IncreaseCyclesBy16_WriteToHighRAM)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.resize(0x10);
+			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
+			context.cartridge->data[0x0] = 0x1;
+
+			context.serial_data[0] = 0x1;
+
+			// Act
+			Op::LoadHighRam(&context);
+
+			// Assert
+			Assert::AreEqual(12, context.cycles);
+			Assert::AreEqual(0x1, static_cast<int>(context.cpu->ProgramCounter));
+
+			uint8_t result = context.cpu->GetRegister(RegisterType8::REG_A);
+			Assert::AreEqual(0x1, static_cast<int>(result));
+		}
 	};
 }

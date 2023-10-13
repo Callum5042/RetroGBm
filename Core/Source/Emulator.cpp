@@ -356,20 +356,24 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::JumpFlagN16(&m_Context, CpuFlag::Carry, false);
 		case 0xDA:
 			return Op::JumpFlagN16(&m_Context, CpuFlag::Carry, true);
+		case 0xE0:
+			return Op::StoreHighRam(&m_Context);
 		case 0xEA:
 			return Op::StoreIndirectR8(&m_Context, RegisterType8::REG_A);
 		case 0xE2:
-			return Op::StoreIndirectAC(&m_Context);
+			throw std::exception(std::format("Possibly bugged: 0x{:x}", opcode).c_str());// return Op::StoreIndirectAC(&m_Context);
 		case 0xE8:
 			return Op::AddSP(&m_Context);
 		case 0xE9:
 			return Op::JumpHL(&m_Context);
 		case 0xEE:
 			return Op::XorN8(&m_Context);
+		case 0xF0:
+			return Op::LoadHighRam(&m_Context);
 		case 0xFA:
 			return Op::LoadIndirectR8(&m_Context, RegisterType8::REG_A);
 		case 0xF2:
-			return Op::LoadIndirectAC(&m_Context);
+			throw std::exception(std::format("Possibly bugged: 0x{:x}", opcode).c_str());// return Op::LoadIndirectAC(&m_Context);
 		case 0xF3:
 			return Op::DisableInterrupts(&m_Context);
 		case 0xFB:
