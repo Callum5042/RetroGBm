@@ -4,6 +4,9 @@
 #include <memory>
 #include <unordered_map>
 #include <functional>
+#include <vector>
+#include <array>
+#include <string>
 
 class Cpu;
 struct CartridgeInfo;
@@ -15,6 +18,7 @@ struct EmulatorContext
 	std::unique_ptr<Cpu> cpu = nullptr;
 	std::vector<uint8_t> video_ram;
 	std::vector<uint8_t> work_ram;
+	std::array<char, 2> serial_data;
 };
 
 class Emulator
@@ -37,6 +41,8 @@ private:
 	std::string Execute(const uint8_t opcode);
 
 	uint8_t m_CurrentOpCode = 0x0;
+
+	std::string m_DebugMessage;
 
 	// std::unordered_map<uint8_t, std::function<std::string()>> m_OpCodeTable;
 };

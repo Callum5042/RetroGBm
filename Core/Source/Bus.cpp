@@ -55,9 +55,18 @@ const uint8_t ReadFromBus(EmulatorContext* context, const uint16_t address)
 	else if (address < 0xFF80)
 	{
 		// I/O registers
+		if (address == 0xFF01)
+		{
+			return context->serial_data[0];
+		}
+		else if (address == 0xFF02)
+		{
+			return context->serial_data[1];
+		}
+
 		throw std::exception("Not implemented 'ReadFromBus' I/O registers");
 	}
-	else if (address < 0xFF80)
+	else if (address < 0xFFFF)
 	{
 		// HRAM (high RAM)
 		throw std::exception("Not implemented 'ReadFromBus' HRAM");
@@ -115,9 +124,20 @@ void WriteToBus(EmulatorContext* context, uint16_t address, uint8_t data)
 	else if (address < 0xFF80)
 	{
 		// I/O registers
-		throw std::exception("Not implemented 'WriteToBus' I/O registers");
+		if (address == 0xFF01)
+		{
+			context->serial_data[0] = data;
+			return;
+		}
+		else if (address == 0xFF02)
+		{
+			context->serial_data[1] = data;
+			return;
+		}
+
+		throw std::exception("Not implemented 'ReadFromBus' I/O registers");
 	}
-	else if (address < 0xFF80)
+	else if (address < 0xFFFF)
 	{
 		// HRAM (high RAM)
 		throw std::exception("Not implemented 'WriteToBus' HRAM");
