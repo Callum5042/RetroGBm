@@ -45,6 +45,7 @@ bool Emulator::LoadRom(const std::filesystem::path& path)
 
 	// Set program counter to 0x100 to skip boot rom
 	m_Context.cpu->ProgramCounter = 0x100;
+	m_Context.timer.div = 0xAC00;
 
 	m_Running = true;
 	return true;
@@ -69,6 +70,45 @@ void Emulator::Tick()
 
 		// Display CPU details
 		std::cout << std::setw(30) << std::left << opcode_name << std::right << std::right << m_Context.cpu->Details() << '\n';
+
+		// Tick timer
+		for (int i = 0; i < m_Context.cycles; ++i)
+		{
+			uint16_t prev_div = m_Context.timer.div;
+
+			m_Context.timer.div++;
+
+			bool timer_update = false;
+
+			switch (m_Context.timer.tac & (0b11))
+			{
+				case 0b00:
+					timer_update = (prev_div & (1 << 9)) && (!(m_Context.timer.div & (1 << 9)));
+					break;
+				case 0b01:
+					timer_update = (prev_div & (1 << 3)) && (!(m_Context.timer.div & (1 << 3)));
+					break;
+				case 0b10:
+					timer_update = (prev_div & (1 << 5)) && (!(m_Context.timer.div & (1 << 5)));
+					break;
+				case 0b11:
+					timer_update = (prev_div & (1 << 7)) && (!(m_Context.timer.div & (1 << 7)));
+					break;
+			}
+
+			if (timer_update && m_Context.timer.tac & (1 << 2))
+			{
+				m_Context.timer.tima++;
+
+				if (m_Context.timer.tima == 0xFF)
+				{
+					m_Context.timer.tima = m_Context.timer.tma;
+					m_Context.cpu->RequestInterrupt(InterruptFlag::Timer);
+				}
+			}
+		}
+
+		m_Context.cycles = 0;
 
 		// Debug
 		{

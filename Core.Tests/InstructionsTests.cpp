@@ -29,7 +29,7 @@ namespace CoreTests
 			EmulatorContext context;
 			context.cycles = 0;
 			context.cpu = std::make_unique<Cpu>();
-			context.cpu->DisableInterrupts();
+			context.cpu->DisableMasterInterrupts();
 
 			// Act
 			Op::EnableInterrupts(&context);
@@ -47,7 +47,7 @@ namespace CoreTests
 			EmulatorContext context;
 			context.cycles = 0;
 			context.cpu = std::make_unique<Cpu>();
-			context.cpu->EnableInterrupts();
+			context.cpu->EnableMasterInterrupts();
 
 			// Act
 			Op::DisableInterrupts(&context);

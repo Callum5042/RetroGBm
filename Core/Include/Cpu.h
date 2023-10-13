@@ -31,6 +31,15 @@ enum class CpuFlag
 	Carry
 };
 
+enum class InterruptFlag
+{
+	VBlank,
+	STAT,
+	Timer,
+	Serial,
+	Joypad
+};
+
 class Cpu
 {
 public:
@@ -52,9 +61,15 @@ public:
 	bool GetFlag(CpuFlag flag) const;
 
 	// Interrupts
-	void EnableInterrupts();
-	void DisableInterrupts();
+	void EnableMasterInterrupts();
+	void DisableMasterInterrupts();
 	bool GetInterruptMasterFlag() const;
+
+	void RequestInterrupt(InterruptFlag flag);
+	void SetInterrupt(uint8_t data);
+
+	void InterruptEnable(uint8_t data);
+	uint8_t GetInterruptEnable() const;
 
 	// Build debug string
 	std::string Details();
@@ -62,7 +77,15 @@ public:
 private:
 	std::map<RegisterType8, uint8_t> m_Registers;
 	uint16_t m_StackPointer = 0;
+
 	bool m_InterruptMasterFlag = false;
+
+
+	// TODO: Not actually sure the difference between these 2
+	std::map<InterruptFlag, bool> m_Interrupts;
+	uint8_t m_InterruptFlags;
+
+	uint8_t m_InterruptEnable;
 };
 
 std::string RegisterTypeString16(RegisterType16 type);
