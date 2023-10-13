@@ -12,6 +12,17 @@ std::string Op::Nop(EmulatorContext* context)
 	return opcode_name;
 }
 
+std::string Op::Stop(EmulatorContext* context)
+{
+	context->cycles += 4;
+	context->cpu->ProgramCounter++;
+
+	throw std::exception("STOP not implemented");
+
+	std::string opcode_name = "STOP";
+	return opcode_name;
+}
+
 std::string Op::EnableInterrupts(EmulatorContext* context)
 {
 	context->cpu->EnableInterrupts();
@@ -77,7 +88,7 @@ std::string Op::JumpHL(EmulatorContext* context)
 std::string Op::JumpRelativeN8(EmulatorContext* context)
 {
 	uint16_t current_pc = context->cpu->ProgramCounter;
-	int8_t data = ReadFromBus(context, context->cpu->ProgramCounter);
+	int8_t data = ReadFromBus(context, context->cpu->ProgramCounter++);
 
 	context->cpu->ProgramCounter += data;
 	context->cycles += 12;
@@ -89,7 +100,7 @@ std::string Op::JumpRelativeN8(EmulatorContext* context)
 std::string Op::JumpRelativeFlagN8(EmulatorContext* context, CpuFlag flag, bool condition)
 {
 	uint16_t current_pc = context->cpu->ProgramCounter;
-	int8_t data = ReadFromBus(context, context->cpu->ProgramCounter);
+	int8_t data = ReadFromBus(context, context->cpu->ProgramCounter++);
 
 	bool enabled = context->cpu->GetFlag(flag);
 	if (enabled == condition)
@@ -99,7 +110,6 @@ std::string Op::JumpRelativeFlagN8(EmulatorContext* context, CpuFlag flag, bool 
 	}
 	else
 	{
-		context->cpu->ProgramCounter++;
 		context->cycles += 8;
 	}
 

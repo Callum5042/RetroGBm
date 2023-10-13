@@ -223,7 +223,7 @@ namespace CoreTests
 
 			// Assert
 			Assert::AreEqual(12, context.cycles);
-			Assert::AreEqual(0x7, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(0x8, static_cast<int>(context.cpu->ProgramCounter));
 		}
 
 		TEST_METHOD(JumpRelativeFlagN8_ZeroFlagNotSet_IncreaseCyclesBy12_JumpToRelativeAddress)
@@ -246,7 +246,7 @@ namespace CoreTests
 
 			// Assert
 			Assert::AreEqual(12, context.cycles);
-			Assert::AreEqual(0xA, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(0xB, static_cast<int>(context.cpu->ProgramCounter));
 		}
 
 		TEST_METHOD(JumpRelativeFlagN8_ZeroFlagSet_IncreaseCyclesBy8_IncreaseProgramCounterBy1)
@@ -296,7 +296,7 @@ namespace CoreTests
 
 			// Assert
 			Assert::AreEqual(12, context.cycles);
-			Assert::AreEqual(0xA, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(0xB, static_cast<int>(context.cpu->ProgramCounter));
 		}
 
 		TEST_METHOD(JumpRelativeFlagN8_ZeroFlagNotSet_IncreaseCyclesBy8_IncreaseProgramCounterBy1)

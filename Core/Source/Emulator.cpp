@@ -120,6 +120,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::DecR8(&m_Context, RegisterType8::REG_C);
 		case 0x0E:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_C);
+		case 0x10:
+			return Op::Stop(&m_Context);
 		case 0x11:
 			return Op::LoadN16(&m_Context, RegisterType16::REG_DE);
 		case 0x12:
