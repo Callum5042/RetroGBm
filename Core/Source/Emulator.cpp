@@ -172,6 +172,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::LoadN16(&m_Context, RegisterType16::REG_HL);
 		case 0x22:
 			return Op::StoreIncrementHL(&m_Context);
+		case 0x2A:
+			return Op::LoadIncrementHL(&m_Context);
 		case 0x31:
 			return Op::LoadN16(&m_Context, RegisterType16::REG_SP);
 		case 0x32:
@@ -180,6 +182,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::StoreN8(&m_Context, RegisterType16::REG_HL);
 		case 0x39:
 			return Op::AddR16(&m_Context, RegisterType16::REG_SP);
+		case 0x3A:
+			return Op::LoadDecrementHL(&m_Context);
 		case 0x3C:
 			return Op::IncR8(&m_Context, RegisterType8::REG_A);
 		case 0x3D:
