@@ -11,6 +11,8 @@ namespace Op
 {
 	std::string Nop(EmulatorContext* context);
 
+	std::string Stop(EmulatorContext* context);
+
 	std::string EnableInterrupts(EmulatorContext* context);
 
 	std::string DisableInterrupts(EmulatorContext* context);
