@@ -338,7 +338,7 @@ std::string Op::StoreIndirectAC(EmulatorContext* context)
 	// Opcode: 0xE2
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint16_t address = context->cpu->GetRegister(RegisterType8::REG_C);
-	WriteToBus(context, address, data);
+	WriteToBus(context, 0xFF00 + address, data);
 	
 	context->cycles += 8;
 
@@ -350,7 +350,7 @@ std::string Op::LoadIndirectAC(EmulatorContext* context)
 {
 	// Opcode: 0xF2
 	uint16_t address = context->cpu->GetRegister(RegisterType8::REG_C);
-	uint8_t data = ReadFromBus(context, address);
+	uint8_t data = ReadFromBus(context, 0xFF00 + address);
 	context->cpu->SetRegister(RegisterType8::REG_A, data);
 
 	context->cycles += 8;
