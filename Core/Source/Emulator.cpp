@@ -171,15 +171,19 @@ std::string Emulator::Execute(const uint8_t opcode)
 		case 0x21:
 			return Op::LoadN16(&m_Context, RegisterType16::REG_HL);
 		case 0x22:
+			return Op::StoreIncrementHL(&m_Context);
+		case 0x2A:
 			return Op::LoadIncrementHL(&m_Context);
 		case 0x31:
 			return Op::LoadN16(&m_Context, RegisterType16::REG_SP);
 		case 0x32:
-			return Op::LoadDecrementHL(&m_Context);
+			return Op::StoreDecrementHL(&m_Context);
 		case 0x36:
 			return Op::StoreN8(&m_Context, RegisterType16::REG_HL);
 		case 0x39:
 			return Op::AddR16(&m_Context, RegisterType16::REG_SP);
+		case 0x3A:
+			return Op::LoadDecrementHL(&m_Context);
 		case 0x3C:
 			return Op::IncR8(&m_Context, RegisterType8::REG_A);
 		case 0x3D:
@@ -352,6 +356,10 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::JumpFlagN16(&m_Context, CpuFlag::Carry, false);
 		case 0xDA:
 			return Op::JumpFlagN16(&m_Context, CpuFlag::Carry, true);
+		case 0xE0:
+			return Op::StoreHighRam(&m_Context);
+		case 0xEA:
+			return Op::StoreIndirectR8(&m_Context, RegisterType8::REG_A);
 		case 0xE2:
 			return Op::StoreIndirectAC(&m_Context);
 		case 0xE8:
@@ -360,6 +368,10 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::JumpHL(&m_Context);
 		case 0xEE:
 			return Op::XorN8(&m_Context);
+		case 0xF0:
+			return Op::LoadHighRam(&m_Context);
+		case 0xFA:
+			return Op::LoadIndirectR8(&m_Context, RegisterType8::REG_A);
 		case 0xF2:
 			return Op::LoadIndirectAC(&m_Context);
 		case 0xF3:

@@ -187,7 +187,7 @@ std::string Op::LoadN16(EmulatorContext* context, RegisterType16 type)
 	return opcode_name;
 }
 
-std::string Op::LoadIncrementHL(EmulatorContext* context)
+std::string Op::StoreIncrementHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
@@ -201,7 +201,7 @@ std::string Op::LoadIncrementHL(EmulatorContext* context)
 	return opcode_name;
 }
 
-std::string Op::LoadDecrementHL(EmulatorContext* context)
+std::string Op::StoreDecrementHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
@@ -212,6 +212,88 @@ std::string Op::LoadDecrementHL(EmulatorContext* context)
 	context->cycles += 8;
 
 	std::string opcode_name = std::format("LDD [{}], r8 (0x{:x})", RegisterTypeString16(RegisterType16::REG_HL), data);
+	return opcode_name;
+}
+
+std::string Op::LoadIncrementHL(EmulatorContext* context)
+{
+	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+	uint8_t data = ReadFromBus(context, address);
+
+	context->cpu->SetRegister(RegisterType8::REG_A, data);
+	context->cpu->SetRegister(RegisterType16::REG_HL, address + 1);
+
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("LDD r8, [{}] (0x{:x})", RegisterTypeString16(RegisterType16::REG_HL), data);
+	return opcode_name;
+}
+
+std::string Op::LoadDecrementHL(EmulatorContext* context)
+{
+	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+	uint8_t data = ReadFromBus(context, address);
+
+	context->cpu->SetRegister(RegisterType8::REG_A, data);
+	context->cpu->SetRegister(RegisterType16::REG_HL, address - 1);
+
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("LDD r8, [{}] (0x{:x})", RegisterTypeString16(RegisterType16::REG_HL), data);
+	return opcode_name;
+}
+
+std::string Op::StoreIndirectR8(EmulatorContext* context, RegisterType8 reg)
+{
+	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint16_t address = low | (high << 8);
+
+	uint8_t data = context->cpu->GetRegister(reg);
+	WriteToBus(context, address, data);
+
+	context->cycles += 16;
+
+	std::string opcode_name = std::format("LD [a16], {} (0x{:x}, 0x{:x})", RegisterTypeString8(reg), low, high);
+	return opcode_name;
+}
+
+std::string Op::LoadIndirectR8(EmulatorContext* context, RegisterType8 reg)
+{
+	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint16_t address = low | (high << 8);
+
+	uint8_t data = ReadFromBus(context, address);
+	context->cpu->SetRegister(reg, data);
+
+	context->cycles += 16;
+
+	std::string opcode_name = std::format("LD [a16], {} (0x{:x}, 0x{:x})", RegisterTypeString8(reg), low, high);
+	return opcode_name;
+}
+
+std::string Op::StoreHighRam(EmulatorContext* context)
+{
+	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint8_t reg_data = context->cpu->GetRegister(RegisterType8::REG_A);
+
+	WriteToBus(context, 0xFF00 + data, reg_data);
+	context->cycles += 12;
+
+	std::string opcode_name = std::format("LDH [a8], A (0x{:x})", data);
+	return opcode_name;
+}
+
+std::string Op::LoadHighRam(EmulatorContext* context)
+{
+	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint8_t result = ReadFromBus(context, 0xFF00 + data);
+
+	context->cpu->SetRegister(RegisterType8::REG_A, result);
+	context->cycles += 12;
+
+	std::string opcode_name = std::format("LDH A, [a8] (0x{:x} 0x{:x})", data, result);
 	return opcode_name;
 }
 
@@ -256,7 +338,7 @@ std::string Op::StoreIndirectAC(EmulatorContext* context)
 	// Opcode: 0xE2
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint16_t address = context->cpu->GetRegister(RegisterType8::REG_C);
-	WriteToBus(context, address, data);
+	WriteToBus(context, 0xFF00 + address, data);
 	
 	context->cycles += 8;
 
@@ -268,7 +350,7 @@ std::string Op::LoadIndirectAC(EmulatorContext* context)
 {
 	// Opcode: 0xF2
 	uint16_t address = context->cpu->GetRegister(RegisterType8::REG_C);
-	uint8_t data = ReadFromBus(context, address);
+	uint8_t data = ReadFromBus(context, 0xFF00 + address);
 	context->cpu->SetRegister(RegisterType8::REG_A, data);
 
 	context->cycles += 8;
