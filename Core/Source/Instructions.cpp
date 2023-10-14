@@ -662,3 +662,21 @@ std::string Op::ReturnCondition(EmulatorContext* context, CpuFlag flag, bool con
 	std::string opcode_name = std::format("RET {}{}, n16", (condition ? "" : "N"), FlagString(flag));
 	return opcode_name;
 }
+
+std::string Op::CompareR8(EmulatorContext* context, RegisterType8 reg)
+{
+	uint8_t a = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t value = context->cpu->GetRegister(reg);
+
+	uint8_t result = a - value;
+
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, true);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (0x0f & value) > (0x0f & a));
+	context->cpu->SetFlag(CpuFlag::Carry, value > a);
+
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("CP A, {}", RegisterTypeString8(reg));
+	return opcode_name;
+}
