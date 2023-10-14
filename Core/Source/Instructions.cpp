@@ -619,3 +619,16 @@ std::string Op::CallN16Condition(EmulatorContext* context, CpuFlag flag, bool co
 	std::string opcode_name = std::format("CALL {}{}, n16 (0x{:x} 0x{:x})", (condition ? "" : "N"), FlagString(flag), low, high);
 	return opcode_name;
 }
+
+std::string Op::Return(EmulatorContext* context)
+{
+	uint8_t low = ReadFromBus(context, context->cpu->StackPointer++);
+	uint8_t high = ReadFromBus(context, context->cpu->StackPointer++);
+	uint16_t address = low | (high << 8);
+
+	context->cpu->ProgramCounter = address;
+	context->cycles += 16;
+
+	std::string opcode_name = std::format("RET");
+	return opcode_name;
+}

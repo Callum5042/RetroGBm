@@ -86,4 +86,6 @@ namespace Op
 	std::string CallN16(EmulatorContext* context);
 
 	std::string CallN16Condition(EmulatorContext* context, CpuFlag flag, bool condition);
+
+	std::string Return(EmulatorContext* context);
 }

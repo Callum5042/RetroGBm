@@ -402,5 +402,27 @@ namespace CoreTests
 			Assert::AreEqual(0x2, static_cast<int>(context.cpu->ProgramCounter));
 			Assert::AreEqual(0xFFFE, static_cast<int>(context.cpu->StackPointer));
 		}
+
+		TEST_METHOD(Return_IncreaseCyclesBy16_SetProgramCounter_DecreaseStack)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.high_ram[125] = 0xEE;
+			context.high_ram[124] = 0xFF;
+
+			context.cpu->StackPointer -= 2;
+
+			// Act
+			Op::Return(&context);
+
+			// Assert
+			Assert::AreEqual(16, context.cycles);
+			Assert::AreEqual(0xEEFF, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(0xFFFE, static_cast<int>(context.cpu->StackPointer));
+		}
 	};
 }
