@@ -566,7 +566,7 @@ std::string Op::IncR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetRegister(reg, result);
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
-	context->cpu->SetFlag(CpuFlag::HalfCarry, (result & 0x0F) > 0x0F);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (result & 0x0F) == 0x0F);
 
 	context->cycles += 4;
 
@@ -582,7 +582,7 @@ std::string Op::DecR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetRegister(reg, result);
 	context->cpu->SetFlag(CpuFlag::Subtraction, true);
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
-	context->cpu->SetFlag(CpuFlag::HalfCarry, (result & 0x0F) > 0x0F);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (result & 0x0F) == 0x0F);
 
 	context->cycles += 4;
 
