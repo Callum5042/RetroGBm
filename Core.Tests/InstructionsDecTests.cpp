@@ -33,7 +33,7 @@ namespace CoreTests
 			Assert::IsTrue(subtract_flag);
 
 			bool zero_flag = context.cpu->GetFlag(CpuFlag::Zero);
-			Assert::IsFalse(subtract_flag);
+			Assert::IsFalse(zero_flag);
 		}
 
 		TEST_METHOD(DecR8_RegIs01_SetZeroFlag)
