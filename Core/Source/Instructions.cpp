@@ -571,7 +571,7 @@ std::string Op::DecR8(EmulatorContext* context, RegisterType8 reg)
 	uint8_t result = data - 1;
 
 	context->cpu->SetRegister(reg, result);
-	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::Subtraction, true);
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
 	context->cpu->SetFlag(CpuFlag::HalfCarry, (result & 0x0F) > 0x0F);
 
