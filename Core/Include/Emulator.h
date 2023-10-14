@@ -19,6 +19,22 @@ struct TimerContext
 	uint8_t tac;
 };
 
+struct DisplayContext
+{
+	uint8_t lcdc;
+	uint8_t stat;
+	uint8_t scy;
+	uint8_t scx;
+	uint8_t ly;
+	uint8_t lyc;
+	uint8_t dma;
+	uint8_t bgp;
+	uint8_t obp0;
+	uint8_t obp1;
+	uint8_t wy;
+	uint8_t wx;
+};
+
 struct EmulatorContext
 {
 	uint64_t ticks = 0;
@@ -31,6 +47,7 @@ struct EmulatorContext
 	std::array<char, 2> serial_data;
 
 	TimerContext timer;
+	DisplayContext display;
 };
 
 class Emulator

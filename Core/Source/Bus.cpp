@@ -3,6 +3,7 @@
 #include "Cartridge.h"
 
 #include <Cpu.h>
+#include <iostream>
 
 // 0000	3FFF	16 KiB ROM bank 00	From cartridge, usually a fixed bank
 // 4000	7FFF	16 KiB ROM Bank 01~NN	From cartridge, switchable bank via mapper(if any)
@@ -81,10 +82,42 @@ const uint8_t ReadFromBus(EmulatorContext* context, const uint16_t address)
 		}
 		else if (address == 0xFF0F)
 		{
-
+			throw std::exception(std::format("Not implemented 'ReadFromBus' I/O registers: 0x{:x}", address).c_str());
+		}
+		else if (address >= 0xFF40 && address <= 0xFF4B)
+		{
+			switch (address)
+			{
+				case 0xFF40:
+					return context->display.lcdc;
+				case 0xFF41:
+					return context->display.stat;
+				case 0xFF42:
+					return context->display.scy;
+				case 0xFF43:
+					return context->display.scx;
+				case 0xFF44:
+					return context->display.ly;
+				case 0xFF45:
+					return context->display.lyc;
+				case 0xFF46:
+					return context->display.dma;
+				case 0xFF47:
+					return context->display.bgp;
+				case 0xFF48:
+					return context->display.obp0;
+				case 0xFF49:
+					return context->display.obp1;
+				case 0xFF4A:
+					return context->display.wy;
+				case 0xFF4B:
+					return context->display.wx;
+			}
 		}
 
-		throw std::exception("Not implemented 'ReadFromBus' I/O registers");
+		std::cerr << "Unsupported 'ReadFromBus' I/O registers\n";
+		return 0;
+		// throw std::exception("Not implemented 'ReadFromBus' I/O registers");
 	}
 	else if (address < 0xFFFF)
 	{
@@ -179,8 +212,52 @@ void WriteToBus(EmulatorContext* context, uint16_t address, uint8_t data)
 			context->cpu->SetInterrupt(data);
 			return;
 		}
+		else if (address >= 0xFF40 && address <= 0xFF4B)
+		{
+			switch (address)
+			{
+				case 0xFF40:
+					context->display.lcdc = data;
+					break;
+				case 0xFF41:
+					context->display.stat = data;
+					break;
+				case 0xFF42:
+					context->display.scy = data;
+					break;
+				case 0xFF43:
+					context->display.scx = data;
+					break;
+				case 0xFF44:
+					context->display.ly = data;
+					break;
+				case 0xFF45:
+					context->display.lyc = data;
+					break;
+				case 0xFF46:
+					context->display.dma = data;
+					break;
+				case 0xFF47:
+					context->display.bgp = data;
+					break;
+				case 0xFF48:
+					context->display.obp0 = data;
+					break;
+				case 0xFF49:
+					context->display.obp1 = data;
+					break;
+				case 0xFF4A:
+					context->display.wy = data;
+					break;
+				case 0xFF4B:
+					context->display.wx = data;
+					break;
+			}
 
-		return;
+			return;
+		}
+
+		std::cerr << "Unsupported 'WriteToBus' I/O registers\n";
 		// throw std::exception("Not implemented 'WriteToBus' I/O registers");
 	}
 	else if (address < 0xFFFF)
