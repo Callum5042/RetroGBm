@@ -35,6 +35,10 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
+	// Debug texture
+	float scale = 4.0f;
+	SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, (16 * 8 * scale) + (16 * scale), (32 * 8 * scale) + (64 * scale));
+
 	// Setup emulator
 	std::unique_ptr<Emulator> emulator = std::make_unique<Emulator>();
 	// emulator->LoadRom("Tetris.gb");

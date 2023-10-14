@@ -120,8 +120,8 @@ void Emulator::Tick()
 	m_Context.cycles = 0;
 
 	// Display CPU details
-	std::cout << std::hex << m_Context.ticks << ": - " << "0x" << std::hex << current_pc << ": ";
-	std::cout << std::setw(30) << std::left << opcode_name << std::right << std::right << cpu_details << '\n';
+	//std::cout << std::hex << m_Context.ticks << ": - " << "0x" << std::hex << current_pc << ": ";
+	//std::cout << std::setw(30) << std::left << opcode_name << std::right << std::right << cpu_details << '\n';
 
 	// Debug
 	{
