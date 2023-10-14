@@ -49,5 +49,49 @@ namespace CoreTests
 			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::HalfCarry));
 			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Carry));
 		}
+		
+		TEST_METHOD(CompareN8_IncreaseCyclesBy8_ResultDoNotEqual_ZeroFlagIsFalse)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cpu->SetRegister(RegisterType8::REG_A, 0x20);
+			context.cartridge->data.push_back(0x10);
+
+			// Act
+			Op::CompareN8(&context);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Zero));
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::Subtraction));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::HalfCarry));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Carry));
+		}
+		
+		TEST_METHOD(CompareN8_IncreaseCyclesBy8_ResultDoEqual_ZeroFlagIsTrue)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cpu->SetRegister(RegisterType8::REG_A, 0x20);
+			context.cartridge->data.push_back(0x20);
+
+			// Act
+			Op::CompareN8(&context);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::Zero));
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::Subtraction));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::HalfCarry));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Carry));
+		}
 	};
 }
