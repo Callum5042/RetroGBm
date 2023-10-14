@@ -193,7 +193,7 @@ std::string Op::LoadN16(EmulatorContext* context, RegisterType16 type)
 	context->cpu->SetRegister(type, high, low);
 	context->cycles += 12;
 
-	std::string opcode_name = std::format("LD {}, n16 (0xC3 0x{:x} 0x{:x})", RegisterTypeString16(type), low, high);
+	std::string opcode_name = std::format("LD {}, n16 (0x{:x} 0x{:x})", RegisterTypeString16(type), low, high);
 	return opcode_name;
 }
 
