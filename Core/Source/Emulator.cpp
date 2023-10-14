@@ -410,6 +410,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::CompareR8(&m_Context, RegisterType8::REG_H);
 		case 0xBD:
 			return Op::CompareR8(&m_Context, RegisterType8::REG_L);
+		case 0xBE:
+			return Op::CompareIndirectHL(&m_Context);
 		case 0xBF:
 			return Op::CompareR8(&m_Context, RegisterType8::REG_A);
 		case 0xC0:

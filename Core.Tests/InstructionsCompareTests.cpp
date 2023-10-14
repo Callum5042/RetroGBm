@@ -93,5 +93,31 @@ namespace CoreTests
 			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::HalfCarry));
 			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Carry));
 		}
+		
+		TEST_METHOD(CompareIndirectHL_IncreaseCyclesBy8_ResultDoEqual_ZeroFlagIsTrue)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.resize(0x10);
+			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
+			context.cartridge->data[0x5] = 0x20;
+
+			context.cpu->SetRegister(RegisterType16::REG_HL, 0x5);
+			context.cpu->SetRegister(RegisterType8::REG_A, 0x20);
+
+			// Act
+			Op::CompareIndirectHL(&context);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::Zero));
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::Subtraction));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::HalfCarry));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Carry));
+		}
 	};
 }

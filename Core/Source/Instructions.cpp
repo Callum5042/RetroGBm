@@ -698,3 +698,23 @@ std::string Op::CompareN8(EmulatorContext* context)
 	std::string opcode_name = std::format("CP A, n8 (0x{:x})", data);
 	return opcode_name;
 }
+
+std::string Op::CompareIndirectHL(EmulatorContext* context)
+{
+	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+
+	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t value = ReadFromBus(context, address);
+
+	uint8_t result = data - value;
+
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, true);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (0x0f & value) > (0x0f & data));
+	context->cpu->SetFlag(CpuFlag::Carry, value > data);
+
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("CP A, [HL] (0x{:x})", data);
+	return opcode_name;
+}
