@@ -398,6 +398,22 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::XorR16(&m_Context, RegisterType16::REG_HL);
 		case 0xAF:
 			return Op::XorR8(&m_Context, RegisterType8::REG_A);
+		case 0xB8:
+			return Op::CompareR8(&m_Context, RegisterType8::REG_B);
+		case 0xB9:
+			return Op::CompareR8(&m_Context, RegisterType8::REG_C);
+		case 0xBA:
+			return Op::CompareR8(&m_Context, RegisterType8::REG_D);
+		case 0xBB:
+			return Op::CompareR8(&m_Context, RegisterType8::REG_E);
+		case 0xBC:
+			return Op::CompareR8(&m_Context, RegisterType8::REG_H);
+		case 0xBD:
+			return Op::CompareR8(&m_Context, RegisterType8::REG_L);
+		case 0xBE:
+			return Op::CompareIndirectHL(&m_Context);
+		case 0xBF:
+			return Op::CompareR8(&m_Context, RegisterType8::REG_A);
 		case 0xC0:
 			return Op::ReturnCondition(&m_Context, CpuFlag::Zero, false);
 		case 0xC2:
@@ -444,14 +460,16 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::XorN8(&m_Context);
 		case 0xF0:
 			return Op::LoadHighRam(&m_Context);
-		case 0xFA:
-			return Op::LoadIndirectR8(&m_Context, RegisterType8::REG_A);
 		case 0xF2:
 			return Op::LoadIndirectAC(&m_Context);
 		case 0xF3:
 			return Op::DisableInterrupts(&m_Context);
+		case 0xFA:
+			return Op::LoadIndirectR8(&m_Context, RegisterType8::REG_A);
 		case 0xFB:
 			return Op::EnableInterrupts(&m_Context);
+		case 0xFE:
+			return Op::CompareN8(&m_Context);
 		default:
 			throw std::exception(std::format("Instruction not implemented: 0x{:x}", opcode).c_str());
 	}
