@@ -32,6 +32,9 @@ bool Emulator::LoadRom(const std::filesystem::path& path)
 		return false;
 	}
 
+	uint8_t checksum_result = 0x0;
+	bool checksum = CartridgeChecksum(m_Context.cartridge.get(), &checksum_result);
+
 	// Print cartridge info
 	std::cout << "Cartidge loaded\n";
 	std::cout << "> Title: " << m_Context.cartridge->title << '\n';
@@ -41,11 +44,22 @@ bool Emulator::LoadRom(const std::filesystem::path& path)
 	std::cout << "> RAM size: " << m_Context.cartridge->header.ram_size << '\n';
 	std::cout << "> License: " << m_Context.cartridge->header.license << '\n';
 	std::cout << "> Version: " << m_Context.cartridge->header.version << '\n';
-	std::cout << "> Checksum: " << (CartridgeChecksum(m_Context.cartridge.get()) ? "Passed" : "Failed") << '\n' << '\n';
+	std::cout << "> Checksum: " << std::format("(0x{:x}) ", checksum_result) << (checksum ? "Passed" : "Failed") << '\n' << '\n';
 
 	// Set program counter to 0x100 to skip boot rom
 	m_Context.cpu->ProgramCounter = 0x100;
 	m_Context.timer.div = 0xAC00;
+
+	if (checksum_result == 0x0)
+	{
+		m_Context.cpu->SetFlag(CpuFlag::Carry, false);
+		m_Context.cpu->SetFlag(CpuFlag::HalfCarry, false);
+	}
+	else
+	{
+		m_Context.cpu->SetFlag(CpuFlag::Carry, true);
+		m_Context.cpu->SetFlag(CpuFlag::HalfCarry, true);
+	}
 
 	m_Running = true;
 	return true;
@@ -53,78 +67,76 @@ bool Emulator::LoadRom(const std::filesystem::path& path)
 
 void Emulator::Tick()
 {
-	const int CYCLES_PER_SCANLINE = 80;
-	if (m_Context.cycles >= CYCLES_PER_SCANLINE)
+	// Fetch
+	uint16_t current_pc = m_Context.cpu->ProgramCounter;
+
+	const uint8_t opcode = ReadFromBus(&m_Context, m_Context.cpu->ProgramCounter++);
+	m_CurrentOpCode = opcode;
+
+	std::string cpu_details = m_Context.cpu->Details();
+
+	// Execute
+	std::string opcode_name = Execute(opcode);
+
+	// Tick timer
+	for (int i = 0; i < m_Context.cycles; ++i)
 	{
-		m_Context.cycles = 0;
-	}
-	else
-	{
-		// Fetch
-		std::cout << "0x" << std::hex << m_Context.cpu->ProgramCounter << ": ";
-		const uint8_t opcode = ReadFromBus(&m_Context, m_Context.cpu->ProgramCounter++);
-		m_CurrentOpCode = opcode;
+		m_Context.ticks++;
 
-		// Execute
-		std::string opcode_name = Execute(opcode);
+		uint16_t prev_div = m_Context.timer.div;
 
-		// Display CPU details
-		std::cout << std::setw(30) << std::left << opcode_name << std::right << std::right << m_Context.cpu->Details() << '\n';
+		m_Context.timer.div++;
 
-		// Tick timer
-		for (int i = 0; i < m_Context.cycles; ++i)
+		bool timer_update = false;
+
+		switch (m_Context.timer.tac & (0b11))
 		{
-			uint16_t prev_div = m_Context.timer.div;
-
-			m_Context.timer.div++;
-
-			bool timer_update = false;
-
-			switch (m_Context.timer.tac & (0b11))
-			{
-				case 0b00:
-					timer_update = (prev_div & (1 << 9)) && (!(m_Context.timer.div & (1 << 9)));
-					break;
-				case 0b01:
-					timer_update = (prev_div & (1 << 3)) && (!(m_Context.timer.div & (1 << 3)));
-					break;
-				case 0b10:
-					timer_update = (prev_div & (1 << 5)) && (!(m_Context.timer.div & (1 << 5)));
-					break;
-				case 0b11:
-					timer_update = (prev_div & (1 << 7)) && (!(m_Context.timer.div & (1 << 7)));
-					break;
-			}
-
-			if (timer_update && m_Context.timer.tac & (1 << 2))
-			{
-				m_Context.timer.tima++;
-
-				if (m_Context.timer.tima == 0xFF)
-				{
-					m_Context.timer.tima = m_Context.timer.tma;
-					m_Context.cpu->RequestInterrupt(InterruptFlag::Timer);
-				}
-			}
+			case 0b00:
+				timer_update = (prev_div & (1 << 9)) && (!(m_Context.timer.div & (1 << 9)));
+				break;
+			case 0b01:
+				timer_update = (prev_div & (1 << 3)) && (!(m_Context.timer.div & (1 << 3)));
+				break;
+			case 0b10:
+				timer_update = (prev_div & (1 << 5)) && (!(m_Context.timer.div & (1 << 5)));
+				break;
+			case 0b11:
+				timer_update = (prev_div & (1 << 7)) && (!(m_Context.timer.div & (1 << 7)));
+				break;
 		}
 
-		m_Context.cycles = 0;
-
-		// Debug
+		if (timer_update && m_Context.timer.tac & (1 << 2))
 		{
-			uint8_t data = ReadFromBus(&m_Context, 0xFF02);
-			if (data == 0x81)
-			{
-				uint8_t c = ReadFromBus(&m_Context, 0xFF01);
+			m_Context.timer.tima++;
 
-				m_DebugMessage += static_cast<char>(c);
-				WriteToBus(&m_Context, 0xFF02, 0);
-			}
-
-			if (!m_DebugMessage.empty())
+			if (m_Context.timer.tima == 0xFF)
 			{
-				std::cout << "DEBUG: " << m_DebugMessage << '\n';
+				m_Context.timer.tima = m_Context.timer.tma;
+				m_Context.cpu->RequestInterrupt(InterruptFlag::Timer);
 			}
+		}
+	}
+
+	m_Context.cycles = 0;
+
+	// Display CPU details
+	std::cout << std::hex << m_Context.ticks << ": - " << "0x" << std::hex << current_pc << ": ";
+	std::cout << std::setw(30) << std::left << opcode_name << std::right << std::right << cpu_details << '\n';
+
+	// Debug
+	{
+		uint8_t data = ReadFromBus(&m_Context, 0xFF02);
+		if (data == 0x81)
+		{
+			uint8_t c = ReadFromBus(&m_Context, 0xFF01);
+
+			m_DebugMessage += static_cast<char>(c);
+			WriteToBus(&m_Context, 0xFF02, 0);
+		}
+
+		if (!m_DebugMessage.empty())
+		{
+			std::cout << "DEBUG: " << m_DebugMessage << '\n';
 		}
 	}
 }
@@ -208,8 +220,6 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::JumpRelativeFlagN8(&m_Context, CpuFlag::Carry, true);
 		case 0x3E:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_A);
-		case 0xC3:
-			return Op::JumpN16(&m_Context);
 		case 0x21:
 			return Op::LoadN16(&m_Context, RegisterType16::REG_HL);
 		case 0x22:
@@ -388,16 +398,38 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::XorR16(&m_Context, RegisterType16::REG_HL);
 		case 0xAF:
 			return Op::XorR8(&m_Context, RegisterType8::REG_A);
+		case 0xC0:
+			return Op::ReturnCondition(&m_Context, CpuFlag::Zero, false);
 		case 0xC2:
 			return Op::JumpFlagN16(&m_Context, CpuFlag::Zero, false);
-		case 0xCA:
-			return Op::JumpFlagN16(&m_Context, CpuFlag::Zero, true);
+		case 0xC3:
+			return Op::JumpN16(&m_Context);
+		case 0xC4:
+			return Op::CallN16Condition(&m_Context, CpuFlag::Zero, false);
 		case 0xC6:
 			return Op::AddN8(&m_Context);
+		case 0xC8:
+			return Op::ReturnCondition(&m_Context, CpuFlag::Zero, true);
+		case 0xC9:
+			return Op::Return(&m_Context);
+		case 0xCA:
+			return Op::JumpFlagN16(&m_Context, CpuFlag::Zero, true);
+		case 0xCC:
+			return Op::CallN16Condition(&m_Context, CpuFlag::Zero, true);
+		case 0xD0:
+			return Op::ReturnCondition(&m_Context, CpuFlag::Carry, false);
+		case 0xCD:
+			return Op::CallN16(&m_Context);
 		case 0xD2:
 			return Op::JumpFlagN16(&m_Context, CpuFlag::Carry, false);
+		case 0xD4:
+			return Op::CallN16Condition(&m_Context, CpuFlag::Carry, false);
+		case 0xD8:
+			return Op::ReturnCondition(&m_Context, CpuFlag::Carry, true);
 		case 0xDA:
 			return Op::JumpFlagN16(&m_Context, CpuFlag::Carry, true);
+		case 0xDC:
+			return Op::CallN16Condition(&m_Context, CpuFlag::Carry, true);
 		case 0xE0:
 			return Op::StoreHighRam(&m_Context);
 		case 0xEA:

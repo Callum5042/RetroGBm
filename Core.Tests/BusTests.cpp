@@ -102,5 +102,37 @@ namespace CoreTests
 			// Assert
 			Assert::AreEqual(0x52, static_cast<int>(context.work_ram[address - 0xC000]));
 		}
+
+		TEST_METHOD(BusWrite_StartOfHighRAM_WriteToHighRAM)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			uint16_t address = 0xFF80;
+			context.high_ram[0] = 0x0;
+
+			// Act
+			WriteToBus(&context, address, static_cast<uint8_t>(0x52));
+
+			// Assert
+			Assert::AreEqual(0x52, static_cast<int>(context.high_ram[0]));
+		}
+
+		TEST_METHOD(BusRead_StartOfHighRAM_ReadFromHighRAM)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			uint16_t address = 0xFF80;
+			context.high_ram[0] = 0x52;
+
+			// Act
+			uint8_t result = ReadFromBus(&context, address);
+
+			// Assert
+			Assert::AreEqual(0x52, static_cast<int>(result));
+		}
 	};
 }

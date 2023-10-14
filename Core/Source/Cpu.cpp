@@ -62,7 +62,7 @@ void Cpu::SetRegister(RegisterType16 type, uint8_t data_high, uint8_t data_low)
 			break;
 
 		case RegisterType16::REG_SP:
-			m_StackPointer = data_low | (data_high << 8);
+			StackPointer = data_low | (data_high << 8);
 			break;
 	}
 }
@@ -102,7 +102,7 @@ uint16_t Cpu::GetRegister(RegisterType16 type) const
 			break;
 
 		case RegisterType16::REG_SP:
-			return m_StackPointer;
+			return StackPointer;
 	}
 
 	uint16_t data = data_low | (data_high << 8);

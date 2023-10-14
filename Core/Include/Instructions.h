@@ -82,4 +82,12 @@ namespace Op
 	std::string IncR8(EmulatorContext* context, RegisterType8 reg);
 
 	std::string DecR8(EmulatorContext* context, RegisterType8 reg);
+
+	std::string CallN16(EmulatorContext* context);
+
+	std::string CallN16Condition(EmulatorContext* context, CpuFlag flag, bool condition);
+
+	std::string Return(EmulatorContext* context);
+
+	std::string ReturnCondition(EmulatorContext* context, CpuFlag flag, bool condition);
 }

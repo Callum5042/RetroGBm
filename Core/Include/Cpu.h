@@ -47,6 +47,7 @@ public:
 	virtual ~Cpu() = default;
 
 	uint16_t ProgramCounter = 0;
+	uint16_t StackPointer = 0;
 
 	// Registers
 	void SetRegister(RegisterType8 type, uint8_t data);
@@ -76,10 +77,8 @@ public:
 
 private:
 	std::map<RegisterType8, uint8_t> m_Registers;
-	uint16_t m_StackPointer = 0;
 
 	bool m_InterruptMasterFlag = false;
-
 
 	// TODO: Not actually sure the difference between these 2
 	std::map<InterruptFlag, bool> m_Interrupts;

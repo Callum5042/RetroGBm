@@ -17,7 +17,7 @@ namespace CoreTests
 			context.cpu = std::make_unique<Cpu>();
 
 			context.cpu->SetRegister(RegisterType8::REG_B, 0xD);
-			context.cpu->SetFlag(CpuFlag::Subtraction, true);
+			context.cpu->SetFlag(CpuFlag::Subtraction, false);
 			context.cpu->SetFlag(CpuFlag::Zero, true);
 
 			// Act
@@ -30,11 +30,12 @@ namespace CoreTests
 			Assert::AreEqual(0xC, static_cast<int>(result));
 
 			bool subtract_flag = context.cpu->GetFlag(CpuFlag::Subtraction);
-			Assert::IsFalse(subtract_flag);
+			Assert::IsTrue(subtract_flag);
 
 			bool zero_flag = context.cpu->GetFlag(CpuFlag::Zero);
 			Assert::IsFalse(subtract_flag);
 		}
+
 		TEST_METHOD(DecR8_RegIs01_SetZeroFlag)
 		{
 			// Arrange

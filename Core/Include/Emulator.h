@@ -21,11 +21,13 @@ struct TimerContext
 
 struct EmulatorContext
 {
+	uint64_t ticks = 0;
 	int cycles = 0;
 	std::unique_ptr<CartridgeInfo> cartridge = nullptr;
 	std::unique_ptr<Cpu> cpu = nullptr;
 	std::vector<uint8_t> video_ram;
 	std::vector<uint8_t> work_ram;
+	std::array<uint8_t, 127> high_ram;
 	std::array<char, 2> serial_data;
 
 	TimerContext timer;
