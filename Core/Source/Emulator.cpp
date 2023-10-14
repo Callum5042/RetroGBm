@@ -386,6 +386,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::XorR16(&m_Context, RegisterType16::REG_HL);
 		case 0xAF:
 			return Op::XorR8(&m_Context, RegisterType8::REG_A);
+		case 0xC0:
+			return Op::ReturnCondition(&m_Context, CpuFlag::Zero, false);
 		case 0xC2:
 			return Op::JumpFlagN16(&m_Context, CpuFlag::Zero, false);
 		case 0xC3:
@@ -394,18 +396,24 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::CallN16Condition(&m_Context, CpuFlag::Zero, false);
 		case 0xC6:
 			return Op::AddN8(&m_Context);
+		case 0xC8:
+			return Op::ReturnCondition(&m_Context, CpuFlag::Zero, true);
 		case 0xC9:
 			return Op::Return(&m_Context);
 		case 0xCA:
 			return Op::JumpFlagN16(&m_Context, CpuFlag::Zero, true);
 		case 0xCC:
 			return Op::CallN16Condition(&m_Context, CpuFlag::Zero, true);
+		case 0xD0:
+			return Op::ReturnCondition(&m_Context, CpuFlag::Carry, false);
 		case 0xCD:
 			return Op::CallN16(&m_Context);
 		case 0xD2:
 			return Op::JumpFlagN16(&m_Context, CpuFlag::Carry, false);
 		case 0xD4:
 			return Op::CallN16Condition(&m_Context, CpuFlag::Carry, false);
+		case 0xD8:
+			return Op::ReturnCondition(&m_Context, CpuFlag::Carry, true);
 		case 0xDA:
 			return Op::JumpFlagN16(&m_Context, CpuFlag::Carry, true);
 		case 0xDC:
