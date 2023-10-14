@@ -21,6 +21,7 @@ struct TimerContext
 
 struct EmulatorContext
 {
+	uint64_t ticks = 0;
 	int cycles = 0;
 	std::unique_ptr<CartridgeInfo> cartridge = nullptr;
 	std::unique_ptr<Cpu> cpu = nullptr;

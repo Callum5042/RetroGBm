@@ -53,78 +53,74 @@ bool Emulator::LoadRom(const std::filesystem::path& path)
 
 void Emulator::Tick()
 {
-	const int CYCLES_PER_SCANLINE = 80;
-	if (m_Context.cycles >= CYCLES_PER_SCANLINE)
+	// Fetch
+	uint16_t current_pc = m_Context.cpu->ProgramCounter;
+
+	const uint8_t opcode = ReadFromBus(&m_Context, m_Context.cpu->ProgramCounter++);
+	m_CurrentOpCode = opcode;
+
+	// Execute
+	std::string opcode_name = Execute(opcode);
+
+	// Tick timer
+	for (int i = 0; i < m_Context.cycles; ++i)
 	{
-		m_Context.cycles = 0;
-	}
-	else
-	{
-		// Fetch
-		std::cout << "0x" << std::hex << m_Context.cpu->ProgramCounter << ": ";
-		const uint8_t opcode = ReadFromBus(&m_Context, m_Context.cpu->ProgramCounter++);
-		m_CurrentOpCode = opcode;
+		m_Context.ticks++;
 
-		// Execute
-		std::string opcode_name = Execute(opcode);
+		uint16_t prev_div = m_Context.timer.div;
 
-		// Display CPU details
-		std::cout << std::setw(30) << std::left << opcode_name << std::right << std::right << m_Context.cpu->Details() << '\n';
+		m_Context.timer.div++;
 
-		// Tick timer
-		for (int i = 0; i < m_Context.cycles; ++i)
+		bool timer_update = false;
+
+		switch (m_Context.timer.tac & (0b11))
 		{
-			uint16_t prev_div = m_Context.timer.div;
-
-			m_Context.timer.div++;
-
-			bool timer_update = false;
-
-			switch (m_Context.timer.tac & (0b11))
-			{
-				case 0b00:
-					timer_update = (prev_div & (1 << 9)) && (!(m_Context.timer.div & (1 << 9)));
-					break;
-				case 0b01:
-					timer_update = (prev_div & (1 << 3)) && (!(m_Context.timer.div & (1 << 3)));
-					break;
-				case 0b10:
-					timer_update = (prev_div & (1 << 5)) && (!(m_Context.timer.div & (1 << 5)));
-					break;
-				case 0b11:
-					timer_update = (prev_div & (1 << 7)) && (!(m_Context.timer.div & (1 << 7)));
-					break;
-			}
-
-			if (timer_update && m_Context.timer.tac & (1 << 2))
-			{
-				m_Context.timer.tima++;
-
-				if (m_Context.timer.tima == 0xFF)
-				{
-					m_Context.timer.tima = m_Context.timer.tma;
-					m_Context.cpu->RequestInterrupt(InterruptFlag::Timer);
-				}
-			}
+			case 0b00:
+				timer_update = (prev_div & (1 << 9)) && (!(m_Context.timer.div & (1 << 9)));
+				break;
+			case 0b01:
+				timer_update = (prev_div & (1 << 3)) && (!(m_Context.timer.div & (1 << 3)));
+				break;
+			case 0b10:
+				timer_update = (prev_div & (1 << 5)) && (!(m_Context.timer.div & (1 << 5)));
+				break;
+			case 0b11:
+				timer_update = (prev_div & (1 << 7)) && (!(m_Context.timer.div & (1 << 7)));
+				break;
 		}
 
-		m_Context.cycles = 0;
-
-		// Debug
+		if (timer_update && m_Context.timer.tac & (1 << 2))
 		{
-			uint8_t data = ReadFromBus(&m_Context, 0xFF02);
-			if (data == 0x81)
-			{
-				uint8_t c = ReadFromBus(&m_Context, 0xFF01);
+			m_Context.timer.tima++;
 
-				m_DebugMessage += static_cast<char>(c);
-				WriteToBus(&m_Context, 0xFF02, 0);
-			}
-
-			if (!m_DebugMessage.empty())
+			if (m_Context.timer.tima == 0xFF)
 			{
-				std::cout << "DEBUG: " << m_DebugMessage << '\n';
+				m_Context.timer.tima = m_Context.timer.tma;
+				m_Context.cpu->RequestInterrupt(InterruptFlag::Timer);
 			}
+		}
+	}
+
+	m_Context.cycles = 0;
+
+	// Display CPU details
+	std::cout << std::hex << m_Context.ticks << ": - " << "0x" << std::hex << current_pc << ": ";
+	std::cout << std::setw(30) << std::left << opcode_name << std::right << std::right << m_Context.cpu->Details() << '\n';
+
+	// Debug
+	{
+		uint8_t data = ReadFromBus(&m_Context, 0xFF02);
+		if (data == 0x81)
+		{
+			uint8_t c = ReadFromBus(&m_Context, 0xFF01);
+
+			m_DebugMessage += static_cast<char>(c);
+			WriteToBus(&m_Context, 0xFF02, 0);
+		}
+
+		if (!m_DebugMessage.empty())
+		{
+			std::cout << "DEBUG: " << m_DebugMessage << '\n';
 		}
 	}
 }
