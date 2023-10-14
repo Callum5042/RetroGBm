@@ -32,6 +32,9 @@ bool Emulator::LoadRom(const std::filesystem::path& path)
 		return false;
 	}
 
+	uint8_t checksum_result = 0x0;
+	bool checksum = CartridgeChecksum(m_Context.cartridge.get(), &checksum_result);
+
 	// Print cartridge info
 	std::cout << "Cartidge loaded\n";
 	std::cout << "> Title: " << m_Context.cartridge->title << '\n';
@@ -41,11 +44,22 @@ bool Emulator::LoadRom(const std::filesystem::path& path)
 	std::cout << "> RAM size: " << m_Context.cartridge->header.ram_size << '\n';
 	std::cout << "> License: " << m_Context.cartridge->header.license << '\n';
 	std::cout << "> Version: " << m_Context.cartridge->header.version << '\n';
-	std::cout << "> Checksum: " << (CartridgeChecksum(m_Context.cartridge.get()) ? "Passed" : "Failed") << '\n' << '\n';
+	std::cout << "> Checksum: " << std::format("(0x{:x}) ", checksum_result) << (checksum ? "Passed" : "Failed") << '\n' << '\n';
 
 	// Set program counter to 0x100 to skip boot rom
 	m_Context.cpu->ProgramCounter = 0x100;
 	m_Context.timer.div = 0xAC00;
+
+	if (checksum_result == 0x0)
+	{
+		m_Context.cpu->SetFlag(CpuFlag::Carry, false);
+		m_Context.cpu->SetFlag(CpuFlag::HalfCarry, false);
+	}
+	else
+	{
+		m_Context.cpu->SetFlag(CpuFlag::Carry, true);
+		m_Context.cpu->SetFlag(CpuFlag::HalfCarry, true);
+	}
 
 	m_Running = true;
 	return true;
