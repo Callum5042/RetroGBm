@@ -125,6 +125,9 @@ std::string Op::XorR8(EmulatorContext* context, RegisterType8 type)
 	uint8_t result = reg_a ^ reg_b;
 	context->cpu->SetRegister(RegisterType8::REG_A, result);
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0x0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
+	context->cpu->SetFlag(CpuFlag::Carry, false);
 
 	context->cycles += 4;
 
@@ -140,6 +143,9 @@ std::string Op::XorN8(EmulatorContext* context)
 	uint8_t result = reg_a ^ data;
 	context->cpu->SetRegister(RegisterType8::REG_A, result);
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
+	context->cpu->SetFlag(CpuFlag::Carry, false);
 
 	context->cycles += 8;
 
@@ -157,6 +163,9 @@ std::string Op::XorR16(EmulatorContext* context, RegisterType16 type)
 
 	context->cpu->SetRegister(RegisterType8::REG_A, result);
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
+	context->cpu->SetFlag(CpuFlag::Carry, false);
 
 	context->cycles += 8;
 

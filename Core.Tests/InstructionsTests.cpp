@@ -77,6 +77,10 @@ namespace CoreTests
 
 			bool flag = context.cpu->GetFlag(CpuFlag::Zero);
 			Assert::IsTrue(flag);
+
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Subtraction));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::HalfCarry));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Carry));
 		}
 
 		TEST_METHOD(XorR8_RegBRegA_IncreaseCyclesBy4_SetRegA_FlagZeroFalse)
