@@ -36,7 +36,7 @@ bool Emulator::LoadRom(const std::filesystem::path& path)
 	bool checksum = CartridgeChecksum(m_Context.cartridge.get(), &checksum_result);
 
 	// Print cartridge info
-	std::cout << "Cartidge loaded\n";
+	/*std::cout << "Cartidge loaded\n";
 	std::cout << "> Title: " << m_Context.cartridge->title << '\n';
 	std::cout << "> Cartridge Type: " << m_Context.cartridge->header.cartridge_type << std::format(" (0x{:x})", static_cast<int>(m_Context.cartridge->header.cartridge_type_code)) << '\n';
 	std::cout << "> ROM size: " << m_Context.cartridge->header.rom_size << '\n';
@@ -44,7 +44,7 @@ bool Emulator::LoadRom(const std::filesystem::path& path)
 	std::cout << "> RAM size: " << m_Context.cartridge->header.ram_size << '\n';
 	std::cout << "> License: " << m_Context.cartridge->header.license << '\n';
 	std::cout << "> Version: " << m_Context.cartridge->header.version << '\n';
-	std::cout << "> Checksum: " << std::format("(0x{:x}) ", checksum_result) << (checksum ? "Passed" : "Failed") << '\n' << '\n';
+	std::cout << "> Checksum: " << std::format("(0x{:x}) ", checksum_result) << (checksum ? "Passed" : "Failed") << '\n' << '\n';*/
 
 	// Set program counter to 0x100 to skip boot rom
 	m_Context.cpu->ProgramCounter = 0x100;
@@ -74,6 +74,11 @@ void Emulator::Tick()
 	m_CurrentOpCode = opcode;
 
 	std::string cpu_details = m_Context.cpu->Details();
+
+	static int count = 0;
+	count++;
+
+	std::cout << std::format("Opcode: 0x{:x} - {} - REG_A:0x{:x}", opcode, count, m_Context.cpu->GetRegister(RegisterType8::REG_A)) << '\n';
 
 	// Execute
 	std::string opcode_name = Execute(opcode);
@@ -120,8 +125,9 @@ void Emulator::Tick()
 	m_Context.cycles = 0;
 
 	// Display CPU details
-	//std::cout << std::hex << m_Context.ticks << ": - " << "0x" << std::hex << current_pc << ": ";
-	//std::cout << std::setw(30) << std::left << opcode_name << std::right << std::right << cpu_details << '\n';
+
+	/*std::cout << std::hex << m_Context.ticks << ": - " << "0x" << std::hex << current_pc << ": " << " - 0x" << std::hex << (int)opcode << " - ";
+	std::cout << std::setw(30) << std::left << opcode_name << std::right << std::right << cpu_details << '\n';*/
 
 	// Debug
 	{

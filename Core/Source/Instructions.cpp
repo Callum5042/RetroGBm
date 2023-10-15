@@ -99,13 +99,13 @@ std::string Op::JumpRelativeN8(EmulatorContext* context)
 
 std::string Op::JumpRelativeFlagN8(EmulatorContext* context, CpuFlag flag, bool condition)
 {
-	uint16_t current_pc = context->cpu->ProgramCounter;
 	int8_t data = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint16_t current_pc = context->cpu->ProgramCounter;
 
 	bool enabled = context->cpu->GetFlag(flag);
 	if (enabled == condition)
 	{
-		context->cpu->ProgramCounter += data;
+		context->cpu->ProgramCounter = (context->cpu->ProgramCounter + data);
 		context->cycles += 12;
 	}
 	else
@@ -596,8 +596,11 @@ std::string Op::CallN16(EmulatorContext* context)
 	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter++);
 	uint16_t address = low | (high << 8);
 
-	WriteToBus(context, context->cpu->StackPointer--, low);
-	WriteToBus(context, context->cpu->StackPointer--, high);
+	uint8_t pc_low = ((context->cpu->ProgramCounter) >> 8) & 0xFF;
+	uint8_t pc_high = ((context->cpu->ProgramCounter) & 0xFF);
+
+	WriteToBus(context, context->cpu->StackPointer--, pc_low);
+	WriteToBus(context, context->cpu->StackPointer--, pc_high);
 	context->cpu->ProgramCounter = address;
 
 	context->cycles += 24;
@@ -615,8 +618,11 @@ std::string Op::CallN16Condition(EmulatorContext* context, CpuFlag flag, bool co
 	bool flag_result = context->cpu->GetFlag(flag);
 	if (flag_result == condition)
 	{
-		WriteToBus(context, context->cpu->StackPointer--, low);
-		WriteToBus(context, context->cpu->StackPointer--, high);
+		uint8_t pc_low = ((context->cpu->ProgramCounter) >> 8) & 0xFF;
+		uint8_t pc_high = ((context->cpu->ProgramCounter) & 0xFF);
+
+		WriteToBus(context, context->cpu->StackPointer--, pc_low);
+		WriteToBus(context, context->cpu->StackPointer--, pc_high);
 		context->cpu->ProgramCounter = address;
 		context->cycles += 24;
 	}
@@ -631,9 +637,11 @@ std::string Op::CallN16Condition(EmulatorContext* context, CpuFlag flag, bool co
 
 std::string Op::Return(EmulatorContext* context)
 {
-	uint8_t low = ReadFromBus(context, context->cpu->StackPointer++);
-	uint8_t high = ReadFromBus(context, context->cpu->StackPointer++);
+	uint8_t low = ReadFromBus(context, context->cpu->StackPointer + 1);
+	uint8_t high = ReadFromBus(context, context->cpu->StackPointer + 2);
 	uint16_t address = low | (high << 8);
+
+	context->cpu->StackPointer += 2;
 
 	context->cpu->ProgramCounter = address;
 	context->cycles += 16;

@@ -258,6 +258,7 @@ void WriteToBus(EmulatorContext* context, uint16_t address, uint8_t data)
 		}
 
 		std::cerr << "Unsupported 'WriteToBus' I/O registers\n";
+		return;
 		// throw std::exception("Not implemented 'WriteToBus' I/O registers");
 	}
 	else if (address < 0xFFFF)
