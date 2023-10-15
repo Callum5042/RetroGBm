@@ -695,7 +695,7 @@ std::string Op::CompareN8(EmulatorContext* context)
 
 	context->cycles += 8;
 
-	std::string opcode_name = std::format("CP A, n8 (0x{:x})", data);
+	std::string opcode_name = std::format("CP A, n8 (0x{:x})", value);
 	return opcode_name;
 }
 
@@ -715,6 +715,6 @@ std::string Op::CompareIndirectHL(EmulatorContext* context)
 
 	context->cycles += 8;
 
-	std::string opcode_name = std::format("CP A, [HL] (0x{:x})", data);
+	std::string opcode_name = std::format("CP A, [HL] (0x{:x})", value);
 	return opcode_name;
 }
