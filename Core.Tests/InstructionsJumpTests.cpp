@@ -331,10 +331,12 @@ namespace CoreTests
 			context.cpu = std::make_unique<Cpu>();
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
+			context.cpu->ProgramCounter = 0x6;
+
 			context.cartridge->data.resize(1024 * 8);
 			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
-			context.cartridge->data[0x0] = 0xEE;
-			context.cartridge->data[0x1] = 0xFF;
+			context.cartridge->data[0x6] = 0xEE;
+			context.cartridge->data[0x7] = 0xFF;
 
 			// Act
 			Op::CallN16(&context);
@@ -346,8 +348,8 @@ namespace CoreTests
 
 			uint8_t stack_low = ReadFromBus(&context, context.cpu->StackPointer + 2);
 			uint8_t stack_high = ReadFromBus(&context, context.cpu->StackPointer + 1);
-			Assert::AreEqual(0xEE, static_cast<int>(stack_low));
-			Assert::AreEqual(0xFF, static_cast<int>(stack_high));
+			Assert::AreEqual(0x0, static_cast<int>(stack_low));
+			Assert::AreEqual(0x8, static_cast<int>(stack_high));
 		}
 
 		TEST_METHOD(CallN16Condition_ZeroFlagSet_IncreaseCyclesBy24_WriteToStack)
@@ -358,10 +360,12 @@ namespace CoreTests
 			context.cpu = std::make_unique<Cpu>();
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
+			context.cpu->ProgramCounter = 0x6;
+
 			context.cartridge->data.resize(1024 * 8);
 			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
-			context.cartridge->data[0x0] = 0xEE;
-			context.cartridge->data[0x1] = 0xFF;
+			context.cartridge->data[0x6] = 0xEE;
+			context.cartridge->data[0x7] = 0xFF;
 
 			context.cpu->SetFlag(CpuFlag::Zero, true);
 
@@ -375,8 +379,8 @@ namespace CoreTests
 
 			uint8_t stack_low = ReadFromBus(&context, context.cpu->StackPointer + 2);
 			uint8_t stack_high = ReadFromBus(&context, context.cpu->StackPointer + 1);
-			Assert::AreEqual(0xEE, static_cast<int>(stack_low));
-			Assert::AreEqual(0xFF, static_cast<int>(stack_high));
+			Assert::AreEqual(0x0, static_cast<int>(stack_low));
+			Assert::AreEqual(0x8, static_cast<int>(stack_high));
 		}
 
 		TEST_METHOD(CallN16Condition_ZeroFlagNotSet_IncreaseCyclesBy12_DoNotWriteToStack)
@@ -411,8 +415,8 @@ namespace CoreTests
 			context.cpu = std::make_unique<Cpu>();
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
-			context.high_ram[125] = 0xEE;
-			context.high_ram[124] = 0xFF;
+			context.high_ram[126] = 0xEE;
+			context.high_ram[125] = 0xFF;
 
 			context.cpu->StackPointer -= 2;
 
