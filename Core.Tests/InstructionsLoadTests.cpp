@@ -379,8 +379,8 @@ namespace InstructionsTests
 
 			context.cartridge->data.resize(0x10);
 			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
-			context.cartridge->data[0x0] = 0x5;
-			context.cartridge->data[0x1] = 0x0;
+			context.cartridge->data[0x0] = 0x0;
+			context.cartridge->data[0x1] = 0x5;
 			context.cartridge->data[0x5] = 0x1;
 
 			context.cpu->SetRegister(RegisterType8::REG_A, 0x32);
@@ -390,7 +390,7 @@ namespace InstructionsTests
 
 			// Assert
 			Assert::AreEqual(16, context.cycles);
-			Assert::AreEqual(0x2, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(0x3, static_cast<int>(context.cpu->ProgramCounter));
 
 			Assert::AreEqual(0x32, static_cast<int>(context.cartridge->data[0x5]));
 		}
@@ -422,7 +422,7 @@ namespace InstructionsTests
 			Assert::AreEqual(0x32, static_cast<int>(result));
 		}
 
-		TEST_METHOD(StoreHighRam_IncreaseCyclesBy16_WriteToHighRAM)
+		TEST_METHOD(StoreFF00_IncreaseCyclesBy16_WriteToHighRAM)
 		{
 			// Arrange
 			EmulatorContext context;
@@ -432,19 +432,19 @@ namespace InstructionsTests
 
 			context.cartridge->data.resize(0x10);
 			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
-			context.cartridge->data[0x0] = 0x1;
+			context.cartridge->data[0x1] = 0x1;
 
 			// Act
-			Op::StoreHighRam(&context);
+			Op::StoreFF00(&context);
 
 			// Assert
 			Assert::AreEqual(12, context.cycles);
-			Assert::AreEqual(0x1, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(0x2, static_cast<int>(context.cpu->ProgramCounter));
 
 			Assert::AreEqual(0x1, static_cast<int>(context.serial_data[0]));
 		}
 
-		TEST_METHOD(LoadHighRam_IncreaseCyclesBy16_WriteToHighRAM)
+		TEST_METHOD(LoadFF00_IncreaseCyclesBy16_WriteToHighRAM)
 		{
 			// Arrange
 			EmulatorContext context;
@@ -454,16 +454,16 @@ namespace InstructionsTests
 
 			context.cartridge->data.resize(0x10);
 			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
-			context.cartridge->data[0x0] = 0x1;
+			context.cartridge->data[0x1] = 0x1;
 
 			context.serial_data[0] = 0x1;
 
 			// Act
-			Op::LoadHighRam(&context);
+			Op::LoadFF00(&context);
 
 			// Assert
 			Assert::AreEqual(12, context.cycles);
-			Assert::AreEqual(0x1, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(0x2, static_cast<int>(context.cpu->ProgramCounter));
 
 			uint8_t result = context.cpu->GetRegister(RegisterType8::REG_A);
 			Assert::AreEqual(0x1, static_cast<int>(result));

@@ -259,10 +259,10 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::IncR16(&m_Context, RegisterType16::REG_SP);
 		//case 0x38:
 		//	return Op::JumpRelativeFlagN8(&m_Context, CpuFlag::Carry, true);
-		//case 0x3E:
-		//	return Op::LoadN8(&m_Context, RegisterType8::REG_A);
-		//case 0x31:
-		//	return Op::LoadN16(&m_Context, RegisterType16::REG_SP);
+		case 0x3E:
+			return Op::LoadN8(&m_Context, RegisterType8::REG_A);
+		case 0x31:
+			return Op::LoadN16(&m_Context, RegisterType16::REG_SP);
 		//case 0x32:
 		//	return Op::StoreDecrementHL(&m_Context);
 		//case 0x36:
@@ -395,10 +395,10 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_D);
 		//case 0x7B:
 		//	return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_E);
-		//case 0x7C:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_H);
-		//case 0x7D:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_L);
+		case 0x7C:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_H);
+		case 0x7D:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_L);
 		//case 0x7E:
 		//	return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_A, RegisterType16::REG_HL);
 		//case 0x7F:
@@ -473,8 +473,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::JumpFlagN16(&m_Context, CpuFlag::Zero, true);
 		//case 0xCC:
 		//	return Op::CallN16Condition(&m_Context, CpuFlag::Zero, true);
-		//case 0xCD:
-		//	return Op::CallN16(&m_Context);
+		case 0xCD:
+			return Op::CallN16(&m_Context);
 		//case 0xD0:
 		//	return Op::ReturnCondition(&m_Context, CpuFlag::Carry, false);
 		//case 0xD1:
@@ -491,12 +491,12 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::JumpFlagN16(&m_Context, CpuFlag::Carry, true);
 		//case 0xDC:
 		//	return Op::CallN16Condition(&m_Context, CpuFlag::Carry, true);
-		//case 0xE0:
-		//	return Op::StoreHighRam(&m_Context);
+		case 0xE0:
+			return Op::StoreFF00(&m_Context);
 		//case 0xE1:
 		//	return Op::PopR16(&m_Context, RegisterType16::REG_HL);
-		//case 0xEA:
-		//	return Op::StoreIndirectR8(&m_Context, RegisterType8::REG_A);
+		case 0xEA:
+			return Op::StoreIndirectR8(&m_Context, RegisterType8::REG_A);
 		//case 0xE2:
 		//	return Op::StoreIndirectAC(&m_Context);
 		//case 0xE5:

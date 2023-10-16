@@ -53,9 +53,9 @@ namespace Op
 
 	std::string LoadIndirectR8(EmulatorContext* context, RegisterType8 reg);
 
-	std::string StoreHighRam(EmulatorContext* context);
+	std::string StoreFF00(EmulatorContext* context);
 
-	std::string LoadHighRam(EmulatorContext* context);
+	std::string LoadFF00(EmulatorContext* context);
 
 	std::string StoreR8(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg_pointer);
 
