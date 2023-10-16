@@ -654,16 +654,16 @@ std::string Op::CallN16Condition(EmulatorContext* context, CpuFlag flag, bool co
 
 std::string Op::Return(EmulatorContext* context)
 {
-	uint8_t low = ReadFromBus(context, context->cpu->StackPointer + 1);
-	uint8_t high = ReadFromBus(context, context->cpu->StackPointer + 2);
-	uint16_t address = low | (high << 8);
-
 	context->cpu->StackPointer += 2;
+
+	uint8_t high = ReadFromBus(context, context->cpu->StackPointer - 1);
+	uint8_t low = ReadFromBus(context, context->cpu->StackPointer - 2);
+	uint16_t address = low | (high << 8);
 
 	context->cpu->ProgramCounter = address;
 	context->cycles += 16;
 
-	std::string opcode_name = std::format("RET");
+	std::string opcode_name = std::format("RET 0x{:x}", address);
 	return opcode_name;
 }
 
@@ -746,15 +746,17 @@ std::string Op::CompareIndirectHL(EmulatorContext* context)
 
 std::string Op::PushR16(EmulatorContext* context, RegisterType16 reg)
 {
-	uint16_t address = context->cpu->GetRegister(reg);
-	uint8_t low = address & 0xFF;
-	uint8_t high = (address >> 8) & 0xFF;
-
-	WriteToBus(context, context->cpu->StackPointer - 1 , high);
-	WriteToBus(context, context->cpu->StackPointer - 2, low);
-
 	context->cpu->StackPointer -= 2;
+
+	uint16_t address = context->cpu->GetRegister(reg);
+	uint8_t high = address >> 8;
+	uint8_t low = address & 0xFF;
+
+	WriteToBus(context, context->cpu->StackPointer + 1 , high);
+	WriteToBus(context, context->cpu->StackPointer + 0, low);
+	
 	context->cycles += 16;
+	context->cpu->ProgramCounter += 1;
 
 	std::string opcode_name = std::format("PUSH {}", RegisterTypeString16(reg));
 	return opcode_name;
@@ -762,12 +764,15 @@ std::string Op::PushR16(EmulatorContext* context, RegisterType16 reg)
 
 std::string Op::PopR16(EmulatorContext* context, RegisterType16 reg)
 {
-	uint8_t low = ReadFromBus(context, context->cpu->StackPointer + 1);
-	uint8_t high = ReadFromBus(context, context->cpu->StackPointer);
+	context->cpu->StackPointer += 2;
+
+	uint8_t high = ReadFromBus(context, context->cpu->StackPointer - 1);
+	uint8_t low = ReadFromBus(context, context->cpu->StackPointer - 2);
 
 	context->cpu->SetRegister(reg, high, low);
-	context->cpu->StackPointer += 2;
+	
 	context->cycles += 12;
+	context->cpu->ProgramCounter += 1;
 
 	std::string opcode_name = std::format("POP {}", RegisterTypeString16(reg));
 	return opcode_name;

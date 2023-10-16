@@ -332,8 +332,8 @@ namespace InstructionsTests
 			context.cpu = std::make_unique<Cpu>();
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
-			context.high_ram[126] = 0xEE;
-			context.high_ram[125] = 0xFF;
+			context.high_ram[125] = 0xEE;
+			context.high_ram[124] = 0xFF;
 
 			context.cpu->StackPointer -= 2;
 
@@ -409,10 +409,11 @@ namespace InstructionsTests
 			Op::PushR16(&context, RegisterType16::REG_BC);
 
 			// Assert
+			Assert::AreEqual(1, static_cast<int>(context.cpu->ProgramCounter));
 			Assert::AreEqual(16, context.cycles);
 
-			Assert::AreEqual(0x36, static_cast<int>(context.high_ram[0xFFFE - 0xFF80]));
 			Assert::AreEqual(0x24, static_cast<int>(context.high_ram[0xFFFD - 0xFF80]));
+			Assert::AreEqual(0x36, static_cast<int>(context.high_ram[0xFFFC - 0xFF80]));
 			Assert::AreEqual(0xFFFE - 2, static_cast<int>(context.cpu->StackPointer));
 		}
 
@@ -427,8 +428,8 @@ namespace InstructionsTests
 			context.cpu->SetRegister(RegisterType8::REG_C, 0x0);
 			context.cpu->SetRegister(RegisterType8::REG_B, 0x0);
 
-			context.high_ram[0xFFFE - 0xFF80] = 0x36;
-			context.high_ram[0xFFFD - 0xFF80] = 0x24;
+			context.high_ram[0xFFFD - 0xFF80] = 0x36;
+			context.high_ram[0xFFFC - 0xFF80] = 0x24;
 			context.cpu->StackPointer = 0xFFFE - 2;
 
 			// Act
