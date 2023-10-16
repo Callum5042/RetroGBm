@@ -476,5 +476,53 @@ namespace CoreTests
 			Assert::AreEqual(0x0, static_cast<int>(context.cpu->ProgramCounter));
 			Assert::AreEqual(0xFFFE - 2, static_cast<int>(context.cpu->StackPointer));
 		}
+
+		TEST_METHOD(PushR16_IncreaseCyclesBy16_PushRegToHighRam_IncreaseStack)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cpu->SetRegister(RegisterType8::REG_C, 0x36);
+			context.cpu->SetRegister(RegisterType8::REG_B, 0x24);
+
+			// Act
+			Op::PushR16(&context, RegisterType16::REG_BC);
+
+			// Assert
+			Assert::AreEqual(16, context.cycles);
+
+			Assert::AreEqual(0x36, static_cast<int>(context.high_ram[0xFFFE - 0xFF80]));
+			Assert::AreEqual(0x24, static_cast<int>(context.high_ram[0xFFFD - 0xFF80]));
+			Assert::AreEqual(0xFFFE - 2, static_cast<int>(context.cpu->StackPointer));
+		}
+
+		TEST_METHOD(PopR12_IncreaseCyclesBy16_ReadFromHighRam_DecreaseStack)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cpu->SetRegister(RegisterType8::REG_C, 0x0);
+			context.cpu->SetRegister(RegisterType8::REG_B, 0x0);
+
+			context.high_ram[0xFFFE - 0xFF80] = 0x36;
+			context.high_ram[0xFFFD - 0xFF80] = 0x24;
+			context.cpu->StackPointer = 0xFFFE - 2;
+
+			// Act
+			Op::PopR16(&context, RegisterType16::REG_BC);
+
+			// Assert
+			Assert::AreEqual(12, context.cycles);
+			Assert::AreEqual(0xFFFE, static_cast<int>(context.cpu->StackPointer));
+
+			Assert::AreEqual(0x36, static_cast<int>(context.cpu->GetRegister(RegisterType8::REG_B)));
+			Assert::AreEqual(0x24, static_cast<int>(context.cpu->GetRegister(RegisterType8::REG_C)));
+		}
 	};
 }
