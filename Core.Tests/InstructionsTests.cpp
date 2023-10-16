@@ -4,7 +4,7 @@
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
-namespace CoreTests
+namespace InstructionsTests
 {
 	TEST_CLASS(InstructionsTests)
 	{
@@ -14,12 +14,14 @@ namespace CoreTests
 		{
 			// Arrange
 			EmulatorContext context;
+			context.cpu = std::make_unique<Cpu>();
 			context.cycles = 0;
 
 			// Act
 			Op::Nop(&context);
 
 			// Assert
+			Assert::AreEqual(1, static_cast<int>(context.cpu->ProgramCounter));
 			Assert::AreEqual(4, context.cycles);
 		}
 

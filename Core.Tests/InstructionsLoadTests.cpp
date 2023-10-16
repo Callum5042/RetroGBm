@@ -37,6 +37,7 @@ namespace InstructionsTests
 
 			context.cpu = std::make_unique<Cpu>();
 			context.cartridge = std::make_unique<CartridgeInfo>();
+			context.cartridge->data.push_back(0x05);
 			context.cartridge->data.push_back(0x10);
 
 			// Act
@@ -44,7 +45,7 @@ namespace InstructionsTests
 
 			// Assert
 			Assert::AreEqual(8, context.cycles);
-			Assert::AreEqual(1, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
 
 			uint8_t result = context.cpu->GetRegister(RegisterType8::REG_A);
 			Assert::AreEqual(0x10, static_cast<int>(result));
@@ -58,6 +59,7 @@ namespace InstructionsTests
 			context.cpu = std::make_unique<Cpu>();
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
+			context.cartridge->data.push_back(0x12);
 			context.cartridge->data.push_back(0x20);
 			context.cartridge->data.push_back(0x50);
 
@@ -66,7 +68,7 @@ namespace InstructionsTests
 
 			// Assert
 			Assert::AreEqual(12, context.cycles);
-			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(3, static_cast<int>(context.cpu->ProgramCounter));
 
 			uint16_t reg = context.cpu->GetRegister(RegisterType16::REG_HL);
 			Assert::AreEqual(0x5020, static_cast<int>(reg));
@@ -80,6 +82,7 @@ namespace InstructionsTests
 			context.cpu = std::make_unique<Cpu>();
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
+			context.cartridge->data.push_back(0x12);
 			context.cartridge->data.push_back(0x20);
 			context.cartridge->data.push_back(0x50);
 
@@ -88,7 +91,7 @@ namespace InstructionsTests
 
 			// Assert
 			Assert::AreEqual(12, context.cycles);
-			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(3, static_cast<int>(context.cpu->ProgramCounter));
 
 			uint16_t reg = context.cpu->GetRegister(RegisterType16::REG_SP);
 			Assert::AreEqual(0x5020, static_cast<int>(reg));

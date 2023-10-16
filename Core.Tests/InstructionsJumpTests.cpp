@@ -5,7 +5,7 @@
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
-namespace CoreTests
+namespace InstructionsTests
 {
 	TEST_CLASS(InstructionsJumpTests)
 	{
@@ -18,6 +18,7 @@ namespace CoreTests
 			context.cpu = std::make_unique<Cpu>();
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
+			context.cartridge->data.push_back(0x12);
 			context.cartridge->data.push_back(0x20);
 			context.cartridge->data.push_back(0x50);
 
