@@ -96,4 +96,8 @@ namespace Op
 	std::string CompareN8(EmulatorContext* context);
 
 	std::string CompareIndirectHL(EmulatorContext* context);
+
+	std::string PushR16(EmulatorContext* context, RegisterType16 reg);
+
+	std::string PopR16(EmulatorContext* context, RegisterType16 reg);
 }

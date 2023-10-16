@@ -726,3 +726,33 @@ std::string Op::CompareIndirectHL(EmulatorContext* context)
 	std::string opcode_name = std::format("CP A, [HL] (0x{:x})", value);
 	return opcode_name;
 }
+
+std::string Op::PushR16(EmulatorContext* context, RegisterType16 reg)
+{
+	uint16_t address = context->cpu->GetRegister(reg);
+	uint8_t low = address & 0xFF;
+	uint8_t high = (address >> 8) & 0xFF;
+
+	WriteToBus(context, context->cpu->StackPointer, low);
+	WriteToBus(context, context->cpu->StackPointer - 1, high);
+
+	context->cpu->StackPointer -= 2;
+	context->cycles += 16;
+
+	std::string opcode_name = std::format("PUSH {}", RegisterTypeString16(reg));
+	return opcode_name;
+}
+
+std::string Op::PopR16(EmulatorContext* context, RegisterType16 reg)
+{
+	uint8_t low = ReadFromBus(context, context->cpu->StackPointer + 1);
+	uint8_t high = ReadFromBus(context, context->cpu->StackPointer + 2);
+	uint16_t value = (high << 8) | low;
+
+	context->cpu->SetRegister(reg, high, low);
+	context->cpu->StackPointer += 2;
+	context->cycles += 12;
+
+	std::string opcode_name = std::format("POP {}", RegisterTypeString16(reg));
+	return opcode_name;
+}

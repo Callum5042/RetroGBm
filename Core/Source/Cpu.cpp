@@ -214,6 +214,9 @@ std::string RegisterTypeString16(RegisterType16 type)
 {
 	switch (type)
 	{
+		case RegisterType16::REG_AF:
+			return "AF";
+
 		case RegisterType16::REG_BC:
 			return "BC";
 

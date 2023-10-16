@@ -17,6 +17,7 @@ enum class RegisterType8
 
 enum class RegisterType16
 {
+	REG_AF,
 	REG_BC,
 	REG_DE,
 	REG_HL,
