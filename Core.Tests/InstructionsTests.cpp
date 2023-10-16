@@ -56,6 +56,7 @@ namespace InstructionsTests
 
 			// Assert
 			Assert::AreEqual(0x4, context.cycles);
+			Assert::AreEqual(1, static_cast<int>(context.cpu->ProgramCounter));
 
 			bool result = context.cpu->GetInterruptMasterFlag();
 			Assert::IsFalse(result);

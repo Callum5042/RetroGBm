@@ -37,6 +37,7 @@ std::string Op::DisableInterrupts(EmulatorContext* context)
 {
 	context->cpu->DisableMasterInterrupts();
 	context->cycles += 4;
+	context->cpu->ProgramCounter += 1;
 
 	std::string opcode_name = "DI";
 	return opcode_name;
@@ -592,9 +593,10 @@ std::string Op::DecR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetRegister(reg, result);
 	context->cpu->SetFlag(CpuFlag::Subtraction, true);
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
-	context->cpu->SetFlag(CpuFlag::HalfCarry, (result & 0x0F) == 0x0F);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (data & 0xF) < (1 & 0xF));
 
 	context->cycles += 4;
+	context->cpu->ProgramCounter += 1;
 
 	std::string opcode_name = std::format("DEC {}", RegisterTypeString8(reg));
 	return opcode_name;
