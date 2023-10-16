@@ -89,13 +89,13 @@ std::string Op::JumpHL(EmulatorContext* context)
 
 std::string Op::JumpRelativeN8(EmulatorContext* context)
 {
-	uint16_t current_pc = context->cpu->ProgramCounter;
-	int8_t data = ReadFromBus(context, context->cpu->ProgramCounter++);
+	int8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint16_t address = static_cast<int16_t>(context->cpu->ProgramCounter + data + 2);
 
-	context->cpu->ProgramCounter += data;
+	context->cpu->ProgramCounter = address;
 	context->cycles += 12;
 
-	std::string opcode_name = std::format("JR e8 0x{:x} (0x:{:x})", current_pc + data, data);
+	std::string opcode_name = std::format("JR 0x{:x}", address);
 	return opcode_name;
 }
 

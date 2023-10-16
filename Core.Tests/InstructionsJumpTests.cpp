@@ -218,7 +218,7 @@ namespace InstructionsTests
 			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
 			context.cartridge->data[0x5] = 0x2;
 
-			context.cpu->ProgramCounter = 0x5;
+			context.cpu->ProgramCounter = 0x4;
 
 			// Act
 			Op::JumpRelativeN8(&context);
