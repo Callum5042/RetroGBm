@@ -78,7 +78,22 @@ void Emulator::Tick()
 	static int count = 0;
 	count++;
 
-	std::cout << std::format("Opcode: 0x{:x} - {} - REG_A:0x{:x}", opcode, count, m_Context.cpu->GetRegister(RegisterType8::REG_A)) << '\n';
+	std::string opcode_format = std::format("Opcode: 0x{:x} - {} - B:${:x} C:${:x} D:${:x} E:${:x} H:${:x} L:${:x} A:${:x} F:{}{}{}{}",
+											opcode,
+											count,
+											m_Context.cpu->GetRegister(RegisterType8::REG_B),
+											m_Context.cpu->GetRegister(RegisterType8::REG_C),
+											m_Context.cpu->GetRegister(RegisterType8::REG_D),
+											m_Context.cpu->GetRegister(RegisterType8::REG_E),
+											m_Context.cpu->GetRegister(RegisterType8::REG_H),
+											m_Context.cpu->GetRegister(RegisterType8::REG_L),
+											m_Context.cpu->GetRegister(RegisterType8::REG_A),
+											m_Context.cpu->GetFlag(CpuFlag::Zero) ? "Z" : "-",
+											m_Context.cpu->GetFlag(CpuFlag::Subtraction) ? "N" : "-",
+											m_Context.cpu->GetFlag(CpuFlag::HalfCarry) ? "H" : "-",
+											m_Context.cpu->GetFlag(CpuFlag::Carry) ? "C" : "-");
+
+	std::cout << opcode_format << '\n';
 
 	// Execute
 	std::string opcode_name = Execute(opcode);

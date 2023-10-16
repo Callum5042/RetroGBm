@@ -566,7 +566,7 @@ std::string Op::IncR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetRegister(reg, result);
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
-	context->cpu->SetFlag(CpuFlag::HalfCarry, (result & 0x0F) == 0x0F);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (result & 0x0F) == 0x0);
 
 	context->cycles += 4;
 
@@ -733,8 +733,8 @@ std::string Op::PushR16(EmulatorContext* context, RegisterType16 reg)
 	uint8_t low = address & 0xFF;
 	uint8_t high = (address >> 8) & 0xFF;
 
-	WriteToBus(context, context->cpu->StackPointer, low);
-	WriteToBus(context, context->cpu->StackPointer - 1, high);
+	WriteToBus(context, context->cpu->StackPointer - 1 , high);
+	WriteToBus(context, context->cpu->StackPointer - 2, low);
 
 	context->cpu->StackPointer -= 2;
 	context->cycles += 16;
@@ -746,8 +746,7 @@ std::string Op::PushR16(EmulatorContext* context, RegisterType16 reg)
 std::string Op::PopR16(EmulatorContext* context, RegisterType16 reg)
 {
 	uint8_t low = ReadFromBus(context, context->cpu->StackPointer + 1);
-	uint8_t high = ReadFromBus(context, context->cpu->StackPointer + 2);
-	uint16_t value = (high << 8) | low;
+	uint8_t high = ReadFromBus(context, context->cpu->StackPointer);
 
 	context->cpu->SetRegister(reg, high, low);
 	context->cpu->StackPointer += 2;

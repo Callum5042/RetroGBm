@@ -46,6 +46,10 @@ void Cpu::SetRegister(RegisterType16 type, uint8_t data_high, uint8_t data_low)
 {
 	switch (type)
 	{
+		case RegisterType16::REG_AF:
+			m_Registers[RegisterType8::REG_A] = data_high;
+			m_Registers[RegisterType8::REG_F] = data_low;
+
 		case RegisterType16::REG_BC:
 			m_Registers[RegisterType8::REG_B] = data_high;
 			m_Registers[RegisterType8::REG_C] = data_low;
@@ -86,6 +90,11 @@ uint16_t Cpu::GetRegister(RegisterType16 type) const
 
 	switch (type)
 	{
+		case RegisterType16::REG_AF:
+			data_high = GetRegister(RegisterType8::REG_A);
+			data_low = GetRegister(RegisterType8::REG_F);
+			break;
+
 		case RegisterType16::REG_BC:
 			data_high = GetRegister(RegisterType8::REG_B);
 			data_low = GetRegister(RegisterType8::REG_C);
@@ -103,6 +112,9 @@ uint16_t Cpu::GetRegister(RegisterType16 type) const
 
 		case RegisterType16::REG_SP:
 			return StackPointer;
+
+		default:
+			throw std::exception("GetRegister flag not supported");
 	}
 
 	uint16_t data = data_low | (data_high << 8);
@@ -116,19 +128,19 @@ void Cpu::SetFlag(CpuFlag flag, bool data)
 		switch (flag)
 		{
 			case CpuFlag::Zero:
-				m_Registers[RegisterType8::REG_F] |= (1 << 6);
+				m_Registers[RegisterType8::REG_F] |= (1 << 7);
 				break;
 
 			case CpuFlag::Subtraction:
-				m_Registers[RegisterType8::REG_F] |= (1 << 5);
+				m_Registers[RegisterType8::REG_F] |= (1 << 6);
 				break;
 
 			case CpuFlag::HalfCarry:
-				m_Registers[RegisterType8::REG_F] |= (1 << 4);
+				m_Registers[RegisterType8::REG_F] |= (1 << 5);
 				break;
 
 			case CpuFlag::Carry:
-				m_Registers[RegisterType8::REG_F] |= (1 << 3);
+				m_Registers[RegisterType8::REG_F] |= (1 << 4);
 				break;
 
 			default:
@@ -140,19 +152,19 @@ void Cpu::SetFlag(CpuFlag flag, bool data)
 		switch (flag)
 		{
 			case CpuFlag::Zero:
-				m_Registers[RegisterType8::REG_F] &= ~(1 << 6);
+				m_Registers[RegisterType8::REG_F] &= ~(1 << 7);
 				break;
 
 			case CpuFlag::Subtraction:
-				m_Registers[RegisterType8::REG_F] &= ~(1 << 5);
+				m_Registers[RegisterType8::REG_F] &= ~(1 << 6);
 				break;
 
 			case CpuFlag::HalfCarry:
-				m_Registers[RegisterType8::REG_F] &= ~(1 << 4);
+				m_Registers[RegisterType8::REG_F] &= ~(1 << 5);
 				break;
 
 			case CpuFlag::Carry:
-				m_Registers[RegisterType8::REG_F] &= ~(1 << 3);
+				m_Registers[RegisterType8::REG_F] &= ~(1 << 4);
 				break;
 
 			default:
@@ -168,16 +180,16 @@ bool Cpu::GetFlag(CpuFlag flag) const
 	switch (flag)
 	{
 		case CpuFlag::Zero:
-			return ((flag_register >> 6) & 1) != 0;
+			return ((flag_register >> 7) & 1) != 0;
 
 		case CpuFlag::Subtraction:
-			return ((flag_register >> 5) & 1) != 0;
+			return ((flag_register >> 6) & 1) != 0;
 
 		case CpuFlag::HalfCarry:
-			return ((flag_register >> 4) & 1) != 0;
+			return ((flag_register >> 5) & 1) != 0;
 
 		case CpuFlag::Carry:
-			return ((flag_register >> 3) & 1) != 0;
+			return ((flag_register >> 4) & 1) != 0;
 	}
 
 	// TODO: Should this should throw an exception or just log and continue
