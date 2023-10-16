@@ -35,6 +35,7 @@ namespace CoreTests
 			bool zero_flag = context.cpu->GetFlag(CpuFlag::Zero);
 			Assert::IsFalse(subtract_flag);
 		}
+
 		TEST_METHOD(IncR8_RegIsFF_SetZeroFlag)
 		{
 			// Arrange
@@ -56,6 +57,25 @@ namespace CoreTests
 
 			bool zero_flag = context.cpu->GetFlag(CpuFlag::Zero);
 			Assert::IsTrue(zero_flag);
+		}
+
+		TEST_METHOD(IncR16_IncreaseCyclesBy8_IncreaseRegister)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+
+			context.cpu->SetRegister(RegisterType16::REG_BC, 0x5);
+
+			// Act
+			Op::IncR16(&context, RegisterType16::REG_BC);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+
+			uint16_t result = context.cpu->GetRegister(RegisterType16::REG_BC);
+			Assert::AreEqual(0x6, static_cast<int>(result));
 		}
 	};
 }

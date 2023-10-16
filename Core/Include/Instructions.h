@@ -100,4 +100,8 @@ namespace Op
 	std::string PushR16(EmulatorContext* context, RegisterType16 reg);
 
 	std::string PopR16(EmulatorContext* context, RegisterType16 reg);
+
+	std::string IncR16(EmulatorContext* context, RegisterType16 reg);
+
+	std::string DecR16(EmulatorContext* context, RegisterType16 reg);
 }

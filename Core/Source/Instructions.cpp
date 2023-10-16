@@ -756,3 +756,25 @@ std::string Op::PopR16(EmulatorContext* context, RegisterType16 reg)
 	std::string opcode_name = std::format("POP {}", RegisterTypeString16(reg));
 	return opcode_name;
 }
+
+std::string Op::IncR16(EmulatorContext* context, RegisterType16 reg)
+{
+	uint16_t data = context->cpu->GetRegister(reg);
+	context->cpu->SetRegister(reg, data + 1);
+
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("INC {}", RegisterTypeString16(reg));
+	return opcode_name;
+}
+
+std::string Op::DecR16(EmulatorContext* context, RegisterType16 reg)
+{
+	uint16_t data = context->cpu->GetRegister(reg);
+	context->cpu->SetRegister(reg, data - 1);
+
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("DEC {}", RegisterTypeString16(reg));
+	return opcode_name;
+}
