@@ -106,4 +106,6 @@ namespace Op
 	std::string IncR16(EmulatorContext* context, RegisterType16 reg);
 
 	std::string DecR16(EmulatorContext* context, RegisterType16 reg);
+
+	std::string OrR8(EmulatorContext* context, RegisterType8 reg);
 }
