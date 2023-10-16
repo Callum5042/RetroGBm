@@ -173,8 +173,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 	{
 		case 0x0:
 			return Op::Nop(&m_Context);
-		//case 0x01:
-		//	return Op::LoadN16(&m_Context, RegisterType16::REG_BC);
+		case 0x01:
+			return Op::LoadN16(&m_Context, RegisterType16::REG_BC);
 		//case 0x02:
 		//	return Op::StoreR8(&m_Context, RegisterType8::REG_A, RegisterType16::REG_BC);
 		//case 0x03:
@@ -461,8 +461,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::JumpN16(&m_Context);
 		//case 0xC4:
 		//	return Op::CallN16Condition(&m_Context, CpuFlag::Zero, false);
-		//case 0xC5:
-		//	return Op::PushR16(&m_Context, RegisterType16::REG_BC);
+		case 0xC5:
+			return Op::PushR16(&m_Context, RegisterType16::REG_BC);
 		//case 0xC6:
 		//	return Op::AddN8(&m_Context);
 		//case 0xC8:
@@ -509,8 +509,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::XorN8(&m_Context);
 		//case 0xF0:
 		//	return Op::LoadHighRam(&m_Context);
-		//case 0xF1:
-		//	return Op::PopR16(&m_Context, RegisterType16::REG_AF);
+		case 0xF1:
+			return Op::PopR16(&m_Context, RegisterType16::REG_AF);
 		//case 0xF2:
 		//	return Op::LoadIndirectAC(&m_Context);
 		case 0xF3:
