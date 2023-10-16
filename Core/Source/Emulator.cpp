@@ -233,8 +233,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::StoreIncrementHL(&m_Context);
 		//case 0x24:
 		//	return Op::IncR8(&m_Context, RegisterType8::REG_H);
-		//case 0x23:
-		//	return Op::IncR16(&m_Context, RegisterType16::REG_HL);
+		case 0x23:
+			return Op::IncR16(&m_Context, RegisterType16::REG_HL);
 		//case 0x25:
 		//	return Op::DecR8(&m_Context, RegisterType8::REG_H);
 		//case 0x26:
@@ -515,8 +515,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::LoadIndirectAC(&m_Context);
 		case 0xF3:
 			return Op::DisableInterrupts(&m_Context);
-		//case 0xF5:
-		//	return Op::PushR16(&m_Context, RegisterType16::REG_AF);
+		case 0xF5:
+			return Op::PushR16(&m_Context, RegisterType16::REG_AF);
 		//case 0xFA:
 		//	return Op::LoadIndirectR8(&m_Context, RegisterType8::REG_A);
 		//case 0xFB:

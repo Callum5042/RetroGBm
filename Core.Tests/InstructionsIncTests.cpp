@@ -145,6 +145,7 @@ namespace InstructionsTests
 			Op::IncR16(&context, RegisterType16::REG_BC);
 
 			// Assert
+			Assert::AreEqual(1, static_cast<int>(context.cpu->ProgramCounter));
 			Assert::AreEqual(8, context.cycles);
 
 			uint16_t result = context.cpu->GetRegister(RegisterType16::REG_BC);
