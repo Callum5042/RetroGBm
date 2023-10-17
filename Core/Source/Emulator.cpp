@@ -248,8 +248,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::JumpRelativeFlagNotSet(&m_Context, CpuFlag::Zero);
 		case 0x21:
 			return Op::LoadN16(&m_Context, RegisterType16::REG_HL);
-		//case 0x22:
-		//	return Op::StoreIncrementHL(&m_Context);
+		case 0x22:
+			return Op::StoreIncrementHL(&m_Context);
 		case 0x23:
 			return Op::IncR16(&m_Context, RegisterType16::REG_HL);
 		case 0x24:
@@ -484,8 +484,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::CallN16FlagNotSet(&m_Context, CpuFlag::Zero);
 		case 0xC5:
 			return Op::PushR16(&m_Context, RegisterType16::REG_BC);
-		//case 0xC6:
-		//	return Op::AddN8(&m_Context);
+		case 0xC6:
+			return Op::AddN8(&m_Context);
 		//case 0xC8:
 		//	return Op::ReturnCondition(&m_Context, CpuFlag::Zero, true);
 		case 0xC9:

@@ -119,7 +119,7 @@ namespace InstructionsTests
 			Assert::AreEqual(4, context.cycles);
 
 			uint8_t result = context.cpu->GetRegister(RegisterType8::REG_A);
-			Assert::AreEqual(0xE5, static_cast<int>(result));
+			Assert::AreEqual(0xE4, static_cast<int>(result));
 
 			bool flag = context.cpu->GetFlag(CpuFlag::Carry);
 			Assert::IsTrue(flag);
@@ -159,7 +159,7 @@ namespace InstructionsTests
 
 			context.cartridge->data.resize(0x10);
 			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
-			context.cartridge->data[0x0] = 0x50;
+			context.cartridge->data[0x1] = 0x50;
 
 			context.cpu->SetRegister(RegisterType8::REG_A, 0x15);
 			context.cpu->SetFlag(CpuFlag::Subtraction, true);
@@ -169,7 +169,7 @@ namespace InstructionsTests
 
 			// Assert
 			Assert::AreEqual(8, context.cycles);
-			Assert::AreEqual(1, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
 
 			uint8_t result = context.cpu->GetRegister(RegisterType8::REG_A);
 			Assert::AreEqual(0x65, static_cast<int>(result));
