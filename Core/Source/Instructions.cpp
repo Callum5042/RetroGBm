@@ -1069,3 +1069,28 @@ std::string Op::ReturnFlagNotSet(EmulatorContext* context, CpuFlag flag)
 	std::string opcode_name = std::format("RET N{}", FlagString(flag));
 	return opcode_name;
 }
+
+std::string Op::ReturnFlagSet(EmulatorContext* context, CpuFlag flag)
+{
+	bool flag_result = context->cpu->GetFlag(flag);
+
+	if (flag_result)
+	{
+		context->cpu->StackPointer += 2;
+
+		uint8_t high = ReadFromBus(context, context->cpu->StackPointer - 1);
+		uint8_t low = ReadFromBus(context, context->cpu->StackPointer - 2);
+		uint16_t address = high << 8 | low;
+
+		context->cpu->ProgramCounter = address;
+		context->cycles += 20;
+	}
+	else
+	{
+		context->cpu->ProgramCounter += 1;
+		context->cycles += 8;
+	}
+
+	std::string opcode_name = std::format("RET {}", FlagString(flag));
+	return opcode_name;
+}
