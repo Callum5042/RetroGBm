@@ -559,20 +559,11 @@ std::string Op::AddR16(EmulatorContext* context, RegisterType16 reg)
 	uint32_t result = result_a + result_b;
 	context->cpu->SetRegister(RegisterType16::REG_HL, result);
 
-	context->cpu->SetFlag(CpuFlag::Carry, result > 0xFFFF);
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::Carry, result > 0xFFFF);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (result_a & 0xFFF) + (result_b & 0xFFF) > 0xFFF);
 
-	if (((result_a & 0x0FFF) + (result_b & 0x0FFF) > 0x0FFF))
-	{
-		// Set the half-carry flag if there's a carry from low nibble to high nibble
-		context->cpu->SetFlag(CpuFlag::HalfCarry, true);
-	}
-	else
-	{
-		// Clear the half-carry flag if there's no carry
-		context->cpu->SetFlag(CpuFlag::HalfCarry, false);
-	}
-
+	context->cpu->ProgramCounter += 1;
 	context->cycles += 8;
 
 	std::string opcode_name = std::format("ADD HL, {}", RegisterTypeString16(reg));
