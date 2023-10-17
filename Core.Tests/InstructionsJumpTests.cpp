@@ -360,8 +360,7 @@ namespace InstructionsTests
 
 			context.high_ram[125] = 0xEE;
 			context.high_ram[124] = 0xFF;
-
-			context.cpu->StackPointer -= 2;
+			context.cpu->StackPointer = 0xFFFE - 2;
 
 			context.cpu->SetFlag(CpuFlag::Zero, true);
 
@@ -394,7 +393,7 @@ namespace InstructionsTests
 
 			// Assert
 			Assert::AreEqual(8, context.cycles);
-			Assert::AreEqual(0x0, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(0x1, static_cast<int>(context.cpu->ProgramCounter));
 			Assert::AreEqual(0xFFFE - 2, static_cast<int>(context.cpu->StackPointer));
 		}
 

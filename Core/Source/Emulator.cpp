@@ -210,8 +210,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_A, RegisterType16::REG_BC);
 		//case 0x0B:
 		//	return Op::DecR16(&m_Context, RegisterType16::REG_BC);
-		//case 0x0C:
-		//	return Op::IncR8(&m_Context, RegisterType8::REG_C);
+		case 0x0C:
+			return Op::IncR8(&m_Context, RegisterType8::REG_C);
 		case 0x0D:
 			return Op::DecR8(&m_Context, RegisterType8::REG_C);
 		case 0x0E:
@@ -480,8 +480,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::CompareIndirectHL(&m_Context);
 		//case 0xBF:
 		//	return Op::CompareR8(&m_Context, RegisterType8::REG_A);
-		//case 0xC0:
-		//	return Op::ReturnCondition(&m_Context, CpuFlag::Zero, false);
+		case 0xC0:
+			return Op::ReturnFlagNotSet(&m_Context, CpuFlag::Zero);
 		case 0xC1:
 			return Op::PopR16(&m_Context, RegisterType16::REG_BC);
 		case 0xC2:

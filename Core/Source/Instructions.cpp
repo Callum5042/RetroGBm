@@ -703,9 +703,11 @@ std::string Op::ReturnCondition(EmulatorContext* context, CpuFlag flag, bool con
 	bool flag_result = context->cpu->GetFlag(flag);
 	if (flag_result == condition)
 	{
-		uint8_t low = ReadFromBus(context, context->cpu->StackPointer++);
-		uint8_t high = ReadFromBus(context, context->cpu->StackPointer++);
-		uint16_t address = low | (high << 8);
+		context->cpu->StackPointer += 2;
+
+		uint8_t high = ReadFromBus(context, context->cpu->StackPointer - 1);
+		uint8_t low = ReadFromBus(context, context->cpu->StackPointer - 2);
+		uint16_t address = high << 8 | low;
 
 		context->cpu->ProgramCounter = address;
 		context->cycles += 20;
@@ -713,9 +715,10 @@ std::string Op::ReturnCondition(EmulatorContext* context, CpuFlag flag, bool con
 	else
 	{
 		context->cycles += 8;
+		context->cpu->ProgramCounter += 1;
 	}
 
-	std::string opcode_name = std::format("RET {}{}, n16", (condition ? "" : "N"), FlagString(flag));
+	std::string opcode_name = std::format("RET {}{}", (condition ? "" : "N"), FlagString(flag));
 	return opcode_name;
 }
 
