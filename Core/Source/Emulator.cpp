@@ -200,10 +200,10 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::IncR16(&m_Context, RegisterType16::REG_BC);
 		//case 0x04:
 		//	return Op::IncR8(&m_Context, RegisterType8::REG_B);
-		//case 0x05:
-		//	return Op::DecR8(&m_Context, RegisterType8::REG_B);
-		//case 0x06:
-		//	return Op::LoadN8(&m_Context, RegisterType8::REG_B);
+		case 0x05:
+			return Op::DecR8(&m_Context, RegisterType8::REG_B);
+		case 0x06:
+			return Op::LoadN8(&m_Context, RegisterType8::REG_B);
 		//case 0x09:
 		//	return Op::AddR16(&m_Context, RegisterType16::REG_BC);
 		//case 0x0A:
@@ -250,10 +250,10 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::LoadN16(&m_Context, RegisterType16::REG_HL);
 		//case 0x22:
 		//	return Op::StoreIncrementHL(&m_Context);
-		//case 0x24:
-		//	return Op::IncR8(&m_Context, RegisterType8::REG_H);
 		case 0x23:
 			return Op::IncR16(&m_Context, RegisterType16::REG_HL);
+		case 0x24:
+			return Op::IncR8(&m_Context, RegisterType8::REG_H);
 		//case 0x25:
 		//	return Op::DecR8(&m_Context, RegisterType8::REG_H);
 		//case 0x26:
@@ -266,8 +266,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::LoadIncrementHL(&m_Context);
 		//case 0x2B:
 		//	return Op::DecR16(&m_Context, RegisterType16::REG_HL);
-		//case 0x2C:
-		//	return Op::IncR8(&m_Context, RegisterType8::REG_L);
+		case 0x2C:
+			return Op::IncR8(&m_Context, RegisterType8::REG_L);
 		//case 0x2D:
 		//	return Op::DecR8(&m_Context, RegisterType8::REG_L);
 		//case 0x2E:
@@ -404,8 +404,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::StoreR8(&m_Context, RegisterType8::REG_H, RegisterType16::REG_HL);
 		//case 0x75:
 		//	return Op::StoreR8(&m_Context, RegisterType8::REG_L, RegisterType16::REG_HL);
-		//case 0x77:
-		//	return Op::StoreR8(&m_Context, RegisterType8::REG_A, RegisterType16::REG_HL);
+		case 0x77:
+			return Op::StoreR8(&m_Context, RegisterType8::REG_A, RegisterType16::REG_HL);
 		case 0x78:
 			return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_B);
 		//case 0x79:
