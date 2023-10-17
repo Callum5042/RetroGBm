@@ -130,5 +130,47 @@ namespace InstructionsTests
 			Assert::AreEqual(0x8, static_cast<int>(context.cpu->ProgramCounter));
 			Assert::AreEqual(0xFFFE, static_cast<int>(context.cpu->StackPointer));
 		}
+
+		TEST_METHOD(ReturnFlagNotSet_ZeroFlagSet_IncreaseProgramCounter)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cpu->SetFlag(CpuFlag::Zero, true);
+
+			// Act
+			Op::ReturnFlagNotSet(&context, CpuFlag::Zero);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+			Assert::AreEqual(0x1, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(0xFFFE, static_cast<int>(context.cpu->StackPointer));
+		}
+
+		TEST_METHOD(ReturnFlagNotSet_ZeroFlagNotSet_SetProgramCounterToStack_DecreaseStackPointer)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.high_ram[125] = 0xEE;
+			context.high_ram[124] = 0xFF;
+			context.cpu->StackPointer = 0xFFFE - 2;
+
+			context.cpu->SetFlag(CpuFlag::Zero, false);
+
+			// Act
+			Op::ReturnFlagNotSet(&context, CpuFlag::Zero);
+
+			// Assert
+			Assert::AreEqual(20, context.cycles);
+			Assert::AreEqual(0xEEFF, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(0xFFFE, static_cast<int>(context.cpu->StackPointer));
+		}
 	};
 }

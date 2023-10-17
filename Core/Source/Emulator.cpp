@@ -194,24 +194,24 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::Nop(&m_Context);
 		case 0x01:
 			return Op::LoadN16(&m_Context, RegisterType16::REG_BC);
-		//case 0x02:
-		//	return Op::StoreR8(&m_Context, RegisterType8::REG_A, RegisterType16::REG_BC);
+		case 0x02:
+			return Op::StoreR8(&m_Context, RegisterType8::REG_A, RegisterType16::REG_BC);
 		case 0x03:
 			return Op::IncR16(&m_Context, RegisterType16::REG_BC);
-		//case 0x04:
-		//	return Op::IncR8(&m_Context, RegisterType8::REG_B);
+		case 0x04:
+			return Op::IncR8(&m_Context, RegisterType8::REG_B);
 		case 0x05:
 			return Op::DecR8(&m_Context, RegisterType8::REG_B);
 		case 0x06:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_B);
-		//case 0x09:
-		//	return Op::AddR16(&m_Context, RegisterType16::REG_BC);
-		//case 0x0A:
-		//	return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_A, RegisterType16::REG_BC);
-		//case 0x0B:
-		//	return Op::DecR16(&m_Context, RegisterType16::REG_BC);
-		//case 0x0C:
-		//	return Op::IncR8(&m_Context, RegisterType8::REG_C);
+		case 0x09:
+			return Op::AddR16(&m_Context, RegisterType16::REG_BC);
+		case 0x0A:
+			return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_A, RegisterType16::REG_BC);
+		case 0x0B:
+			return Op::DecR16(&m_Context, RegisterType16::REG_BC);
+		case 0x0C:
+			return Op::IncR8(&m_Context, RegisterType8::REG_C);
 		case 0x0D:
 			return Op::DecR8(&m_Context, RegisterType8::REG_C);
 		case 0x0E:
@@ -226,24 +226,24 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::IncR16(&m_Context, RegisterType16::REG_DE);
 		case 0x14:
 			return Op::IncR8(&m_Context, RegisterType8::REG_D);
-		//case 0x15:
-		//	return Op::DecR8(&m_Context, RegisterType8::REG_D);
-		//case 0x16:
-		//	return Op::LoadN8(&m_Context, RegisterType8::REG_D);
+		case 0x15:
+			return Op::DecR8(&m_Context, RegisterType8::REG_D);
+		case 0x16:
+			return Op::LoadN8(&m_Context, RegisterType8::REG_D);
 		case 0x18:
 			return Op::JumpRelativeN8(&m_Context);
-		//case 0x19:
-		//	return Op::AddR16(&m_Context, RegisterType16::REG_DE);
+		case 0x19:
+			return Op::AddR16(&m_Context, RegisterType16::REG_DE);
 		case 0x1A:
 			return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_A, RegisterType16::REG_DE);
-		//case 0x1B:
-		//	return Op::DecR16(&m_Context, RegisterType16::REG_DE);
+		case 0x1B:
+			return Op::DecR16(&m_Context, RegisterType16::REG_DE);
 		case 0x1C:
 			return Op::IncR8(&m_Context, RegisterType8::REG_E);
-		//case 0x1D:
-		//	return Op::DecR8(&m_Context, RegisterType8::REG_E);
-		//case 0x1E:
-		//	return Op::LoadN8(&m_Context, RegisterType8::REG_E);
+		case 0x1D:
+			return Op::DecR8(&m_Context, RegisterType8::REG_E);
+		case 0x1E:
+			return Op::LoadN8(&m_Context, RegisterType8::REG_E);
 		case 0x1F:
 			return Op::RotateRegisterA(&m_Context);
 		case 0x20:
@@ -262,150 +262,152 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::LoadN8(&m_Context, RegisterType8::REG_H);
 		case 0x28:
 			return Op::JumpRelativeFlagSet(&m_Context, CpuFlag::Zero);
-		//case 0x29:
-		//	return Op::AddR16(&m_Context, RegisterType16::REG_HL);
+		case 0x29:
+			return Op::AddR16(&m_Context, RegisterType16::REG_HL);
 		case 0x2A:
 			return Op::LoadIncrementHL(&m_Context);
-		//case 0x2B:
-		//	return Op::DecR16(&m_Context, RegisterType16::REG_HL);
+		case 0x2B:
+			return Op::DecR16(&m_Context, RegisterType16::REG_HL);
 		case 0x2C:
 			return Op::IncR8(&m_Context, RegisterType8::REG_L);
 		case 0x2D:
 			return Op::DecR8(&m_Context, RegisterType8::REG_L);
-		//case 0x2E:
-		//	return Op::LoadN8(&m_Context, RegisterType8::REG_L);
+		case 0x2E:
+			return Op::LoadN8(&m_Context, RegisterType8::REG_L);
 		case 0x30:
 			return Op::JumpRelativeFlagNotSet(&m_Context, CpuFlag::Carry);
 		case 0x31:
 			return Op::LoadN16(&m_Context, RegisterType16::REG_SP);
 		case 0x32:
 			return Op::StoreDecrementHL(&m_Context);
-		//case 0x33:
-		//	return Op::IncR16(&m_Context, RegisterType16::REG_SP);
+		case 0x33:
+			return Op::IncR16(&m_Context, RegisterType16::REG_SP);
+		case 0x35:
+			return Op::DecIndirectHL(&m_Context);
 		//case 0x36:
 		//	return Op::StoreN8(&m_Context, RegisterType16::REG_HL);
-		//case 0x38:
-		//	return Op::JumpRelativeFlagN8(&m_Context, CpuFlag::Carry, true);
-		//case 0x39:
-		//	return Op::AddR16(&m_Context, RegisterType16::REG_SP);
+		case 0x38:
+			return Op::JumpRelativeFlagSet(&m_Context, CpuFlag::Carry);
+		case 0x39:
+			return Op::AddR16(&m_Context, RegisterType16::REG_SP);
 		//case 0x3A:
 		//	return Op::LoadDecrementHL(&m_Context);
-		//case 0x3B:
-		//	return Op::DecR16(&m_Context, RegisterType16::REG_SP);
-		//case 0x3C:
-		//	return Op::IncR8(&m_Context, RegisterType8::REG_A);
-		//case 0x3D:
-		//	return Op::DecR8(&m_Context, RegisterType8::REG_A);
+		case 0x3B:
+			return Op::DecR16(&m_Context, RegisterType16::REG_SP);
+		case 0x3C:
+			return Op::IncR8(&m_Context, RegisterType8::REG_A);
+		case 0x3D:
+			return Op::DecR8(&m_Context, RegisterType8::REG_A);
 		case 0x3E:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_A);
-		//case 0x40:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_B);
-		//case 0x41:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_C);
-		//case 0x42:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_D);
-		//case 0x43:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_E);
-		//case 0x44:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_H);
-		//case 0x45:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_L);
+		case 0x40:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_B);
+		case 0x41:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_C);
+		case 0x42:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_D);
+		case 0x43:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_E);
+		case 0x44:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_H);
+		case 0x45:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_L);
 		case 0x46:
 			return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_B, RegisterType16::REG_HL);
 		case 0x47:
 			return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_A);
-		//case 0x48:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_B);
-		//case 0x49:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_C);
-		//case 0x4A:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_D);
-		//case 0x4B:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_E);
-		//case 0x4C:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_H);
-		//case 0x4D:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_L);
+		case 0x48:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_B);
+		case 0x49:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_C);
+		case 0x4A:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_D);
+		case 0x4B:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_E);
+		case 0x4C:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_H);
+		case 0x4D:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_L);
 		case 0x4E:
 			return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_C, RegisterType16::REG_HL);
 		case 0x4F:
 			return Op::LoadR8(&m_Context, RegisterType8::REG_C, RegisterType8::REG_A);
-		//case 0x50:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_B);
-		//case 0x51:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_C);
-		//case 0x52:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_D);
-		//case 0x53:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_E);
-		//case 0x54:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_H);
-		//case 0x55:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_L);
+		case 0x50:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_B);
+		case 0x51:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_C);
+		case 0x52:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_D);
+		case 0x53:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_E);
+		case 0x54:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_H);
+		case 0x55:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_L);
 		case 0x56:
 			return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_D, RegisterType16::REG_HL);
 		case 0x57:
 			return Op::LoadR8(&m_Context, RegisterType8::REG_D, RegisterType8::REG_A);
-		//case 0x58:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_B);
-		//case 0x59:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_C);
-		//case 0x5A:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_D);
-		//case 0x5B:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_E);
-		//case 0x5C:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_H);
-		//case 0x5D:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_L);
-		//case 0x5E:
-		//	return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_E, RegisterType16::REG_HL);
+		case 0x58:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_B);
+		case 0x59:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_C);
+		case 0x5A:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_D);
+		case 0x5B:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_E);
+		case 0x5C:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_H);
+		case 0x5D:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_L);
+		case 0x5E:
+			return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_E, RegisterType16::REG_HL);
 		case 0x5F:
 			return Op::LoadR8(&m_Context, RegisterType8::REG_E, RegisterType8::REG_A);
-		//case 0x60:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_B);
-		//case 0x61:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_C);
-		//case 0x62:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_D);
-		//case 0x63:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_E);
-		//case 0x64:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_H);
-		//case 0x65:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_L);
-		//case 0x66:
-		//	return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_H, RegisterType16::REG_HL);
-		//case 0x67:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_A);
-		//case 0x68:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_B);
-		//case 0x69:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_C);
-		//case 0x6A:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_D);
-		//case 0x6B:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_E);
-		//case 0x6C:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_H);
-		//case 0x6D:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_L);
-		//case 0x6E:
-		//	return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_L, RegisterType16::REG_HL);
-		//case 0x6F:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_A);
+		case 0x60:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_B);
+		case 0x61:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_C);
+		case 0x62:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_D);
+		case 0x63:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_E);
+		case 0x64:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_H);
+		case 0x65:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_L);
+		case 0x66:
+			return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_H, RegisterType16::REG_HL);
+		case 0x67:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_H, RegisterType8::REG_A);
+		case 0x68:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_B);
+		case 0x69:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_C);
+		case 0x6A:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_D);
+		case 0x6B:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_E);
+		case 0x6C:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_H);
+		case 0x6D:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_L);
+		case 0x6E:
+			return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_L, RegisterType16::REG_HL);
+		case 0x6F:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_A);
 		case 0x70:
 			return Op::StoreR8(&m_Context, RegisterType8::REG_B, RegisterType16::REG_HL);
 		case 0x71:
 			return Op::StoreR8(&m_Context, RegisterType8::REG_C, RegisterType16::REG_HL);
 		case 0x72:
 			return Op::StoreR8(&m_Context, RegisterType8::REG_D, RegisterType16::REG_HL);
-		//case 0x73:
-		//	return Op::StoreR8(&m_Context, RegisterType8::REG_E, RegisterType16::REG_HL);
-		//case 0x74:
-		//	return Op::StoreR8(&m_Context, RegisterType8::REG_H, RegisterType16::REG_HL);
-		//case 0x75:
-		//	return Op::StoreR8(&m_Context, RegisterType8::REG_L, RegisterType16::REG_HL);
+		case 0x73:
+			return Op::StoreR8(&m_Context, RegisterType8::REG_E, RegisterType16::REG_HL);
+		case 0x74:
+			return Op::StoreR8(&m_Context, RegisterType8::REG_H, RegisterType16::REG_HL);
+		case 0x75:
+			return Op::StoreR8(&m_Context, RegisterType8::REG_L, RegisterType16::REG_HL);
 		case 0x77:
 			return Op::StoreR8(&m_Context, RegisterType8::REG_A, RegisterType16::REG_HL);
 		case 0x78:
@@ -420,10 +422,10 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_H);
 		case 0x7D:
 			return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_L);
-		//case 0x7E:
-		//	return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_A, RegisterType16::REG_HL);
-		//case 0x7F:
-		//	return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_A);
+		case 0x7E:
+			return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_A, RegisterType16::REG_HL);
+		case 0x7F:
+			return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_A);
 		//case 0x80:
 		//	return Op::AddR8(&m_Context, RegisterType8::REG_B);
 		//case 0x81:
@@ -458,30 +460,32 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::XorR8(&m_Context, RegisterType8::REG_A);
 		case 0xB1:
 			return Op::OrR8(&m_Context, RegisterType8::REG_C);
+		case 0xB6:
+			return Op::OrHL(&m_Context);
 		case 0xB7:
 			return Op::OrR8(&m_Context, RegisterType8::REG_A);
-		//case 0xB8:
-		//	return Op::CompareR8(&m_Context, RegisterType8::REG_B);
-		//case 0xB9:
-		//	return Op::CompareR8(&m_Context, RegisterType8::REG_C);
-		//case 0xBA:
-		//	return Op::CompareR8(&m_Context, RegisterType8::REG_D);
-		//case 0xBB:
-		//	return Op::CompareR8(&m_Context, RegisterType8::REG_E);
-		//case 0xBC:
-		//	return Op::CompareR8(&m_Context, RegisterType8::REG_H);
-		//case 0xBD:
-		//	return Op::CompareR8(&m_Context, RegisterType8::REG_L);
+		case 0xB8:
+			return Op::CompareR8(&m_Context, RegisterType8::REG_B);
+		case 0xB9:
+			return Op::CompareR8(&m_Context, RegisterType8::REG_C);
+		case 0xBA:
+			return Op::CompareR8(&m_Context, RegisterType8::REG_D);
+		case 0xBB:
+			return Op::CompareR8(&m_Context, RegisterType8::REG_E);
+		case 0xBC:
+			return Op::CompareR8(&m_Context, RegisterType8::REG_H);
+		case 0xBD:
+			return Op::CompareR8(&m_Context, RegisterType8::REG_L);
 		//case 0xBE:
 		//	return Op::CompareIndirectHL(&m_Context);
-		//case 0xBF:
-		//	return Op::CompareR8(&m_Context, RegisterType8::REG_A);
-		//case 0xC0:
-		//	return Op::ReturnCondition(&m_Context, CpuFlag::Zero, false);
+		case 0xBF:
+			return Op::CompareR8(&m_Context, RegisterType8::REG_A);
+		case 0xC0:
+			return Op::ReturnFlagNotSet(&m_Context, CpuFlag::Zero);
 		case 0xC1:
 			return Op::PopR16(&m_Context, RegisterType16::REG_BC);
-		//case 0xC2:
-		//	return Op::JumpFlagN16(&m_Context, CpuFlag::Zero, false);
+		case 0xC2:
+			return Op::JumpFlagN16(&m_Context, CpuFlag::Zero, false);
 		case 0xC3:
 			return Op::JumpN16(&m_Context);
 		case 0xC4:
@@ -490,8 +494,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::PushR16(&m_Context, RegisterType16::REG_BC);
 		case 0xC6:
 			return Op::AddN8(&m_Context);
-		//case 0xC8:
-		//	return Op::ReturnCondition(&m_Context, CpuFlag::Zero, true);
+		case 0xC8:
+			return Op::ReturnFlagSet(&m_Context, CpuFlag::Zero);
 		case 0xC9:
 			return Op::Return(&m_Context);
 		//case 0xCA:
@@ -502,8 +506,10 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::CallN16Condition(&m_Context, CpuFlag::Zero, true);
 		case 0xCD:
 			return Op::CallN16(&m_Context);
-		//case 0xD0:
-		//	return Op::ReturnCondition(&m_Context, CpuFlag::Carry, false);
+		case 0xCE:
+			return Op::AddCarryN8(&m_Context);
+		case 0xD0:
+			return Op::ReturnFlagNotSet(&m_Context, CpuFlag::Carry);
 		case 0xD1:
 			return Op::PopR16(&m_Context, RegisterType16::REG_DE);
 		//case 0xD2:
@@ -514,6 +520,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::PushR16(&m_Context, RegisterType16::REG_DE);
 		case 0xD6:
 			return Op::SubN8(&m_Context);
+		case 0xD8:
+			return Op::ReturnFlagSet(&m_Context, CpuFlag::Carry);
 		//case 0xD8:
 		//	return Op::ReturnCondition(&m_Context, CpuFlag::Carry, true);
 		//case 0xDA:
@@ -534,8 +542,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::AndN8(&m_Context);
 		//case 0xE8:
 		//	return Op::AddSP(&m_Context);
-		//case 0xE9:
-		//	return Op::JumpHL(&m_Context);
+		case 0xE9:
+			return Op::JumpHL(&m_Context);
 		case 0xEE:
 			return Op::XorN8(&m_Context);
 		case 0xF0:

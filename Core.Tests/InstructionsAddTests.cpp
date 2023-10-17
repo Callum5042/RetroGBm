@@ -256,6 +256,7 @@ namespace InstructionsTests
 
 			// Assert
 			Assert::AreEqual(8, context.cycles);
+			Assert::AreEqual(1, static_cast<int>(context.cpu->ProgramCounter));
 
 			uint16_t result = context.cpu->GetRegister(RegisterType16::REG_HL);
 			Assert::AreEqual(0x25, static_cast<int>(result));
@@ -272,18 +273,47 @@ namespace InstructionsTests
 			context.cpu = std::make_unique<Cpu>();
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
-			context.cpu->SetFlag(CpuFlag::Subtraction, true);
 			context.cpu->SetRegister(RegisterType16::REG_BC, 0xFFAA);
 			context.cpu->SetRegister(RegisterType16::REG_HL, 0xFFAA);
+			context.cpu->SetFlag(CpuFlag::Subtraction, true);
 
 			// Act
 			Op::AddR16(&context, RegisterType16::REG_BC);
 
 			// Assert
 			Assert::AreEqual(8, context.cycles);
+			Assert::AreEqual(1, static_cast<int>(context.cpu->ProgramCounter));
 
-			bool subtract_flag = context.cpu->GetFlag(CpuFlag::Carry);
-			Assert::IsTrue(subtract_flag);
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Subtraction));
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::HalfCarry));
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::Carry));
+		}
+
+		TEST_METHOD(AddR16_ResultOverflows3rdNibble_SetHalfCarryFlag)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cpu->SetRegister(RegisterType16::REG_BC, 0xFFF);
+			context.cpu->SetRegister(RegisterType16::REG_HL, 0x1);
+			context.cpu->SetFlag(CpuFlag::Subtraction, true);
+
+			// Act
+			Op::AddR16(&context, RegisterType16::REG_BC);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+			Assert::AreEqual(1, static_cast<int>(context.cpu->ProgramCounter));
+
+			uint16_t result = context.cpu->GetRegister(RegisterType16::REG_HL);
+			Assert::AreEqual(0x1000, static_cast<int>(result));
+
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Subtraction));
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::HalfCarry));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Carry));
 		}
 	};
 }

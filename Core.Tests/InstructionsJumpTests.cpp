@@ -38,6 +38,7 @@ namespace InstructionsTests
 			context.cpu = std::make_unique<Cpu>();
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
+			context.cartridge->data.push_back(0x0);
 			context.cartridge->data.push_back(0x20);
 			context.cartridge->data.push_back(0x50);
 			context.cpu->SetFlag(CpuFlag::Zero, false);
@@ -59,6 +60,7 @@ namespace InstructionsTests
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
 			context.cartridge->data.push_back(0x20);
+			context.cartridge->data.push_back(0x20);
 			context.cartridge->data.push_back(0x50);
 			context.cpu->SetFlag(CpuFlag::Zero, true);
 
@@ -67,7 +69,7 @@ namespace InstructionsTests
 
 			// Assert
 			Assert::AreEqual(12, context.cycles);
-			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(3, static_cast<int>(context.cpu->ProgramCounter));
 		}
 
 		TEST_METHOD(JumpFlagN16_CarryFlagNotSet_IncreaseCyclesBy16_ChangeProgramCounterToAddress)
@@ -78,6 +80,7 @@ namespace InstructionsTests
 			context.cpu = std::make_unique<Cpu>();
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
+			context.cartridge->data.push_back(0x0);
 			context.cartridge->data.push_back(0x20);
 			context.cartridge->data.push_back(0x50);
 			context.cpu->SetFlag(CpuFlag::Carry, false);
@@ -98,6 +101,7 @@ namespace InstructionsTests
 			context.cpu = std::make_unique<Cpu>();
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
+			context.cartridge->data.push_back(0x0);
 			context.cartridge->data.push_back(0x20);
 			context.cartridge->data.push_back(0x50);
 			context.cpu->SetFlag(CpuFlag::Carry, true);
@@ -107,7 +111,7 @@ namespace InstructionsTests
 
 			// Assert
 			Assert::AreEqual(12, context.cycles);
-			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(3, static_cast<int>(context.cpu->ProgramCounter));
 		}
 		
 		TEST_METHOD(JumpFlagN16_CarryFlagSet_IncreaseCyclesBy16_ChangeProgramCounterToAddress)
@@ -118,6 +122,7 @@ namespace InstructionsTests
 			context.cpu = std::make_unique<Cpu>();
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
+			context.cartridge->data.push_back(0x0);
 			context.cartridge->data.push_back(0x20);
 			context.cartridge->data.push_back(0x50);
 			context.cpu->SetFlag(CpuFlag::Carry, true);
@@ -138,6 +143,7 @@ namespace InstructionsTests
 			context.cpu = std::make_unique<Cpu>();
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
+			context.cartridge->data.push_back(0x0);
 			context.cartridge->data.push_back(0x20);
 			context.cartridge->data.push_back(0x50);
 			context.cpu->SetFlag(CpuFlag::Carry, false);
@@ -147,7 +153,7 @@ namespace InstructionsTests
 
 			// Assert
 			Assert::AreEqual(12, context.cycles);
-			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(3, static_cast<int>(context.cpu->ProgramCounter));
 		}
 		
 		TEST_METHOD(JumpFlagN16_ZeroFlagSet_IncreaseCyclesBy16_ChangeProgramCounterToAddress)
@@ -158,6 +164,7 @@ namespace InstructionsTests
 			context.cpu = std::make_unique<Cpu>();
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
+			context.cartridge->data.push_back(0x0);
 			context.cartridge->data.push_back(0x20);
 			context.cartridge->data.push_back(0x50);
 			context.cpu->SetFlag(CpuFlag::Zero, true);
@@ -178,6 +185,7 @@ namespace InstructionsTests
 			context.cpu = std::make_unique<Cpu>();
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
+			context.cartridge->data.push_back(0x0);
 			context.cartridge->data.push_back(0x20);
 			context.cartridge->data.push_back(0x50);
 			context.cpu->SetFlag(CpuFlag::Zero, false);
@@ -187,7 +195,7 @@ namespace InstructionsTests
 
 			// Assert
 			Assert::AreEqual(12, context.cycles);
-			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(3, static_cast<int>(context.cpu->ProgramCounter));
 		}
 
 		TEST_METHOD(JumpHL_IncreaseCyclesBy4_SetProgramCounter)
@@ -274,10 +282,6 @@ namespace InstructionsTests
 			Assert::AreEqual(0x6, static_cast<int>(context.cpu->ProgramCounter));
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-
 		TEST_METHOD(JumpRelativeFlagN8_ZeroFlagSet_IncreaseCyclesBy12_JumpToRelativeAddress)
 		{
 			// Arrange
@@ -356,8 +360,7 @@ namespace InstructionsTests
 
 			context.high_ram[125] = 0xEE;
 			context.high_ram[124] = 0xFF;
-
-			context.cpu->StackPointer -= 2;
+			context.cpu->StackPointer = 0xFFFE - 2;
 
 			context.cpu->SetFlag(CpuFlag::Zero, true);
 
@@ -390,7 +393,7 @@ namespace InstructionsTests
 
 			// Assert
 			Assert::AreEqual(8, context.cycles);
-			Assert::AreEqual(0x0, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(0x1, static_cast<int>(context.cpu->ProgramCounter));
 			Assert::AreEqual(0xFFFE - 2, static_cast<int>(context.cpu->StackPointer));
 		}
 
@@ -441,6 +444,37 @@ namespace InstructionsTests
 
 			Assert::AreEqual(0x36, static_cast<int>(context.cpu->GetRegister(RegisterType8::REG_B)));
 			Assert::AreEqual(0x24, static_cast<int>(context.cpu->GetRegister(RegisterType8::REG_C)));
+		}
+
+		TEST_METHOD(PopR12_DataWouldSetFlag_FlagsShouldBeSet)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cpu->SetRegister(RegisterType8::REG_A, 0x0);
+			context.cpu->SetRegister(RegisterType8::REG_F, 0x0);
+
+			context.high_ram[0xFFFD - 0xFF80] = 0x0;
+			context.high_ram[0xFFFC - 0xFF80] = 0xF0;
+			context.cpu->StackPointer = 0xFFFE - 2;
+
+			// Act
+			Op::PopR16(&context, RegisterType16::REG_AF);
+
+			// Assert
+			Assert::AreEqual(12, context.cycles);
+			Assert::AreEqual(0xFFFE, static_cast<int>(context.cpu->StackPointer));
+
+			Assert::AreEqual(0x0, static_cast<int>(context.cpu->GetRegister(RegisterType8::REG_A)));
+			Assert::AreEqual(0xF0, static_cast<int>(context.cpu->GetRegister(RegisterType8::REG_F)));
+
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::Zero));
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::Subtraction));
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::HalfCarry));
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::Carry));
 		}
 
 		TEST_METHOD(JumpRelativeFlagSet_ZeroFlagSet_JumpToAddress)
