@@ -198,8 +198,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::StoreR8(&m_Context, RegisterType8::REG_A, RegisterType16::REG_BC);
 		case 0x03:
 			return Op::IncR16(&m_Context, RegisterType16::REG_BC);
-		//case 0x04:
-		//	return Op::IncR8(&m_Context, RegisterType8::REG_B);
+		case 0x04:
+			return Op::IncR8(&m_Context, RegisterType8::REG_B);
 		case 0x05:
 			return Op::DecR8(&m_Context, RegisterType8::REG_B);
 		case 0x06:
