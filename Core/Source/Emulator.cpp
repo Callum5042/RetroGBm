@@ -240,8 +240,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::DecR16(&m_Context, RegisterType16::REG_DE);
 		case 0x1C:
 			return Op::IncR8(&m_Context, RegisterType8::REG_E);
-		//case 0x1D:
-		//	return Op::DecR8(&m_Context, RegisterType8::REG_E);
+		case 0x1D:
+			return Op::DecR8(&m_Context, RegisterType8::REG_E);
 		//case 0x1E:
 		//	return Op::LoadN8(&m_Context, RegisterType8::REG_E);
 		case 0x1F:
@@ -294,8 +294,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::LoadDecrementHL(&m_Context);
 		//case 0x3B:
 		//	return Op::DecR16(&m_Context, RegisterType16::REG_SP);
-		//case 0x3C:
-		//	return Op::IncR8(&m_Context, RegisterType8::REG_A);
+		case 0x3C:
+			return Op::IncR8(&m_Context, RegisterType8::REG_A);
 		case 0x3D:
 			return Op::DecR8(&m_Context, RegisterType8::REG_A);
 		case 0x3E:
@@ -540,8 +540,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::AndN8(&m_Context);
 		//case 0xE8:
 		//	return Op::AddSP(&m_Context);
-		//case 0xE9:
-		//	return Op::JumpHL(&m_Context);
+		case 0xE9:
+			return Op::JumpHL(&m_Context);
 		case 0xEE:
 			return Op::XorN8(&m_Context);
 		case 0xF0:

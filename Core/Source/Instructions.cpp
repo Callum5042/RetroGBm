@@ -81,6 +81,7 @@ std::string Op::JumpFlagN16(EmulatorContext* context, CpuFlag flag, bool conditi
 std::string Op::JumpHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+
 	context->cpu->ProgramCounter = address;
 	context->cycles += 4;
 
