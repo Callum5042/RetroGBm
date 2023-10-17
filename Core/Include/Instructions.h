@@ -99,6 +99,8 @@ namespace Op
 
 	std::string ReturnCondition(EmulatorContext* context, CpuFlag flag, bool condition);
 
+	std::string ReturnFlagNotSet(EmulatorContext* context, CpuFlag flag);
+
 	std::string CompareR8(EmulatorContext* context, RegisterType8 reg);
 
 	std::string CompareN8(EmulatorContext* context);
