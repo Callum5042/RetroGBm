@@ -801,9 +801,9 @@ std::string Op::DecR16(EmulatorContext* context, RegisterType16 reg)
 	return opcode_name;
 }
 
-std::string Op::JumpRelativeNotZero(EmulatorContext* context)
+std::string Op::JumpRelativeFlagNotSet(EmulatorContext* context, CpuFlag flag)
 {
-	bool flag_zero = context->cpu->GetFlag(CpuFlag::Zero);
+	bool flag_zero = context->cpu->GetFlag(flag);
 	int8_t data = static_cast<int8_t>(ReadFromBus(context, context->cpu->ProgramCounter + 1));
 	uint16_t address = static_cast<int16_t>(context->cpu->ProgramCounter + data + 2);
 
@@ -819,6 +819,27 @@ std::string Op::JumpRelativeNotZero(EmulatorContext* context)
 	}
 
 	std::string opcode_name = std::format("JR NZ, 0x{:x}", address);
+	return opcode_name;
+}
+
+std::string Op::JumpRelativeFlagSet(EmulatorContext* context, CpuFlag flag)
+{
+	bool flag_zero = context->cpu->GetFlag(flag);
+	int8_t data = static_cast<int8_t>(ReadFromBus(context, context->cpu->ProgramCounter + 1));
+	uint16_t address = static_cast<int16_t>(context->cpu->ProgramCounter + data + 2);
+
+	if (flag_zero)
+	{
+		context->cycles += 12;
+		context->cpu->ProgramCounter = address;
+	}
+	else
+	{
+		context->cycles += 8;
+		context->cpu->ProgramCounter += 2;
+	}
+
+	std::string opcode_name = std::format("JR {}, 0x{:x}", FlagString(flag), address);
 	return opcode_name;
 }
 
