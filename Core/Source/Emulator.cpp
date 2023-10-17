@@ -17,6 +17,8 @@ Emulator::Emulator()
 	m_Context.video_ram.resize(1024 * 8);
 	std::fill(m_Context.video_ram.begin(), m_Context.video_ram.end(), 0x0);
 
+	std::fill(m_Context.high_ram.begin(), m_Context.high_ram.end(), 0x0);
+
 	// Build opcode table
 	/*m_OpCodeTable[0x0] = [&]() { return Op::Nop(&m_Context); };
 	m_OpCodeTable[0xC3] = [&]() { return Op::JumpN16(&m_Context); };
@@ -48,7 +50,24 @@ bool Emulator::LoadRom(const std::filesystem::path& path)
 
 	// Set program counter to 0x100 to skip boot rom
 	m_Context.cpu->ProgramCounter = 0x100;
-	m_Context.timer.div = 0xAC00;
+
+	m_Context.timer.div = 0xAB;
+	m_Context.timer.tac = 0xF8;
+	m_Context.timer.tma = 0x0;
+	m_Context.timer.tima = 0x0;
+
+	m_Context.display.lcdc = 0x91;
+	m_Context.display.stat = 0x85;
+	m_Context.display.scx = 0x0;
+	m_Context.display.scy = 0x0;
+	m_Context.display.ly = 0x0;
+	m_Context.display.lyc = 0x0;
+	m_Context.display.dma = 0xFF;
+	m_Context.display.bgp = 0xFC;
+	m_Context.display.obp0 = 0x0;
+	m_Context.display.obp1 = 0x0;
+	m_Context.display.wy = 0x0;
+	m_Context.display.wx = 0x0;
 
 	if (checksum_result == 0x0)
 	{
