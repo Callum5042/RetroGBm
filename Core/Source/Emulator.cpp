@@ -244,6 +244,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::DecR8(&m_Context, RegisterType8::REG_E);
 		//case 0x1E:
 		//	return Op::LoadN8(&m_Context, RegisterType8::REG_E);
+		case 0x1F:
+			return Op::RotateRegisterA(&m_Context);
 		case 0x20:
 			return Op::JumpRelativeFlagNotSet(&m_Context, CpuFlag::Zero);
 		case 0x21:

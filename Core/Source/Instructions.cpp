@@ -939,6 +939,28 @@ std::string Op::AndN8(EmulatorContext* context)
 	return opcode_name;
 }
 
+std::string Op::RotateRegisterA(EmulatorContext* context)
+{
+	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t result = data >> 1;
+	uint8_t bit0 = (data & 0x1);
+
+	bool carry_flag = context->cpu->GetFlag(CpuFlag::Carry);
+	result |= (carry_flag ? 0b10000000 : 0);
+	context->cpu->SetRegister(RegisterType8::REG_A, result);
+
+	context->cpu->SetFlag(CpuFlag::Zero, false);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
+	context->cpu->SetFlag(CpuFlag::Carry, bit0 == 1);
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("RRA");
+	return opcode_name;
+}
+
 std::string Op::ExtendedPrefix(EmulatorContext* context)
 {
 	uint8_t extended_op = ReadFromBus(context, context->cpu->ProgramCounter + 1);

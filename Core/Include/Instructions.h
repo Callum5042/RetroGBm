@@ -120,4 +120,6 @@ namespace Op
 	std::string AndN8(EmulatorContext* context);
 
 	std::string ExtendedPrefix(EmulatorContext* context);
+
+	std::string RotateRegisterA(EmulatorContext* context);
 }

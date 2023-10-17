@@ -170,6 +170,7 @@
     <ClCompile Include="InstructionsJumpTests.cpp" />
     <ClCompile Include="InstructionsLoadTests.cpp" />
     <ClCompile Include="InstructionsOrTests.cpp" />
+    <ClCompile Include="InstructionsShiftTests.cpp" />
     <ClCompile Include="InstructionsSubTests.cpp" />
     <ClCompile Include="InstructionsTests.cpp" />
     <ClCompile Include="InstructionsXorTests.cpp" />

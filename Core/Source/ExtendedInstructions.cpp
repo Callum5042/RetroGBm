@@ -28,6 +28,7 @@ void CB::RotateRight(EmulatorContext* context, RegisterType8 reg)
 
 	bool carry_flag = context->cpu->GetFlag(CpuFlag::Carry);
 	result |= (carry_flag ? 0b10000000 : 0);
+	context->cpu->SetRegister(reg, result);
 
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);
