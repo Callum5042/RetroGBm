@@ -171,8 +171,9 @@ std::string Op::XorR16(EmulatorContext* context, RegisterType16 type)
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
 	context->cycles += 8;
+	context->cpu->ProgramCounter += 1;
 
-	std::string opcode_name = std::format("XOR r16 (0x{:x})", data);
+	std::string opcode_name = std::format("XOR 0x{:x}", data);
 	return opcode_name;
 }
 
@@ -464,6 +465,26 @@ std::string Op::AddN8(EmulatorContext* context)
 	context->cycles += 8;
 
 	std::string opcode_name = std::format("ADD A, 0x{:x}", result_b);
+	return opcode_name;
+}
+
+std::string Op::SubN8(EmulatorContext* context)
+{
+	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t result_b = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+
+	uint16_t result = result_a - result_b;
+	context->cpu->SetFlag(CpuFlag::Zero, (result & 0xFF) == 0x0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, true);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (result_a & 0xF) < (result_b & 0xF));
+	context->cpu->SetFlag(CpuFlag::Carry, result_a < result_b);
+
+	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result & 0xFF));
+
+	context->cpu->ProgramCounter += 2;
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("SUB A, 0x{:x}", result_b);
 	return opcode_name;
 }
 
