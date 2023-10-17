@@ -805,7 +805,8 @@ std::string Op::PopR16(EmulatorContext* context, RegisterType16 reg)
 	uint8_t high = ReadFromBus(context, context->cpu->StackPointer - 1);
 	uint8_t low = ReadFromBus(context, context->cpu->StackPointer - 2);
 
-	context->cpu->SetRegister(reg, high, low);
+	uint16_t data = high << 8 | low;
+	context->cpu->SetRegister(reg, data);
 	
 	context->cycles += 12;
 	context->cpu->ProgramCounter += 1;

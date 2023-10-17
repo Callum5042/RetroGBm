@@ -446,6 +446,37 @@ namespace InstructionsTests
 			Assert::AreEqual(0x24, static_cast<int>(context.cpu->GetRegister(RegisterType8::REG_C)));
 		}
 
+		TEST_METHOD(PopR12_DataWouldSetFlag_FlagsShouldBeSet)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cpu->SetRegister(RegisterType8::REG_A, 0x0);
+			context.cpu->SetRegister(RegisterType8::REG_F, 0x0);
+
+			context.high_ram[0xFFFD - 0xFF80] = 0x0;
+			context.high_ram[0xFFFC - 0xFF80] = 0xF0;
+			context.cpu->StackPointer = 0xFFFE - 2;
+
+			// Act
+			Op::PopR16(&context, RegisterType16::REG_AF);
+
+			// Assert
+			Assert::AreEqual(12, context.cycles);
+			Assert::AreEqual(0xFFFE, static_cast<int>(context.cpu->StackPointer));
+
+			Assert::AreEqual(0x0, static_cast<int>(context.cpu->GetRegister(RegisterType8::REG_A)));
+			Assert::AreEqual(0xF0, static_cast<int>(context.cpu->GetRegister(RegisterType8::REG_F)));
+
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::Zero));
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::Subtraction));
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::HalfCarry));
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::Carry));
+		}
+
 		TEST_METHOD(JumpRelativeFlagSet_ZeroFlagSet_JumpToAddress)
 		{
 			// Arrange
