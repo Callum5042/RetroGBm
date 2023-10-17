@@ -289,16 +289,17 @@ std::string Op::StoreIndirectR8(EmulatorContext* context, RegisterType8 reg)
 
 std::string Op::LoadIndirectR8(EmulatorContext* context, RegisterType8 reg)
 {
-	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter++);
-	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
 	uint16_t address = low | (high << 8);
 
 	uint8_t data = ReadFromBus(context, address);
 	context->cpu->SetRegister(reg, data);
 
 	context->cycles += 16;
+	context->cpu->ProgramCounter += 3;
 
-	std::string opcode_name = std::format("LD [a16], {} (0x{:x}, 0x{:x})", RegisterTypeString8(reg), low, high);
+	std::string opcode_name = std::format("LD [a16], {} 0x{:x})", RegisterTypeString8(reg), address);
 	return opcode_name;
 }
 
