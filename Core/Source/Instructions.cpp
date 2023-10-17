@@ -653,6 +653,36 @@ std::string Op::CallN16Condition(EmulatorContext* context, CpuFlag flag, bool co
 	return opcode_name;
 }
 
+std::string Op::CallN16FlagNotSet(EmulatorContext* context, CpuFlag flag)
+{
+	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
+	uint16_t address = low | (high << 8);
+
+	bool flag_result = context->cpu->GetFlag(flag);
+	if (!flag_result)
+	{
+		context->cpu->StackPointer -= 2;
+
+		uint8_t pc_high = (context->cpu->ProgramCounter + 3) >> 8;
+		uint8_t pc_low = (context->cpu->ProgramCounter + 3) & 0xFF;
+
+		WriteToBus(context, context->cpu->StackPointer + 1, pc_high);
+		WriteToBus(context, context->cpu->StackPointer + 0, pc_low);
+
+		context->cpu->ProgramCounter = address;
+		context->cycles += 24;
+	}
+	else
+	{
+		context->cycles += 12;
+		context->cpu->ProgramCounter += 3;
+	}
+
+	std::string opcode_name = std::format("CALL N{}, 0x{:x}", FlagString(flag), address);
+	return opcode_name;
+}
+
 std::string Op::Return(EmulatorContext* context)
 {
 	context->cpu->StackPointer += 2;
@@ -805,11 +835,11 @@ std::string Op::DecR16(EmulatorContext* context, RegisterType16 reg)
 
 std::string Op::JumpRelativeFlagNotSet(EmulatorContext* context, CpuFlag flag)
 {
-	bool flag_zero = context->cpu->GetFlag(flag);
+	bool flag_result = context->cpu->GetFlag(flag);
 	int8_t data = static_cast<int8_t>(ReadFromBus(context, context->cpu->ProgramCounter + 1));
 	uint16_t address = static_cast<int16_t>(context->cpu->ProgramCounter + data + 2);
 
-	if (!flag_zero)
+	if (!flag_result)
 	{
 		context->cycles += 12;
 		context->cpu->ProgramCounter = address;
@@ -826,11 +856,11 @@ std::string Op::JumpRelativeFlagNotSet(EmulatorContext* context, CpuFlag flag)
 
 std::string Op::JumpRelativeFlagSet(EmulatorContext* context, CpuFlag flag)
 {
-	bool flag_zero = context->cpu->GetFlag(flag);
+	bool flag_result = context->cpu->GetFlag(flag);
 	int8_t data = static_cast<int8_t>(ReadFromBus(context, context->cpu->ProgramCounter + 1));
 	uint16_t address = static_cast<int16_t>(context->cpu->ProgramCounter + data + 2);
 
-	if (flag_zero)
+	if (flag_result)
 	{
 		context->cycles += 12;
 		context->cpu->ProgramCounter = address;

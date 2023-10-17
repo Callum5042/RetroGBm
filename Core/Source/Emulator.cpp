@@ -480,8 +480,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::JumpFlagN16(&m_Context, CpuFlag::Zero, false);
 		case 0xC3:
 			return Op::JumpN16(&m_Context);
-		//case 0xC4:
-		//	return Op::CallN16Condition(&m_Context, CpuFlag::Zero, false);
+		case 0xC4:
+			return Op::CallN16FlagNotSet(&m_Context, CpuFlag::Zero);
 		case 0xC5:
 			return Op::PushR16(&m_Context, RegisterType16::REG_BC);
 		//case 0xC6:
