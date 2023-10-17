@@ -2,6 +2,7 @@
 #include "Bus.h"
 #include "Emulator.h"
 #include "Cpu.h"
+#include "ExtendedInstructions.h"
 using namespace Op;
 
 std::string Op::Nop(EmulatorContext* context)
@@ -935,5 +936,30 @@ std::string Op::AndN8(EmulatorContext* context)
 	context->cycles += 8;
 
 	std::string opcode_name = std::format("AND A, 0x{:x}", result_r);
+	return opcode_name;
+}
+
+std::string Op::ExtendedPrefix(EmulatorContext* context)
+{
+	uint8_t extended_op = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+
+	switch (extended_op)
+	{
+		case 0x19:
+			CB::RotateRight(context, RegisterType8::REG_C);
+			break;
+		case 0x1A:
+			CB::RotateRight(context, RegisterType8::REG_D);
+			break;
+
+		case 0x38:
+			CB::ShiftRightLogically(context, RegisterType8::REG_B);
+			break;
+
+		default:
+			throw std::exception(std::format("Extended instruction not implement: 0x{:x}", extended_op).c_str());
+	}
+
+	std::string opcode_name = std::format("PREFIX 0x{:x}", extended_op);
 	return opcode_name;
 }

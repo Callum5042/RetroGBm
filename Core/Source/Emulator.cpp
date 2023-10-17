@@ -494,6 +494,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::Return(&m_Context);
 		//case 0xCA:
 		//	return Op::JumpFlagN16(&m_Context, CpuFlag::Zero, true);
+		case 0xCB:
+			return Op::ExtendedPrefix(&m_Context);
 		//case 0xCC:
 		//	return Op::CallN16Condition(&m_Context, CpuFlag::Zero, true);
 		case 0xCD:
