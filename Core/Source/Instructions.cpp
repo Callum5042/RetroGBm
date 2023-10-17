@@ -142,7 +142,7 @@ std::string Op::XorR8(EmulatorContext* context, RegisterType8 type)
 std::string Op::XorN8(EmulatorContext* context)
 {
 	uint8_t reg_a = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
 
 	uint8_t result = reg_a ^ data;
 	context->cpu->SetRegister(RegisterType8::REG_A, result);
@@ -152,8 +152,9 @@ std::string Op::XorN8(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
 	context->cycles += 8;
+	context->cpu->ProgramCounter += 2;
 
-	std::string opcode_name = std::format("XOR n8 (0x{:x})", data);
+	std::string opcode_name = std::format("XOR 0x{:x}", data);
 	return opcode_name;
 }
 
