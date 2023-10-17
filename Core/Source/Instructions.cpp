@@ -840,6 +840,24 @@ std::string Op::DecR16(EmulatorContext* context, RegisterType16 reg)
 	return opcode_name;
 }
 
+std::string Op::DecIndirectHL(EmulatorContext* context)
+{
+	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+	uint8_t data = ReadFromBus(context, address);
+	uint8_t result = data - 1;
+
+	WriteToBus(context, address, result);
+	context->cpu->SetFlag(CpuFlag::Subtraction, true);
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (data & 0xF) < (1 & 0xF));
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 12;
+
+	std::string opcode_name = std::format("DEC [HL]");
+	return opcode_name;
+}
+
 std::string Op::JumpRelativeFlagNotSet(EmulatorContext* context, CpuFlag flag)
 {
 	bool flag_result = context->cpu->GetFlag(flag);
@@ -899,6 +917,27 @@ std::string Op::OrR8(EmulatorContext* context, RegisterType8 reg)
 	context->cycles += 4;
 
 	std::string opcode_name = std::format("OR A, {}", RegisterTypeString8(reg));
+	return opcode_name;
+}
+
+std::string Op::OrHL(EmulatorContext* context)
+{
+	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+	uint8_t result_r = ReadFromBus(context, address);
+
+	uint8_t result = result_a | result_r;
+	context->cpu->SetRegister(RegisterType8::REG_A, result);
+
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
+	context->cpu->SetFlag(CpuFlag::Carry, false);
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("OR A, [HL]");
 	return opcode_name;
 }
 

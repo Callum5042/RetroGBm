@@ -282,6 +282,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::StoreDecrementHL(&m_Context);
 		//case 0x33:
 		//	return Op::IncR16(&m_Context, RegisterType16::REG_SP);
+		case 0x35:
+			return Op::DecIndirectHL(&m_Context);
 		//case 0x36:
 		//	return Op::StoreN8(&m_Context, RegisterType16::REG_HL);
 		//case 0x38:
@@ -458,6 +460,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::XorR8(&m_Context, RegisterType8::REG_A);
 		case 0xB1:
 			return Op::OrR8(&m_Context, RegisterType8::REG_C);
+		case 0xB6:
+			return Op::OrHL(&m_Context);
 		case 0xB7:
 			return Op::OrR8(&m_Context, RegisterType8::REG_A);
 		//case 0xB8:

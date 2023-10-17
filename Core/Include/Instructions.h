@@ -115,7 +115,11 @@ namespace Op
 
 	std::string DecR16(EmulatorContext* context, RegisterType16 reg);
 
+	std::string DecIndirectHL(EmulatorContext* context);
+
 	std::string OrR8(EmulatorContext* context, RegisterType8 reg);
+
+	std::string OrHL(EmulatorContext* context);
 
 	std::string AndR8(EmulatorContext* context, RegisterType8 reg);
 
