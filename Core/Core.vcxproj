@@ -23,9 +23,11 @@
     <ClInclude Include="Include\Cartridge.h" />
     <ClInclude Include="Include\Cpu.h" />
     <ClInclude Include="Include\Emulator.h" />
+    <ClInclude Include="Include\ExtendedInstructions.h" />
     <ClInclude Include="Include\Instructions.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\ExtendedInstructions.cpp" />
     <ClCompile Include="Source\Bus.cpp" />
     <ClCompile Include="Source\Cartridge.cpp" />
     <ClCompile Include="Source\Cpu.cpp" />

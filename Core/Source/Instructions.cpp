@@ -2,6 +2,7 @@
 #include "Bus.h"
 #include "Emulator.h"
 #include "Cpu.h"
+#include "ExtendedInstructions.h"
 using namespace Op;
 
 std::string Op::Nop(EmulatorContext* context)
@@ -141,7 +142,7 @@ std::string Op::XorR8(EmulatorContext* context, RegisterType8 type)
 std::string Op::XorN8(EmulatorContext* context)
 {
 	uint8_t reg_a = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
 
 	uint8_t result = reg_a ^ data;
 	context->cpu->SetRegister(RegisterType8::REG_A, result);
@@ -151,8 +152,9 @@ std::string Op::XorN8(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
 	context->cycles += 8;
+	context->cpu->ProgramCounter += 2;
 
-	std::string opcode_name = std::format("XOR n8 (0x{:x})", data);
+	std::string opcode_name = std::format("XOR 0x{:x}", data);
 	return opcode_name;
 }
 
@@ -935,5 +937,52 @@ std::string Op::AndN8(EmulatorContext* context)
 	context->cycles += 8;
 
 	std::string opcode_name = std::format("AND A, 0x{:x}", result_r);
+	return opcode_name;
+}
+
+std::string Op::RotateRegisterA(EmulatorContext* context)
+{
+	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t result = data >> 1;
+	uint8_t bit0 = (data & 0x1);
+
+	bool carry_flag = context->cpu->GetFlag(CpuFlag::Carry);
+	result |= (carry_flag ? 0b10000000 : 0);
+	context->cpu->SetRegister(RegisterType8::REG_A, result);
+
+	context->cpu->SetFlag(CpuFlag::Zero, false);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
+	context->cpu->SetFlag(CpuFlag::Carry, bit0 == 1);
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("RRA");
+	return opcode_name;
+}
+
+std::string Op::ExtendedPrefix(EmulatorContext* context)
+{
+	uint8_t extended_op = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+
+	switch (extended_op)
+	{
+		case 0x19:
+			CB::RotateRight(context, RegisterType8::REG_C);
+			break;
+		case 0x1A:
+			CB::RotateRight(context, RegisterType8::REG_D);
+			break;
+
+		case 0x38:
+			CB::ShiftRightLogically(context, RegisterType8::REG_B);
+			break;
+
+		default:
+			throw std::exception(std::format("Extended instruction not implement: 0x{:x}", extended_op).c_str());
+	}
+
+	std::string opcode_name = std::format("PREFIX 0x{:x}", extended_op);
 	return opcode_name;
 }

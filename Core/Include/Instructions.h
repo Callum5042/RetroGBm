@@ -118,4 +118,8 @@ namespace Op
 	std::string AndR8(EmulatorContext* context, RegisterType8 reg);
 
 	std::string AndN8(EmulatorContext* context);
+
+	std::string ExtendedPrefix(EmulatorContext* context);
+
+	std::string RotateRegisterA(EmulatorContext* context);
 }
