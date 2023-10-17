@@ -226,7 +226,7 @@ std::string Op::StoreIncrementHL(EmulatorContext* context)
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 1;
 
-	std::string opcode_name = std::format("LDI [{}], 0x{:x}", RegisterTypeString16(RegisterType16::REG_HL), address);
+	std::string opcode_name = std::format("LDI [{}], A", RegisterTypeString16(RegisterType16::REG_HL));
 	return opcode_name;
 }
 
@@ -239,8 +239,9 @@ std::string Op::StoreDecrementHL(EmulatorContext* context)
 	context->cpu->SetRegister(RegisterType16::REG_HL, address - 1);
 
 	context->cycles += 8;
+	context->cpu->ProgramCounter += 1;
 
-	std::string opcode_name = std::format("LDD [{}], r8 (0x{:x})", RegisterTypeString16(RegisterType16::REG_HL), data);
+	std::string opcode_name = std::format("LDD [{}], A", RegisterTypeString16(RegisterType16::REG_HL));
 	return opcode_name;
 }
 
