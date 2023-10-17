@@ -542,8 +542,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::LoadIndirectR8(&m_Context, RegisterType8::REG_A);
 		//case 0xFB:
 		//	return Op::EnableInterrupts(&m_Context);
-		//case 0xFE:
-		//	return Op::CompareN8(&m_Context);
+		case 0xFE:
+			return Op::CompareN8(&m_Context);
 		default:
 			throw std::exception(std::format("Instruction not implemented: 0x{:x}", opcode).c_str());
 	}

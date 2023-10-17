@@ -709,18 +709,19 @@ std::string Op::CompareR8(EmulatorContext* context, RegisterType8 reg)
 std::string Op::CompareN8(EmulatorContext* context)
 {
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t value = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint8_t value = ReadFromBus(context, context->cpu->ProgramCounter + 1);
 
 	uint8_t result = data - value;
 
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
 	context->cpu->SetFlag(CpuFlag::Subtraction, true);
-	context->cpu->SetFlag(CpuFlag::HalfCarry, (0x0f & value) > (0x0f & data));
-	context->cpu->SetFlag(CpuFlag::Carry, value > data);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (data & 0xF) < (value & 0xF));
+	context->cpu->SetFlag(CpuFlag::Carry, data < value);
 
 	context->cycles += 8;
+	context->cpu->ProgramCounter += 2;
 
-	std::string opcode_name = std::format("CP A, n8 (0x{:x})", value);
+	std::string opcode_name = std::format("CP A, 0x{:x}", value);
 	return opcode_name;
 }
 

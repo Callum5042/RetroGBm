@@ -59,6 +59,7 @@ namespace CoreTests
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
 			context.cpu->SetRegister(RegisterType8::REG_A, 0x20);
+			context.cartridge->data.push_back(0x0);
 			context.cartridge->data.push_back(0x10);
 
 			// Act
@@ -81,6 +82,7 @@ namespace CoreTests
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
 			context.cpu->SetRegister(RegisterType8::REG_A, 0x20);
+			context.cartridge->data.push_back(0x0);
 			context.cartridge->data.push_back(0x20);
 
 			// Act
