@@ -59,8 +59,8 @@ std::string Op::JumpN16(EmulatorContext* context)
 
 std::string Op::JumpFlagN16(EmulatorContext* context, CpuFlag flag, bool condition)
 {
-	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter++);
-	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
 	uint16_t data = low | (high << 8);
 
 	bool enabled = context->cpu->GetFlag(flag);
@@ -72,9 +72,10 @@ std::string Op::JumpFlagN16(EmulatorContext* context, CpuFlag flag, bool conditi
 	else
 	{
 		context->cycles += 12;
+		context->cpu->ProgramCounter += 3;
 	}
 
-	std::string opcode_name = std::format("JP {}{}, n16 (0x{:x} 0x{:x})", (condition ? "" : "N"), FlagString(flag), low, high);
+	std::string opcode_name = std::format("JP {}{}, {}", (condition ? "" : "N"), FlagString(flag), data);
 	return opcode_name;
 }
 
@@ -727,10 +728,11 @@ std::string Op::CompareR8(EmulatorContext* context, RegisterType8 reg)
 
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
 	context->cpu->SetFlag(CpuFlag::Subtraction, true);
-	context->cpu->SetFlag(CpuFlag::HalfCarry, (0x0f & value) > (0x0f & a));
-	context->cpu->SetFlag(CpuFlag::Carry, value > a);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (a & 0xF) < (value & 0xF));
+	context->cpu->SetFlag(CpuFlag::Carry, a < value);
 
 	context->cycles += 4;
+	context->cpu->ProgramCounter += 1;
 
 	std::string opcode_name = std::format("CP A, {}", RegisterTypeString8(reg));
 	return opcode_name;
