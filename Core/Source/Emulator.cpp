@@ -502,6 +502,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::CallN16Condition(&m_Context, CpuFlag::Zero, true);
 		case 0xCD:
 			return Op::CallN16(&m_Context);
+		case 0xCE:
+			return Op::AddCarryN8(&m_Context);
 		//case 0xD0:
 		//	return Op::ReturnCondition(&m_Context, CpuFlag::Carry, false);
 		case 0xD1:

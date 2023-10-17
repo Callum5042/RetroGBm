@@ -122,4 +122,6 @@ namespace Op
 	std::string ExtendedPrefix(EmulatorContext* context);
 
 	std::string RotateRegisterA(EmulatorContext* context);
+
+	std::string AddCarryN8(EmulatorContext* context);
 }

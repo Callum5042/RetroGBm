@@ -986,3 +986,25 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 	std::string opcode_name = std::format("PREFIX 0x{:x}", extended_op);
 	return opcode_name;
 }
+
+std::string Op::AddCarryN8(EmulatorContext* context)
+{
+	uint8_t reg = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+
+	bool carry_flag = context->cpu->GetFlag(CpuFlag::Carry);
+	uint16_t result = reg + data + (carry_flag ? 1 : 0);
+
+	bool set_half_carry_flag = (reg & 0xF) + (data & 0xF) > (carry_flag ? 0xE : 0xF);
+
+	context->cpu->SetFlag(CpuFlag::Zero, (result & 0xFF) == 0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, set_half_carry_flag);
+	context->cpu->SetFlag(CpuFlag::Carry, (result > 0xFF));
+
+	context->cpu->ProgramCounter += 2;
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("ADC A, 0x{:x}", reg);
+	return opcode_name;
+}
