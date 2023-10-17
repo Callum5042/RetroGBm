@@ -864,3 +864,41 @@ std::string Op::OrR8(EmulatorContext* context, RegisterType8 reg)
 	std::string opcode_name = std::format("OR A, {}", RegisterTypeString8(reg));
 	return opcode_name;
 }
+
+std::string Op::AndR8(EmulatorContext* context, RegisterType8 reg)
+{
+	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t result_r = context->cpu->GetRegister(reg);
+	uint8_t result = result_a & result_r;
+	context->cpu->SetRegister(RegisterType8::REG_A, result);
+
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, true);
+	context->cpu->SetFlag(CpuFlag::Carry, false);
+
+	context->cpu->ProgramCounter += 2;
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("AND A, {}", RegisterTypeString8(reg));
+	return opcode_name;
+}
+
+std::string Op::AndN8(EmulatorContext* context)
+{
+	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t result_r = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint8_t result = result_a & result_r;
+	context->cpu->SetRegister(RegisterType8::REG_A, result);
+
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, true);
+	context->cpu->SetFlag(CpuFlag::Carry, false);
+
+	context->cpu->ProgramCounter += 2;
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("AND A, 0x{:x}", result_r);
+	return opcode_name;
+}

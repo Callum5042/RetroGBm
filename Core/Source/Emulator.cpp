@@ -522,6 +522,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::StoreIndirectAC(&m_Context);
 		case 0xE5:
 			return Op::PushR16(&m_Context, RegisterType16::REG_HL);
+		case 0xE6:
+			return Op::AndN8(&m_Context);
 		//case 0xE8:
 		//	return Op::AddSP(&m_Context);
 		//case 0xE9:
