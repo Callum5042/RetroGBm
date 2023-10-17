@@ -5,7 +5,7 @@
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
-namespace CoreTests
+namespace InstructionsTests
 {
 	TEST_CLASS(InstructionsJumpTests)
 	{
@@ -18,6 +18,7 @@ namespace CoreTests
 			context.cpu = std::make_unique<Cpu>();
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
+			context.cartridge->data.push_back(0x12);
 			context.cartridge->data.push_back(0x20);
 			context.cartridge->data.push_back(0x50);
 
@@ -217,7 +218,7 @@ namespace CoreTests
 			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
 			context.cartridge->data[0x5] = 0x2;
 
-			context.cpu->ProgramCounter = 0x5;
+			context.cpu->ProgramCounter = 0x4;
 
 			// Act
 			Op::JumpRelativeN8(&context);
@@ -323,90 +324,6 @@ namespace CoreTests
 			Assert::AreEqual(0x6, static_cast<int>(context.cpu->ProgramCounter));
 		}
 
-		TEST_METHOD(CallN16_IncreaseCyclesBy24)
-		{
-			// Arrange
-			EmulatorContext context;
-			context.cycles = 0;
-			context.cpu = std::make_unique<Cpu>();
-			context.cartridge = std::make_unique<CartridgeInfo>();
-
-			context.cpu->ProgramCounter = 0x6;
-
-			context.cartridge->data.resize(1024 * 8);
-			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
-			context.cartridge->data[0x6] = 0xEE;
-			context.cartridge->data[0x7] = 0xFF;
-
-			// Act
-			Op::CallN16(&context);
-
-			// Assert
-			Assert::AreEqual(24, context.cycles);
-			Assert::AreEqual(0xFFEE, static_cast<int>(context.cpu->ProgramCounter));
-			Assert::AreEqual(0xFFFE - 0x2, static_cast<int>(context.cpu->StackPointer));
-
-			uint8_t stack_low = ReadFromBus(&context, context.cpu->StackPointer + 2);
-			uint8_t stack_high = ReadFromBus(&context, context.cpu->StackPointer + 1);
-			Assert::AreEqual(0x0, static_cast<int>(stack_low));
-			Assert::AreEqual(0x8, static_cast<int>(stack_high));
-		}
-
-		TEST_METHOD(CallN16Condition_ZeroFlagSet_IncreaseCyclesBy24_WriteToStack)
-		{
-			// Arrange
-			EmulatorContext context;
-			context.cycles = 0;
-			context.cpu = std::make_unique<Cpu>();
-			context.cartridge = std::make_unique<CartridgeInfo>();
-
-			context.cpu->ProgramCounter = 0x6;
-
-			context.cartridge->data.resize(1024 * 8);
-			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
-			context.cartridge->data[0x6] = 0xEE;
-			context.cartridge->data[0x7] = 0xFF;
-
-			context.cpu->SetFlag(CpuFlag::Zero, true);
-
-			// Act
-			Op::CallN16Condition(&context, CpuFlag::Zero, true);
-
-			// Assert
-			Assert::AreEqual(24, context.cycles);
-			Assert::AreEqual(0xFFEE, static_cast<int>(context.cpu->ProgramCounter));
-			Assert::AreEqual(0xFFFE - 0x2, static_cast<int>(context.cpu->StackPointer));
-
-			uint8_t stack_low = ReadFromBus(&context, context.cpu->StackPointer + 2);
-			uint8_t stack_high = ReadFromBus(&context, context.cpu->StackPointer + 1);
-			Assert::AreEqual(0x0, static_cast<int>(stack_low));
-			Assert::AreEqual(0x8, static_cast<int>(stack_high));
-		}
-
-		TEST_METHOD(CallN16Condition_ZeroFlagNotSet_IncreaseCyclesBy12_DoNotWriteToStack)
-		{
-			// Arrange
-			EmulatorContext context;
-			context.cycles = 0;
-			context.cpu = std::make_unique<Cpu>();
-			context.cartridge = std::make_unique<CartridgeInfo>();
-
-			context.cartridge->data.resize(1024 * 8);
-			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
-			context.cartridge->data[0x0] = 0xEE;
-			context.cartridge->data[0x1] = 0xFF;
-
-			context.cpu->SetFlag(CpuFlag::Zero, false);
-
-			// Act
-			Op::CallN16Condition(&context, CpuFlag::Zero, true);
-
-			// Assert
-			Assert::AreEqual(12, context.cycles);
-			Assert::AreEqual(0x2, static_cast<int>(context.cpu->ProgramCounter));
-			Assert::AreEqual(0xFFFE, static_cast<int>(context.cpu->StackPointer));
-		}
-
 		TEST_METHOD(Return_IncreaseCyclesBy16_SetProgramCounter_DecreaseStack)
 		{
 			// Arrange
@@ -415,8 +332,8 @@ namespace CoreTests
 			context.cpu = std::make_unique<Cpu>();
 			context.cartridge = std::make_unique<CartridgeInfo>();
 
-			context.high_ram[126] = 0xEE;
-			context.high_ram[125] = 0xFF;
+			context.high_ram[125] = 0xEE;
+			context.high_ram[124] = 0xFF;
 
 			context.cpu->StackPointer -= 2;
 
@@ -492,10 +409,11 @@ namespace CoreTests
 			Op::PushR16(&context, RegisterType16::REG_BC);
 
 			// Assert
+			Assert::AreEqual(1, static_cast<int>(context.cpu->ProgramCounter));
 			Assert::AreEqual(16, context.cycles);
 
-			Assert::AreEqual(0x36, static_cast<int>(context.high_ram[0xFFFE - 0xFF80]));
 			Assert::AreEqual(0x24, static_cast<int>(context.high_ram[0xFFFD - 0xFF80]));
+			Assert::AreEqual(0x36, static_cast<int>(context.high_ram[0xFFFC - 0xFF80]));
 			Assert::AreEqual(0xFFFE - 2, static_cast<int>(context.cpu->StackPointer));
 		}
 
@@ -510,8 +428,8 @@ namespace CoreTests
 			context.cpu->SetRegister(RegisterType8::REG_C, 0x0);
 			context.cpu->SetRegister(RegisterType8::REG_B, 0x0);
 
-			context.high_ram[0xFFFE - 0xFF80] = 0x36;
-			context.high_ram[0xFFFD - 0xFF80] = 0x24;
+			context.high_ram[0xFFFD - 0xFF80] = 0x36;
+			context.high_ram[0xFFFC - 0xFF80] = 0x24;
 			context.cpu->StackPointer = 0xFFFE - 2;
 
 			// Act
@@ -523,6 +441,190 @@ namespace CoreTests
 
 			Assert::AreEqual(0x36, static_cast<int>(context.cpu->GetRegister(RegisterType8::REG_B)));
 			Assert::AreEqual(0x24, static_cast<int>(context.cpu->GetRegister(RegisterType8::REG_C)));
+		}
+
+		TEST_METHOD(JumpRelativeFlagSet_ZeroFlagSet_JumpToAddress)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+			context.cartridge->data.push_back(0x0);
+			context.cartridge->data.push_back(0x0); // <- ProgramCounter is here
+			context.cartridge->data.push_back(0x20); // <- Data to jump relative is here
+
+			context.cpu->ProgramCounter = 0x1;
+
+			context.cpu->SetFlag(CpuFlag::Zero, true);
+
+			// Act
+			Op::JumpRelativeFlagSet(&context, CpuFlag::Zero);
+
+			// Assert
+			Assert::AreEqual(12, context.cycles);
+			Assert::AreEqual(0x23, static_cast<int>(context.cpu->ProgramCounter)); // <- Should be 0x23 because of relative address 0x20 + PC + CPU instruction read of 2
+		}
+
+		TEST_METHOD(JumpRelativeFlagSet_ZeroFlagNotSet_IncreaseProgramCounterBy2)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+			context.cartridge->data.push_back(0x0);
+			context.cartridge->data.push_back(0x0); // <- ProgramCounter is here
+			context.cartridge->data.push_back(0x20); // <- Data to jump relative is here
+
+			context.cpu->ProgramCounter = 0x1;
+
+			context.cpu->SetFlag(CpuFlag::Zero, false);
+
+			// Act
+			Op::JumpRelativeFlagSet(&context, CpuFlag::Zero);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+			Assert::AreEqual(0x3, static_cast<int>(context.cpu->ProgramCounter));
+		}
+
+		TEST_METHOD(JumpRelativeFlagSet_CarryFlagSet_JumpToAddress)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+			context.cartridge->data.push_back(0x0);
+			context.cartridge->data.push_back(0x0); // <- ProgramCounter is here
+			context.cartridge->data.push_back(0x20); // <- Data to jump relative is here
+
+			context.cpu->ProgramCounter = 0x1;
+
+			context.cpu->SetFlag(CpuFlag::Carry, true);
+
+			// Act
+			Op::JumpRelativeFlagSet(&context, CpuFlag::Carry);
+
+			// Assert
+			Assert::AreEqual(12, context.cycles);
+			Assert::AreEqual(0x23, static_cast<int>(context.cpu->ProgramCounter)); // <- Should be 0x23 because of relative address 0x20 + PC + CPU instruction read of 2
+		}
+
+		TEST_METHOD(JumpRelativeFlagSet_CarryFlagNotSet_IncreaseProgramCounterBy2)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+			context.cartridge->data.push_back(0x0);
+			context.cartridge->data.push_back(0x0); // <- ProgramCounter is here
+			context.cartridge->data.push_back(0x20); // <- Data to jump relative is here
+
+			context.cpu->ProgramCounter = 0x1;
+
+			context.cpu->SetFlag(CpuFlag::Carry, false);
+
+			// Act
+			Op::JumpRelativeFlagSet(&context, CpuFlag::Carry);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+			Assert::AreEqual(0x3, static_cast<int>(context.cpu->ProgramCounter));
+		}
+
+		TEST_METHOD(JumpRelativeFlagNotSet_ZeroFlagNotSet_JumpToAddress)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+			context.cartridge->data.push_back(0x0);
+			context.cartridge->data.push_back(0x0); // <- ProgramCounter is here
+			context.cartridge->data.push_back(0x20); // <- Data to jump relative is here
+
+			context.cpu->ProgramCounter = 0x1;
+
+			context.cpu->SetFlag(CpuFlag::Zero, false);
+
+			// Act
+			Op::JumpRelativeFlagNotSet(&context, CpuFlag::Zero);
+
+			// Assert
+			Assert::AreEqual(12, context.cycles);
+			Assert::AreEqual(0x23, static_cast<int>(context.cpu->ProgramCounter)); // <- Should be 0x23 because of relative address 0x20 + PC + CPU instruction read of 2
+		}
+
+		TEST_METHOD(JumpRelativeFlagNotSet_ZeroFlagSet_IncreaseProgramCounterBy2)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+			context.cartridge->data.push_back(0x0);
+			context.cartridge->data.push_back(0x0); // <- ProgramCounter is here
+			context.cartridge->data.push_back(0x20); // <- Data to jump relative is here
+
+			context.cpu->ProgramCounter = 0x1;
+
+			context.cpu->SetFlag(CpuFlag::Zero, true);
+
+			// Act
+			Op::JumpRelativeFlagNotSet(&context, CpuFlag::Zero);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+			Assert::AreEqual(0x3, static_cast<int>(context.cpu->ProgramCounter));
+		}
+
+		TEST_METHOD(JumpRelativeFlagNotSet_CarryFlagNotSet_JumpToAddress)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+			context.cartridge->data.push_back(0x0);
+			context.cartridge->data.push_back(0x0); // <- ProgramCounter is here
+			context.cartridge->data.push_back(0x20); // <- Data to jump relative is here
+
+			context.cpu->ProgramCounter = 0x1;
+
+			context.cpu->SetFlag(CpuFlag::Carry, false);
+
+			// Act
+			Op::JumpRelativeFlagNotSet(&context, CpuFlag::Carry);
+
+			// Assert
+			Assert::AreEqual(12, context.cycles);
+			Assert::AreEqual(0x23, static_cast<int>(context.cpu->ProgramCounter)); // <- Should be 0x23 because of relative address 0x20 + PC + CPU instruction read of 2
+		}
+
+		TEST_METHOD(JumpRelativeFlagNotSet_CarryFlagSet_IncreaseProgramCounterBy2)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+			context.cartridge->data.push_back(0x0);
+			context.cartridge->data.push_back(0x0); // <- ProgramCounter is here
+			context.cartridge->data.push_back(0x20); // <- Data to jump relative is here
+
+			context.cpu->ProgramCounter = 0x1;
+
+			context.cpu->SetFlag(CpuFlag::Carry, true);
+
+			// Act
+			Op::JumpRelativeFlagNotSet(&context, CpuFlag::Carry);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+			Assert::AreEqual(0x3, static_cast<int>(context.cpu->ProgramCounter));
 		}
 	};
 }

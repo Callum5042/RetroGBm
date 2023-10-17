@@ -27,6 +27,10 @@ namespace Op
 
 	std::string JumpRelativeFlagN8(EmulatorContext* context, CpuFlag flag, bool condition);
 
+	std::string JumpRelativeFlagNotSet(EmulatorContext* context, CpuFlag flag);
+
+	std::string JumpRelativeFlagSet(EmulatorContext* context, CpuFlag flag);
+
 	std::string XorR8(EmulatorContext* context, RegisterType8 type);
 
 	std::string XorN8(EmulatorContext* context);
@@ -51,9 +55,9 @@ namespace Op
 
 	std::string LoadIndirectR8(EmulatorContext* context, RegisterType8 reg);
 
-	std::string StoreHighRam(EmulatorContext* context);
+	std::string StoreFF00(EmulatorContext* context);
 
-	std::string LoadHighRam(EmulatorContext* context);
+	std::string LoadFF00(EmulatorContext* context);
 
 	std::string StoreR8(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg_pointer);
 
@@ -73,6 +77,8 @@ namespace Op
 
 	std::string AddN8(EmulatorContext* context);
 
+	std::string SubN8(EmulatorContext* context);
+
 	std::string AddIndirectHL(EmulatorContext* context);
 
 	std::string AddSP(EmulatorContext* context);
@@ -86,6 +92,8 @@ namespace Op
 	std::string CallN16(EmulatorContext* context);
 
 	std::string CallN16Condition(EmulatorContext* context, CpuFlag flag, bool condition);
+
+	std::string CallN16FlagNotSet(EmulatorContext* context, CpuFlag flag);
 
 	std::string Return(EmulatorContext* context);
 
@@ -104,4 +112,10 @@ namespace Op
 	std::string IncR16(EmulatorContext* context, RegisterType16 reg);
 
 	std::string DecR16(EmulatorContext* context, RegisterType16 reg);
+
+	std::string OrR8(EmulatorContext* context, RegisterType8 reg);
+
+	std::string AndR8(EmulatorContext* context, RegisterType8 reg);
+
+	std::string AndN8(EmulatorContext* context);
 }

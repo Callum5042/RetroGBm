@@ -162,12 +162,17 @@
   <ItemGroup>
     <ClCompile Include="BusTests.cpp" />
     <ClCompile Include="CpuTests.cpp" />
+    <ClCompile Include="InstructionsAndTests.cpp" />
+    <ClCompile Include="InstructionsCallTests.cpp" />
     <ClCompile Include="InstructionsCompareTests.cpp" />
     <ClCompile Include="InstructionsDecTests.cpp" />
     <ClCompile Include="InstructionsIncTests.cpp" />
     <ClCompile Include="InstructionsJumpTests.cpp" />
     <ClCompile Include="InstructionsLoadTests.cpp" />
+    <ClCompile Include="InstructionsOrTests.cpp" />
+    <ClCompile Include="InstructionsSubTests.cpp" />
     <ClCompile Include="InstructionsTests.cpp" />
+    <ClCompile Include="InstructionsXorTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.vcxproj">
