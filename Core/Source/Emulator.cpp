@@ -509,8 +509,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::JumpHL(&m_Context);
 		//case 0xEE:
 		//	return Op::XorN8(&m_Context);
-		//case 0xF0:
-		//	return Op::LoadHighRam(&m_Context);
+		case 0xF0:
+			return Op::LoadFF00(&m_Context);
 		case 0xF1:
 			return Op::PopR16(&m_Context, RegisterType16::REG_AF);
 		//case 0xF2:

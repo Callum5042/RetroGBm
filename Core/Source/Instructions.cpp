@@ -324,7 +324,7 @@ std::string Op::LoadFF00(EmulatorContext* context)
 	context->cycles += 12;
 	context->cpu->ProgramCounter += 2;
 
-	std::string opcode_name = std::format("LDH A, [a8] (0x{:x} 0x{:x})", data, result);
+	std::string opcode_name = std::format("LDH A, [a8] 0x{:x}", data);
 	return opcode_name;
 }
 
