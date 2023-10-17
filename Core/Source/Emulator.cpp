@@ -392,8 +392,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_H);
 		//case 0x6D:
 		//	return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_L);
-		//case 0x6E:
-		//	return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_L, RegisterType16::REG_HL);
+		case 0x6E:
+			return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_L, RegisterType16::REG_HL);
 		//case 0x6F:
 		//	return Op::LoadR8(&m_Context, RegisterType8::REG_L, RegisterType8::REG_A);
 		case 0x70:
