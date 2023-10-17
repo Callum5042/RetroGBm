@@ -132,8 +132,9 @@ std::string Op::XorR8(EmulatorContext* context, RegisterType8 type)
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
 	context->cycles += 4;
+	context->cpu->ProgramCounter += 1;
 
-	std::string opcode_name = "XOR r8";
+	std::string opcode_name = std::format("XOR A, {}", RegisterTypeString8(type));
 	return opcode_name;
 }
 
@@ -361,8 +362,9 @@ std::string Op::LoadIndirectR16(EmulatorContext* context, RegisterType8 reg, Reg
 	context->cpu->SetRegister(reg, data);
 
 	context->cycles += 8;
+	context->cpu->ProgramCounter += 1;
 
-	std::string opcode_name = std::format("LD {}, [{}] (0x{:x})", RegisterTypeString8(reg), RegisterTypeString16(reg_pointer), data);
+	std::string opcode_name = std::format("LD {}, [{}] 0x{:x}", RegisterTypeString8(reg), RegisterTypeString16(reg_pointer), data);
 	return opcode_name;
 }
 

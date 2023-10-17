@@ -171,6 +171,7 @@
     <ClCompile Include="InstructionsLoadTests.cpp" />
     <ClCompile Include="InstructionsOrTests.cpp" />
     <ClCompile Include="InstructionsTests.cpp" />
+    <ClCompile Include="InstructionsXorTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.vcxproj">
