@@ -1011,6 +1011,18 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0x1A:
 			CB::RotateRight(context, RegisterType8::REG_D);
 			break;
+		case 0x1B:
+			CB::RotateRight(context, RegisterType8::REG_E);
+			break;
+		case 0x1C:
+			CB::RotateRight(context, RegisterType8::REG_H);
+			break;
+		case 0x1D:
+			CB::RotateRight(context, RegisterType8::REG_L);
+			break;
+		case 0x1F:
+			CB::RotateRight(context, RegisterType8::REG_A);
+			break;
 		case 0x30:
 			CB::SwapR8(context, RegisterType8::REG_B);
 			break;
