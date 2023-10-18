@@ -1152,6 +1152,9 @@ std::string Op::Daa(EmulatorContext* context)
 		}
 	}
 
+	context->cpu->SetFlag(CpuFlag::Zero, value == 0);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
+
 	context->cpu->SetRegister(RegisterType8::REG_A, value);
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 4;
