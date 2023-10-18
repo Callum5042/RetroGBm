@@ -252,6 +252,26 @@ std::string Op::LoadHLFromSP(EmulatorContext* context)
 	return opcode_name;
 }
 
+std::string Op::LoadHLFromSPRelative(EmulatorContext* context)
+{
+	uint16_t reg_data = context->cpu->GetRegister(RegisterType16::REG_SP);
+	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint16_t result = data + reg_data;
+
+	context->cpu->SetRegister(RegisterType16::REG_HL, data);
+
+	context->cpu->SetFlag(CpuFlag::Zero, false);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (reg_data & 0xF) + (data & 0xF) > 0xF);
+	context->cpu->SetFlag(CpuFlag::Carry, ((reg_data & 0xFF) + data) > 0xF);
+
+	context->cpu->ProgramCounter += 2;
+	context->cycles += 12;
+
+	std::string opcode_name = std::format("LD SP, HL + 0x{:x}", data);
+	return opcode_name;
+}
+
 std::string Op::StoreIncrementHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);

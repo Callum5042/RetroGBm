@@ -578,6 +578,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::PushR16(&m_Context, RegisterType16::REG_AF);
 		case 0xF6:
 			return Op::OrN8(&m_Context);
+		case 0xF8:
+			return Op::LoadHLFromSPRelative(&m_Context);
 		case 0xF9:
 			return Op::LoadHLFromSP(&m_Context);
 		case 0xFA:
