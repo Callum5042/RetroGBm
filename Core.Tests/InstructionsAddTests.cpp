@@ -315,5 +315,33 @@ namespace InstructionsTests
 			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::HalfCarry));
 			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Carry));
 		}
+
+		TEST_METHOD(AddCarryN8_CarryFlagNotSet_AddResultToRegister)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.resize(0x10);
+			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
+			context.cartridge->data[0x1] = 0x50;
+
+			context.cpu->SetRegister(RegisterType8::REG_A, 0x15);
+			context.cpu->SetFlag(CpuFlag::Subtraction, true);
+
+			// Act
+			Op::AddCarryN8(&context);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
+
+			uint8_t result = context.cpu->GetRegister(RegisterType8::REG_A);
+			Assert::AreEqual(0x65, static_cast<int>(result));
+
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Subtraction));
+		}
 	};
 }

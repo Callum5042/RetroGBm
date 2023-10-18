@@ -135,6 +135,8 @@ namespace Op
 
 	std::string AddCarryN8(EmulatorContext* context);
 
+	std::string SubCarryN8(EmulatorContext* context);
+
 	std::string Daa(EmulatorContext* context);
 
 	std::string ComplementA(EmulatorContext* context);
