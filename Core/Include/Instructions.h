@@ -45,6 +45,8 @@ namespace Op
 
 	std::string LoadIndirectSP(EmulatorContext* context);
 
+	std::string LoadHLFromSP(EmulatorContext* context);
+
 	std::string StoreIncrementHL(EmulatorContext* context);
 
 	std::string StoreDecrementHL(EmulatorContext* context);

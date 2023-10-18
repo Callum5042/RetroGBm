@@ -240,6 +240,18 @@ std::string Op::LoadIndirectSP(EmulatorContext* context)
 	return opcode_name;
 }
 
+std::string Op::LoadHLFromSP(EmulatorContext* context)
+{
+	uint16_t data = context->cpu->GetRegister(RegisterType16::REG_HL);
+	context->cpu->SetRegister(RegisterType16::REG_SP, data);
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("LD SP, HL");
+	return opcode_name;
+}
+
 std::string Op::StoreIncrementHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
