@@ -43,6 +43,12 @@ namespace Op
 
 	std::string LoadN8(EmulatorContext* context, RegisterType8 type);
 
+	std::string LoadIndirectSP(EmulatorContext* context);
+
+	std::string LoadHLFromSP(EmulatorContext* context);
+
+	std::string LoadHLFromSPRelative(EmulatorContext* context);
+
 	std::string StoreIncrementHL(EmulatorContext* context);
 
 	std::string StoreDecrementHL(EmulatorContext* context);

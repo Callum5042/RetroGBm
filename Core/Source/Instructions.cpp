@@ -220,6 +220,61 @@ std::string Op::LoadN16(EmulatorContext* context, RegisterType16 type)
 	return opcode_name;
 }
 
+std::string Op::LoadIndirectSP(EmulatorContext* context)
+{
+	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
+	uint16_t address = (high << 8) | low;
+
+	uint16_t data = context->cpu->GetRegister(RegisterType16::REG_SP);
+	uint8_t data_low = data & 0xFF;
+	uint8_t data_high = (data >> 8) & 0xFF;
+
+	WriteToBus(context, address + 0, data_low);
+	WriteToBus(context, address + 1, data_high);
+
+	context->cpu->ProgramCounter += 3;
+	context->cycles += 20;
+
+	std::string opcode_name = std::format("LD [n16], SP 0x{:x}", address);
+	return opcode_name;
+}
+
+std::string Op::LoadHLFromSP(EmulatorContext* context)
+{
+	uint16_t data = context->cpu->GetRegister(RegisterType16::REG_HL);
+	context->cpu->SetRegister(RegisterType16::REG_SP, data);
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("LD SP, HL");
+	return opcode_name;
+}
+
+std::string Op::LoadHLFromSPRelative(EmulatorContext* context)
+{
+	uint16_t reg_data = context->cpu->GetRegister(RegisterType16::REG_SP);
+	int8_t data = static_cast<int8_t>(ReadFromBus(context, context->cpu->ProgramCounter + 1));
+	uint16_t result = data + reg_data;
+
+	context->cpu->SetRegister(RegisterType16::REG_HL, result);
+
+	context->cpu->SetFlag(CpuFlag::Zero, false);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	/*context->cpu->SetFlag(CpuFlag::HalfCarry, (reg_data & 0xF) + (data & 0xF) > 0xF);
+	context->cpu->SetFlag(CpuFlag::Carry, ((reg_data & 0xFF) + data) > 0xF);*/
+
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (((reg_data & 0x0f) + (data & 0x0f)) & 0x10) != 0);
+	context->cpu->SetFlag(CpuFlag::Carry, (((reg_data & 0xff) + (data & 0xff)) & 0x100) != 0);
+
+	context->cpu->ProgramCounter += 2;
+	context->cycles += 12;
+
+	std::string opcode_name = std::format("LD SP, HL + 0x{:x}", data);
+	return opcode_name;
+}
+
 std::string Op::StoreIncrementHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
@@ -529,28 +584,20 @@ std::string Op::AddSP(EmulatorContext* context)
 {
 	// 0xE8
 	uint16_t reg_sp = context->cpu->GetRegister(RegisterType16::REG_SP);
-	int8_t data = static_cast<int8_t>(ReadFromBus(context, context->cpu->ProgramCounter++));
+	int8_t data = static_cast<int8_t>(ReadFromBus(context, context->cpu->ProgramCounter + 1));
 
 	uint16_t result = reg_sp + data;
 	context->cpu->SetRegister(RegisterType16::REG_SP, result);
 
-	if (result > 0xFF)
-	{
-		context->cpu->SetFlag(CpuFlag::Carry, true);
-	}
-	else
-	{
-		context->cpu->SetFlag(CpuFlag::Carry, false);
-	}
-
-	bool half_carry = (((reg_sp & 0xF) + (data & 0xF)) & 0x10) == 0x10;
-	context->cpu->SetFlag(CpuFlag::HalfCarry, half_carry);
-
-	context->cpu->SetFlag(CpuFlag::Subtraction, false);
 	context->cpu->SetFlag(CpuFlag::Zero, false);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (((reg_sp & 0x0f) + (data & 0x0f)) & 0x10) != 0);
+	context->cpu->SetFlag(CpuFlag::Carry, (((reg_sp & 0xff) + (data & 0xff)) & 0x100) != 0);
+
+	context->cpu->ProgramCounter += 2;
 	context->cycles += 16;
 
-	std::string opcode_name = std::format("ADD SP, e8 0x{:x} (0x:{:x})", result, static_cast<uint8_t>(data));
+	std::string opcode_name = std::format("ADD SP, 0x{:x}", result);
 	return opcode_name;
 }
 
