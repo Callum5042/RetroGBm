@@ -464,8 +464,18 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::XorR16(&m_Context, RegisterType16::REG_HL);
 		case 0xAF:
 			return Op::XorR8(&m_Context, RegisterType8::REG_A);
+		case 0xB0:
+			return Op::OrR8(&m_Context, RegisterType8::REG_B);
 		case 0xB1:
 			return Op::OrR8(&m_Context, RegisterType8::REG_C);
+		case 0xB2:
+			return Op::OrR8(&m_Context, RegisterType8::REG_D);
+		case 0xB3:
+			return Op::OrR8(&m_Context, RegisterType8::REG_E);
+		case 0xB4:
+			return Op::OrR8(&m_Context, RegisterType8::REG_H);
+		case 0xB5:
+			return Op::OrR8(&m_Context, RegisterType8::REG_L);
 		case 0xB6:
 			return Op::OrHL(&m_Context);
 		case 0xB7:
