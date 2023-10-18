@@ -127,6 +127,7 @@ namespace CoreTests
 
 			// Assert
 			Assert::AreEqual(8, context.cycles);
+			Assert::AreEqual(1, static_cast<int>(context.cpu->ProgramCounter));
 
 			uint16_t result = context.cpu->GetRegister(RegisterType16::REG_BC);
 			Assert::AreEqual(0x4, static_cast<int>(result));

@@ -43,7 +43,7 @@ int main(int argc, char** argv)
 	std::unique_ptr<Emulator> emulator = std::make_unique<Emulator>();
 	// emulator->LoadRom("Tetris.gb");
 	//emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\individual\\01-special.gb");
-	emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\individual\\06-ld r,r.gb");
+	emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\individual\\05-op rp.gb");
 
 	// Message loop
 	try

@@ -833,6 +833,7 @@ std::string Op::DecR16(EmulatorContext* context, RegisterType16 reg)
 	context->cpu->SetRegister(reg, data - 1);
 
 	context->cycles += 8;
+	context->cpu->ProgramCounter += 1;
 
 	std::string opcode_name = std::format("DEC {}", RegisterTypeString16(reg));
 	return opcode_name;
