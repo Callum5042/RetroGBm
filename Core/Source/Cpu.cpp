@@ -24,9 +24,9 @@ Cpu::Cpu()
 
 void Cpu::SetRegister(RegisterType8 type, uint8_t data)
 {
-	if (type == RegisterType8::REG_B)
+	if (type == RegisterType8::REG_F)
 	{
-		m_Registers[type] = data;
+		m_Registers[type] = data & 0xF0;
 	}
 	else
 	{
@@ -48,7 +48,7 @@ void Cpu::SetRegister(RegisterType16 type, uint8_t data_high, uint8_t data_low)
 	{
 		case RegisterType16::REG_AF:
 			m_Registers[RegisterType8::REG_A] = data_high;
-			m_Registers[RegisterType8::REG_F] = data_low;
+			m_Registers[RegisterType8::REG_F] = data_low & 0xF0;
 			break;
 
 		case RegisterType16::REG_BC:

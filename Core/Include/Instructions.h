@@ -132,4 +132,10 @@ namespace Op
 	std::string RotateRegisterA(EmulatorContext* context);
 
 	std::string AddCarryN8(EmulatorContext* context);
+
+	std::string Daa(EmulatorContext* context);
+
+	std::string ComplementA(EmulatorContext* context);
+
+	std::string SetCarryFlag(EmulatorContext* context);
 }
