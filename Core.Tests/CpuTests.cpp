@@ -44,7 +44,7 @@ namespace CoreTests
 			Assert::AreEqual(result, static_cast<uint8_t>(100));
 		}
 
-		TEST_METHOD(SetRegister_RegF_ValueIs100)
+		TEST_METHOD(SetRegister_RegF_ValueIs100_LowerNibbleOfByteNotSet)
 		{
 			// Arrange
 			Cpu _cpu;
@@ -54,7 +54,7 @@ namespace CoreTests
 			uint8_t result = _cpu.GetRegister(RegisterType8::REG_F);
 
 			// Assert
-			Assert::AreEqual(result, static_cast<uint8_t>(100));
+			Assert::AreEqual(result, static_cast<uint8_t>(96));
 		}
 
 		TEST_METHOD(SetRegister_RegB_ValueIs100)

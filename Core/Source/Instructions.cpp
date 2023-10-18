@@ -1095,3 +1095,64 @@ std::string Op::ReturnFlagSet(EmulatorContext* context, CpuFlag flag)
 	std::string opcode_name = std::format("RET {}", FlagString(flag));
 	return opcode_name;
 }
+
+std::string Op::Daa(EmulatorContext* context)
+{
+	bool subtract_flag = context->cpu->GetFlag(CpuFlag::Subtraction);
+	bool carry_flag = context->cpu->GetFlag(CpuFlag::Carry);
+	bool half_carry_flag = context->cpu->GetFlag(CpuFlag::HalfCarry);
+
+	uint8_t value = context->cpu->GetRegister(RegisterType8::REG_A);
+
+	if (!subtract_flag)
+	{
+		// after an addition, adjust if (half-)carry occurred or if result is out of bounds
+		if (carry_flag || value > 0x99)
+		{
+			value += 0x60;
+			context->cpu->SetFlag(CpuFlag::Carry, true);
+		}
+
+		if (half_carry_flag || (value & 0x0f) > 0x09)
+		{
+			value += 0x6;
+		}
+	}
+	else
+	{
+		// after a subtraction, only adjust if (half-)carry occurred
+		if (carry_flag)
+		{
+			value -= 0x60;
+		}
+
+		if (half_carry_flag)
+		{
+			value -= 0x6;
+		}
+	}
+
+	context->cpu->SetRegister(RegisterType8::REG_A, value);
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("DAA");
+	return opcode_name;
+}
+
+std::string Op::ComplementA(EmulatorContext* context)
+{
+	uint8_t value = context->cpu->GetRegister(RegisterType8::REG_A);
+	value = ~value;
+
+	context->cpu->SetFlag(CpuFlag::Subtraction, true);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, true);
+
+	context->cpu->SetRegister(RegisterType8::REG_A, value);
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("CPL");
+	return opcode_name;
+}

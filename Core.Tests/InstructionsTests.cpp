@@ -61,5 +61,30 @@ namespace InstructionsTests
 			bool result = context.cpu->GetInterruptMasterFlag();
 			Assert::IsFalse(result);
 		}
+
+		TEST_METHOD(ComplementA_IncreaseCyclesBy4_FlipBits)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+
+			context.cpu->SetRegister(RegisterType8::REG_A, 0xF);
+			context.cpu->SetFlag(CpuFlag::Subtraction, false);
+			context.cpu->SetFlag(CpuFlag::HalfCarry, false);
+
+			// Act
+			Op::ComplementA(&context);
+
+			// Assert
+			Assert::AreEqual(0x4, context.cycles);
+			Assert::AreEqual(1, static_cast<int>(context.cpu->ProgramCounter));
+
+			uint8_t result = context.cpu->GetRegister(RegisterType8::REG_A);
+			Assert::AreEqual(0xF0, static_cast<int>(result));
+
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::Subtraction));
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::HalfCarry));
+		}
 	};
 }

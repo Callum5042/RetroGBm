@@ -260,6 +260,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::DecR8(&m_Context, RegisterType8::REG_H);
 		case 0x26:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_H);
+		case 0x27:
+			return Op::Daa(&m_Context);
 		case 0x28:
 			return Op::JumpRelativeFlagSet(&m_Context, CpuFlag::Zero);
 		case 0x29:
@@ -274,6 +276,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::DecR8(&m_Context, RegisterType8::REG_L);
 		case 0x2E:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_L);
+		case 0x2F:
+			return Op::ComplementA(&m_Context);
 		case 0x30:
 			return Op::JumpRelativeFlagNotSet(&m_Context, CpuFlag::Carry);
 		case 0x31:
