@@ -237,6 +237,37 @@ namespace InstructionsTests
 			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Zero));
 		}
 
+		TEST_METHOD(AddSP_WillOverFlowNibble_SetHalfCarryFlag)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.push_back(0x0);
+			context.cartridge->data.push_back(0x1);
+			context.cpu->SetRegister(RegisterType16::REG_SP, 0xF);
+
+			context.cpu->SetFlag(CpuFlag::Zero, true);
+			context.cpu->SetFlag(CpuFlag::Subtraction, true);
+			context.cpu->SetFlag(CpuFlag::HalfCarry, false);
+
+			// Act
+			Op::AddSP(&context);
+
+			// Assert
+			Assert::AreEqual(16, context.cycles);
+			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
+
+			uint16_t result = context.cpu->GetRegister(RegisterType16::REG_SP);
+			Assert::AreEqual(0x10, static_cast<int>(result));
+
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Subtraction));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Zero));
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::HalfCarry));
+		}
+
 		TEST_METHOD(AddR16_IncreasedCyclesBy8_SetSubtractionFlagToFalse_AddResultsToHL)
 		{
 			// Arrange

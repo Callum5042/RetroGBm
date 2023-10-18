@@ -24,6 +24,14 @@ Emulator::Emulator()
 	m_OpCodeTable[0xC3] = [&]() { return Op::JumpN16(&m_Context); };
 	m_OpCodeTable[0xAF] = [&]() { return Op::Xor(&m_Context, RegisterType8::REG_A, RegisterType8::REG_A); };
 	m_OpCodeTable[0x21] = [&]() { return Op::LoadN16(&m_Context, RegisterType16::REG_HL); };*/
+
+
+	m_DebugFile.open("debug.txt");
+}
+
+Emulator::~Emulator()
+{
+	m_DebugFile.close();
 }
 
 bool Emulator::LoadRom(const std::filesystem::path& path)
@@ -113,6 +121,18 @@ void Emulator::Tick()
 											m_Context.cpu->GetFlag(CpuFlag::Carry) ? "C" : "-");
 
 	std::cout << opcode_format << '\n';
+
+	/*std::string debug_format = std::format("OP:{:X} PC:{:X} AF:{:X} BC:{:X} DE:{:X} HL:{:X} SP:{:X}",
+											opcode,
+											m_Context.cpu->ProgramCounter,
+											m_Context.cpu->GetRegister(RegisterType16::REG_AF),
+											m_Context.cpu->GetRegister(RegisterType16::REG_BC),
+											m_Context.cpu->GetRegister(RegisterType16::REG_DE),
+											m_Context.cpu->GetRegister(RegisterType16::REG_HL),
+											m_Context.cpu->StackPointer);*/
+
+	// std::cout << debug_format << '\n';
+	// m_DebugFile << debug_format << '\n';
 
 	// Execute
 	std::string opcode_name = Execute(opcode);

@@ -7,6 +7,7 @@
 #include <vector>
 #include <array>
 #include <string>
+#include <fstream>
 
 class Cpu;
 struct CartridgeInfo;
@@ -54,7 +55,7 @@ class Emulator
 {
 public:
 	Emulator();
-	virtual ~Emulator() = default;
+	virtual ~Emulator();
 
 	bool LoadRom(const std::filesystem::path& path);
 
@@ -72,6 +73,8 @@ private:
 	uint8_t m_CurrentOpCode = 0x0;
 
 	std::string m_DebugMessage;
+
+	std::ofstream m_DebugFile;
 
 	// std::unordered_map<uint8_t, std::function<std::string()>> m_OpCodeTable;
 };
