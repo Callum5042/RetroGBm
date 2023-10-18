@@ -121,6 +121,8 @@ namespace Op
 
 	std::string OrR8(EmulatorContext* context, RegisterType8 reg);
 
+	std::string OrN8(EmulatorContext* context);
+
 	std::string OrHL(EmulatorContext* context);
 
 	std::string AndR8(EmulatorContext* context, RegisterType8 reg);
@@ -132,6 +134,8 @@ namespace Op
 	std::string RotateRegisterA(EmulatorContext* context);
 
 	std::string AddCarryN8(EmulatorContext* context);
+
+	std::string SubCarryN8(EmulatorContext* context);
 
 	std::string Daa(EmulatorContext* context);
 

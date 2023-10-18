@@ -288,8 +288,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::IncR16(&m_Context, RegisterType16::REG_SP);
 		case 0x35:
 			return Op::DecIndirectHL(&m_Context);
-		//case 0x36:
-		//	return Op::StoreN8(&m_Context, RegisterType16::REG_HL);
+		case 0x36:
+			return Op::StoreN8(&m_Context, RegisterType16::REG_HL);
 		case 0x37:
 			return Op::SetCarryFlag(&m_Context);
 		case 0x38:
@@ -544,6 +544,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::JumpFlagN16(&m_Context, CpuFlag::Carry, true);
 		//case 0xDC:
 		//	return Op::CallN16Condition(&m_Context, CpuFlag::Carry, true);
+		case 0xDE:
+			return Op::SubCarryN8(&m_Context);
 		case 0xE0:
 			return Op::StoreFF00(&m_Context);
 		case 0xE1:
@@ -572,6 +574,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::DisableInterrupts(&m_Context);
 		case 0xF5:
 			return Op::PushR16(&m_Context, RegisterType16::REG_AF);
+		case 0xF6:
+			return Op::OrN8(&m_Context);
 		case 0xFA:
 			return Op::LoadIndirectR8(&m_Context, RegisterType8::REG_A);
 		//case 0xFB:
