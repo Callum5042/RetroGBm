@@ -262,8 +262,11 @@ std::string Op::LoadHLFromSPRelative(EmulatorContext* context)
 
 	context->cpu->SetFlag(CpuFlag::Zero, false);
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);
-	context->cpu->SetFlag(CpuFlag::HalfCarry, (reg_data & 0xF) + (data & 0xF) > 0xF);
-	context->cpu->SetFlag(CpuFlag::Carry, ((reg_data & 0xFF) + data) > 0xF);
+	/*context->cpu->SetFlag(CpuFlag::HalfCarry, (reg_data & 0xF) + (data & 0xF) > 0xF);
+	context->cpu->SetFlag(CpuFlag::Carry, ((reg_data & 0xFF) + data) > 0xF);*/
+
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (((reg_data & 0x0f) + (data & 0x0f)) & 0x10) != 0);
+	context->cpu->SetFlag(CpuFlag::Carry, (((reg_data & 0xff) + (data & 0xff)) & 0x100) != 0);
 
 	context->cpu->ProgramCounter += 2;
 	context->cycles += 12;
@@ -588,8 +591,8 @@ std::string Op::AddSP(EmulatorContext* context)
 
 	context->cpu->SetFlag(CpuFlag::Zero, false);
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);
-	context->cpu->SetFlag(CpuFlag::HalfCarry, (reg_sp & 0xF) + (data & 0xF) > 0xF);
-	context->cpu->SetFlag(CpuFlag::Carry, ((reg_sp & 0xFF) + data) > 0xFF);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (((reg_sp & 0x0f) + (data & 0x0f)) & 0x10) != 0);
+	context->cpu->SetFlag(CpuFlag::Carry, (((reg_sp & 0xff) + (data & 0xff)) & 0x100) != 0);
 
 	context->cpu->ProgramCounter += 2;
 	context->cycles += 16;
