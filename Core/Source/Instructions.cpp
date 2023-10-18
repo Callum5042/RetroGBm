@@ -220,6 +220,26 @@ std::string Op::LoadN16(EmulatorContext* context, RegisterType16 type)
 	return opcode_name;
 }
 
+std::string Op::LoadIndirectSP(EmulatorContext* context)
+{
+	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
+	uint16_t address = (high << 8) | low;
+
+	uint16_t data = context->cpu->GetRegister(RegisterType16::REG_SP);
+	uint8_t data_low = data & 0xFF;
+	uint8_t data_high = (data >> 8) & 0xFF;
+
+	WriteToBus(context, address + 0, data_low);
+	WriteToBus(context, address + 1, data_high);
+
+	context->cpu->ProgramCounter += 3;
+	context->cycles += 20;
+
+	std::string opcode_name = std::format("LD [n16], SP 0x{:x}", address);
+	return opcode_name;
+}
+
 std::string Op::StoreIncrementHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);

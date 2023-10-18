@@ -204,6 +204,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::DecR8(&m_Context, RegisterType8::REG_B);
 		case 0x06:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_B);
+		case 0x08:
+			return Op::LoadIndirectSP(&m_Context);
 		case 0x09:
 			return Op::AddR16(&m_Context, RegisterType16::REG_BC);
 		case 0x0A:
