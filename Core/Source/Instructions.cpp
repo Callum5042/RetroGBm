@@ -1156,3 +1156,16 @@ std::string Op::ComplementA(EmulatorContext* context)
 	std::string opcode_name = std::format("CPL");
 	return opcode_name;
 }
+
+std::string Op::SetCarryFlag(EmulatorContext* context)
+{
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
+	context->cpu->SetFlag(CpuFlag::Carry, true);
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("SCF");
+	return opcode_name;
+}

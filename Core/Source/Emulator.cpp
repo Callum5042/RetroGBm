@@ -290,6 +290,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::DecIndirectHL(&m_Context);
 		//case 0x36:
 		//	return Op::StoreN8(&m_Context, RegisterType16::REG_HL);
+		case 0x37:
+			return Op::SetCarryFlag(&m_Context);
 		case 0x38:
 			return Op::JumpRelativeFlagSet(&m_Context, CpuFlag::Carry);
 		case 0x39:

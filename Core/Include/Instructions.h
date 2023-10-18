@@ -136,4 +136,6 @@ namespace Op
 	std::string Daa(EmulatorContext* context);
 
 	std::string ComplementA(EmulatorContext* context);
+
+	std::string SetCarryFlag(EmulatorContext* context);
 }
