@@ -572,6 +572,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::DisableInterrupts(&m_Context);
 		case 0xF5:
 			return Op::PushR16(&m_Context, RegisterType16::REG_AF);
+		case 0xF6:
+			return Op::OrN8(&m_Context);
 		case 0xFA:
 			return Op::LoadIndirectR8(&m_Context, RegisterType8::REG_A);
 		//case 0xFB:
