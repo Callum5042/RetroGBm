@@ -233,11 +233,8 @@ namespace InstructionsTests
 			uint16_t result = context.cpu->GetRegister(RegisterType16::REG_SP);
 			Assert::AreEqual(0x3, static_cast<int>(result));
 
-			bool subtract_flag = context.cpu->GetFlag(CpuFlag::Subtraction);
-			Assert::IsFalse(subtract_flag);
-
-			bool zero_flag = context.cpu->GetFlag(CpuFlag::Zero);
-			Assert::IsFalse(subtract_flag);
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Subtraction));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Zero));
 		}
 
 		TEST_METHOD(AddR16_IncreasedCyclesBy8_SetSubtractionFlagToFalse_AddResultsToHL)

@@ -255,10 +255,10 @@ std::string Op::LoadHLFromSP(EmulatorContext* context)
 std::string Op::LoadHLFromSPRelative(EmulatorContext* context)
 {
 	uint16_t reg_data = context->cpu->GetRegister(RegisterType16::REG_SP);
-	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	int8_t data = static_cast<int8_t>(ReadFromBus(context, context->cpu->ProgramCounter + 1));
 	uint16_t result = data + reg_data;
 
-	context->cpu->SetRegister(RegisterType16::REG_HL, data);
+	context->cpu->SetRegister(RegisterType16::REG_HL, result);
 
 	context->cpu->SetFlag(CpuFlag::Zero, false);
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);

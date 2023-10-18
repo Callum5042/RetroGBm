@@ -489,5 +489,55 @@ namespace InstructionsTests
 			uint16_t result = context.cpu->GetRegister(RegisterType16::REG_SP);
 			Assert::AreEqual(0x6C3C, static_cast<int>(result));
 		}
+
+		TEST_METHOD(LoadHLFromSPRelative_SetSPRelativeToHL_Plus1)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.resize(0x10);
+			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
+			context.cartridge->data[0x1] = 0x1;
+
+			context.cpu->SetRegister(RegisterType16::REG_SP, 0x6C3C);
+
+			// Act
+			Op::LoadHLFromSPRelative(&context);
+
+			// Assert
+			Assert::AreEqual(12, context.cycles);
+			Assert::AreEqual(0x2, static_cast<int>(context.cpu->ProgramCounter));
+
+			uint16_t result = context.cpu->GetRegister(RegisterType16::REG_HL);
+			Assert::AreEqual(0x6C3C + 1, static_cast<int>(result));
+		}
+
+		TEST_METHOD(LoadHLFromSPRelative_SetSPRelativeToHL_Negative1)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cartridge->data.resize(0x10);
+			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
+			context.cartridge->data[0x1] = 0xFF;
+
+			context.cpu->SetRegister(RegisterType16::REG_SP, 0x6C3C);
+
+			// Act
+			Op::LoadHLFromSPRelative(&context);
+
+			// Assert
+			Assert::AreEqual(12, context.cycles);
+			Assert::AreEqual(0x2, static_cast<int>(context.cpu->ProgramCounter));
+
+			uint16_t result = context.cpu->GetRegister(RegisterType16::REG_HL);
+			Assert::AreEqual(0x6C3C - 1, static_cast<int>(result));
+		}
 	};
 }
