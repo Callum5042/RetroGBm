@@ -187,7 +187,7 @@ namespace InstructionsTests
 
 			context.cartridge->data.resize(0x10);
 			std::fill(context.cartridge->data.begin(), context.cartridge->data.end(), 0x0);
-			context.cartridge->data[0x0] = 0x50;
+			context.cartridge->data[0x1] = 0x50;
 
 			context.cpu->SetRegister(RegisterType16::REG_HL, 0x5);
 
@@ -196,7 +196,7 @@ namespace InstructionsTests
 
 			// Assert
 			Assert::AreEqual(12, context.cycles);
-			Assert::AreEqual(1, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
 			Assert::AreEqual(0x50, static_cast<int>(context.cartridge->data[0x5]));
 		}
 

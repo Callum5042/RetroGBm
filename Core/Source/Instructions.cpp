@@ -352,13 +352,14 @@ std::string Op::StoreR8(EmulatorContext* context, RegisterType8 reg, RegisterTyp
 
 std::string Op::StoreN8(EmulatorContext* context, RegisterType16 reg_pointer)
 {
-	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter++);
+	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
 	uint16_t address = context->cpu->GetRegister(reg_pointer);
 	WriteToBus(context, address, data);
 
 	context->cycles += 12;
+	context->cpu->ProgramCounter += 2;
 
-	std::string opcode_name = std::format("LD [{}], n8 (0x{:x})", RegisterTypeString16(reg_pointer), data);
+	std::string opcode_name = std::format("LD [{}], 0x{:x}", RegisterTypeString16(reg_pointer), data);
 	return opcode_name;
 }
 
