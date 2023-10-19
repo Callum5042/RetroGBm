@@ -9,7 +9,7 @@ namespace InstructionsTests
 	TEST_CLASS(InstructionsShiftTests)
 	{
 	public:
-		TEST_METHOD(RotateRegisterA_ShiftRight_CarryFlagNotSet)
+		TEST_METHOD(RotateRegisterRightA_ShiftRight_CarryFlagNotSet)
 		{
 			// Arrange
 			EmulatorContext context;
@@ -20,7 +20,7 @@ namespace InstructionsTests
 			context.cpu->SetFlag(CpuFlag::Carry, false);
 
 			// Act
-			Op::RotateRegisterA(&context);
+			Op::RotateRegisterRightA(&context);
 
 			// Assert
 			Assert::AreEqual(4, context.cycles);
@@ -35,7 +35,7 @@ namespace InstructionsTests
 			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Carry));
 		}
 
-		TEST_METHOD(RotateRegisterA_WillUnderFlow_ShiftRight_CarryFlagSet)
+		TEST_METHOD(RotateRegisterRightA_WillUnderFlow_ShiftRight_CarryFlagSet)
 		{
 			// Arrange
 			EmulatorContext context;
@@ -46,7 +46,7 @@ namespace InstructionsTests
 			context.cpu->SetFlag(CpuFlag::Carry, false);
 
 			// Act
-			Op::RotateRegisterA(&context);
+			Op::RotateRegisterRightA(&context);
 
 			// Assert
 			Assert::AreEqual(4, context.cycles);
@@ -61,7 +61,7 @@ namespace InstructionsTests
 			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::Carry));
 		}
 
-		TEST_METHOD(RotateRegisterA_CarryFlagSetShiftRight_CarryFlagNotSet)
+		TEST_METHOD(RotateRegisterRightA_CarryFlagSetShiftRight_CarryFlagNotSet)
 		{
 			// Arrange
 			EmulatorContext context;
@@ -72,7 +72,7 @@ namespace InstructionsTests
 			context.cpu->SetFlag(CpuFlag::Carry, true);
 
 			// Act
-			Op::RotateRegisterA(&context);
+			Op::RotateRegisterRightA(&context);
 
 			// Assert
 			Assert::AreEqual(4, context.cycles);

@@ -520,11 +520,31 @@ std::string Op::AddN8(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, result > 0xFF);
 
 	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result & 0xFF));
-	
+
 	context->cpu->ProgramCounter += 2;
 	context->cycles += 8;
 
 	std::string opcode_name = std::format("ADD A, 0x{:x}", result_b);
+	return opcode_name;
+}
+
+std::string Op::SubR8(EmulatorContext* context, RegisterType8 reg)
+{
+	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t result_b = context->cpu->GetRegister(reg);
+
+	uint16_t result = result_a - result_b;
+	context->cpu->SetFlag(CpuFlag::Zero, (result & 0xFF) == 0x0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, true);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (result_a & 0xF) < (result_b & 0xF));
+	context->cpu->SetFlag(CpuFlag::Carry, result_a < result_b);
+
+	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result & 0xFF));
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("SUB A, {}", RegisterTypeString8(reg));
 	return opcode_name;
 }
 
@@ -833,9 +853,9 @@ std::string Op::PushR16(EmulatorContext* context, RegisterType16 reg)
 	uint8_t high = address >> 8;
 	uint8_t low = address & 0xFF;
 
-	WriteToBus(context, context->cpu->StackPointer + 1 , high);
+	WriteToBus(context, context->cpu->StackPointer + 1, high);
 	WriteToBus(context, context->cpu->StackPointer + 0, low);
-	
+
 	context->cycles += 16;
 	context->cpu->ProgramCounter += 1;
 
@@ -852,7 +872,7 @@ std::string Op::PopR16(EmulatorContext* context, RegisterType16 reg)
 
 	uint16_t data = high << 8 | low;
 	context->cpu->SetRegister(reg, data);
-	
+
 	context->cycles += 12;
 	context->cpu->ProgramCounter += 1;
 
@@ -1043,7 +1063,7 @@ std::string Op::AndN8(EmulatorContext* context)
 	return opcode_name;
 }
 
-std::string Op::RotateRegisterA(EmulatorContext* context)
+std::string Op::RotateRegisterRightA(EmulatorContext* context)
 {
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t result = data >> 1;
@@ -1062,6 +1082,28 @@ std::string Op::RotateRegisterA(EmulatorContext* context)
 	context->cycles += 4;
 
 	std::string opcode_name = std::format("RRA");
+	return opcode_name;
+}
+
+std::string Op::RotateRegisterLeftA(EmulatorContext* context)
+{
+	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t result = data << 1;
+	uint8_t bit7 = (data >> 7);
+
+	bool carry_flag = context->cpu->GetFlag(CpuFlag::Carry);
+	result |= (carry_flag ? 1 : 0);
+	context->cpu->SetRegister(RegisterType8::REG_A, result);
+
+	context->cpu->SetFlag(CpuFlag::Zero, false);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
+	context->cpu->SetFlag(CpuFlag::Carry, bit7 == 1);
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("RLA");
 	return opcode_name;
 }
 
@@ -1329,5 +1371,93 @@ std::string Op::ComplementCarryFlag(EmulatorContext* context)
 	context->cycles += 4;
 
 	std::string opcode_name = std::format("CCF");
+	return opcode_name;
+}
+
+std::string Op::AddCarryR8(EmulatorContext* context, RegisterType8 reg)
+{
+	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t result_b = context->cpu->GetRegister(reg);
+
+	bool carry_flag = context->cpu->GetFlag(CpuFlag::Carry);
+
+	uint16_t result = result_a + result_b + (carry_flag ? 1 : 0);
+	context->cpu->SetFlag(CpuFlag::Zero, (result & 0xFF) == 0x0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (result_a & 0xF) + (result_b & 0xF) > (carry_flag ? 0xE : 0xF));
+	context->cpu->SetFlag(CpuFlag::Carry, result > 0xFF);
+
+	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result & 0xFF));
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("ADC A, {}", RegisterTypeString8(reg));
+	return opcode_name;
+}
+
+std::string Op::SubCarryR8(EmulatorContext* context, RegisterType8 reg)
+{
+	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t result_b = context->cpu->GetRegister(reg);
+
+	bool carry_flag = context->cpu->GetFlag(CpuFlag::Carry);
+	uint8_t carry_value = (carry_flag ? 1 : 0);
+	uint16_t result = result_a - result_b - carry_value;
+
+	bool set_half_carry_flag = (result_a & 0xF) < ((result_b & 0xF) + carry_value);
+	context->cpu->SetFlag(CpuFlag::Zero, (result & 0xFF) == 0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, true);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, set_half_carry_flag);
+	context->cpu->SetFlag(CpuFlag::Carry, result_a < (result_b + carry_value));
+
+	context->cpu->SetRegister(RegisterType8::REG_A, (result & 0xFF));
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("SBC A, {}", RegisterTypeString8(reg));
+	return opcode_name;
+}
+
+std::string Op::RotateRegisterLeftCarryA(EmulatorContext* context)
+{
+	uint8_t value = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t bit7 = (value >> 7);
+
+	value <<= 1;
+	value |= bit7;
+
+	context->cpu->SetRegister(RegisterType8::REG_A, value);
+
+	context->cpu->SetFlag(CpuFlag::Zero, false);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
+	context->cpu->SetFlag(CpuFlag::Carry, bit7 == 1);
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("RLCA");
+	return opcode_name;
+}
+
+std::string Op::RotateRegisterRightCarryA(EmulatorContext* context)
+{
+	uint8_t value = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t bit0 = (value & 0x1);
+
+	value >>= 1;
+	value |= (bit0 << 7);
+
+	context->cpu->SetFlag(CpuFlag::Zero, false);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
+	context->cpu->SetFlag(CpuFlag::Carry, bit0 == 1);
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("RRCA");
 	return opcode_name;
 }
