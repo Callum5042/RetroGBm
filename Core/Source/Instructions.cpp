@@ -1315,3 +1315,19 @@ std::string Op::Rst(EmulatorContext* context, uint8_t offset)
 	std::string opcode_name = std::format("RST 0x{:x}", offset);
 	return opcode_name;
 }
+
+std::string Op::ComplementCarryFlag(EmulatorContext* context)
+{
+	// 0x3F
+	bool flag = context->cpu->GetFlag(CpuFlag::Carry);
+
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
+	context->cpu->SetFlag(CpuFlag::Carry, !flag);
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("CCF");
+	return opcode_name;
+}

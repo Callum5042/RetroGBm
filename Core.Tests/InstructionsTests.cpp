@@ -109,5 +109,47 @@ namespace InstructionsTests
 			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::HalfCarry));
 			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::Carry));
 		}
+
+		TEST_METHOD(ComplementCarryFlag_CarryFlagSet_UnsetCarryFlag)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+
+			context.cpu->SetFlag(CpuFlag::Carry, true);
+
+			// Act
+			Op::ComplementCarryFlag(&context);
+
+			// Assert
+			Assert::AreEqual(0x4, context.cycles);
+			Assert::AreEqual(1, static_cast<int>(context.cpu->ProgramCounter));
+
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Subtraction));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::HalfCarry));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Carry));
+		}
+
+		TEST_METHOD(ComplementCarryFlag_CarryFlagNotSet_SetCarryFlag)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+
+			context.cpu->SetFlag(CpuFlag::Carry, false);
+
+			// Act
+			Op::ComplementCarryFlag(&context);
+
+			// Assert
+			Assert::AreEqual(0x4, context.cycles);
+			Assert::AreEqual(1, static_cast<int>(context.cpu->ProgramCounter));
+
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Subtraction));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::HalfCarry));
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::Carry));
+		}
 	};
 }

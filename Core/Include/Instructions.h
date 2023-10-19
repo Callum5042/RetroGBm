@@ -150,4 +150,6 @@ namespace Op
 	std::string SetCarryFlag(EmulatorContext* context);
 
 	std::string Rst(EmulatorContext* context, uint8_t offset);
+
+	std::string ComplementCarryFlag(EmulatorContext* context);
 }
