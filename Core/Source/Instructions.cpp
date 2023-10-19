@@ -1298,3 +1298,20 @@ std::string Op::SetCarryFlag(EmulatorContext* context)
 	std::string opcode_name = std::format("SCF");
 	return opcode_name;
 }
+
+std::string Op::Rst(EmulatorContext* context, uint8_t offset)
+{
+	context->cpu->StackPointer -= 2;
+
+	uint8_t pc_high = (context->cpu->ProgramCounter + 1) >> 8;
+	uint8_t pc_low = (context->cpu->ProgramCounter + 1) & 0xFF;
+
+	WriteToBus(context, context->cpu->StackPointer + 1, pc_high);
+	WriteToBus(context, context->cpu->StackPointer + 0, pc_low);
+
+	context->cpu->ProgramCounter = offset;
+	context->cycles += 16;
+
+	std::string opcode_name = std::format("RST 0x{:x}", offset);
+	return opcode_name;
+}
