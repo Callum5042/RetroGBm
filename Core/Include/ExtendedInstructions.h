@@ -26,4 +26,8 @@ namespace CB
 	void Set(EmulatorContext* context, uint8_t bit, RegisterType8 reg);
 
 	void Reset(EmulatorContext* context, uint8_t bit, RegisterType8 reg);
+
+	void ShiftLeftArithmetically(EmulatorContext* context, RegisterType8 reg);
+
+	void ShiftRightArithmetically(EmulatorContext* context, RegisterType8 reg);
 }
