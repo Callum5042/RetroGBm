@@ -39,6 +39,25 @@ void CB::RotateRight(EmulatorContext* context, RegisterType8 reg)
 	context->cycles += 8;
 }
 
+void CB::RotateLeft(EmulatorContext* context, RegisterType8 reg)
+{
+	uint8_t data = context->cpu->GetRegister(reg);
+
+	uint8_t bit7 = (data >> 7);
+	bool carry_flag = context->cpu->GetFlag(CpuFlag::Carry);
+
+	uint8_t result = (data << 1);
+	result |= (carry_flag ? 1 : 0);
+
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
+	context->cpu->SetFlag(CpuFlag::Carry, bit7 == 1);
+
+	context->cpu->ProgramCounter += 2;
+	context->cycles += 8;
+}
+
 void CB::SwapR8(EmulatorContext* context, RegisterType8 reg)
 {
 	uint8_t value = context->cpu->GetRegister(reg);
@@ -49,6 +68,75 @@ void CB::SwapR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);
 	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
 	context->cpu->SetFlag(CpuFlag::Carry, false);
+
+	context->cpu->ProgramCounter += 2;
+	context->cycles += 8;
+}
+
+void CB::RotateRightCarry(EmulatorContext* context, RegisterType8 reg)
+{
+	uint8_t value = context->cpu->GetRegister(reg);
+
+	uint8_t bit7 = (value >> 7);
+	uint8_t result = (value << 1);
+	result |= bit7;
+
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
+	context->cpu->SetFlag(CpuFlag::Carry, bit7 == 1);
+
+	context->cpu->ProgramCounter += 2;
+	context->cycles += 8;
+}
+
+void CB::RotateLeftCarry(EmulatorContext* context, RegisterType8 reg)
+{
+	uint8_t value = context->cpu->GetRegister(reg);
+
+	uint8_t bit0 = (value & 0x1);
+	uint8_t result = (value >> 1);
+	result |= (bit0 << 7);
+
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
+	context->cpu->SetFlag(CpuFlag::Carry, bit0 == 1);
+
+	context->cpu->ProgramCounter += 2;
+	context->cycles += 8;
+}
+
+void CB::Bit(EmulatorContext* context, uint8_t bit, RegisterType8 reg)
+{
+	uint8_t value = context->cpu->GetRegister(reg);
+	bool set = (value >> bit) & 0x1;
+
+	context->cpu->SetFlag(CpuFlag::Zero, !set);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, true);
+
+	context->cpu->ProgramCounter += 2;
+	context->cycles += 8;
+}
+
+void CB::Set(EmulatorContext* context, uint8_t bit, RegisterType8 reg)
+{
+	uint8_t value = context->cpu->GetRegister(reg);
+
+	uint8_t result = value | (1 << bit);
+	context->cpu->SetRegister(reg, result);
+
+	context->cpu->ProgramCounter += 2;
+	context->cycles += 8;
+}
+
+void CB::Reset(EmulatorContext* context, uint8_t bit, RegisterType8 reg)
+{
+	uint8_t value = context->cpu->GetRegister(reg);
+
+	uint8_t result = value & ~(1 << bit);
+	context->cpu->SetRegister(reg, result);
 
 	context->cpu->ProgramCounter += 2;
 	context->cycles += 8;

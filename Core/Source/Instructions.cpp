@@ -1113,6 +1113,69 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 
 	switch (extended_op)
 	{
+		case 0x0:
+			CB::RotateLeftCarry(context, RegisterType8::REG_B);
+			break;
+		case 0x1:
+			CB::RotateLeftCarry(context, RegisterType8::REG_C);
+			break;
+		case 0x2:
+			CB::RotateLeftCarry(context, RegisterType8::REG_D);
+			break;
+		case 0x3:
+			CB::RotateLeftCarry(context, RegisterType8::REG_E);
+			break;
+		case 0x4:
+			CB::RotateLeftCarry(context, RegisterType8::REG_H);
+			break;
+		case 0x5:
+			CB::RotateLeftCarry(context, RegisterType8::REG_L);
+			break;
+		case 0x7:
+			CB::RotateLeftCarry(context, RegisterType8::REG_A);
+			break;
+		case 0x8:
+			CB::RotateRightCarry(context, RegisterType8::REG_B);
+			break;
+		case 0x9:
+			CB::RotateRightCarry(context, RegisterType8::REG_C);
+			break;
+		case 0xA:
+			CB::RotateRightCarry(context, RegisterType8::REG_D);
+			break;
+		case 0xB:
+			CB::RotateRightCarry(context, RegisterType8::REG_E);
+			break;
+		case 0xC:
+			CB::RotateRightCarry(context, RegisterType8::REG_H);
+			break;
+		case 0xD:
+			CB::RotateRightCarry(context, RegisterType8::REG_L);
+			break;
+		case 0xF:
+			CB::RotateRightCarry(context, RegisterType8::REG_A);
+			break;
+		case 0x10:
+			CB::RotateLeft(context, RegisterType8::REG_B);
+			break;
+		case 0x11:
+			CB::RotateLeft(context, RegisterType8::REG_C);
+			break;
+		case 0x12:
+			CB::RotateLeft(context, RegisterType8::REG_D);
+			break;
+		case 0x13:
+			CB::RotateLeft(context, RegisterType8::REG_E);
+			break;
+		case 0x14:
+			CB::RotateLeft(context, RegisterType8::REG_H);
+			break;
+		case 0x15:
+			CB::RotateLeft(context, RegisterType8::REG_L);
+			break;
+		case 0x17:
+			CB::RotateLeft(context, RegisterType8::REG_A);
+			break;
 		case 0x19:
 			CB::RotateRight(context, RegisterType8::REG_C);
 			break;
@@ -1154,6 +1217,192 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0x38:
 			CB::ShiftRightLogically(context, RegisterType8::REG_B);
+			break;
+
+
+
+			// Set bit 0
+		case 0xC0:
+			CB::Set(context, 0, RegisterType8::REG_B);
+			break;
+		case 0xC1:
+			CB::Set(context, 0, RegisterType8::REG_C);
+			break;
+		case 0xC2:
+			CB::Set(context, 0, RegisterType8::REG_D);
+			break;
+		case 0xC3:
+			CB::Set(context, 0, RegisterType8::REG_E);
+			break;
+		case 0xC4:
+			CB::Set(context, 0, RegisterType8::REG_H);
+			break;
+		case 0xC5:
+			CB::Set(context, 0, RegisterType8::REG_L);
+			break;
+		case 0xC7:
+			CB::Set(context, 0, RegisterType8::REG_A);
+			break;
+
+			// Set bit 1
+		case 0xC8:
+			CB::Set(context, 1, RegisterType8::REG_B);
+			break;
+		case 0xC9:
+			CB::Set(context, 1, RegisterType8::REG_C);
+			break;
+		case 0xCA:
+			CB::Set(context, 1, RegisterType8::REG_D);
+			break;
+		case 0xCB:
+			CB::Set(context, 1, RegisterType8::REG_E);
+			break;
+		case 0xCD:
+			CB::Set(context, 1, RegisterType8::REG_H);
+			break;
+		case 0xCE:
+			CB::Set(context, 1, RegisterType8::REG_L);
+			break;
+		case 0xCF:
+			CB::Set(context, 1, RegisterType8::REG_A);
+			break;
+
+			// Set bit 2
+		case 0xD0:
+			CB::Set(context, 2, RegisterType8::REG_B);
+			break;
+		case 0xD1:
+			CB::Set(context, 2, RegisterType8::REG_C);
+			break;
+		case 0xD2:
+			CB::Set(context, 2, RegisterType8::REG_D);
+			break;
+		case 0xD3:
+			CB::Set(context, 2, RegisterType8::REG_E);
+			break;
+		case 0xD4:
+			CB::Set(context, 2, RegisterType8::REG_H);
+			break;
+		case 0xD5:
+			CB::Set(context, 2, RegisterType8::REG_L);
+			break;
+		case 0xD7:
+			CB::Set(context, 2, RegisterType8::REG_A);
+			break;
+
+			// Set bit 3
+		case 0xD8:
+			CB::Set(context, 3, RegisterType8::REG_B);
+			break;
+		case 0xD9:
+			CB::Set(context, 3, RegisterType8::REG_C);
+			break;
+		case 0xDA:
+			CB::Set(context, 3, RegisterType8::REG_D);
+			break;
+		case 0xDB:
+			CB::Set(context, 3, RegisterType8::REG_E);
+			break;
+		case 0xDD:
+			CB::Set(context, 3, RegisterType8::REG_H);
+			break;
+		case 0xDE:
+			CB::Set(context, 3, RegisterType8::REG_L);
+			break;
+		case 0xDF:
+			CB::Set(context, 3, RegisterType8::REG_A);
+			break;
+
+			// Set bit 4
+		case 0xE0:
+			CB::Set(context, 4, RegisterType8::REG_B);
+			break;
+		case 0xE1:
+			CB::Set(context, 4, RegisterType8::REG_C);
+			break;
+		case 0xE2:
+			CB::Set(context, 4, RegisterType8::REG_D);
+			break;
+		case 0xE3:
+			CB::Set(context, 4, RegisterType8::REG_E);
+			break;
+		case 0xE4:
+			CB::Set(context, 4, RegisterType8::REG_H);
+			break;
+		case 0xE5:
+			CB::Set(context, 4, RegisterType8::REG_L);
+			break;
+		case 0xE7:
+			CB::Set(context, 4, RegisterType8::REG_A);
+			break;
+
+			// Set bit 5
+		case 0xE8:
+			CB::Set(context, 5, RegisterType8::REG_B);
+			break;
+		case 0xE9:
+			CB::Set(context, 5, RegisterType8::REG_C);
+			break;
+		case 0xEA:
+			CB::Set(context, 5, RegisterType8::REG_D);
+			break;
+		case 0xEB:
+			CB::Set(context, 5, RegisterType8::REG_E);
+			break;
+		case 0xED:
+			CB::Set(context, 5, RegisterType8::REG_H);
+			break;
+		case 0xEE:
+			CB::Set(context, 5, RegisterType8::REG_L);
+			break;
+		case 0xEF:
+			CB::Set(context, 5, RegisterType8::REG_A);
+			break;
+
+			// Set bit 6
+		case 0xF0:
+			CB::Set(context, 6, RegisterType8::REG_B);
+			break;
+		case 0xF1:
+			CB::Set(context, 6, RegisterType8::REG_C);
+			break;
+		case 0xF2:
+			CB::Set(context, 6, RegisterType8::REG_D);
+			break;
+		case 0xF3:
+			CB::Set(context, 6, RegisterType8::REG_E);
+			break;
+		case 0xF4:
+			CB::Set(context, 6, RegisterType8::REG_H);
+			break;
+		case 0xF5:
+			CB::Set(context, 6, RegisterType8::REG_L);
+			break;
+		case 0xF7:
+			CB::Set(context, 6, RegisterType8::REG_A);
+			break;
+
+			// Set bit 7
+		case 0xF8:
+			CB::Set(context, 7, RegisterType8::REG_B);
+			break;
+		case 0xF9:
+			CB::Set(context, 7, RegisterType8::REG_C);
+			break;
+		case 0xFA:
+			CB::Set(context, 7, RegisterType8::REG_D);
+			break;
+		case 0xFB:
+			CB::Set(context, 7, RegisterType8::REG_E);
+			break;
+		case 0xFD:
+			CB::Set(context, 7, RegisterType8::REG_H);
+			break;
+		case 0xFE:
+			CB::Set(context, 7, RegisterType8::REG_L);
+			break;
+		case 0xFF:
+			CB::Set(context, 7, RegisterType8::REG_A);
 			break;
 
 		default:
