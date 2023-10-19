@@ -172,5 +172,30 @@ namespace InstructionsTests
 			Assert::AreEqual(0xEEFF, static_cast<int>(context.cpu->ProgramCounter));
 			Assert::AreEqual(0xFFFE, static_cast<int>(context.cpu->StackPointer));
 		}
+
+		TEST_METHOD(Rst_IncreaseCyclesBy16_JumpToAddress_StorePcOnStack)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+			context.cartridge = std::make_unique<CartridgeInfo>();
+
+			context.cpu->ProgramCounter = 0x5;
+
+			// Act
+			Op::Rst(&context, 0x20);
+
+			// Assert
+			Assert::AreEqual(16, context.cycles);
+			Assert::AreEqual(0x20, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(0xFFFE - 0x2, static_cast<int>(context.cpu->StackPointer));
+
+			uint8_t stack_low = ReadFromBus(&context, context.cpu->StackPointer + 0);
+			Assert::AreEqual(0x6, static_cast<int>(stack_low));
+
+			uint8_t stack_high = ReadFromBus(&context, context.cpu->StackPointer + 1);
+			Assert::AreEqual(0x0, static_cast<int>(stack_high));
+		}
 	};
 }

@@ -532,42 +532,50 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::PushR16(&m_Context, RegisterType16::REG_BC);
 		case 0xC6:
 			return Op::AddN8(&m_Context);
+		case 0xC7:
+			return Op::Rst(&m_Context, 0x0);
 		case 0xC8:
 			return Op::ReturnFlagSet(&m_Context, CpuFlag::Zero);
 		case 0xC9:
 			return Op::Return(&m_Context);
-		//case 0xCA:
-		//	return Op::JumpFlagN16(&m_Context, CpuFlag::Zero, true);
+		case 0xCA:
+			return Op::JumpFlagN16(&m_Context, CpuFlag::Zero, true);
 		case 0xCB:
 			return Op::ExtendedPrefix(&m_Context);
-		//case 0xCC:
-		//	return Op::CallN16Condition(&m_Context, CpuFlag::Zero, true);
+		case 0xCC:
+			return Op::CallN16FlagSet(&m_Context, CpuFlag::Zero);
 		case 0xCD:
 			return Op::CallN16(&m_Context);
 		case 0xCE:
 			return Op::AddCarryN8(&m_Context);
+		case 0xCF:
+			return Op::Rst(&m_Context, 0x08);
 		case 0xD0:
 			return Op::ReturnFlagNotSet(&m_Context, CpuFlag::Carry);
 		case 0xD1:
 			return Op::PopR16(&m_Context, RegisterType16::REG_DE);
-		//case 0xD2:
-		//	return Op::JumpFlagN16(&m_Context, CpuFlag::Carry, false);
-		//case 0xD4:
-		//	return Op::CallN16Condition(&m_Context, CpuFlag::Carry, false);
+		case 0xD2:
+			return Op::JumpFlagN16(&m_Context, CpuFlag::Carry, false);
+		case 0xD4:
+			return Op::CallN16FlagNotSet(&m_Context, CpuFlag::Carry);
 		case 0xD5:
 			return Op::PushR16(&m_Context, RegisterType16::REG_DE);
 		case 0xD6:
 			return Op::SubN8(&m_Context);
+		case 0xD7:
+			return Op::Rst(&m_Context, 0x10);
 		case 0xD8:
 			return Op::ReturnFlagSet(&m_Context, CpuFlag::Carry);
-		//case 0xD8:
-		//	return Op::ReturnCondition(&m_Context, CpuFlag::Carry, true);
-		//case 0xDA:
-		//	return Op::JumpFlagN16(&m_Context, CpuFlag::Carry, true);
-		//case 0xDC:
-		//	return Op::CallN16Condition(&m_Context, CpuFlag::Carry, true);
+		case 0xD9:
+			return Op::ReturnInterrupt(&m_Context);
+		case 0xDA:
+			return Op::JumpFlagN16(&m_Context, CpuFlag::Carry, true);
+		case 0xDC:
+			return Op::CallN16FlagSet(&m_Context, CpuFlag::Carry);
 		case 0xDE:
 			return Op::SubCarryN8(&m_Context);
+		case 0xDF:
+			return Op::Rst(&m_Context, 0x18);
 		case 0xE0:
 			return Op::StoreFF00(&m_Context);
 		case 0xE1:
@@ -580,12 +588,16 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::PushR16(&m_Context, RegisterType16::REG_HL);
 		case 0xE6:
 			return Op::AndN8(&m_Context);
+		case 0xE7:
+			return Op::Rst(&m_Context, 0x20);
 		case 0xE8:
 			return Op::AddSP(&m_Context);
 		case 0xE9:
 			return Op::JumpHL(&m_Context);
 		case 0xEE:
 			return Op::XorN8(&m_Context);
+		case 0xEF:
+			return Op::Rst(&m_Context, 0x28);
 		case 0xF0:
 			return Op::LoadFF00(&m_Context);
 		case 0xF1:
@@ -598,6 +610,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::PushR16(&m_Context, RegisterType16::REG_AF);
 		case 0xF6:
 			return Op::OrN8(&m_Context);
+		case 0xF7:
+			return Op::Rst(&m_Context, 0x30);
 		case 0xF8:
 			return Op::LoadHLFromSPRelative(&m_Context);
 		case 0xF9:
@@ -608,6 +622,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 		//	return Op::EnableInterrupts(&m_Context);
 		case 0xFE:
 			return Op::CompareN8(&m_Context);
+		case 0xFF:
+			return Op::Rst(&m_Context, 0x38);
 		default:
 			throw std::exception(std::format("Instruction not implemented: 0x{:x}", opcode).c_str());
 	}

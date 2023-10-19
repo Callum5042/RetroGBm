@@ -97,13 +97,13 @@ namespace Op
 
 	std::string CallN16(EmulatorContext* context);
 
-	std::string CallN16Condition(EmulatorContext* context, CpuFlag flag, bool condition);
-
 	std::string CallN16FlagNotSet(EmulatorContext* context, CpuFlag flag);
+
+	std::string CallN16FlagSet(EmulatorContext* context, CpuFlag flag);
 
 	std::string Return(EmulatorContext* context);
 
-	std::string ReturnCondition(EmulatorContext* context, CpuFlag flag, bool condition);
+	std::string ReturnInterrupt(EmulatorContext* context);
 
 	std::string ReturnFlagNotSet(EmulatorContext* context, CpuFlag flag);
 
@@ -148,4 +148,6 @@ namespace Op
 	std::string ComplementA(EmulatorContext* context);
 
 	std::string SetCarryFlag(EmulatorContext* context);
+
+	std::string Rst(EmulatorContext* context, uint8_t offset);
 }

@@ -350,53 +350,6 @@ namespace InstructionsTests
 			Assert::AreEqual(0xFFFE, static_cast<int>(context.cpu->StackPointer));
 		}
 
-		TEST_METHOD(ReturnCondition_ZeroFlagSet_IncreaseCyclesBy20_SetProgramCounter_IncreaseStack)
-		{
-			// Arrange
-			EmulatorContext context;
-			context.cycles = 0;
-			context.cpu = std::make_unique<Cpu>();
-			context.cartridge = std::make_unique<CartridgeInfo>();
-
-			context.high_ram[125] = 0xEE;
-			context.high_ram[124] = 0xFF;
-			context.cpu->StackPointer = 0xFFFE - 2;
-
-			context.cpu->SetFlag(CpuFlag::Zero, true);
-
-			// Act
-			Op::ReturnCondition(&context, CpuFlag::Zero, true);
-
-			// Assert
-			Assert::AreEqual(20, context.cycles);
-			Assert::AreEqual(0xEEFF, static_cast<int>(context.cpu->ProgramCounter));
-			Assert::AreEqual(0xFFFE, static_cast<int>(context.cpu->StackPointer));
-		}
-
-		TEST_METHOD(ReturnCondition_ZeroFlagNotSet_IncreaseCyclesBy8)
-		{
-			// Arrange
-			EmulatorContext context;
-			context.cycles = 0;
-			context.cpu = std::make_unique<Cpu>();
-			context.cartridge = std::make_unique<CartridgeInfo>();
-
-			context.high_ram[125] = 0xEE;
-			context.high_ram[124] = 0xFF;
-
-			context.cpu->StackPointer -= 2;
-
-			context.cpu->SetFlag(CpuFlag::Zero, false);
-
-			// Act
-			Op::ReturnCondition(&context, CpuFlag::Zero, true);
-
-			// Assert
-			Assert::AreEqual(8, context.cycles);
-			Assert::AreEqual(0x1, static_cast<int>(context.cpu->ProgramCounter));
-			Assert::AreEqual(0xFFFE - 2, static_cast<int>(context.cpu->StackPointer));
-		}
-
 		TEST_METHOD(PushR16_IncreaseCyclesBy16_PushRegToHighRam_IncreaseStack)
 		{
 			// Arrange
