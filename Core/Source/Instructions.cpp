@@ -571,8 +571,8 @@ std::string Op::AddIndirectHL(EmulatorContext* context)
 	uint16_t result = result_a + result_b;
 	context->cpu->SetFlag(CpuFlag::Zero, (result & 0xFF) == 0x0);
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);
-	context->cpu->SetFlag(CpuFlag::HalfCarry, (result_a & 0xF) < (result_b & 0xF));
-	context->cpu->SetFlag(CpuFlag::Carry, result_a < result_b);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (result_a & 0xF) + (result_b & 0xF) > 0xF);
+	context->cpu->SetFlag(CpuFlag::Carry, result > 0xFF);
 
 	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result & 0xFF));
 
@@ -912,7 +912,7 @@ std::string Op::IncIndirectHL(EmulatorContext* context)
 	uint8_t result = data + 1;
 
 	WriteToBus(context, address, result);
-	context->cpu->SetFlag(CpuFlag::Subtraction, true);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
 	context->cpu->SetFlag(CpuFlag::HalfCarry, (data & 0xF) + (1 & 0xF) > 0xF);
 
