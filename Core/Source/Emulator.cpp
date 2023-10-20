@@ -324,8 +324,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::JumpRelativeFlagSet(&m_Context, CpuFlag::Carry);
 		case 0x39:
 			return Op::AddR16(&m_Context, RegisterType16::REG_SP);
-		//case 0x3A:
-		//	return Op::LoadDecrementHL(&m_Context);
+		case 0x3A:
+			return Op::LoadDecrementHL(&m_Context);
 		case 0x3B:
 			return Op::DecR16(&m_Context, RegisterType16::REG_SP);
 		case 0x3C:
@@ -646,8 +646,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::PopR16(&m_Context, RegisterType16::REG_HL);
 		case 0xEA:
 			return Op::StoreIndirectR8(&m_Context, RegisterType8::REG_A);
-		//case 0xE2:
-		//	return Op::StoreIndirectAC(&m_Context);
+		case 0xE2:
+			return Op::StoreIndirectAC(&m_Context);
 		case 0xE5:
 			return Op::PushR16(&m_Context, RegisterType16::REG_HL);
 		case 0xE6:
@@ -666,8 +666,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::LoadFF00(&m_Context);
 		case 0xF1:
 			return Op::PopR16(&m_Context, RegisterType16::REG_AF);
-		//case 0xF2:
-		//	return Op::LoadIndirectAC(&m_Context);
+		case 0xF2:
+			return Op::LoadIndirectAC(&m_Context);
 		case 0xF3:
 			return Op::DisableInterrupts(&m_Context);
 		case 0xF5:
