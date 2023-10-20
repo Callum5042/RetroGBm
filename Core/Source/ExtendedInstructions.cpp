@@ -133,6 +133,20 @@ void CB::Bit(EmulatorContext* context, uint8_t bit, RegisterType8 reg)
 	context->cycles += 8;
 }
 
+void CB::BitIndirectHL(EmulatorContext* context, uint8_t bit)
+{
+	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+	uint8_t value = ReadFromBus(context, address);
+	bool set = (value >> bit) & 0x1;
+
+	context->cpu->SetFlag(CpuFlag::Zero, !set);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, true);
+
+	context->cpu->ProgramCounter += 2;
+	context->cycles += 8;
+}
+
 void CB::Set(EmulatorContext* context, uint8_t bit, RegisterType8 reg)
 {
 	uint8_t value = context->cpu->GetRegister(reg);
@@ -144,12 +158,36 @@ void CB::Set(EmulatorContext* context, uint8_t bit, RegisterType8 reg)
 	context->cycles += 8;
 }
 
+void CB::SetIndirectHL(EmulatorContext* context, uint8_t bit)
+{
+	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+	uint8_t value = ReadFromBus(context, address);
+
+	uint8_t result = value | (1 << bit);
+	WriteToBus(context, address, result);
+
+	context->cpu->ProgramCounter += 2;
+	context->cycles += 8;
+}
+
 void CB::Reset(EmulatorContext* context, uint8_t bit, RegisterType8 reg)
 {
 	uint8_t value = context->cpu->GetRegister(reg);
 
 	uint8_t result = value & ~(1 << bit);
 	context->cpu->SetRegister(reg, result);
+
+	context->cpu->ProgramCounter += 2;
+	context->cycles += 8;
+}
+
+void CB::ResetIndirectHL(EmulatorContext* context, uint8_t bit)
+{
+	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+	uint8_t value = ReadFromBus(context, address);
+
+	uint8_t result = value & ~(1 << bit);
+	WriteToBus(context, address, result);
 
 	context->cpu->ProgramCounter += 2;
 	context->cycles += 8;
