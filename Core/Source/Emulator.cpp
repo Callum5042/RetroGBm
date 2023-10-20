@@ -666,8 +666,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::LoadFF00(&m_Context);
 		case 0xF1:
 			return Op::PopR16(&m_Context, RegisterType16::REG_AF);
-		//case 0xF2:
-		//	return Op::LoadIndirectAC(&m_Context);
+		case 0xF2:
+			return Op::LoadIndirectAC(&m_Context);
 		case 0xF3:
 			return Op::DisableInterrupts(&m_Context);
 		case 0xF5:

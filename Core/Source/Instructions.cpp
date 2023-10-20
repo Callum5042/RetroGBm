@@ -454,7 +454,7 @@ std::string Op::LoadIndirectAC(EmulatorContext* context)
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 1;
 
-	std::string opcode_name = std::format("LD A, [C] (0x{:x})", data);
+	std::string opcode_name = std::format("LD A, [C]");
 	return opcode_name;
 }
 
