@@ -50,6 +50,9 @@ public:
 	uint16_t ProgramCounter = 0;
 	uint16_t StackPointer = 0;
 
+	// Check setting interrupt master flag
+	void CheckSettingInterruptMasterFlag();
+
 	// Registers
 	void SetRegister(RegisterType8 type, uint8_t data);
 	void SetRegister(RegisterType16 type, uint16_t data);
@@ -80,6 +83,9 @@ private:
 	std::map<RegisterType8, uint8_t> m_Registers;
 
 	bool m_InterruptMasterFlag = false;
+
+	// Need this variable as a counter because the flag is only set after the next instruction
+	int m_SettingInterruptMasterFlag = 0;
 
 	// TODO: Not actually sure the difference between these 2
 	std::map<InterruptFlag, bool> m_Interrupts;

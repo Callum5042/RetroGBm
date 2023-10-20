@@ -36,6 +36,9 @@ namespace InstructionsTests
 			// Act
 			Op::EnableInterrupts(&context);
 
+			context.cpu->CheckSettingInterruptMasterFlag();
+			context.cpu->CheckSettingInterruptMasterFlag();
+
 			// Assert
 			Assert::AreEqual(0x4, context.cycles);
 

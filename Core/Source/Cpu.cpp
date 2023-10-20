@@ -300,7 +300,7 @@ std::string FlagString(CpuFlag flag)
 
 void Cpu::EnableMasterInterrupts()
 {
-	m_InterruptMasterFlag = true;
+	m_SettingInterruptMasterFlag = 2;
 }
 
 void Cpu::DisableMasterInterrupts()
@@ -331,4 +331,17 @@ void Cpu::InterruptEnable(uint8_t data)
 uint8_t Cpu::GetInterruptEnable() const
 {
 	return m_InterruptEnable;
+}
+
+void Cpu::CheckSettingInterruptMasterFlag()
+{
+	if (m_SettingInterruptMasterFlag > 0)
+	{
+		m_SettingInterruptMasterFlag--;
+
+		if (m_SettingInterruptMasterFlag == 0)
+		{
+			m_InterruptMasterFlag = true;
+		}
+	}
 }

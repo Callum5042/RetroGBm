@@ -137,6 +137,9 @@ void Emulator::Tick()
 	// Execute
 	std::string opcode_name = Execute(opcode);
 
+	// Check flag
+	m_Context.cpu->CheckSettingInterruptMasterFlag();
+
 	// Tick timer
 	for (int i = 0; i < m_Context.cycles; ++i)
 	{
@@ -682,8 +685,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::LoadHLFromSP(&m_Context);
 		case 0xFA:
 			return Op::LoadIndirectR8(&m_Context, RegisterType8::REG_A);
-		//case 0xFB:
-		//	return Op::EnableInterrupts(&m_Context);
+		case 0xFB:
+			return Op::EnableInterrupts(&m_Context);
 		case 0xFE:
 			return Op::CompareN8(&m_Context);
 		case 0xFF:
