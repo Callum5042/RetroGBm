@@ -520,6 +520,27 @@ std::string Op::SubR8(EmulatorContext* context, RegisterType8 reg)
 	return opcode_name;
 }
 
+std::string Op::SubIndirectHL(EmulatorContext* context)
+{
+	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t result_b = ReadFromBus(context, address);
+
+	uint16_t result = result_a - result_b;
+	context->cpu->SetFlag(CpuFlag::Zero, (result & 0xFF) == 0x0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, true);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (result_a & 0xF) < (result_b & 0xF));
+	context->cpu->SetFlag(CpuFlag::Carry, result_a < result_b);
+
+	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result & 0xFF));
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("SUB A, [HL]");
+	return opcode_name;
+}
+
 std::string Op::SubN8(EmulatorContext* context)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
@@ -548,24 +569,14 @@ std::string Op::AddIndirectHL(EmulatorContext* context)
 	uint8_t result_b = ReadFromBus(context, address);
 
 	uint16_t result = result_a + result_b;
-	context->cpu->SetFlag(CpuFlag::Zero, result == 0x0);
-
-	if (result > 0xFF)
-	{
-		context->cpu->SetFlag(CpuFlag::Carry, true);
-		result -= 0xFF;
-	}
-	else
-	{
-		context->cpu->SetFlag(CpuFlag::Carry, false);
-	}
-
-	bool half_carry = (((result_a & 0xF) + (result_b & 0xF)) & 0x10) == 0x10;
-	context->cpu->SetFlag(CpuFlag::HalfCarry, half_carry);
-
-	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result));
+	context->cpu->SetFlag(CpuFlag::Zero, (result & 0xFF) == 0x0);
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (result_a & 0xF) + (result_b & 0xF) > 0xF);
+	context->cpu->SetFlag(CpuFlag::Carry, result > 0xFF);
 
+	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result & 0xFF));
+
+	context->cpu->ProgramCounter += 2;
 	context->cycles += 8;
 
 	std::string opcode_name = std::format("ADD A, [HL]");
@@ -807,12 +818,13 @@ std::string Op::CompareIndirectHL(EmulatorContext* context)
 
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
 	context->cpu->SetFlag(CpuFlag::Subtraction, true);
-	context->cpu->SetFlag(CpuFlag::HalfCarry, (0x0f & value) > (0x0f & data));
-	context->cpu->SetFlag(CpuFlag::Carry, value > data);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (data & 0xF) < (value & 0xF));
+	context->cpu->SetFlag(CpuFlag::Carry, data < value);
 
 	context->cycles += 8;
+	context->cpu->ProgramCounter += 1;
 
-	std::string opcode_name = std::format("CP A, [HL] (0x{:x})", value);
+	std::string opcode_name = std::format("CP A, [HL]", value);
 	return opcode_name;
 }
 
@@ -890,6 +902,24 @@ std::string Op::DecIndirectHL(EmulatorContext* context)
 	context->cycles += 12;
 
 	std::string opcode_name = std::format("DEC [HL]");
+	return opcode_name;
+}
+
+std::string Op::IncIndirectHL(EmulatorContext* context)
+{
+	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+	uint8_t data = ReadFromBus(context, address);
+	uint8_t result = data + 1;
+
+	WriteToBus(context, address, result);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (data & 0xF) + (1 & 0xF) > 0xF);
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 12;
+
+	std::string opcode_name = std::format("INC [HL]");
 	return opcode_name;
 }
 
@@ -990,7 +1020,7 @@ std::string Op::OrHL(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 4;
+	context->cycles += 8;
 
 	std::string opcode_name = std::format("OR A, [HL]");
 	return opcode_name;
@@ -1008,10 +1038,30 @@ std::string Op::AndR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, true);
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 4;
+
+	std::string opcode_name = std::format("AND A, {}", RegisterTypeString8(reg));
+	return opcode_name;
+}
+
+std::string Op::AndIndirectHL(EmulatorContext* context)
+{
+	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t result_r = ReadFromBus(context, address);
+	uint8_t result = result_a & result_r;
+	context->cpu->SetRegister(RegisterType8::REG_A, result);
+
+	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, true);
+	context->cpu->SetFlag(CpuFlag::Carry, false);
+
 	context->cpu->ProgramCounter += 2;
 	context->cycles += 8;
 
-	std::string opcode_name = std::format("AND A, {}", RegisterTypeString8(reg));
+	std::string opcode_name = std::format("AND A, [HL]");
 	return opcode_name;
 }
 
@@ -1103,6 +1153,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0x5:
 			CB::RotateLeftCarry(context, RegisterType8::REG_L);
 			break;
+		case 0x6:
+			CB::RotateLeftCarryIndirectHL(context);
+			break;
 		case 0x7:
 			CB::RotateLeftCarry(context, RegisterType8::REG_A);
 			break;
@@ -1125,6 +1178,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0xD:
 			CB::RotateRightCarry(context, RegisterType8::REG_L);
+			break;
+		case 0xE:
+			CB::RotateRightCarryIndirectHL(context);
 			break;
 		case 0xF:
 			CB::RotateRightCarry(context, RegisterType8::REG_A);
@@ -1149,6 +1205,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0x15:
 			CB::RotateLeft(context, RegisterType8::REG_L);
 			break;
+		case 0x16:
+			CB::RotateLeftIndirectHL(context);
+			break;
 		case 0x17:
 			CB::RotateLeft(context, RegisterType8::REG_A);
 			break;
@@ -1171,6 +1230,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0x1D:
 			CB::RotateRight(context, RegisterType8::REG_L);
+			break;
+		case 0x1E:
+			CB::RotateRightIndirectHL(context);
 			break;
 		case 0x1F:
 			CB::RotateRight(context, RegisterType8::REG_A);
@@ -1195,6 +1257,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0x25:
 			CB::ShiftLeftArithmetically(context, RegisterType8::REG_L);
 			break;
+		case 0x26:
+			CB::ShiftLeftArithmeticallyIndirectHL(context);
+			break;
 		case 0x27:
 			CB::ShiftLeftArithmetically(context, RegisterType8::REG_A);
 			break;
@@ -1217,6 +1282,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0x2D:
 			CB::ShiftRightArithmetically(context, RegisterType8::REG_L);
+			break;
+		case 0x2E:
+			CB::ShiftRightArithmeticallyIndirectHL(context);
 			break;
 		case 0x2F:
 			CB::ShiftRightArithmetically(context, RegisterType8::REG_A);
@@ -1241,6 +1309,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0x35:
 			CB::SwapR8(context, RegisterType8::REG_L);
 			break;
+		case 0x36:
+			CB::SwapIndirectHL(context);
+			break;
 		case 0x37:
 			CB::SwapR8(context, RegisterType8::REG_A);
 			break;
@@ -1263,6 +1334,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0x3D:
 			CB::ShiftRightLogically(context, RegisterType8::REG_L);
+			break;
+		case 0x3E:
+			CB::ShiftRightLogicallyIndirectHL(context);
 			break;
 		case 0x3F:
 			CB::ShiftRightLogically(context, RegisterType8::REG_A);
@@ -1287,6 +1361,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0x45:
 			CB::Bit(context, 0, RegisterType8::REG_L);
 			break;
+		case 0x46:
+			CB::BitIndirectHL(context, 0);
+			break;
 		case 0x47:
 			CB::Bit(context, 0, RegisterType8::REG_A);
 			break;
@@ -1309,6 +1386,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0x4D:
 			CB::Bit(context, 1, RegisterType8::REG_L);
+			break;
+		case 0x4E:
+			CB::BitIndirectHL(context, 1);
 			break;
 		case 0x4F:
 			CB::Bit(context, 1, RegisterType8::REG_A);
@@ -1333,6 +1413,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0x55:
 			CB::Bit(context, 2, RegisterType8::REG_L);
 			break;
+		case 0x56:
+			CB::BitIndirectHL(context, 2);
+			break;
 		case 0x57:
 			CB::Bit(context, 2, RegisterType8::REG_A);
 			break;
@@ -1355,6 +1438,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0x5D:
 			CB::Bit(context, 3, RegisterType8::REG_L);
+			break;
+		case 0x5E:
+			CB::BitIndirectHL(context, 3);
 			break;
 		case 0x5F:
 			CB::Bit(context, 3, RegisterType8::REG_A);
@@ -1379,6 +1465,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0x65:
 			CB::Bit(context, 4, RegisterType8::REG_L);
 			break;
+		case 0x66:
+			CB::BitIndirectHL(context, 4);
+			break;
 		case 0x67:
 			CB::Bit(context, 4, RegisterType8::REG_A);
 			break;
@@ -1401,6 +1490,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0x6D:
 			CB::Bit(context, 5, RegisterType8::REG_L);
+			break;
+		case 0x6E:
+			CB::BitIndirectHL(context, 5);
 			break;
 		case 0x6F:
 			CB::Bit(context, 5, RegisterType8::REG_A);
@@ -1425,6 +1517,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0x75:
 			CB::Bit(context, 6, RegisterType8::REG_L);
 			break;
+		case 0x76:
+			CB::BitIndirectHL(context, 6);
+			break;
 		case 0x77:
 			CB::Bit(context, 6, RegisterType8::REG_A);
 			break;
@@ -1447,6 +1542,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0x7D:
 			CB::Bit(context, 7, RegisterType8::REG_L);
+			break;
+		case 0x7E:
+			CB::BitIndirectHL(context, 7);
 			break;
 		case 0x7F:
 			CB::Bit(context, 7, RegisterType8::REG_A);
@@ -1471,6 +1569,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0x85:
 			CB::Reset(context, 0, RegisterType8::REG_L);
 			break;
+		case 0x86:
+			CB::ResetIndirectHL(context, 0);
+			break;
 		case 0x87:
 			CB::Reset(context, 0, RegisterType8::REG_A);
 			break;
@@ -1493,6 +1594,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0x8D:
 			CB::Reset(context, 1, RegisterType8::REG_L);
+			break;
+		case 0x8E:
+			CB::ResetIndirectHL(context, 1);
 			break;
 		case 0x8F:
 			CB::Reset(context, 1, RegisterType8::REG_A);
@@ -1517,6 +1621,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0x95:
 			CB::Reset(context, 2, RegisterType8::REG_L);
 			break;
+		case 0x96:
+			CB::ResetIndirectHL(context, 2);
+			break;
 		case 0x97:
 			CB::Reset(context, 2, RegisterType8::REG_A);
 			break;
@@ -1539,6 +1646,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0x9D:
 			CB::Reset(context, 3, RegisterType8::REG_L);
+			break;
+		case 0x9E:
+			CB::ResetIndirectHL(context, 3);
 			break;
 		case 0x9F:
 			CB::Reset(context, 3, RegisterType8::REG_A);
@@ -1563,6 +1673,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0xA5:
 			CB::Reset(context, 4, RegisterType8::REG_L);
 			break;
+		case 0xA6:
+			CB::ResetIndirectHL(context, 4);
+			break;
 		case 0xA7:
 			CB::Reset(context, 4, RegisterType8::REG_A);
 			break;
@@ -1585,6 +1698,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0xAD:
 			CB::Reset(context, 5, RegisterType8::REG_L);
+			break;
+		case 0xAE:
+			CB::ResetIndirectHL(context, 5);
 			break;
 		case 0xAF:
 			CB::Reset(context, 5, RegisterType8::REG_A);
@@ -1609,6 +1725,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0xB5:
 			CB::Reset(context, 6, RegisterType8::REG_L);
 			break;
+		case 0xB6:
+			CB::ResetIndirectHL(context, 6);
+			break;
 		case 0xB7:
 			CB::Reset(context, 6, RegisterType8::REG_A);
 			break;
@@ -1631,6 +1750,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0xBD:
 			CB::Reset(context, 7, RegisterType8::REG_L);
+			break;
+		case 0xBE:
+			CB::ResetIndirectHL(context, 7);
 			break;
 		case 0xBF:
 			CB::Reset(context, 7, RegisterType8::REG_A);
@@ -1655,6 +1777,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0xC5:
 			CB::Set(context, 0, RegisterType8::REG_L);
 			break;
+		case 0xC6:
+			CB::SetIndirectHL(context, 0);
+			break;
 		case 0xC7:
 			CB::Set(context, 0, RegisterType8::REG_A);
 			break;
@@ -1677,6 +1802,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0xCD:
 			CB::Set(context, 1, RegisterType8::REG_L);
+			break;
+		case 0xCE:
+			CB::SetIndirectHL(context, 1);
 			break;
 		case 0xCF:
 			CB::Set(context, 1, RegisterType8::REG_A);
@@ -1701,6 +1829,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0xD5:
 			CB::Set(context, 2, RegisterType8::REG_L);
 			break;
+		case 0xD6:
+			CB::SetIndirectHL(context, 2);
+			break;
 		case 0xD7:
 			CB::Set(context, 2, RegisterType8::REG_A);
 			break;
@@ -1723,6 +1854,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0xDD:
 			CB::Set(context, 3, RegisterType8::REG_L);
+			break;
+		case 0xDE:
+			CB::SetIndirectHL(context, 3);
 			break;
 		case 0xDF:
 			CB::Set(context, 3, RegisterType8::REG_A);
@@ -1747,6 +1881,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0xE5:
 			CB::Set(context, 4, RegisterType8::REG_L);
 			break;
+		case 0xE6:
+			CB::SetIndirectHL(context, 4);
+			break;
 		case 0xE7:
 			CB::Set(context, 4, RegisterType8::REG_A);
 			break;
@@ -1769,6 +1906,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0xED:
 			CB::Set(context, 5, RegisterType8::REG_L);
+			break;
+		case 0xEE:
+			CB::SetIndirectHL(context, 5);
 			break;
 		case 0xEF:
 			CB::Set(context, 5, RegisterType8::REG_A);
@@ -1793,6 +1933,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0xF5:
 			CB::Set(context, 6, RegisterType8::REG_L);
 			break;
+		case 0xF6:
+			CB::SetIndirectHL(context, 6);
+			break;
 		case 0xF7:
 			CB::Set(context, 6, RegisterType8::REG_A);
 			break;
@@ -1815,6 +1958,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0xFD:
 			CB::Set(context, 7, RegisterType8::REG_L);
+			break;
+		case 0xFE:
+			CB::SetIndirectHL(context, 7);
 			break;
 		case 0xFF:
 			CB::Set(context, 7, RegisterType8::REG_A);
@@ -2060,6 +2206,30 @@ std::string Op::AddCarryR8(EmulatorContext* context, RegisterType8 reg)
 	return opcode_name;
 }
 
+std::string Op::AddCarryIndirectHL(EmulatorContext* context)
+{
+	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+
+	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t result_b = ReadFromBus(context, address);
+
+	bool carry_flag = context->cpu->GetFlag(CpuFlag::Carry);
+
+	uint16_t result = result_a + result_b + (carry_flag ? 1 : 0);
+	context->cpu->SetFlag(CpuFlag::Zero, (result & 0xFF) == 0x0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (result_a & 0xF) + (result_b & 0xF) > (carry_flag ? 0xE : 0xF));
+	context->cpu->SetFlag(CpuFlag::Carry, result > 0xFF);
+
+	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result & 0xFF));
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("ADC A, [HL]");
+	return opcode_name;
+}
+
 std::string Op::SubCarryR8(EmulatorContext* context, RegisterType8 reg)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
@@ -2081,6 +2251,31 @@ std::string Op::SubCarryR8(EmulatorContext* context, RegisterType8 reg)
 	context->cycles += 4;
 
 	std::string opcode_name = std::format("SBC A, {}", RegisterTypeString8(reg));
+	return opcode_name;
+}
+
+std::string Op::SubCarryIndirectHL(EmulatorContext* context)
+{
+	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
+	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
+	uint8_t result_b = ReadFromBus(context, address);
+
+	bool carry_flag = context->cpu->GetFlag(CpuFlag::Carry);
+	uint8_t carry_value = (carry_flag ? 1 : 0);
+	uint16_t result = result_a - result_b - carry_value;
+
+	bool set_half_carry_flag = (result_a & 0xF) < ((result_b & 0xF) + carry_value);
+	context->cpu->SetFlag(CpuFlag::Zero, (result & 0xFF) == 0);
+	context->cpu->SetFlag(CpuFlag::Subtraction, true);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, set_half_carry_flag);
+	context->cpu->SetFlag(CpuFlag::Carry, result_a < (result_b + carry_value));
+
+	context->cpu->SetRegister(RegisterType8::REG_A, (result & 0xFF));
+
+	context->cpu->ProgramCounter += 1;
+	context->cycles += 8;
+
+	std::string opcode_name = std::format("SBC A, [HL]");
 	return opcode_name;
 }
 

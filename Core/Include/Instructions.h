@@ -81,6 +81,8 @@ namespace Op
 
 	std::string SubR8(EmulatorContext* context, RegisterType8 reg);
 
+	std::string SubIndirectHL(EmulatorContext* context);
+
 	std::string SubN8(EmulatorContext* context);
 
 	std::string AddIndirectHL(EmulatorContext* context);
@@ -123,6 +125,8 @@ namespace Op
 
 	std::string DecIndirectHL(EmulatorContext* context);
 
+	std::string IncIndirectHL(EmulatorContext* context);
+
 	std::string OrR8(EmulatorContext* context, RegisterType8 reg);
 
 	std::string OrN8(EmulatorContext* context);
@@ -130,6 +134,8 @@ namespace Op
 	std::string OrHL(EmulatorContext* context);
 
 	std::string AndR8(EmulatorContext* context, RegisterType8 reg);
+
+	std::string AndIndirectHL(EmulatorContext* context);
 
 	std::string AndN8(EmulatorContext* context);
 
@@ -155,7 +161,11 @@ namespace Op
 
 	std::string AddCarryR8(EmulatorContext* context, RegisterType8 reg);
 
+	std::string AddCarryIndirectHL(EmulatorContext* context);
+
 	std::string SubCarryR8(EmulatorContext* context, RegisterType8 reg);
+
+	std::string SubCarryIndirectHL(EmulatorContext* context);
 
 	std::string RotateRegisterLeftCarryA(EmulatorContext* context);
 

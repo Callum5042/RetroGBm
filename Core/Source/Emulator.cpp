@@ -317,6 +317,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::StoreDecrementHL(&m_Context);
 		case 0x33:
 			return Op::IncR16(&m_Context, RegisterType16::REG_SP);
+		case 0x34:
+			return Op::IncIndirectHL(&m_Context);
 		case 0x35:
 			return Op::DecIndirectHL(&m_Context);
 		case 0x36:
@@ -477,8 +479,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::AddR8(&m_Context, RegisterType8::REG_H);
 		case 0x85:
 			return Op::AddR8(&m_Context, RegisterType8::REG_L);
-		//case 0x86:
-		//	return Op::AddIndirectHL(&m_Context);
+		case 0x86:
+			return Op::AddIndirectHL(&m_Context);
 		case 0x87:
 			return Op::AddR8(&m_Context, RegisterType8::REG_A);
 		case 0x88:
@@ -493,6 +495,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::AddCarryR8(&m_Context, RegisterType8::REG_H);
 		case 0x8D:
 			return Op::AddCarryR8(&m_Context, RegisterType8::REG_L);
+		case 0x8e:
+			return Op::AddCarryIndirectHL(&m_Context);
 		case 0x8F:
 			return Op::AddCarryR8(&m_Context, RegisterType8::REG_A);
 		case 0x90:
@@ -507,6 +511,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::SubR8(&m_Context, RegisterType8::REG_H);
 		case 0x95:
 			return Op::SubR8(&m_Context, RegisterType8::REG_L);
+		case 0x96:
+			return Op::SubIndirectHL(&m_Context);
 		case 0x97:
 			return Op::SubR8(&m_Context, RegisterType8::REG_A);
 		case 0x98:
@@ -521,6 +527,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::SubCarryR8(&m_Context, RegisterType8::REG_H);
 		case 0x9D:
 			return Op::SubCarryR8(&m_Context, RegisterType8::REG_L);
+		case 0x9E:
+			return Op::SubCarryIndirectHL(&m_Context);
 		case 0x9F:
 			return Op::SubCarryR8(&m_Context, RegisterType8::REG_A);
 		case 0xA0:
@@ -535,6 +543,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::AndR8(&m_Context, RegisterType8::REG_H);
 		case 0xA5:
 			return Op::AndR8(&m_Context, RegisterType8::REG_L);
+		case 0xA6:
+			return Op::AndIndirectHL(&m_Context);
 		case 0xA7:
 			return Op::AndR8(&m_Context, RegisterType8::REG_A);
 		case 0xA8:
@@ -581,8 +591,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::CompareR8(&m_Context, RegisterType8::REG_H);
 		case 0xBD:
 			return Op::CompareR8(&m_Context, RegisterType8::REG_L);
-		//case 0xBE:
-		//	return Op::CompareIndirectHL(&m_Context);
+		case 0xBE:
+			return Op::CompareIndirectHL(&m_Context);
 		case 0xBF:
 			return Op::CompareR8(&m_Context, RegisterType8::REG_A);
 		case 0xC0:
