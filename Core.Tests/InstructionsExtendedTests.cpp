@@ -155,5 +155,30 @@ namespace InstructionsTests
 			uint8_t result = context.cpu->GetRegister(RegisterType8::REG_A);
 			Assert::AreEqual(0xD, static_cast<int>(result));
 		}
+
+		TEST_METHOD(RotateLeft_ResultWillCarry_SetCarryFlag)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+
+			context.cpu->SetRegister(RegisterType8::REG_A, 0xC0);
+
+			// Act
+			CB::RotateLeft(&context, RegisterType8::REG_A);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
+
+			uint8_t result = context.cpu->GetRegister(RegisterType8::REG_A);
+			Assert::AreEqual(0x80, static_cast<int>(result));
+
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Zero));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Subtraction));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::HalfCarry));
+			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::Carry));
+		}
 	};
 }

@@ -46,6 +46,7 @@ void CB::RotateLeft(EmulatorContext* context, RegisterType8 reg)
 
 	uint8_t result = data << 1;
 	result |= (carry_flag ? 1 : 0);
+	context->cpu->SetRegister(reg, result);
 
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);
@@ -85,6 +86,8 @@ void CB::RotateRightCarry(EmulatorContext* context, RegisterType8 reg)
 		context->cpu->SetFlag(CpuFlag::Carry, false);
 	}
 
+	context->cpu->SetRegister(reg, result);
+
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);
 	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
@@ -106,6 +109,8 @@ void CB::RotateLeftCarry(EmulatorContext* context, RegisterType8 reg)
 	{
 		context->cpu->SetFlag(CpuFlag::Carry, false);
 	}
+
+	context->cpu->SetRegister(reg, result);
 
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);

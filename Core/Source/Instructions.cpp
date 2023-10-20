@@ -2143,6 +2143,8 @@ std::string Op::RotateRegisterRightCarryA(EmulatorContext* context)
 	value >>= 1;
 	value |= (bit0 << 7);
 
+	context->cpu->SetRegister(RegisterType8::REG_A, value);
+
 	context->cpu->SetFlag(CpuFlag::Zero, false);
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);
 	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
