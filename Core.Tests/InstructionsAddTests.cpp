@@ -199,7 +199,7 @@ namespace InstructionsTests
 
 			// Assert
 			Assert::AreEqual(8, context.cycles);
-			Assert::AreEqual(0, static_cast<int>(context.cpu->ProgramCounter));
+			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
 
 			uint8_t result = context.cpu->GetRegister(RegisterType8::REG_A);
 			Assert::AreEqual(0x65, static_cast<int>(result));

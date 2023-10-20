@@ -570,7 +570,7 @@ std::string Op::AddIndirectHL(EmulatorContext* context)
 
 	uint16_t result = result_a + result_b;
 	context->cpu->SetFlag(CpuFlag::Zero, (result & 0xFF) == 0x0);
-	context->cpu->SetFlag(CpuFlag::Subtraction, true);
+	context->cpu->SetFlag(CpuFlag::Subtraction, false);
 	context->cpu->SetFlag(CpuFlag::HalfCarry, (result_a & 0xF) < (result_b & 0xF));
 	context->cpu->SetFlag(CpuFlag::Carry, result_a < result_b);
 
@@ -1153,6 +1153,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0x5:
 			CB::RotateLeftCarry(context, RegisterType8::REG_L);
 			break;
+		case 0x6:
+			CB::RotateLeftCarryIndirectHL(context);
+			break;
 		case 0x7:
 			CB::RotateLeftCarry(context, RegisterType8::REG_A);
 			break;
@@ -1175,6 +1178,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0xD:
 			CB::RotateRightCarry(context, RegisterType8::REG_L);
+			break;
+		case 0xE:
+			CB::RotateRightCarryIndirectHL(context);
 			break;
 		case 0xF:
 			CB::RotateRightCarry(context, RegisterType8::REG_A);
@@ -1199,6 +1205,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0x15:
 			CB::RotateLeft(context, RegisterType8::REG_L);
 			break;
+		case 0x16:
+			CB::RotateLeftIndirectHL(context);
+			break;
 		case 0x17:
 			CB::RotateLeft(context, RegisterType8::REG_A);
 			break;
@@ -1221,6 +1230,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0x1D:
 			CB::RotateRight(context, RegisterType8::REG_L);
+			break;
+		case 0x1E:
+			CB::RotateRightIndirectHL(context);
 			break;
 		case 0x1F:
 			CB::RotateRight(context, RegisterType8::REG_A);
@@ -1245,6 +1257,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0x25:
 			CB::ShiftLeftArithmetically(context, RegisterType8::REG_L);
 			break;
+		case 0x26:
+			CB::ShiftLeftArithmeticallyIndirectHL(context);
+			break;
 		case 0x27:
 			CB::ShiftLeftArithmetically(context, RegisterType8::REG_A);
 			break;
@@ -1267,6 +1282,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0x2D:
 			CB::ShiftRightArithmetically(context, RegisterType8::REG_L);
+			break;
+		case 0x2E:
+			CB::ShiftRightArithmeticallyIndirectHL(context);
 			break;
 		case 0x2F:
 			CB::ShiftRightArithmetically(context, RegisterType8::REG_A);
@@ -1291,6 +1309,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		case 0x35:
 			CB::SwapR8(context, RegisterType8::REG_L);
 			break;
+		case 0x36:
+			CB::SwapIndirectHL(context);
+			break;
 		case 0x37:
 			CB::SwapR8(context, RegisterType8::REG_A);
 			break;
@@ -1313,6 +1334,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 		case 0x3D:
 			CB::ShiftRightLogically(context, RegisterType8::REG_L);
+			break;
+		case 0x3E:
+			CB::ShiftRightLogicallyIndirectHL(context);
 			break;
 		case 0x3F:
 			CB::ShiftRightLogically(context, RegisterType8::REG_A);
