@@ -83,6 +83,8 @@ namespace Op
 
 	std::string AddN8(EmulatorContext* context);
 
+	std::string SubR8(EmulatorContext* context, RegisterType8 reg);
+
 	std::string SubN8(EmulatorContext* context);
 
 	std::string AddIndirectHL(EmulatorContext* context);
@@ -137,7 +139,9 @@ namespace Op
 
 	std::string ExtendedPrefix(EmulatorContext* context);
 
-	std::string RotateRegisterA(EmulatorContext* context);
+	std::string RotateRegisterRightA(EmulatorContext* context);
+
+	std::string RotateRegisterLeftA(EmulatorContext* context);
 
 	std::string AddCarryN8(EmulatorContext* context);
 
@@ -150,4 +154,14 @@ namespace Op
 	std::string SetCarryFlag(EmulatorContext* context);
 
 	std::string Rst(EmulatorContext* context, uint8_t offset);
+
+	std::string ComplementCarryFlag(EmulatorContext* context);
+
+	std::string AddCarryR8(EmulatorContext* context, RegisterType8 reg);
+
+	std::string SubCarryR8(EmulatorContext* context, RegisterType8 reg);
+
+	std::string RotateRegisterLeftCarryA(EmulatorContext* context);
+
+	std::string RotateRegisterRightCarryA(EmulatorContext* context);
 }

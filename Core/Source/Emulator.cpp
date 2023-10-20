@@ -224,6 +224,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::DecR8(&m_Context, RegisterType8::REG_B);
 		case 0x06:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_B);
+		case 0x07:
+			return Op::RotateRegisterLeftCarryA(&m_Context);
 		case 0x08:
 			return Op::LoadIndirectSP(&m_Context);
 		case 0x09:
@@ -238,6 +240,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::DecR8(&m_Context, RegisterType8::REG_C);
 		case 0x0E:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_C);
+		case 0x0F:
+			return Op::RotateRegisterRightCarryA(&m_Context);
 		//case 0x10:
 		//	return Op::Stop(&m_Context);
 		case 0x11:
@@ -252,6 +256,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::DecR8(&m_Context, RegisterType8::REG_D);
 		case 0x16:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_D);
+		case 0x17:
+			return Op::RotateRegisterLeftA(&m_Context);
 		case 0x18:
 			return Op::JumpRelativeN8(&m_Context);
 		case 0x19:
@@ -267,7 +273,7 @@ std::string Emulator::Execute(const uint8_t opcode)
 		case 0x1E:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_E);
 		case 0x1F:
-			return Op::RotateRegisterA(&m_Context);
+			return Op::RotateRegisterRightA(&m_Context);
 		case 0x20:
 			return Op::JumpRelativeFlagNotSet(&m_Context, CpuFlag::Zero);
 		case 0x21:
@@ -328,6 +334,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::DecR8(&m_Context, RegisterType8::REG_A);
 		case 0x3E:
 			return Op::LoadN8(&m_Context, RegisterType8::REG_A);
+		case 0x3F:
+			return Op::ComplementCarryFlag(&m_Context);
 		case 0x40:
 			return Op::LoadR8(&m_Context, RegisterType8::REG_B, RegisterType8::REG_B);
 		case 0x41:
@@ -454,22 +462,78 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::LoadIndirectR16(&m_Context, RegisterType8::REG_A, RegisterType16::REG_HL);
 		case 0x7F:
 			return Op::LoadR8(&m_Context, RegisterType8::REG_A, RegisterType8::REG_A);
-		//case 0x80:
-		//	return Op::AddR8(&m_Context, RegisterType8::REG_B);
-		//case 0x81:
-		//	return Op::AddR8(&m_Context, RegisterType8::REG_C);
-		//case 0x82:
-		//	return Op::AddR8(&m_Context, RegisterType8::REG_D);
-		//case 0x83:
-		//	return Op::AddR8(&m_Context, RegisterType8::REG_E);
-		//case 0x84:
-		//	return Op::AddR8(&m_Context, RegisterType8::REG_H);
-		//case 0x85:
-		//	return Op::AddR8(&m_Context, RegisterType8::REG_L);
+		case 0x80:
+			return Op::AddR8(&m_Context, RegisterType8::REG_B);
+		case 0x81:
+			return Op::AddR8(&m_Context, RegisterType8::REG_C);
+		case 0x82:
+			return Op::AddR8(&m_Context, RegisterType8::REG_D);
+		case 0x83:
+			return Op::AddR8(&m_Context, RegisterType8::REG_E);
+		case 0x84:
+			return Op::AddR8(&m_Context, RegisterType8::REG_H);
+		case 0x85:
+			return Op::AddR8(&m_Context, RegisterType8::REG_L);
 		//case 0x86:
 		//	return Op::AddIndirectHL(&m_Context);
-		//case 0x87:
-		//	return Op::AddR8(&m_Context, RegisterType8::REG_A);
+		case 0x87:
+			return Op::AddR8(&m_Context, RegisterType8::REG_A);
+		case 0x88:
+			return Op::AddCarryR8(&m_Context, RegisterType8::REG_B);
+		case 0x89:
+			return Op::AddCarryR8(&m_Context, RegisterType8::REG_C);
+		case 0x8A:
+			return Op::AddCarryR8(&m_Context, RegisterType8::REG_D);
+		case 0x8B:
+			return Op::AddCarryR8(&m_Context, RegisterType8::REG_E);
+		case 0x8C:
+			return Op::AddCarryR8(&m_Context, RegisterType8::REG_H);
+		case 0x8D:
+			return Op::AddCarryR8(&m_Context, RegisterType8::REG_L);
+		case 0x8F:
+			return Op::AddCarryR8(&m_Context, RegisterType8::REG_A);
+		case 0x90:
+			return Op::SubR8(&m_Context, RegisterType8::REG_B);
+		case 0x91:
+			return Op::SubR8(&m_Context, RegisterType8::REG_C);
+		case 0x92:
+			return Op::SubR8(&m_Context, RegisterType8::REG_D);
+		case 0x93:
+			return Op::SubR8(&m_Context, RegisterType8::REG_E);
+		case 0x94:
+			return Op::SubR8(&m_Context, RegisterType8::REG_H);
+		case 0x95:
+			return Op::SubR8(&m_Context, RegisterType8::REG_L);
+		case 0x97:
+			return Op::SubR8(&m_Context, RegisterType8::REG_A);
+		case 0x98:
+			return Op::SubCarryR8(&m_Context, RegisterType8::REG_B);
+		case 0x99:
+			return Op::SubCarryR8(&m_Context, RegisterType8::REG_C);
+		case 0x9A:
+			return Op::SubCarryR8(&m_Context, RegisterType8::REG_D);
+		case 0x9B:
+			return Op::SubCarryR8(&m_Context, RegisterType8::REG_E);
+		case 0x9C:
+			return Op::SubCarryR8(&m_Context, RegisterType8::REG_H);
+		case 0x9D:
+			return Op::SubCarryR8(&m_Context, RegisterType8::REG_L);
+		case 0x9F:
+			return Op::SubCarryR8(&m_Context, RegisterType8::REG_A);
+		case 0xA0:
+			return Op::AndR8(&m_Context, RegisterType8::REG_B);
+		case 0xA1:
+			return Op::AndR8(&m_Context, RegisterType8::REG_C);
+		case 0xA2:
+			return Op::AndR8(&m_Context, RegisterType8::REG_D);
+		case 0xA3:
+			return Op::AndR8(&m_Context, RegisterType8::REG_E);
+		case 0xA4:
+			return Op::AndR8(&m_Context, RegisterType8::REG_H);
+		case 0xA5:
+			return Op::AndR8(&m_Context, RegisterType8::REG_L);
+		case 0xA7:
+			return Op::AndR8(&m_Context, RegisterType8::REG_A);
 		case 0xA8:
 			return Op::XorR8(&m_Context, RegisterType8::REG_B);
 		case 0xA9:

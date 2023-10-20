@@ -13,5 +13,21 @@ namespace CB
 
 	void RotateRight(EmulatorContext* context, RegisterType8 reg);
 
+	void RotateLeft(EmulatorContext* context, RegisterType8 reg);
+
 	void SwapR8(EmulatorContext* context, RegisterType8 reg);
+
+	void RotateRightCarry(EmulatorContext* context, RegisterType8 reg);
+
+	void RotateLeftCarry(EmulatorContext* context, RegisterType8 reg);
+
+	void Bit(EmulatorContext* context, uint8_t bit, RegisterType8 reg);
+
+	void Set(EmulatorContext* context, uint8_t bit, RegisterType8 reg);
+
+	void Reset(EmulatorContext* context, uint8_t bit, RegisterType8 reg);
+
+	void ShiftLeftArithmetically(EmulatorContext* context, RegisterType8 reg);
+
+	void ShiftRightArithmetically(EmulatorContext* context, RegisterType8 reg);
 }
