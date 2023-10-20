@@ -180,5 +180,55 @@ namespace InstructionsTests
 			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::HalfCarry));
 			Assert::IsTrue(context.cpu->GetFlag(CpuFlag::Carry));
 		}
+
+		TEST_METHOD(ShiftRightArithmetically)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+
+			context.cpu->SetRegister(RegisterType8::REG_A, 0xC0);
+
+			// Act
+			CB::ShiftRightArithmetically(&context, RegisterType8::REG_A);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
+
+			uint8_t result = context.cpu->GetRegister(RegisterType8::REG_A);
+			Assert::AreEqual(0xE0, static_cast<int>(result));
+
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Zero));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Subtraction));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::HalfCarry));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Carry));
+		}
+
+		TEST_METHOD(ShiftLeftArithmetically)
+		{
+			// Arrange
+			EmulatorContext context;
+			context.cycles = 0;
+			context.cpu = std::make_unique<Cpu>();
+
+			context.cpu->SetRegister(RegisterType8::REG_A, 0x3);
+
+			// Act
+			CB::ShiftLeftArithmetically(&context, RegisterType8::REG_A);
+
+			// Assert
+			Assert::AreEqual(8, context.cycles);
+			Assert::AreEqual(2, static_cast<int>(context.cpu->ProgramCounter));
+
+			uint8_t result = context.cpu->GetRegister(RegisterType8::REG_A);
+			Assert::AreEqual(0x6, static_cast<int>(result));
+
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Zero));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Subtraction));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::HalfCarry));
+			Assert::IsFalse(context.cpu->GetFlag(CpuFlag::Carry));
+		}
 	};
 }

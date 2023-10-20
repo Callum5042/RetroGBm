@@ -165,7 +165,7 @@ void CB::ShiftLeftArithmetically(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);
 	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
-	context->cpu->SetFlag(CpuFlag::Carry, (result & (1 << 7)) != 0);
+	context->cpu->SetFlag(CpuFlag::Carry, (value & (1 << 7)) != 0);
 
 	context->cpu->ProgramCounter += 2;
 	context->cycles += 8;
