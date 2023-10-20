@@ -324,8 +324,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::JumpRelativeFlagSet(&m_Context, CpuFlag::Carry);
 		case 0x39:
 			return Op::AddR16(&m_Context, RegisterType16::REG_SP);
-		//case 0x3A:
-		//	return Op::LoadDecrementHL(&m_Context);
+		case 0x3A:
+			return Op::LoadDecrementHL(&m_Context);
 		case 0x3B:
 			return Op::DecR16(&m_Context, RegisterType16::REG_SP);
 		case 0x3C:

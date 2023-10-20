@@ -329,8 +329,9 @@ std::string Op::LoadDecrementHL(EmulatorContext* context)
 	context->cpu->SetRegister(RegisterType16::REG_HL, address - 1);
 
 	context->cycles += 8;
+	context->cpu->ProgramCounter += 1;
 
-	std::string opcode_name = std::format("LDD r8, [{}] (0x{:x})", RegisterTypeString16(RegisterType16::REG_HL), data);
+	std::string opcode_name = std::format("LDD r8, [HL-] 0x{:x}", data);
 	return opcode_name;
 }
 
@@ -592,8 +593,8 @@ std::string Op::AddIndirectHL(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, half_carry);
 
 	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result));
-
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);
+
 	context->cycles += 8;
 
 	std::string opcode_name = std::format("ADD A, [HL]");
@@ -602,7 +603,6 @@ std::string Op::AddIndirectHL(EmulatorContext* context)
 
 std::string Op::AddSP(EmulatorContext* context)
 {
-	// 0xE8
 	uint16_t reg_sp = context->cpu->GetRegister(RegisterType16::REG_SP);
 	int8_t data = static_cast<int8_t>(ReadFromBus(context, context->cpu->ProgramCounter + 1));
 
