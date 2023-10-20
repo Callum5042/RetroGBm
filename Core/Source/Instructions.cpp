@@ -1644,25 +1644,25 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 
 			// Reset bit 7
 		case 0xB8:
-			CB::Reset(context, 5, RegisterType8::REG_B);
+			CB::Reset(context, 7, RegisterType8::REG_B);
 			break;
 		case 0xB9:
-			CB::Reset(context, 5, RegisterType8::REG_C);
+			CB::Reset(context, 7, RegisterType8::REG_C);
 			break;
 		case 0xBA:
-			CB::Reset(context, 5, RegisterType8::REG_D);
+			CB::Reset(context, 7, RegisterType8::REG_D);
 			break;
 		case 0xBB:
-			CB::Reset(context, 5, RegisterType8::REG_E);
+			CB::Reset(context, 7, RegisterType8::REG_E);
 			break;
 		case 0xBC:
-			CB::Reset(context, 5, RegisterType8::REG_H);
+			CB::Reset(context, 7, RegisterType8::REG_H);
 			break;
 		case 0xBD:
-			CB::Reset(context, 5, RegisterType8::REG_L);
+			CB::Reset(context, 7, RegisterType8::REG_L);
 			break;
 		case 0xBF:
-			CB::Reset(context, 5, RegisterType8::REG_A);
+			CB::Reset(context, 7, RegisterType8::REG_A);
 			break;
 
 			// Set bit 0
