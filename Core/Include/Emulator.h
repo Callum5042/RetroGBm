@@ -63,6 +63,8 @@ public:
 
 	uint8_t GetOpCode() const;
 
+	inline EmulatorContext* GetContext() { return &m_Context; }
+
 private:
 	bool m_Running = false;
 
