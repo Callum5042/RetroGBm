@@ -15,6 +15,8 @@ public:
 private:
 	void Init();
 	void Run();
+	void HandleEvents(const SDL_Event& e);
+	void HandleWindowEvents(const SDL_Event& e);
 	std::atomic_bool m_Running = true;
 
 	// Main window

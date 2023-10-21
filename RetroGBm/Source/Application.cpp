@@ -73,39 +73,13 @@ void Application::Run()
 		}
 	});
 
-	// TODO: Refactor
-	/*SDL_Texture* m_TileTexture = SDL_CreateTexture(m_TileRenderer,
-											 SDL_PIXELFORMAT_ARGB8888,
-											 SDL_TEXTUREACCESS_STREAMING,
-											 static_cast<int>((16 * 8 * m_TileWindowScale) + (16 * m_TileWindowScale)),
-											 static_cast<int>((32 * 8 * m_TileWindowScale) + (64 * m_TileWindowScale)));
-
-
-	SDL_Surface* m_TileSurface = SDL_CreateRGBSurface(0, (16 * 8 * m_TileWindowScale) + (16 * m_TileWindowScale),
-													(32 * 8 * m_TileWindowScale) + (64 * m_TileWindowScale), 32,
-													0x00FF0000,
-													0x0000FF00,
-													0x000000FF,
-													0xFF000000);*/
-
-	// END TODO: Refactor
-
 	// UI runs on main thread
 	while (m_Running)
 	{
 		SDL_Event e = {};
 		if (SDL_PollEvent(&e))
 		{
-			// Handle inputs
-			switch (e.type)
-			{
-				case SDL_QUIT:
-					m_Running = false;
-					break;
-
-				default:
-					break;
-			}
+			HandleEvents(e);
 		}
 		else
 		{
@@ -127,6 +101,33 @@ void Application::Run()
 	}
 
 	emulator_thread.join();
+}
+
+void Application::HandleEvents(const SDL_Event& e)
+{
+	switch (e.type)
+	{
+		case SDL_QUIT:
+			m_Running = false;
+			break;
+
+		case SDL_WINDOWEVENT:
+			HandleWindowEvents(e);
+			break;
+
+		default:
+			break;
+	}
+}
+
+void Application::HandleWindowEvents(const SDL_Event& e)
+{
+	switch (e.window.event)
+	{
+		case SDL_WINDOWEVENT_CLOSE:
+			m_Running = false;
+			break;
+	}
 }
 
 void Application::Init()
@@ -181,9 +182,9 @@ void Application::CreateTileWindow()
 
 void Application::UpdateTileWindow()
 {
-	int xDraw = 0;
-	int yDraw = 0;
-	int tileNum = 0;
+	int draw_x = 0;
+	int draw_y = 0;
+	int tile_number = 0;
 
 	SDL_Rect rc = {};
 	rc.x = 0;
@@ -192,21 +193,20 @@ void Application::UpdateTileWindow()
 	rc.h = m_TileSurface->h;
 	SDL_FillRect(m_TileSurface, &rc, 0xFF111111);
 
-	uint16_t addr = 0x8000;
+	uint16_t address = 0x8000;
+	const unsigned long tile_colors[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
 
-	//384 tiles, 24 x 16
+	// 384 tiles, 24 x 16
 	for (int y = 0; y < 24; y++)
 	{
 		for (int x = 0; x < 16; x++)
 		{
 			SDL_Rect rc = {};
 
-			static unsigned long tile_colors[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
-
 			for (int tileY = 0; tileY < 16; tileY += 2)
 			{
-				uint8_t b1 = ReadFromBus(m_Emulator->GetContext(), (addr + (tileNum * 16) + tileY));
-				uint8_t b2 = ReadFromBus(m_Emulator->GetContext(), (addr + (tileNum * 16) + tileY + 1));
+				uint8_t b1 = ReadFromBus(m_Emulator->GetContext(), (address + (tile_number * 16) + tileY));
+				uint8_t b2 = ReadFromBus(m_Emulator->GetContext(), (address + (tile_number * 16) + tileY + 1));
 
 				for (int bit = 7; bit >= 0; bit--)
 				{
@@ -215,8 +215,8 @@ void Application::UpdateTileWindow()
 
 					uint8_t color = hi | lo;
 
-					rc.x = static_cast<int>(xDraw + (x * m_TileWindowScale) + ((7 - bit) * m_TileWindowScale));
-					rc.y = static_cast<int>(yDraw + (y * m_TileWindowScale) + (tileY / 2.0f * m_TileWindowScale));
+					rc.x = static_cast<int>(draw_x + (x * m_TileWindowScale) + ((7 - bit) * m_TileWindowScale));
+					rc.y = static_cast<int>(draw_y + (y * m_TileWindowScale) + (tileY / 2.0f * m_TileWindowScale));
 					rc.w = static_cast<int>(m_TileWindowScale);
 					rc.h = static_cast<int>(m_TileWindowScale);
 
@@ -224,12 +224,12 @@ void Application::UpdateTileWindow()
 				}
 			}
 
-			xDraw += static_cast<int>(8 * m_TileWindowScale);
-			tileNum++;
+			draw_x += static_cast<int>(8 * m_TileWindowScale);
+			tile_number++;
 		}
 
-		yDraw += static_cast<int>(8 * m_TileWindowScale);
-		xDraw = 0;
+		draw_y += static_cast<int>(8 * m_TileWindowScale);
+		draw_x = 0;
 	}
 
 	SDL_UpdateTexture(m_TileTexture, NULL, m_TileSurface->pixels, m_TileSurface->pitch);
