@@ -38,8 +38,22 @@ int main(int argc, char** argv)
 	}
 
 	// Debug texture
-	float scale = 4.0f;
-	SDL_Texture* texture = SDL_CreateTexture(renderer, 
+	float scale = 2.0f;
+	SDL_Window* tile_window = SDL_CreateWindow("RetroGBm", 
+											   SDL_WINDOWPOS_UNDEFINED, 
+											   SDL_WINDOWPOS_UNDEFINED, 
+											   static_cast<int>(16 * 8 * scale),
+											   static_cast<int>(32 * 8 * scale),
+											   SDL_WINDOW_SHOWN);
+
+	SDL_Renderer* tile_renderer = SDL_CreateRenderer(tile_window, -1, SDL_RENDERER_ACCELERATED);
+	if (renderer == nullptr)
+	{
+		SDL_ShowSimpleMessageBox(NULL, "Error", "SDL_CreateWindow failed", nullptr);
+		return -1;
+	}
+	
+	SDL_Texture* texture = SDL_CreateTexture(tile_renderer, 
 											 SDL_PIXELFORMAT_ARGB8888, 
 											 SDL_TEXTUREACCESS_STREAMING, 
 											 static_cast<int>((16 * 8 * scale) + (16 * scale)), 
@@ -138,8 +152,6 @@ int main(int argc, char** argv)
 							}
 						}
 
-
-
 						xDraw += (8 * scale);
 						tileNum++;
 					}
@@ -150,13 +162,17 @@ int main(int argc, char** argv)
 
 				SDL_UpdateTexture(texture, NULL, debugScreen->pixels, debugScreen->pitch);
 
+				// Render tile window
+				SDL_SetRenderDrawColor(tile_renderer, 0, 0, 0, 255);
+				SDL_RenderClear(tile_renderer);
+				SDL_RenderCopy(tile_renderer, texture, NULL, NULL);
+				SDL_RenderPresent(tile_renderer);
+
 				// Render
-				SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+				/*SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 				SDL_RenderClear(renderer);
-
 				SDL_RenderCopy(renderer, texture, NULL, NULL);
-
-				SDL_RenderPresent(renderer);
+				SDL_RenderPresent(renderer);*/
 			}
 		}
 	}
