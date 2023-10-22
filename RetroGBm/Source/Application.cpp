@@ -83,7 +83,8 @@ void Application::Run()
 		}
 		else
 		{
-			// Update tile window
+			// Update windows
+			UpdateMainWindow();
 			UpdateTileWindow();
 
 			// Display tile window
@@ -95,7 +96,7 @@ void Application::Run()
 			// Display main window
 			SDL_SetRenderDrawColor(m_MainRenderer, 0, 0, 0, 255);
 			SDL_RenderClear(m_MainRenderer);
-			// SDL_RenderCopy(m_MainRenderer, texture, NULL, NULL);
+			SDL_RenderCopy(m_MainRenderer, m_MainTexture, NULL, NULL);
 			SDL_RenderPresent(m_MainRenderer);
 		}
 	}
@@ -154,6 +155,9 @@ void Application::CreateMainWindow()
 	{
 		throw std::exception("SDL_CreateRenderer failed");
 	}
+
+	m_MainTexture = SDL_CreateTexture(m_MainRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 800, 600);
+	m_MainSurface = SDL_CreateRGBSurface(0, 800, 600, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 }
 
 void Application::CreateTileWindow()
@@ -233,4 +237,32 @@ void Application::UpdateTileWindow()
 	}
 
 	SDL_UpdateTexture(m_TileTexture, NULL, m_TileSurface->pixels, m_TileSurface->pitch);
+}
+
+void Application::UpdateMainWindow()
+{
+	SDL_Rect rc = {};
+	rc.x = rc.y = 0;
+	rc.w = rc.h = 2048;
+
+	auto& video_buffer = m_Emulator->GetContext()->ppu_context.video_buffer;
+
+	const int YRES = 144;
+	const int XRES = 160;
+
+	int scale = 4;
+	for (int line_num = 0; line_num < YRES; line_num++)
+	{
+		for (int x = 0; x < XRES; x++)
+		{
+			rc.x = x * scale;
+			rc.y = line_num * scale;
+			rc.w = scale;
+			rc.h = scale;
+
+			SDL_FillRect(m_MainSurface, &rc, video_buffer[x + (line_num * XRES)]);
+		}
+	}
+
+	SDL_UpdateTexture(m_MainTexture, NULL, m_MainSurface->pixels, m_MainSurface->pitch);
 }

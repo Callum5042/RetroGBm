@@ -21,8 +21,11 @@ private:
 
 	// Main window
 	void CreateMainWindow();
+	void UpdateMainWindow();
 	SDL_Window* m_MainWindow = nullptr;
 	SDL_Renderer* m_MainRenderer = nullptr;
+	SDL_Texture* m_MainTexture = nullptr;
+	SDL_Surface* m_MainSurface = nullptr;
 
 	// Tile window
 	void CreateTileWindow();
