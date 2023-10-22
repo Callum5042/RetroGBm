@@ -20,8 +20,8 @@ Emulator::Emulator()
 
 	std::fill(m_Context.high_ram.begin(), m_Context.high_ram.end(), 0x0);
 
-	m_Context.ppu_context.video_buffer.resize(160 * 144);
-	std::fill(m_Context.ppu_context.video_buffer.begin(), m_Context.ppu_context.video_buffer.end(), 0x0);
+	m_Context.video_buffer.resize(160 * 144);
+	std::fill(m_Context.video_buffer.begin(), m_Context.video_buffer.end(), 0x0);
 
 	m_DebugFile.open("debug.txt");
 }

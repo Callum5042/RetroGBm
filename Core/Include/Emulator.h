@@ -36,12 +36,6 @@ struct DisplayContext
 	uint8_t wx;
 };
 
-struct PpuContext
-{
-	uint32_t line_ticks = 0;
-	std::vector<uint32_t> video_buffer;
-};
-
 struct EmulatorContext
 {
 	uint64_t ticks = 0;
@@ -50,12 +44,14 @@ struct EmulatorContext
 	std::unique_ptr<Cpu> cpu = nullptr;
 	std::vector<uint8_t> video_ram;
 	std::vector<uint8_t> work_ram;
+	std::vector<uint32_t> video_buffer;
 	std::array<uint8_t, 127> high_ram;
 	std::array<char, 2> serial_data;
 
 	TimerContext timer;
 	DisplayContext display;
-	PpuContext ppu_context;
+
+	uint32_t line_ticks = 0;
 };
 
 class Emulator

@@ -245,7 +245,7 @@ void Application::UpdateMainWindow()
 	rc.x = rc.y = 0;
 	rc.w = rc.h = 2048;
 
-	auto& video_buffer = m_Emulator->GetContext()->ppu_context.video_buffer;
+	auto& video_buffer = m_Emulator->GetContext()->video_buffer;
 
 	const int YRES = 144;
 	const int XRES = 160;
