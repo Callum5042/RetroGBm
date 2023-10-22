@@ -1,10 +1,11 @@
 #include "Emulator.h"
 #include "Cpu.h"
+#include "Bus.h"
+#include "Instructions.h"
+
 #include <iostream>
 #include <exception>
 #include <string>
-#include "Bus.h"
-#include "Instructions.h"
 
 Emulator::Emulator()
 {
@@ -19,12 +20,8 @@ Emulator::Emulator()
 
 	std::fill(m_Context.high_ram.begin(), m_Context.high_ram.end(), 0x0);
 
-	// Build opcode table
-	/*m_OpCodeTable[0x0] = [&]() { return Op::Nop(&m_Context); };
-	m_OpCodeTable[0xC3] = [&]() { return Op::JumpN16(&m_Context); };
-	m_OpCodeTable[0xAF] = [&]() { return Op::Xor(&m_Context, RegisterType8::REG_A, RegisterType8::REG_A); };
-	m_OpCodeTable[0x21] = [&]() { return Op::LoadN16(&m_Context, RegisterType16::REG_HL); };*/
-
+	m_Context.ppu_context.video_buffer.resize(160 * 144);
+	std::fill(m_Context.ppu_context.video_buffer.begin(), m_Context.ppu_context.video_buffer.end(), 0x0);
 
 	m_DebugFile.open("debug.txt");
 }
@@ -59,6 +56,18 @@ bool Emulator::LoadRom(const std::filesystem::path& path)
 	// Set program counter to 0x100 to skip boot rom
 	m_Context.cpu->ProgramCounter = 0x100;
 
+	// Default flags based on the cartridge info
+	if (checksum_result == 0x0)
+	{
+		m_Context.cpu->SetFlag(CpuFlag::Carry, false);
+		m_Context.cpu->SetFlag(CpuFlag::HalfCarry, false);
+	}
+	else
+	{
+		m_Context.cpu->SetFlag(CpuFlag::Carry, true);
+		m_Context.cpu->SetFlag(CpuFlag::HalfCarry, true);
+	}
+
 	m_Context.timer.div = 0xAB;
 	m_Context.timer.tac = 0xF8;
 	m_Context.timer.tma = 0x0;
@@ -77,18 +86,6 @@ bool Emulator::LoadRom(const std::filesystem::path& path)
 	m_Context.display.wy = 0x0;
 	m_Context.display.wx = 0x0;
 
-	if (checksum_result == 0x0)
-	{
-		m_Context.cpu->SetFlag(CpuFlag::Carry, false);
-		m_Context.cpu->SetFlag(CpuFlag::HalfCarry, false);
-	}
-	else
-	{
-		m_Context.cpu->SetFlag(CpuFlag::Carry, true);
-		m_Context.cpu->SetFlag(CpuFlag::HalfCarry, true);
-	}
-
-	m_Running = true;
 	return true;
 }
 
@@ -100,28 +97,6 @@ void Emulator::Tick()
 	const uint8_t opcode = ReadFromBus(&m_Context, m_Context.cpu->ProgramCounter);
 	m_CurrentOpCode = opcode;
 
-	std::string cpu_details = m_Context.cpu->Details();
-
-	static int count = 0;
-	count++;
-
-	std::string opcode_format = std::format("Opcode: 0x{:x} - {} - B:${:x} C:${:x} D:${:x} E:${:x} H:${:x} L:${:x} A:${:x} F:{}{}{}{}",
-											opcode,
-											count,
-											m_Context.cpu->GetRegister(RegisterType8::REG_B),
-											m_Context.cpu->GetRegister(RegisterType8::REG_C),
-											m_Context.cpu->GetRegister(RegisterType8::REG_D),
-											m_Context.cpu->GetRegister(RegisterType8::REG_E),
-											m_Context.cpu->GetRegister(RegisterType8::REG_H),
-											m_Context.cpu->GetRegister(RegisterType8::REG_L),
-											m_Context.cpu->GetRegister(RegisterType8::REG_A),
-											m_Context.cpu->GetFlag(CpuFlag::Zero) ? "Z" : "-",
-											m_Context.cpu->GetFlag(CpuFlag::Subtraction) ? "N" : "-",
-											m_Context.cpu->GetFlag(CpuFlag::HalfCarry) ? "H" : "-",
-											m_Context.cpu->GetFlag(CpuFlag::Carry) ? "C" : "-");
-
-	std::cout << opcode_format << '\n';
-
 	/*std::string debug_format = std::format("OP:{:X} PC:{:X} AF:{:X} BC:{:X} DE:{:X} HL:{:X} SP:{:X}",
 											opcode,
 											m_Context.cpu->ProgramCounter,
@@ -131,10 +106,10 @@ void Emulator::Tick()
 											m_Context.cpu->GetRegister(RegisterType16::REG_HL),
 											m_Context.cpu->StackPointer);*/
 
-	// std::cout << debug_format << '\n';
-	// m_DebugFile << debug_format << '\n';
+											// std::cout << debug_format << '\n';
+											// m_DebugFile << debug_format << '\n';
 
-	// Execute
+											// Execute
 	std::string opcode_name = Execute(opcode);
 
 	// Check flag
@@ -180,11 +155,6 @@ void Emulator::Tick()
 	}
 
 	m_Context.cycles = 0;
-
-	// Display CPU details
-
-	/*std::cout << std::hex << m_Context.ticks << ": - " << "0x" << std::hex << current_pc << ": " << " - 0x" << std::hex << (int)opcode << " - ";
-	std::cout << std::setw(30) << std::left << opcode_name << std::right << std::right << cpu_details << '\n';*/
 
 	// Debug
 	{
@@ -245,8 +215,8 @@ std::string Emulator::Execute(const uint8_t opcode)
 			return Op::LoadN8(&m_Context, RegisterType8::REG_C);
 		case 0x0F:
 			return Op::RotateRegisterRightCarryA(&m_Context);
-		//case 0x10:
-		//	return Op::Stop(&m_Context);
+			//case 0x10:
+			//	return Op::Stop(&m_Context);
 		case 0x11:
 			return Op::LoadN16(&m_Context, RegisterType16::REG_DE);
 		case 0x12:

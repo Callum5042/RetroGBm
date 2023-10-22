@@ -36,6 +36,12 @@ struct DisplayContext
 	uint8_t wx;
 };
 
+struct PpuContext
+{
+	uint32_t line_ticks = 0;
+	std::vector<uint32_t> video_buffer;
+};
+
 struct EmulatorContext
 {
 	uint64_t ticks = 0;
@@ -49,6 +55,7 @@ struct EmulatorContext
 
 	TimerContext timer;
 	DisplayContext display;
+	PpuContext ppu_context;
 };
 
 class Emulator
@@ -63,9 +70,9 @@ public:
 
 	uint8_t GetOpCode() const;
 
-private:
-	bool m_Running = false;
+	inline EmulatorContext* GetContext() { return &m_Context; }
 
+private:
 	EmulatorContext m_Context;
 
 	std::string Execute(const uint8_t opcode);
@@ -73,8 +80,5 @@ private:
 	uint8_t m_CurrentOpCode = 0x0;
 
 	std::string m_DebugMessage;
-
 	std::ofstream m_DebugFile;
-
-	// std::unordered_map<uint8_t, std::function<std::string()>> m_OpCodeTable;
 };
