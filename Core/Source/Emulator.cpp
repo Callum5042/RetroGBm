@@ -7,23 +7,21 @@
 #include <exception>
 #include <string>
 
+Emulator* Emulator::Instance = nullptr;
+
 Emulator::Emulator()
 {
-	m_Context.cpu = std::make_unique<Cpu>();
-	m_Context.cartridge = std::make_unique<CartridgeInfo>();
+	Instance = this;
 
-	m_Context.work_ram.resize(1024 * 8);
-	std::fill(m_Context.work_ram.begin(), m_Context.work_ram.end(), 0x0);
-
-	m_Context.video_ram.resize(1024 * 8);
-	std::fill(m_Context.video_ram.begin(), m_Context.video_ram.end(), 0x0);
-
-	std::fill(m_Context.high_ram.begin(), m_Context.high_ram.end(), 0x0);
-
-	m_Context.video_buffer.resize(160 * 144);
-	std::fill(m_Context.video_buffer.begin(), m_Context.video_buffer.end(), 0x0);
+	m_Cpu = std::make_unique<Cpu>();
+	m_Timer = std::make_unique<Timer>();
+	m_Ram = std::make_unique<Ram>();
+	m_Cartridge = std::make_unique<Cartridge>();
+	m_Display = std::make_unique<Display>();
+	m_Ppu = std::make_unique<Ppu>();
 
 	m_DebugFile.open("debug.txt");
+	m_Context.cpu = m_Cpu.get();
 }
 
 Emulator::~Emulator()
@@ -31,60 +29,35 @@ Emulator::~Emulator()
 	m_DebugFile.close();
 }
 
-bool Emulator::LoadRom(const std::filesystem::path& path)
+bool Emulator::LoadRom(const std::string& path)
 {
-	if (!LoadCartridge(path, m_Context.cartridge.get()))
+	if (!m_Cartridge->Load(const_cast<char*>(path.c_str())))
 	{
 		std::cerr << "Unable to load cartidge\n";
 		return false;
 	}
 
-	uint8_t checksum_result = 0x0;
-	bool checksum = CartridgeChecksum(m_Context.cartridge.get(), &checksum_result);
-
-	// Print cartridge info
-	/*std::cout << "Cartidge loaded\n";
-	std::cout << "> Title: " << m_Context.cartridge->title << '\n';
-	std::cout << "> Cartridge Type: " << m_Context.cartridge->header.cartridge_type << std::format(" (0x{:x})", static_cast<int>(m_Context.cartridge->header.cartridge_type_code)) << '\n';
-	std::cout << "> ROM size: " << m_Context.cartridge->header.rom_size << '\n';
-	std::cout << "> ROM banks: " << m_Context.cartridge->header.rom_banks << '\n';
-	std::cout << "> RAM size: " << m_Context.cartridge->header.ram_size << '\n';
-	std::cout << "> License: " << m_Context.cartridge->header.license << '\n';
-	std::cout << "> Version: " << m_Context.cartridge->header.version << '\n';
-	std::cout << "> Checksum: " << std::format("(0x{:x}) ", checksum_result) << (checksum ? "Passed" : "Failed") << '\n' << '\n';*/
+	uint8_t checksum_result = 0x1;
+	// bool checksum = CartridgeChecksum(m_Context.cartridge.get(), &checksum_result);
 
 	// Set program counter to 0x100 to skip boot rom
-	m_Context.cpu->ProgramCounter = 0x100;
+	m_Cpu->ProgramCounter = 0x100;
 
 	// Default flags based on the cartridge info
 	if (checksum_result == 0x0)
 	{
-		m_Context.cpu->SetFlag(CpuFlag::Carry, false);
-		m_Context.cpu->SetFlag(CpuFlag::HalfCarry, false);
+		m_Cpu->SetFlag(CpuFlag::Carry, false);
+		m_Cpu->SetFlag(CpuFlag::HalfCarry, false);
 	}
 	else
 	{
-		m_Context.cpu->SetFlag(CpuFlag::Carry, true);
-		m_Context.cpu->SetFlag(CpuFlag::HalfCarry, true);
+		m_Cpu->SetFlag(CpuFlag::Carry, true);
+		m_Cpu->SetFlag(CpuFlag::HalfCarry, true);
 	}
 
-	m_Context.timer.div = 0xAB;
-	m_Context.timer.tac = 0xF8;
-	m_Context.timer.tma = 0x0;
-	m_Context.timer.tima = 0x0;
 
-	m_Context.display.lcdc = 0x91;
-	m_Context.display.stat = 0x85;
-	m_Context.display.scx = 0x0;
-	m_Context.display.scy = 0x0;
-	m_Context.display.ly = 0x0;
-	m_Context.display.lyc = 0x0;
-	m_Context.display.dma = 0xFF;
-	m_Context.display.bgp = 0xFC;
-	m_Context.display.obp0 = 0x0;
-	m_Context.display.obp1 = 0x0;
-	m_Context.display.wy = 0x0;
-	m_Context.display.wx = 0x0;
+	m_Timer->Init();
+	m_Ppu->Init();
 
 	return true;
 }
@@ -92,9 +65,9 @@ bool Emulator::LoadRom(const std::filesystem::path& path)
 void Emulator::Tick()
 {
 	// Fetch
-	uint16_t current_pc = m_Context.cpu->ProgramCounter;
+	uint16_t current_pc = m_Cpu->ProgramCounter;
 
-	const uint8_t opcode = ReadFromBus(&m_Context, m_Context.cpu->ProgramCounter);
+	const uint8_t opcode = this->ReadBus(m_Cpu->ProgramCounter);
 	m_CurrentOpCode = opcode;
 
 	/*std::string debug_format = std::format("OP:{:X} PC:{:X} AF:{:X} BC:{:X} DE:{:X} HL:{:X} SP:{:X}",
@@ -109,67 +82,37 @@ void Emulator::Tick()
 											// std::cout << debug_format << '\n';
 											// m_DebugFile << debug_format << '\n';
 
-											// Execute
+	// Execute
+	m_Context.cycles = 0;
 	std::string opcode_name = Execute(opcode);
 
 	// Check flag
-	m_Context.cpu->CheckSettingInterruptMasterFlag();
+	m_Cpu->HandleInterrupts();
 
 	// Tick timer
 	for (int i = 0; i < m_Context.cycles; ++i)
 	{
-		m_Context.ticks++;
-
-		uint16_t prev_div = m_Context.timer.div;
-
-		m_Context.timer.div++;
-
-		bool timer_update = false;
-
-		switch (m_Context.timer.tac & (0b11))
+		for (int n = 0; n < 4; ++n)
 		{
-			case 0b00:
-				timer_update = (prev_div & (1 << 9)) && (!(m_Context.timer.div & (1 << 9)));
-				break;
-			case 0b01:
-				timer_update = (prev_div & (1 << 3)) && (!(m_Context.timer.div & (1 << 3)));
-				break;
-			case 0b10:
-				timer_update = (prev_div & (1 << 5)) && (!(m_Context.timer.div & (1 << 5)));
-				break;
-			case 0b11:
-				timer_update = (prev_div & (1 << 7)) && (!(m_Context.timer.div & (1 << 7)));
-				break;
-		}
-
-		if (timer_update && m_Context.timer.tac & (1 << 2))
-		{
-			m_Context.timer.tima++;
-
-			if (m_Context.timer.tima == 0xFF)
-			{
-				m_Context.timer.tima = m_Context.timer.tma;
-				m_Context.cpu->RequestInterrupt(InterruptFlag::Timer);
-			}
+			m_Timer->Tick();
+			m_Ppu->Tick();
 		}
 	}
 
-	m_Context.cycles = 0;
-
 	// Debug
 	{
-		uint8_t data = ReadFromBus(&m_Context, 0xFF02);
+		uint8_t data = this->ReadBus(0xFF02);
 		if (data == 0x81)
 		{
-			uint8_t c = ReadFromBus(&m_Context, 0xFF01);
+			uint8_t c = this->ReadBus(0xFF01);
 
 			m_DebugMessage += static_cast<char>(c);
-			WriteToBus(&m_Context, 0xFF02, 0);
+			this->WriteBus(0xFF02, 0);
 		}
 
 		if (!m_DebugMessage.empty())
 		{
-			std::cout << "\tDEBUG: " << m_DebugMessage << '\n';
+			// std::cout << "\tDEBUG: " << m_DebugMessage << '\n';
 		}
 	}
 }
@@ -674,4 +617,247 @@ std::string Emulator::Execute(const uint8_t opcode)
 		default:
 			throw std::exception(std::format("Instruction not implemented: 0x{:x}", opcode).c_str());
 	}
+}
+
+uint8_t Emulator::ReadIO(uint16_t address)
+{
+	if (address == 0xFF00)
+	{
+		return 0xF; // return GamepadGetOutput();
+	}
+
+	if (address == 0xFF01)
+	{
+		return m_SerialData[0];
+	}
+
+	if (address == 0xFF02)
+	{
+		return m_SerialData[1];
+	}
+
+	if (((address >= 0xFF04) && (address <= 0xFF07)))
+	{
+		return m_Timer->Read(address);
+	}
+
+	if (address == 0xFF0F)
+	{
+		return m_Cpu->GetInterruptFlags();
+	}
+
+	if (((address >= 0xFF10) && (address <= 0xFF3F)))
+	{
+		//ignore sound
+		return 0;
+	}
+
+	if (((address >= 0xFF40) && (address <= 0xFF4B)))
+	{
+		return m_Display->Read(address);
+	}
+
+	printf("UNSUPPORTED ReadBus (%04X)\n", address);
+	return 0;
+}
+
+void Emulator::WriteIO(uint16_t address, uint8_t value)
+{
+	if (address == 0xFF00)
+	{
+		/*m_GamepadContext.select_buttons = value & 0x20;
+		m_GamepadContext.select_dpad = value & 0x10;*/
+		return;
+	}
+
+	if (address == 0xFF01)
+	{
+		m_SerialData[0] = value;
+		return;
+	}
+
+	if (address == 0xFF02)
+	{
+		m_SerialData[1] = value;
+		return;
+	}
+
+	if (((address >= 0xFF04) && (address <= 0xFF07)))
+	{
+		m_Timer->Write(address, value);
+		return;
+	}
+
+	if (address == 0xFF0F)
+	{
+		m_Cpu->SetInterrupt(value);
+		return;
+	}
+
+	if (((address >= 0xFF10) && (address <= 0xFF3F)))
+	{
+		//ignore sound
+		return;
+	}
+
+	if (((address >= 0xFF40) && (address <= 0xFF4B)))
+	{
+		m_Display->Write(address, value);
+		return;
+	}
+
+	printf("UNSUPPORTED WriteBus(%04X)\n", address);
+}
+
+uint8_t Emulator::ReadBus(uint16_t address)
+{
+	if (address < 0x8000)
+	{
+		// ROM Data
+		return m_Cartridge->Read(address);
+	}
+	else if (address < 0xA000)
+	{
+		// Char/Map Data
+		return m_Ppu->ReadVideoRam(address);
+	}
+	else if (address < 0xC000)
+	{
+		// Cartridge RAM
+		return m_Cartridge->Read(address);
+	}
+	else if (address < 0xE000)
+	{
+		// WRAM (Working RAM)
+		return m_Ram->ReadWorkRam(address);
+	}
+	else if (address < 0xFE00)
+	{
+		// Reserved echo ram...
+		return 0;
+	}
+	else if (address < 0xFEA0)
+	{
+		// OAM
+		/*if (Application::Instance->m_Emulator->m_Dma.IsTransferring())
+		{
+			return 0xFF;
+		}
+
+		return Application::Instance->m_Emulator->m_Ppu.ReadOam(address);*/
+
+		return 0;
+	}
+	else if (address < 0xFF00)
+	{
+		// Reserved unusable
+		return 0;
+	}
+	else if (address < 0xFF80)
+	{
+		// IO Registers
+		return this->ReadIO(address);
+	}
+	else if (address == 0xFFFF)
+	{
+		// CPU interrupts
+		return m_Cpu->GetInterruptEnable();
+	}
+
+	return m_Ram->ReadHighRam(address);
+}
+
+void Emulator::WriteBus(uint16_t address, uint8_t value)
+{
+	if (address < 0x8000)
+	{
+		// ROM Data
+		m_Cartridge->Write(address, value);
+	}
+	else if (address < 0xA000)
+	{
+		// Char/Map Data
+		m_Ppu->WriteVideoRam(address, value);
+	}
+	else if (address < 0xC000)
+	{
+		// EXT-RAM
+		m_Cartridge->Write(address, value);
+	}
+	else if (address < 0xE000)
+	{
+		// WRAM
+		m_Ram->WriteWorkRam(address, value);
+	}
+	else if (address < 0xFE00)
+	{
+		// Reserved echo ram
+	}
+	else if (address < 0xFEA0)
+	{
+		// OAM
+		/*if (Application::Instance->m_Emulator->m_Dma.IsTransferring())
+		{
+			return;
+		}
+
+		Application::Instance->m_Emulator->m_Ppu.WriteOam(address, value);*/
+	}
+	else if (address < 0xFF00)
+	{
+		// Unusable reserved
+	}
+	else if (address < 0xFF80)
+	{
+		// IO Registers
+		return this->WriteIO(address, value);
+	}
+	else if (address == 0xFFFF)
+	{
+		// CPU interrupts
+		m_Cpu->SetInterruptEnable(value);
+	}
+	else
+	{
+		m_Ram->WriteHighRam(address, value);
+	}
+}
+
+uint16_t Emulator::ReadBus16(uint16_t address)
+{
+	uint16_t lo = this->ReadBus(address);
+	uint16_t hi = this->ReadBus(address + 1);
+
+	return lo | (hi << 8);
+}
+
+void Emulator::WriteBus16(uint16_t address, uint16_t value)
+{
+	this->WriteBus(address + 1, (value >> 8) & 0xFF);
+	this->WriteBus(address, value & 0xFF);
+}
+
+void Emulator::StackPush(uint8_t data)
+{
+	m_Cpu->StackPointer--;
+	WriteBus(m_Cpu->StackPointer, data);
+}
+
+void Emulator::StackPush16(uint16_t data)
+{
+	StackPush((data >> 8) & 0xFF);
+	StackPush(data & 0xFF);
+}
+
+uint8_t Emulator::StackPop()
+{
+	return this->ReadBus(m_Cpu->StackPointer++);
+}
+
+uint16_t Emulator::StackPop16()
+{
+	uint16_t lo = this->StackPop();
+	uint16_t hi = this->StackPop();
+
+	return (hi << 8) | lo;
 }

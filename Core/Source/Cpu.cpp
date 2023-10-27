@@ -2,6 +2,7 @@
 #include <exception>
 #include <sstream>
 #include <iomanip>
+#include "Emulator.h"
 
 Cpu::Cpu()
 {
@@ -300,7 +301,7 @@ std::string FlagString(CpuFlag flag)
 
 void Cpu::EnableMasterInterrupts()
 {
-	m_SettingInterruptMasterFlag = 2;
+	m_EnablingInterrupts = true;
 }
 
 void Cpu::DisableMasterInterrupts()
@@ -315,7 +316,7 @@ bool Cpu::GetInterruptMasterFlag() const
 
 void Cpu::RequestInterrupt(InterruptFlag flag)
 {
-	m_Interrupts[flag] = true;
+	m_InterruptFlags |= static_cast<int>(flag);
 }
 
 void Cpu::SetInterrupt(uint8_t data)
@@ -323,7 +324,7 @@ void Cpu::SetInterrupt(uint8_t data)
 	m_InterruptFlags = data;
 }
 
-void Cpu::InterruptEnable(uint8_t data)
+void Cpu::SetInterruptEnable(uint8_t data)
 {
 	m_InterruptEnable = data;
 }
@@ -333,15 +334,58 @@ uint8_t Cpu::GetInterruptEnable() const
 	return m_InterruptEnable;
 }
 
-void Cpu::CheckSettingInterruptMasterFlag()
+void Cpu::HandleInterrupts()
 {
-	if (m_SettingInterruptMasterFlag > 0)
+	if (m_InterruptMasterFlag)
 	{
-		m_SettingInterruptMasterFlag--;
-
-		if (m_SettingInterruptMasterFlag == 0)
+		if (InterruptCheck(0x40, InterruptFlag::VBlank))
 		{
-			m_InterruptMasterFlag = true;
+
 		}
+		else if (InterruptCheck(0x48, InterruptFlag::STAT))
+		{
+
+		}
+		else if (InterruptCheck(0x50, InterruptFlag::Timer))
+		{
+
+		}
+		else if (InterruptCheck(0x58, InterruptFlag::Serial))
+		{
+
+		}
+		else if (InterruptCheck(0x60, InterruptFlag::Joypad))
+		{
+
+		}
+
+		m_EnablingInterrupts = false;
 	}
+
+	if (m_EnablingInterrupts)
+	{
+		m_InterruptMasterFlag = true;
+	}
+}
+
+bool Cpu::InterruptCheck(uint16_t address, InterruptFlag flag)
+{
+	if (m_InterruptFlags & static_cast<int>(flag) && m_InterruptEnable & static_cast<int>(flag))
+	{
+		Emulator::Instance->StackPush16(ProgramCounter);
+		ProgramCounter = address;
+
+		m_InterruptFlags &= ~static_cast<int>(flag);
+		// ctx->halted = false;
+		// m_InterruptMasterFlag = false;
+
+		return true;
+	}
+
+	return false;
+}
+
+uint8_t Cpu::GetInterruptFlags()
+{
+	return m_InterruptFlags;
 }

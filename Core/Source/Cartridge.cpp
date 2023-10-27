@@ -266,3 +266,31 @@ bool CartridgeChecksum(const CartridgeInfo* info, uint8_t* checksum_result)
     *checksum_result = checksum;
     return (checksum & 0xFF);
 }
+
+bool Cartridge::Load(char* cart)
+{
+    return LoadCartridge(cart, &context);
+}
+
+uint8_t Cartridge::Read(uint16_t address)
+{
+    return context.data[address];
+}
+
+void Cartridge::Write(uint16_t address, uint8_t value)
+{
+    context.data[address] = value;
+}
+
+bool Cartridge::NeedSave()
+{
+    return false;
+}
+
+void Cartridge::BatteryLoad()
+{
+}
+
+void Cartridge::BatterySave()
+{
+}

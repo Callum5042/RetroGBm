@@ -9,49 +9,19 @@
 #include <string>
 #include <fstream>
 
-class Cpu;
-struct CartridgeInfo;
-
-struct TimerContext
-{
-	uint16_t div;
-	uint8_t tima;
-	uint8_t tma;
-	uint8_t tac;
-};
-
-struct DisplayContext
-{
-	uint8_t lcdc;
-	uint8_t stat;
-	uint8_t scy;
-	uint8_t scx;
-	uint8_t ly;
-	uint8_t lyc;
-	uint8_t dma;
-	uint8_t bgp;
-	uint8_t obp0;
-	uint8_t obp1;
-	uint8_t wy;
-	uint8_t wx;
-};
+#include "Cpu.h"
+#include "Timer.h"
+#include "Ram.h"
+#include "Cartridge.h"
+#include "Display.h"
+#include "Ppu.h"
 
 struct EmulatorContext
 {
+	Cpu* cpu = nullptr;
+
 	uint64_t ticks = 0;
 	int cycles = 0;
-	std::unique_ptr<CartridgeInfo> cartridge = nullptr;
-	std::unique_ptr<Cpu> cpu = nullptr;
-	std::vector<uint8_t> video_ram;
-	std::vector<uint8_t> work_ram;
-	std::vector<uint32_t> video_buffer;
-	std::array<uint8_t, 127> high_ram;
-	std::array<char, 2> serial_data;
-
-	TimerContext timer;
-	DisplayContext display;
-
-	uint32_t line_ticks = 0;
 };
 
 class Emulator
@@ -60,16 +30,40 @@ public:
 	Emulator();
 	virtual ~Emulator();
 
-	bool LoadRom(const std::filesystem::path& path);
+	static Emulator* Instance;
+	bool LoadRom(const std::string& path);
 
 	void Tick();
 
 	uint8_t GetOpCode() const;
-
 	inline EmulatorContext* GetContext() { return &m_Context; }
 
-private:
+	// Bus
+	uint8_t ReadBus(uint16_t address);
+	void WriteBus(uint16_t address, uint8_t value);
+
+	uint16_t ReadBus16(uint16_t address);
+	void WriteBus16(uint16_t address, uint16_t value);
+
+	uint8_t ReadIO(uint16_t address);
+	void WriteIO(uint16_t address, uint8_t value);
+
+	// Stack
+	void StackPush(uint8_t data);
+	void StackPush16(uint16_t data);
+
+	uint8_t StackPop();
+	uint16_t StackPop16();
+
 	EmulatorContext m_Context;
+
+	inline Cpu* GetCpu() { return m_Cpu.get(); }
+	inline Display* GetDisplay() { return m_Display.get(); }
+	inline Ppu* GetPpu() { return m_Ppu.get(); }
+
+private:
+
+	char m_SerialData[2] = { 0, 0 };
 
 	std::string Execute(const uint8_t opcode);
 
@@ -77,4 +71,12 @@ private:
 
 	std::string m_DebugMessage;
 	std::ofstream m_DebugFile;
+
+	// Subcomponents
+	std::unique_ptr<Cpu> m_Cpu;
+	std::unique_ptr<Timer> m_Timer;
+	std::unique_ptr<Ram> m_Ram;
+	std::unique_ptr<Cartridge> m_Cartridge;
+	std::unique_ptr<Display> m_Display;
+	std::unique_ptr<Ppu> m_Ppu;
 };
