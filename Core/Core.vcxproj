@@ -29,9 +29,11 @@
     <ClInclude Include="Include\Ppu.h" />
     <ClInclude Include="Include\Ram.h" />
     <ClInclude Include="Include\Timer.h" />
+    <ClInclude Include="Include\Dma.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Display.cpp" />
+    <ClCompile Include="Source\Dma.cpp" />
     <ClCompile Include="Source\ExtendedInstructions.cpp" />
     <ClCompile Include="Source\Bus.cpp" />
     <ClCompile Include="Source\Cartridge.cpp" />

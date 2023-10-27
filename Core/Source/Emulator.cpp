@@ -19,6 +19,7 @@ Emulator::Emulator()
 	m_Cartridge = std::make_unique<Cartridge>();
 	m_Display = std::make_unique<Display>();
 	m_Ppu = std::make_unique<Ppu>();
+	m_Dma = std::make_unique<Dma>();
 
 	m_DebugFile.open("debug.txt");
 	m_Context.cpu = m_Cpu.get();
@@ -93,6 +94,8 @@ void Emulator::Tick()
 			m_Timer->Tick();
 			m_Ppu->Tick();
 		}
+
+		m_Dma->Tick();
 	}
 
 	m_Context.cycles = 0;
@@ -740,12 +743,12 @@ uint8_t Emulator::ReadBus(uint16_t address)
 	else if (address < 0xFEA0)
 	{
 		// OAM
-		/*if (Application::Instance->m_Emulator->m_Dma.IsTransferring())
+		if (m_Dma->IsTransferring())
 		{
 			return 0xFF;
 		}
 
-		return Application::Instance->m_Emulator->m_Ppu.ReadOam(address);*/
+		return m_Ppu->ReadOam(address);
 
 		return 0;
 	}
@@ -797,12 +800,12 @@ void Emulator::WriteBus(uint16_t address, uint8_t value)
 	else if (address < 0xFEA0)
 	{
 		// OAM
-		/*if (Application::Instance->m_Emulator->m_Dma.IsTransferring())
+		if (m_Dma->IsTransferring())
 		{
 			return;
 		}
 
-		Application::Instance->m_Emulator->m_Ppu.WriteOam(address, value);*/
+		m_Ppu->WriteOam(address, value);
 	}
 	else if (address < 0xFF00)
 	{

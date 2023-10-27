@@ -1,5 +1,6 @@
 #include "Display.h"
 #include "Cpu.h"
+#include "Emulator.h"
 
 void Display::Init()
 {
@@ -83,7 +84,7 @@ void Display::Write(uint16_t address, uint8_t value)
 			break;
 		case 0xFF46:
 			context.dma = value;
-			// Application::Instance->m_Emulator->m_Dma.Start(value);
+			Emulator::Instance->GetDma()->Start(value);
 			break;
 		case 0xFF47:
 			context.bgp = value;

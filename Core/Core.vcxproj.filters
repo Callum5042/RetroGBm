@@ -45,6 +45,9 @@
     <ClInclude Include="Include\Ppu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Include\Dma.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Cartridge.cpp">
@@ -75,6 +78,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Ppu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Dma.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
