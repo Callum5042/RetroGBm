@@ -62,11 +62,13 @@ int Application::Start()
 void Application::Run()
 {
 	// Emulator runs on a background thread
+	m_Emulator = std::make_unique<Emulator>();
+	m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\Tetris.gb");
+	// m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\individual\\02-interrupts.gb");
+	// m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\cpu_instrs.gb");
+
 	std::thread emulator_thread([&]
 	{
-		m_Emulator = std::make_unique<Emulator>();
-		m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\individual\\01-special.gb");
-
 		while (m_Running)
 		{
 			m_Emulator->Tick();
@@ -87,17 +89,17 @@ void Application::Run()
 			UpdateMainWindow();
 			UpdateTileWindow();
 
-			// Display tile window
-			SDL_SetRenderDrawColor(m_TileRenderer, 0, 0, 0, 255);
-			SDL_RenderClear(m_TileRenderer);
-			SDL_RenderCopy(m_TileRenderer, m_TileTexture, NULL, NULL);
-			SDL_RenderPresent(m_TileRenderer);
-
 			// Display main window
 			SDL_SetRenderDrawColor(m_MainRenderer, 0, 0, 0, 255);
 			SDL_RenderClear(m_MainRenderer);
 			SDL_RenderCopy(m_MainRenderer, m_MainTexture, NULL, NULL);
 			SDL_RenderPresent(m_MainRenderer);
+
+			// Display tile window
+			SDL_SetRenderDrawColor(m_TileRenderer, 0, 0, 0, 255);
+			SDL_RenderClear(m_TileRenderer);
+			SDL_RenderCopy(m_TileRenderer, m_TileTexture, NULL, NULL);
+			SDL_RenderPresent(m_TileRenderer);
 		}
 	}
 
@@ -162,10 +164,10 @@ void Application::CreateMainWindow()
 
 void Application::CreateTileWindow()
 {
-	const int window_width = static_cast<int>(16 * 8 * m_TileWindowScale);
-	const int window_height = static_cast<int>(32 * 8 * m_TileWindowScale);
+	const int debug_width = (16 * 8 * m_TileWindowScale) + (16 * m_TileWindowScale);
+	const int debug_height = (24 * 8 * m_TileWindowScale) + (64 * m_TileWindowScale);
 
-	m_TileWindow = SDL_CreateWindow("RetroGBm - Tile Data", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, window_width, window_height, SDL_WINDOW_SHOWN);
+	m_TileWindow = SDL_CreateWindow("RetroGBm Tilemap", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 16 * 8 * m_TileWindowScale, 24 * 8 * m_TileWindowScale, SDL_WINDOW_SHOWN);
 	if (m_TileWindow == nullptr)
 	{
 		throw std::exception("SDL_CreateWindow failed");
@@ -177,18 +179,15 @@ void Application::CreateTileWindow()
 		throw std::exception("SDL_CreateRenderer failed");
 	}
 
-	const int texture_width = static_cast<int>((16 * 8 * m_TileWindowScale) + (16 * m_TileWindowScale));
-	const int texture_height = static_cast<int>((32 * 8 * m_TileWindowScale) + (64 * m_TileWindowScale));
-
-	m_TileTexture = SDL_CreateTexture(m_TileRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, texture_width, texture_height);
-	m_TileSurface = SDL_CreateRGBSurface(0, texture_width, texture_height, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+	m_TileTexture = SDL_CreateTexture(m_TileRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, debug_width, debug_height);
+	m_TileSurface = SDL_CreateRGBSurface(0, debug_width, debug_height, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 }
 
 void Application::UpdateTileWindow()
 {
-	int draw_x = 0;
-	int draw_y = 0;
-	int tile_number = 0;
+	int xDraw = 0;
+	int yDraw = 0;
+	int tileNum = 0;
 
 	SDL_Rect rc = {};
 	rc.x = 0;
@@ -197,20 +196,21 @@ void Application::UpdateTileWindow()
 	rc.h = m_TileSurface->h;
 	SDL_FillRect(m_TileSurface, &rc, 0xFF111111);
 
-	uint16_t address = 0x8000;
-	const unsigned long tile_colors[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
+	uint16_t addr = 0x8000;
 
 	// 384 tiles, 24 x 16
 	for (int y = 0; y < 24; y++)
 	{
 		for (int x = 0; x < 16; x++)
 		{
-			SDL_Rect rc = {};
+			// Display tile
+			const unsigned long tile_colours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
 
+			SDL_Rect rc = {};
 			for (int tileY = 0; tileY < 16; tileY += 2)
 			{
-				uint8_t b1 = ReadFromBus(m_Emulator->GetContext(), (address + (tile_number * 16) + tileY));
-				uint8_t b2 = ReadFromBus(m_Emulator->GetContext(), (address + (tile_number * 16) + tileY + 1));
+				uint8_t b1 = Emulator::Instance->ReadBus(addr + (tileNum * 16) + tileY);
+				uint8_t b2 = Emulator::Instance->ReadBus(addr + (tileNum * 16) + tileY + 1);
 
 				for (int bit = 7; bit >= 0; bit--)
 				{
@@ -219,21 +219,21 @@ void Application::UpdateTileWindow()
 
 					uint8_t color = hi | lo;
 
-					rc.x = static_cast<int>(draw_x + (x * m_TileWindowScale) + ((7 - bit) * m_TileWindowScale));
-					rc.y = static_cast<int>(draw_y + (y * m_TileWindowScale) + (tileY / 2.0f * m_TileWindowScale));
-					rc.w = static_cast<int>(m_TileWindowScale);
-					rc.h = static_cast<int>(m_TileWindowScale);
+					rc.x = xDraw + (x * m_TileWindowScale) + ((7 - bit) * m_TileWindowScale);
+					rc.y = yDraw + (y * m_TileWindowScale) + (tileY / 2 * m_TileWindowScale);
+					rc.w = m_TileWindowScale;
+					rc.h = m_TileWindowScale;
 
-					SDL_FillRect(m_TileSurface, &rc, tile_colors[color]);
+					SDL_FillRect(m_TileSurface, &rc, tile_colours[color]);
 				}
 			}
 
-			draw_x += static_cast<int>(8 * m_TileWindowScale);
-			tile_number++;
+			xDraw += (8 * m_TileWindowScale);
+			tileNum++;
 		}
 
-		draw_y += static_cast<int>(8 * m_TileWindowScale);
-		draw_x = 0;
+		yDraw += (8 * m_TileWindowScale);
+		xDraw = 0;
 	}
 
 	SDL_UpdateTexture(m_TileTexture, NULL, m_TileSurface->pixels, m_TileSurface->pitch);
@@ -245,22 +245,20 @@ void Application::UpdateMainWindow()
 	rc.x = rc.y = 0;
 	rc.w = rc.h = 2048;
 
-	auto& video_buffer = m_Emulator->GetContext()->video_buffer;
+	auto& video_buffer = Emulator::Instance->GetPpu()->context.video_buffer;
+	int screen_resolution_x = Emulator::Instance->GetPpu()->ScreenResolutionX;
+	int screen_resolution_y = Emulator::Instance->GetPpu()->ScreenResolutionY;
 
-	const int YRES = 144;
-	const int XRES = 160;
-
-	int scale = 4;
-	for (int line_num = 0; line_num < YRES; line_num++)
+	for (int line_num = 0; line_num < screen_resolution_y; line_num++)
 	{
-		for (int x = 0; x < XRES; x++)
+		for (int x = 0; x < screen_resolution_x; x++)
 		{
-			rc.x = x * scale;
-			rc.y = line_num * scale;
-			rc.w = scale;
-			rc.h = scale;
+			rc.x = x * m_TileWindowScale;
+			rc.y = line_num * m_TileWindowScale;
+			rc.w = m_TileWindowScale;
+			rc.h = m_TileWindowScale;
 
-			SDL_FillRect(m_MainSurface, &rc, video_buffer[x + (line_num * XRES)]);
+			SDL_FillRect(m_MainSurface, &rc, video_buffer[x + (line_num * screen_resolution_x)]);
 		}
 	}
 

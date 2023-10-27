@@ -34,7 +34,7 @@ private:
 	SDL_Renderer* m_TileRenderer = nullptr;
 	SDL_Texture* m_TileTexture = nullptr;
 	SDL_Surface* m_TileSurface = nullptr;
-	float m_TileWindowScale = 2.0f;
+	float m_TileWindowScale = 4.0f;
 
 	// Emulator
 	std::unique_ptr<Emulator> m_Emulator;

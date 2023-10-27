@@ -34,11 +34,11 @@ enum class CpuFlag
 
 enum class InterruptFlag
 {
-	VBlank,
-	STAT,
-	Timer,
-	Serial,
-	Joypad
+	VBlank = 1,
+	STAT = 2,
+	Timer = 4,
+	Serial = 8,
+	Joypad = 16,
 };
 
 class Cpu
@@ -49,9 +49,6 @@ public:
 
 	uint16_t ProgramCounter = 0;
 	uint16_t StackPointer = 0;
-
-	// Check setting interrupt master flag
-	void CheckSettingInterruptMasterFlag();
 
 	// Registers
 	void SetRegister(RegisterType8 type, uint8_t data);
@@ -72,9 +69,12 @@ public:
 
 	void RequestInterrupt(InterruptFlag flag);
 	void SetInterrupt(uint8_t data);
+	uint8_t GetInterruptFlags();
 
-	void InterruptEnable(uint8_t data);
+	void SetInterruptEnable(uint8_t data);
 	uint8_t GetInterruptEnable() const;
+
+	void HandleInterrupts();
 
 	// Build debug string
 	std::string Details();
@@ -82,16 +82,13 @@ public:
 private:
 	std::map<RegisterType8, uint8_t> m_Registers;
 
+	bool m_EnablingInterrupts = false;
 	bool m_InterruptMasterFlag = false;
 
-	// Need this variable as a counter because the flag is only set after the next instruction
-	int m_SettingInterruptMasterFlag = 0;
-
-	// TODO: Not actually sure the difference between these 2
-	std::map<InterruptFlag, bool> m_Interrupts;
 	uint8_t m_InterruptFlags;
-
 	uint8_t m_InterruptEnable;
+
+	bool InterruptCheck(uint16_t address, InterruptFlag flag);
 };
 
 std::string RegisterTypeString16(RegisterType16 type);
