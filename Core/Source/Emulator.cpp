@@ -83,11 +83,7 @@ void Emulator::Tick()
 											// m_DebugFile << debug_format << '\n';
 
 	// Execute
-	m_Context.cycles = 0;
 	std::string opcode_name = Execute(opcode);
-
-	// Check flag
-	m_Cpu->HandleInterrupts();
 
 	// Tick timer
 	for (int i = 0; i < m_Context.cycles; ++i)
@@ -98,6 +94,11 @@ void Emulator::Tick()
 			m_Ppu->Tick();
 		}
 	}
+
+	m_Context.cycles = 0;
+
+	// Check flag
+	m_Cpu->HandleInterrupts();
 
 	// Debug
 	{

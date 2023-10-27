@@ -1,4 +1,5 @@
 #include "Timer.h"
+#include "Emulator.h"
 
 void Timer::Init()
 {
@@ -39,7 +40,7 @@ void Timer::Tick()
 		if (context.tima == 0xFF)
 		{
 			context.tima = context.tma;
-			// Application::Instance->m_Emulator->m_Cpu.RequestInterrupts(InterruptType::TIMER);
+			Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::Timer);
 		}
 	}
 }
