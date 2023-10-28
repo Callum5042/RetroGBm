@@ -1,6 +1,5 @@
 #pragma once
 
-#include <filesystem>
 #include <memory>
 #include <unordered_map>
 #include <functional>
@@ -66,8 +65,6 @@ public:
 private:
 
 	char m_SerialData[2] = { 0, 0 };
-
-	std::string Execute(const uint8_t opcode);
 
 	uint8_t m_CurrentOpCode = 0x0;
 
