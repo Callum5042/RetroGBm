@@ -20,6 +20,7 @@ Emulator::Emulator()
 	m_Display = std::make_unique<Display>();
 	m_Ppu = std::make_unique<Ppu>();
 	m_Dma = std::make_unique<Dma>();
+	m_Joypad = std::make_unique<Joypad>();
 
 	m_DebugFile.open("debug.txt");
 	m_Context.cpu = m_Cpu.get();
@@ -130,7 +131,7 @@ uint8_t Emulator::ReadIO(uint16_t address)
 {
 	if (address == 0xFF00)
 	{
-		return 0xF; // return GamepadGetOutput();
+		return m_Joypad->GamepadGetOutput();
 	}
 
 	if (address == 0xFF01)
@@ -164,7 +165,7 @@ uint8_t Emulator::ReadIO(uint16_t address)
 		return m_Display->Read(address);
 	}
 
-	printf("UNSUPPORTED ReadBus (%04X)\n", address);
+	std::cout << "Unsupported ReadBus 0x" << std::hex << address << '\n';
 	return 0;
 }
 
@@ -172,8 +173,7 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 {
 	if (address == 0xFF00)
 	{
-		/*m_GamepadContext.select_buttons = value & 0x20;
-		m_GamepadContext.select_dpad = value & 0x10;*/
+		m_Joypad->Write(value);
 		return;
 	}
 
@@ -213,7 +213,7 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 		return;
 	}
 
-	printf("UNSUPPORTED WriteBus(%04X)\n", address);
+	std::cout << "Unsupported WriteBus 0x" << std::hex << address << '\n';
 }
 
 uint8_t Emulator::ReadBus(uint16_t address)
