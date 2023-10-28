@@ -6,6 +6,8 @@
 #include <array>
 #include <queue>
 
+class IBus;
+
 enum class FetchState
 {
 	Tile,
@@ -74,10 +76,11 @@ struct PpuContext
 
 class Ppu
 {
+	IBus* m_Bus = nullptr;
 	Display* m_Display = nullptr;
 
 public:
-	Ppu() = default;
+	Ppu();
 	virtual ~Ppu() = default;
 
 	void Init();

@@ -203,7 +203,7 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 
 	if (((address >= 0xFF10) && (address <= 0xFF3F)))
 	{
-		//ignore sound
+		// Ignore sound
 		return;
 	}
 
@@ -240,7 +240,7 @@ uint8_t Emulator::ReadBus(uint16_t address)
 	}
 	else if (address < 0xFE00)
 	{
-		// Reserved echo ram...
+		// Reserved echo ram
 		return 0;
 	}
 	else if (address < 0xFEA0)

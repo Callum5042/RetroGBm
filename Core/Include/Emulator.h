@@ -8,6 +8,7 @@
 #include <string>
 #include <fstream>
 
+#include "Bus.h"
 #include "Cpu.h"
 #include "Timer.h"
 #include "Ram.h"
@@ -24,7 +25,7 @@ struct EmulatorContext
 	int cycles = 0;
 };
 
-class Emulator
+class Emulator : public IBus
 {
 public:
 	Emulator();
@@ -39,8 +40,8 @@ public:
 	inline EmulatorContext* GetContext() { return &m_Context; }
 
 	// Bus
-	uint8_t ReadBus(uint16_t address);
-	void WriteBus(uint16_t address, uint8_t value);
+	uint8_t ReadBus(uint16_t address) override;
+	void WriteBus(uint16_t address, uint8_t value) override;
 
 	uint16_t ReadBus16(uint16_t address);
 	void WriteBus16(uint16_t address, uint16_t value);

@@ -2,6 +2,9 @@
 
 #include <cstdint>
 
+class IBus;
+class Ppu;
+
 struct DmaContext
 {
 	bool active;
@@ -12,8 +15,11 @@ struct DmaContext
 
 class Dma
 {
+	IBus* m_Bus = nullptr;
+	Ppu* m_Ppu = nullptr;
+
 public:
-	Dma() = default;
+	Dma();
 	virtual ~Dma() = default;
 
 	void Start(uint8_t start);
@@ -21,5 +27,6 @@ public:
 
 	bool IsTransferring();
 
-	DmaContext context;
+private:
+	DmaContext context = {};
 };
