@@ -3,6 +3,7 @@
 #include <cstring>
 #include "Emulator.h"
 #include <algorithm>
+#include <SDL.h>
 
 void Ppu::Init()
 {
@@ -165,7 +166,7 @@ void Ppu::HBlank()
 
 void Ppu::CalculateFPS()
 {
-	/*uint32_t end = SDL_GetTicks();
+	uint32_t end = SDL_GetTicks();
 	uint32_t frame_time = end - m_PreviousFrameTime;
 
 	if (frame_time < m_TargetFrameTime)
@@ -179,14 +180,16 @@ void Ppu::CalculateFPS()
 		m_StartTimer = end;
 		m_FrameCount = 0;
 
-		if (Emulator::Instance->m_Cartridge.NeedSave())
+		printf("FPS: %d\n", fps);
+
+		/*if (Emulator::Instance->m_Cartridge.NeedSave())
 		{
 			Emulator::Instance->m_Cartridge.BatterySave();
-		}
+		}*/
 	}
 
 	m_FrameCount++;
-	m_PreviousFrameTime = SDL_GetTicks();*/
+	m_PreviousFrameTime = SDL_GetTicks();
 }
 
 void Ppu::PipelineReset()

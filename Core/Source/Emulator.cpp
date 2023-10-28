@@ -84,7 +84,7 @@ void Emulator::Tick()
 											// m_DebugFile << debug_format << '\n';
 
 	// Execute
-	std::string opcode_name = m_Cpu->Execute(&m_Context, opcode);
+	m_Cpu->Execute(&m_Context, opcode);
 
 	// Tick timer
 	for (int i = 0; i < m_Context.cycles; ++i)

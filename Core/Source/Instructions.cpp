@@ -5,48 +5,38 @@
 #include "ExtendedInstructions.h"
 using namespace Op;
 
-std::string Op::Nop(EmulatorContext* context)
+void Op::Nop(EmulatorContext* context)
 {
 	context->cycles += 4;
 	context->cpu->ProgramCounter += 1;
 
-	std::string opcode_name = "NOP";
-	return opcode_name;
+
 }
 
-std::string Op::Stop(EmulatorContext* context)
+void Op::Stop(EmulatorContext* context)
 {
 	context->cycles += 4;
 	context->cpu->ProgramCounter++;
 
 	throw std::exception("STOP not implemented");
-
-	std::string opcode_name = "STOP";
-	return opcode_name;
 }
 
-std::string Op::EnableInterrupts(EmulatorContext* context)
+void Op::EnableInterrupts(EmulatorContext* context)
 {
 	context->cpu->EnableMasterInterrupts();
 
 	context->cycles += 4;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = "EI";
-	return opcode_name;
 }
 
-std::string Op::DisableInterrupts(EmulatorContext* context)
+void Op::DisableInterrupts(EmulatorContext* context)
 {
 	context->cpu->DisableMasterInterrupts();
 	context->cycles += 4;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = "DI";
-	return opcode_name;
 }
 
-std::string Op::JumpN16(EmulatorContext* context)
+void Op::JumpN16(EmulatorContext* context)
 {
 	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
 	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
@@ -54,12 +44,9 @@ std::string Op::JumpN16(EmulatorContext* context)
 
 	context->cpu->ProgramCounter = data;
 	context->cycles += 16;
-
-	std::string opcode_name = std::format("JP 0x{:x}", data);
-	return opcode_name;
 }
 
-std::string Op::JumpFlagN16(EmulatorContext* context, CpuFlag flag, bool condition)
+void Op::JumpFlagN16(EmulatorContext* context, CpuFlag flag, bool condition)
 {
 	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
 	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
@@ -76,35 +63,26 @@ std::string Op::JumpFlagN16(EmulatorContext* context, CpuFlag flag, bool conditi
 		context->cycles += 12;
 		context->cpu->ProgramCounter += 3;
 	}
-
-	std::string opcode_name = std::format("JP {}{}, {}", (condition ? "" : "N"), FlagString(flag), data);
-	return opcode_name;
 }
 
-std::string Op::JumpHL(EmulatorContext* context)
+void Op::JumpHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 
 	context->cpu->ProgramCounter = address;
 	context->cycles += 4;
-
-	std::string opcode_name = std::format("JP HL");
-	return opcode_name;
 }
 
-std::string Op::JumpRelativeN8(EmulatorContext* context)
+void Op::JumpRelativeN8(EmulatorContext* context)
 {
 	int8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
 	uint16_t address = static_cast<int16_t>(context->cpu->ProgramCounter + data + 2);
 
 	context->cpu->ProgramCounter = address;
 	context->cycles += 12;
-
-	std::string opcode_name = std::format("JR 0x{:x}", address);
-	return opcode_name;
 }
 
-std::string Op::JumpRelativeFlagN8(EmulatorContext* context, CpuFlag flag, bool condition)
+void Op::JumpRelativeFlagN8(EmulatorContext* context, CpuFlag flag, bool condition)
 {
 	int8_t data = ReadFromBus(context, context->cpu->ProgramCounter++);
 	uint16_t current_pc = context->cpu->ProgramCounter;
@@ -119,12 +97,9 @@ std::string Op::JumpRelativeFlagN8(EmulatorContext* context, CpuFlag flag, bool 
 	{
 		context->cycles += 8;
 	}
-
-	std::string opcode_name = std::format("JR {}{}, e8 0x{:x} (0x{:x})", (condition ? "" : "N"), FlagString(flag), current_pc + data, static_cast<uint8_t>(data));
-	return opcode_name;
 }
 
-std::string Op::XorR8(EmulatorContext* context, RegisterType8 type)
+void Op::XorR8(EmulatorContext* context, RegisterType8 type)
 {
 	uint8_t reg_a = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t reg_b = context->cpu->GetRegister(type);
@@ -138,12 +113,9 @@ std::string Op::XorR8(EmulatorContext* context, RegisterType8 type)
 
 	context->cycles += 4;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("XOR A, {}", RegisterTypeString8(type));
-	return opcode_name;
 }
 
-std::string Op::XorN8(EmulatorContext* context)
+void Op::XorN8(EmulatorContext* context)
 {
 	uint8_t reg_a = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
@@ -157,12 +129,9 @@ std::string Op::XorN8(EmulatorContext* context)
 
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 2;
-
-	std::string opcode_name = std::format("XOR 0x{:x}", data);
-	return opcode_name;
 }
 
-std::string Op::XorR16(EmulatorContext* context, RegisterType16 type)
+void Op::XorR16(EmulatorContext* context, RegisterType16 type)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t data = ReadFromBus(context, address);
@@ -178,36 +147,27 @@ std::string Op::XorR16(EmulatorContext* context, RegisterType16 type)
 
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("XOR 0x{:x}", data);
-	return opcode_name;
 }
 
-std::string Op::LoadR8(EmulatorContext* context, RegisterType8 reg1, RegisterType8 reg2)
+void Op::LoadR8(EmulatorContext* context, RegisterType8 reg1, RegisterType8 reg2)
 {
 	uint8_t data = context->cpu->GetRegister(reg2);
 	context->cpu->SetRegister(reg1, data);
 
 	context->cycles += 4;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("LD {}, {}", RegisterTypeString8(reg1), RegisterTypeString8(reg2));
-	return opcode_name;
 }
 
-std::string Op::LoadN8(EmulatorContext* context, RegisterType8 type)
+void Op::LoadN8(EmulatorContext* context, RegisterType8 type)
 {
 	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
 	context->cpu->SetRegister(type, data);
 
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 2;
-
-	std::string opcode_name = std::format("LD {}, 0x{:x}", RegisterTypeString8(type), data);
-	return opcode_name;
 }
 
-std::string Op::LoadN16(EmulatorContext* context, RegisterType16 type)
+void Op::LoadN16(EmulatorContext* context, RegisterType16 type)
 {
 	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
 	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
@@ -217,12 +177,9 @@ std::string Op::LoadN16(EmulatorContext* context, RegisterType16 type)
 	context->cpu->SetRegister(type, result);
 	context->cycles += 12;
 	context->cpu->ProgramCounter += 3;
-
-	std::string opcode_name = std::format("LD {}, 0x{:x}", RegisterTypeString16(type), result);
-	return opcode_name;
 }
 
-std::string Op::LoadIndirectSP(EmulatorContext* context)
+void Op::LoadIndirectSP(EmulatorContext* context)
 {
 	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
 	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
@@ -237,24 +194,18 @@ std::string Op::LoadIndirectSP(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 3;
 	context->cycles += 20;
-
-	std::string opcode_name = std::format("LD [n16], SP 0x{:x}", address);
-	return opcode_name;
 }
 
-std::string Op::LoadHLFromSP(EmulatorContext* context)
+void Op::LoadHLFromSP(EmulatorContext* context)
 {
 	uint16_t data = context->cpu->GetRegister(RegisterType16::REG_HL);
 	context->cpu->SetRegister(RegisterType16::REG_SP, data);
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 8;
-
-	std::string opcode_name = std::format("LD SP, HL");
-	return opcode_name;
 }
 
-std::string Op::LoadHLFromSPRelative(EmulatorContext* context)
+void Op::LoadHLFromSPRelative(EmulatorContext* context)
 {
 	uint16_t reg_data = context->cpu->GetRegister(RegisterType16::REG_SP);
 	int8_t data = static_cast<int8_t>(ReadFromBus(context, context->cpu->ProgramCounter + 1));
@@ -272,12 +223,9 @@ std::string Op::LoadHLFromSPRelative(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 2;
 	context->cycles += 12;
-
-	std::string opcode_name = std::format("LD SP, HL + 0x{:x}", data);
-	return opcode_name;
 }
 
-std::string Op::StoreIncrementHL(EmulatorContext* context)
+void Op::StoreIncrementHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
@@ -287,12 +235,9 @@ std::string Op::StoreIncrementHL(EmulatorContext* context)
 
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("LDI [{}], A", RegisterTypeString16(RegisterType16::REG_HL));
-	return opcode_name;
 }
 
-std::string Op::StoreDecrementHL(EmulatorContext* context)
+void Op::StoreDecrementHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
@@ -302,12 +247,9 @@ std::string Op::StoreDecrementHL(EmulatorContext* context)
 
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("LDD [{}], A", RegisterTypeString16(RegisterType16::REG_HL));
-	return opcode_name;
 }
 
-std::string Op::LoadIncrementHL(EmulatorContext* context)
+void Op::LoadIncrementHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t data = ReadFromBus(context, address);
@@ -317,12 +259,9 @@ std::string Op::LoadIncrementHL(EmulatorContext* context)
 
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("LD A, [HL+] 0x{:x}", data);
-	return opcode_name;
 }
 
-std::string Op::LoadDecrementHL(EmulatorContext* context)
+void Op::LoadDecrementHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t data = ReadFromBus(context, address);
@@ -332,12 +271,9 @@ std::string Op::LoadDecrementHL(EmulatorContext* context)
 
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("LDD r8, [HL-] 0x{:x}", data);
-	return opcode_name;
 }
 
-std::string Op::StoreIndirectR8(EmulatorContext* context, RegisterType8 reg)
+void Op::StoreIndirectR8(EmulatorContext* context, RegisterType8 reg)
 {
 	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
 	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
@@ -348,12 +284,9 @@ std::string Op::StoreIndirectR8(EmulatorContext* context, RegisterType8 reg)
 
 	context->cycles += 16;
 	context->cpu->ProgramCounter += 3;
-
-	std::string opcode_name = std::format("LD [a16], {} 0x{:x}", RegisterTypeString8(reg), address);
-	return opcode_name;
 }
 
-std::string Op::LoadIndirectR8(EmulatorContext* context, RegisterType8 reg)
+void Op::LoadIndirectR8(EmulatorContext* context, RegisterType8 reg)
 {
 	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
 	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
@@ -364,12 +297,9 @@ std::string Op::LoadIndirectR8(EmulatorContext* context, RegisterType8 reg)
 
 	context->cycles += 16;
 	context->cpu->ProgramCounter += 3;
-
-	std::string opcode_name = std::format("LD [a16], {} 0x{:x})", RegisterTypeString8(reg), address);
-	return opcode_name;
 }
 
-std::string Op::StoreFF00(EmulatorContext* context)
+void Op::StoreFF00(EmulatorContext* context)
 {
 	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
 	uint8_t reg_data = context->cpu->GetRegister(RegisterType8::REG_A);
@@ -377,12 +307,9 @@ std::string Op::StoreFF00(EmulatorContext* context)
 	WriteToBus(context, 0xFF00 + data, reg_data);
 	context->cycles += 12;
 	context->cpu->ProgramCounter += 2;
-
-	std::string opcode_name = std::format("LDH [a8], A (0x{:x})", data);
-	return opcode_name;
 }
 
-std::string Op::LoadFF00(EmulatorContext* context)
+void Op::LoadFF00(EmulatorContext* context)
 {
 	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
 	uint8_t result = ReadFromBus(context, 0xFF00 + data);
@@ -390,12 +317,9 @@ std::string Op::LoadFF00(EmulatorContext* context)
 	context->cpu->SetRegister(RegisterType8::REG_A, result);
 	context->cycles += 12;
 	context->cpu->ProgramCounter += 2;
-
-	std::string opcode_name = std::format("LDH A, [a8] 0x{:x}", data);
-	return opcode_name;
 }
 
-std::string Op::StoreR8(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg_pointer)
+void Op::StoreR8(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg_pointer)
 {
 	uint8_t data = context->cpu->GetRegister(reg);
 	uint16_t address = context->cpu->GetRegister(reg_pointer);
@@ -403,12 +327,9 @@ std::string Op::StoreR8(EmulatorContext* context, RegisterType8 reg, RegisterTyp
 
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("LD [{}], {}", RegisterTypeString16(reg_pointer), RegisterTypeString8(reg));
-	return opcode_name;
 }
 
-std::string Op::StoreN8(EmulatorContext* context, RegisterType16 reg_pointer)
+void Op::StoreN8(EmulatorContext* context, RegisterType16 reg_pointer)
 {
 	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
 	uint16_t address = context->cpu->GetRegister(reg_pointer);
@@ -416,12 +337,9 @@ std::string Op::StoreN8(EmulatorContext* context, RegisterType16 reg_pointer)
 
 	context->cycles += 12;
 	context->cpu->ProgramCounter += 2;
-
-	std::string opcode_name = std::format("LD [{}], 0x{:x}", RegisterTypeString16(reg_pointer), data);
-	return opcode_name;
 }
 
-std::string Op::LoadIndirectR16(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg_pointer)
+void Op::LoadIndirectR16(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg_pointer)
 {
 	uint16_t address = context->cpu->GetRegister(reg_pointer);
 	uint8_t data = ReadFromBus(context, address);
@@ -429,12 +347,9 @@ std::string Op::LoadIndirectR16(EmulatorContext* context, RegisterType8 reg, Reg
 
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("LD {}, [{}] 0x{:x}", RegisterTypeString8(reg), RegisterTypeString16(reg_pointer), data);
-	return opcode_name;
 }
 
-std::string Op::StoreIndirectAC(EmulatorContext* context)
+void Op::StoreIndirectAC(EmulatorContext* context)
 {
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint16_t address = context->cpu->GetRegister(RegisterType8::REG_C);
@@ -442,12 +357,9 @@ std::string Op::StoreIndirectAC(EmulatorContext* context)
 
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("LD [C], A");
-	return opcode_name;
 }
 
-std::string Op::LoadIndirectAC(EmulatorContext* context)
+void Op::LoadIndirectAC(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType8::REG_C);
 	uint8_t data = ReadFromBus(context, 0xFF00 + address);
@@ -455,12 +367,9 @@ std::string Op::LoadIndirectAC(EmulatorContext* context)
 
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("LD A, [C]");
-	return opcode_name;
 }
 
-std::string Op::AddR8(EmulatorContext* context, RegisterType8 reg)
+void Op::AddR8(EmulatorContext* context, RegisterType8 reg)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t result_b = context->cpu->GetRegister(reg);
@@ -475,12 +384,9 @@ std::string Op::AddR8(EmulatorContext* context, RegisterType8 reg)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 4;
-
-	std::string opcode_name = std::format("ADD A, {}", RegisterTypeString8(reg));
-	return opcode_name;
 }
 
-std::string Op::AddN8(EmulatorContext* context)
+void Op::AddN8(EmulatorContext* context)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t result_b = ReadFromBus(context, context->cpu->ProgramCounter + 1);
@@ -495,12 +401,9 @@ std::string Op::AddN8(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 2;
 	context->cycles += 8;
-
-	std::string opcode_name = std::format("ADD A, 0x{:x}", result_b);
-	return opcode_name;
 }
 
-std::string Op::SubR8(EmulatorContext* context, RegisterType8 reg)
+void Op::SubR8(EmulatorContext* context, RegisterType8 reg)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t result_b = context->cpu->GetRegister(reg);
@@ -515,12 +418,9 @@ std::string Op::SubR8(EmulatorContext* context, RegisterType8 reg)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 4;
-
-	std::string opcode_name = std::format("SUB A, {}", RegisterTypeString8(reg));
-	return opcode_name;
 }
 
-std::string Op::SubIndirectHL(EmulatorContext* context)
+void Op::SubIndirectHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
@@ -536,12 +436,9 @@ std::string Op::SubIndirectHL(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 8;
-
-	std::string opcode_name = std::format("SUB A, [HL]");
-	return opcode_name;
 }
 
-std::string Op::SubN8(EmulatorContext* context)
+void Op::SubN8(EmulatorContext* context)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t result_b = ReadFromBus(context, context->cpu->ProgramCounter + 1);
@@ -556,12 +453,9 @@ std::string Op::SubN8(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 2;
 	context->cycles += 8;
-
-	std::string opcode_name = std::format("SUB A, 0x{:x}", result_b);
-	return opcode_name;
 }
 
-std::string Op::AddIndirectHL(EmulatorContext* context)
+void Op::AddIndirectHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 
@@ -578,12 +472,9 @@ std::string Op::AddIndirectHL(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 2;
 	context->cycles += 8;
-
-	std::string opcode_name = std::format("ADD A, [HL]");
-	return opcode_name;
 }
 
-std::string Op::AddSP(EmulatorContext* context)
+void Op::AddSP(EmulatorContext* context)
 {
 	uint16_t reg_sp = context->cpu->GetRegister(RegisterType16::REG_SP);
 	int8_t data = static_cast<int8_t>(ReadFromBus(context, context->cpu->ProgramCounter + 1));
@@ -598,12 +489,9 @@ std::string Op::AddSP(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 2;
 	context->cycles += 16;
-
-	std::string opcode_name = std::format("ADD SP, 0x{:x}", result);
-	return opcode_name;
 }
 
-std::string Op::AddR16(EmulatorContext* context, RegisterType16 reg)
+void Op::AddR16(EmulatorContext* context, RegisterType16 reg)
 {
 	uint16_t result_a = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint16_t result_b = context->cpu->GetRegister(reg);
@@ -617,12 +505,9 @@ std::string Op::AddR16(EmulatorContext* context, RegisterType16 reg)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 8;
-
-	std::string opcode_name = std::format("ADD HL, {}", RegisterTypeString16(reg));
-	return opcode_name;
 }
 
-std::string Op::IncR8(EmulatorContext* context, RegisterType8 reg)
+void Op::IncR8(EmulatorContext* context, RegisterType8 reg)
 {
 	uint8_t data = context->cpu->GetRegister(reg);
 	uint8_t result = data + 1;
@@ -634,12 +519,9 @@ std::string Op::IncR8(EmulatorContext* context, RegisterType8 reg)
 
 	context->cycles += 4;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("INC {}", RegisterTypeString8(reg));
-	return opcode_name;
 }
 
-std::string Op::DecR8(EmulatorContext* context, RegisterType8 reg)
+void Op::DecR8(EmulatorContext* context, RegisterType8 reg)
 {
 	uint8_t data = context->cpu->GetRegister(reg);
 	uint8_t result = data - 1;
@@ -651,12 +533,9 @@ std::string Op::DecR8(EmulatorContext* context, RegisterType8 reg)
 
 	context->cycles += 4;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("DEC {}", RegisterTypeString8(reg));
-	return opcode_name;
 }
 
-std::string Op::CallN16(EmulatorContext* context)
+void Op::CallN16(EmulatorContext* context)
 {
 	context->cpu->StackPointer -= 2;
 
@@ -672,12 +551,9 @@ std::string Op::CallN16(EmulatorContext* context)
 	context->cpu->ProgramCounter = address;
 
 	context->cycles += 24;
-
-	std::string opcode_name = std::format("CALL 0x{:x}", address);
-	return opcode_name;
 }
 
-std::string Op::CallN16FlagNotSet(EmulatorContext* context, CpuFlag flag)
+void Op::CallN16FlagNotSet(EmulatorContext* context, CpuFlag flag)
 {
 	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
 	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
@@ -702,12 +578,9 @@ std::string Op::CallN16FlagNotSet(EmulatorContext* context, CpuFlag flag)
 		context->cycles += 12;
 		context->cpu->ProgramCounter += 3;
 	}
-
-	std::string opcode_name = std::format("CALL N{}, 0x{:x}", FlagString(flag), address);
-	return opcode_name;
 }
 
-std::string Op::CallN16FlagSet(EmulatorContext* context, CpuFlag flag)
+void Op::CallN16FlagSet(EmulatorContext* context, CpuFlag flag)
 {
 	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
 	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
@@ -732,12 +605,9 @@ std::string Op::CallN16FlagSet(EmulatorContext* context, CpuFlag flag)
 		context->cycles += 12;
 		context->cpu->ProgramCounter += 3;
 	}
-
-	std::string opcode_name = std::format("CALL {}, 0x{:x}", FlagString(flag), address);
-	return opcode_name;
 }
 
-std::string Op::Return(EmulatorContext* context)
+void Op::Return(EmulatorContext* context)
 {
 	context->cpu->StackPointer += 2;
 
@@ -747,12 +617,9 @@ std::string Op::Return(EmulatorContext* context)
 
 	context->cpu->ProgramCounter = address;
 	context->cycles += 16;
-
-	std::string opcode_name = std::format("RET 0x{:x}", address);
-	return opcode_name;
 }
 
-std::string Op::ReturnInterrupt(EmulatorContext* context)
+void Op::ReturnInterrupt(EmulatorContext* context)
 {
 	context->cpu->StackPointer += 2;
 
@@ -764,12 +631,9 @@ std::string Op::ReturnInterrupt(EmulatorContext* context)
 
 	context->cpu->ProgramCounter = address;
 	context->cycles += 16;
-
-	std::string opcode_name = std::format("RETI 0x{:x}", address);
-	return opcode_name;
 }
 
-std::string Op::CompareR8(EmulatorContext* context, RegisterType8 reg)
+void Op::CompareR8(EmulatorContext* context, RegisterType8 reg)
 {
 	uint8_t a = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t value = context->cpu->GetRegister(reg);
@@ -783,12 +647,9 @@ std::string Op::CompareR8(EmulatorContext* context, RegisterType8 reg)
 
 	context->cycles += 4;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("CP A, {}", RegisterTypeString8(reg));
-	return opcode_name;
 }
 
-std::string Op::CompareN8(EmulatorContext* context)
+void Op::CompareN8(EmulatorContext* context)
 {
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t value = ReadFromBus(context, context->cpu->ProgramCounter + 1);
@@ -802,12 +663,9 @@ std::string Op::CompareN8(EmulatorContext* context)
 
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 2;
-
-	std::string opcode_name = std::format("CP A, 0x{:x}", value);
-	return opcode_name;
 }
 
-std::string Op::CompareIndirectHL(EmulatorContext* context)
+void Op::CompareIndirectHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 
@@ -823,12 +681,9 @@ std::string Op::CompareIndirectHL(EmulatorContext* context)
 
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("CP A, [HL]", value);
-	return opcode_name;
 }
 
-std::string Op::PushR16(EmulatorContext* context, RegisterType16 reg)
+void Op::PushR16(EmulatorContext* context, RegisterType16 reg)
 {
 	context->cpu->StackPointer -= 2;
 
@@ -841,12 +696,9 @@ std::string Op::PushR16(EmulatorContext* context, RegisterType16 reg)
 
 	context->cycles += 16;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("PUSH {}", RegisterTypeString16(reg));
-	return opcode_name;
 }
 
-std::string Op::PopR16(EmulatorContext* context, RegisterType16 reg)
+void Op::PopR16(EmulatorContext* context, RegisterType16 reg)
 {
 	context->cpu->StackPointer += 2;
 
@@ -858,36 +710,27 @@ std::string Op::PopR16(EmulatorContext* context, RegisterType16 reg)
 
 	context->cycles += 12;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("POP {}", RegisterTypeString16(reg));
-	return opcode_name;
 }
 
-std::string Op::IncR16(EmulatorContext* context, RegisterType16 reg)
+void Op::IncR16(EmulatorContext* context, RegisterType16 reg)
 {
 	uint16_t data = context->cpu->GetRegister(reg);
 	context->cpu->SetRegister(reg, data + 1);
 
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("INC {}", RegisterTypeString16(reg));
-	return opcode_name;
 }
 
-std::string Op::DecR16(EmulatorContext* context, RegisterType16 reg)
+void Op::DecR16(EmulatorContext* context, RegisterType16 reg)
 {
 	uint16_t data = context->cpu->GetRegister(reg);
 	context->cpu->SetRegister(reg, data - 1);
 
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 1;
-
-	std::string opcode_name = std::format("DEC {}", RegisterTypeString16(reg));
-	return opcode_name;
 }
 
-std::string Op::DecIndirectHL(EmulatorContext* context)
+void Op::DecIndirectHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t data = ReadFromBus(context, address);
@@ -900,12 +743,9 @@ std::string Op::DecIndirectHL(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 12;
-
-	std::string opcode_name = std::format("DEC [HL]");
-	return opcode_name;
 }
 
-std::string Op::IncIndirectHL(EmulatorContext* context)
+void Op::IncIndirectHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t data = ReadFromBus(context, address);
@@ -918,12 +758,9 @@ std::string Op::IncIndirectHL(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 12;
-
-	std::string opcode_name = std::format("INC [HL]");
-	return opcode_name;
 }
 
-std::string Op::JumpRelativeFlagNotSet(EmulatorContext* context, CpuFlag flag)
+void Op::JumpRelativeFlagNotSet(EmulatorContext* context, CpuFlag flag)
 {
 	bool flag_result = context->cpu->GetFlag(flag);
 	int8_t data = static_cast<int8_t>(ReadFromBus(context, context->cpu->ProgramCounter + 1));
@@ -939,12 +776,9 @@ std::string Op::JumpRelativeFlagNotSet(EmulatorContext* context, CpuFlag flag)
 		context->cycles += 8;
 		context->cpu->ProgramCounter += 2;
 	}
-
-	std::string opcode_name = std::format("JR NZ, 0x{:x}", address);
-	return opcode_name;
 }
 
-std::string Op::JumpRelativeFlagSet(EmulatorContext* context, CpuFlag flag)
+void Op::JumpRelativeFlagSet(EmulatorContext* context, CpuFlag flag)
 {
 	bool flag_result = context->cpu->GetFlag(flag);
 	int8_t data = static_cast<int8_t>(ReadFromBus(context, context->cpu->ProgramCounter + 1));
@@ -960,12 +794,9 @@ std::string Op::JumpRelativeFlagSet(EmulatorContext* context, CpuFlag flag)
 		context->cycles += 8;
 		context->cpu->ProgramCounter += 2;
 	}
-
-	std::string opcode_name = std::format("JR {}, 0x{:x}", FlagString(flag), address);
-	return opcode_name;
 }
 
-std::string Op::OrR8(EmulatorContext* context, RegisterType8 reg)
+void Op::OrR8(EmulatorContext* context, RegisterType8 reg)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t result_r = context->cpu->GetRegister(reg);
@@ -980,12 +811,9 @@ std::string Op::OrR8(EmulatorContext* context, RegisterType8 reg)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 4;
-
-	std::string opcode_name = std::format("OR A, {}", RegisterTypeString8(reg));
-	return opcode_name;
 }
 
-std::string Op::OrN8(EmulatorContext* context)
+void Op::OrN8(EmulatorContext* context)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
@@ -1000,12 +828,9 @@ std::string Op::OrN8(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 2;
 	context->cycles += 8;
-
-	std::string opcode_name = std::format("OR A, {}", data);
-	return opcode_name;
 }
 
-std::string Op::OrHL(EmulatorContext* context)
+void Op::OrHL(EmulatorContext* context)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
@@ -1021,12 +846,9 @@ std::string Op::OrHL(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 8;
-
-	std::string opcode_name = std::format("OR A, [HL]");
-	return opcode_name;
 }
 
-std::string Op::AndR8(EmulatorContext* context, RegisterType8 reg)
+void Op::AndR8(EmulatorContext* context, RegisterType8 reg)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t result_r = context->cpu->GetRegister(reg);
@@ -1040,12 +862,9 @@ std::string Op::AndR8(EmulatorContext* context, RegisterType8 reg)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 4;
-
-	std::string opcode_name = std::format("AND A, {}", RegisterTypeString8(reg));
-	return opcode_name;
 }
 
-std::string Op::AndIndirectHL(EmulatorContext* context)
+void Op::AndIndirectHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
@@ -1060,12 +879,9 @@ std::string Op::AndIndirectHL(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 2;
 	context->cycles += 8;
-
-	std::string opcode_name = std::format("AND A, [HL]");
-	return opcode_name;
 }
 
-std::string Op::AndN8(EmulatorContext* context)
+void Op::AndN8(EmulatorContext* context)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t result_r = ReadFromBus(context, context->cpu->ProgramCounter + 1);
@@ -1079,12 +895,9 @@ std::string Op::AndN8(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 2;
 	context->cycles += 8;
-
-	std::string opcode_name = std::format("AND A, 0x{:x}", result_r);
-	return opcode_name;
 }
 
-std::string Op::RotateRegisterRightA(EmulatorContext* context)
+void Op::RotateRegisterRightA(EmulatorContext* context)
 {
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t result = data >> 1;
@@ -1101,12 +914,9 @@ std::string Op::RotateRegisterRightA(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 4;
-
-	std::string opcode_name = std::format("RRA");
-	return opcode_name;
 }
 
-std::string Op::RotateRegisterLeftA(EmulatorContext* context)
+void Op::RotateRegisterLeftA(EmulatorContext* context)
 {
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t result = data << 1;
@@ -1123,18 +933,15 @@ std::string Op::RotateRegisterLeftA(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 4;
-
-	std::string opcode_name = std::format("RLA");
-	return opcode_name;
 }
 
-std::string Op::ExtendedPrefix(EmulatorContext* context)
+void Op::ExtendedPrefix(EmulatorContext* context)
 {
 	uint8_t extended_op = ReadFromBus(context, context->cpu->ProgramCounter + 1);
 
 	switch (extended_op)
 	{
-			// Rotate Left Carry
+		// Rotate Left Carry
 		case 0x0:
 			CB::RotateLeftCarry(context, RegisterType8::REG_B);
 			break;
@@ -1969,12 +1776,9 @@ std::string Op::ExtendedPrefix(EmulatorContext* context)
 		default:
 			throw std::exception(std::format("Extended instruction not implement: 0x{:x}", extended_op).c_str());
 	}
-
-	std::string opcode_name = std::format("PREFIX 0x{:x}", extended_op);
-	return opcode_name;
 }
 
-std::string Op::AddCarryN8(EmulatorContext* context)
+void Op::AddCarryN8(EmulatorContext* context)
 {
 	uint8_t reg = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
@@ -1993,12 +1797,9 @@ std::string Op::AddCarryN8(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 2;
 	context->cycles += 8;
-
-	std::string opcode_name = std::format("ADC A, 0x{:x}", reg);
-	return opcode_name;
 }
 
-std::string Op::SubCarryN8(EmulatorContext* context)
+void Op::SubCarryN8(EmulatorContext* context)
 {
 	uint8_t reg = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
@@ -2017,12 +1818,9 @@ std::string Op::SubCarryN8(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 2;
 	context->cycles += 8;
-
-	std::string opcode_name = std::format("SBC A, 0x{:x}", reg);
-	return opcode_name;
 }
 
-std::string Op::ReturnFlagNotSet(EmulatorContext* context, CpuFlag flag)
+void Op::ReturnFlagNotSet(EmulatorContext* context, CpuFlag flag)
 {
 	bool flag_result = context->cpu->GetFlag(flag);
 
@@ -2042,12 +1840,9 @@ std::string Op::ReturnFlagNotSet(EmulatorContext* context, CpuFlag flag)
 		context->cpu->ProgramCounter += 1;
 		context->cycles += 8;
 	}
-
-	std::string opcode_name = std::format("RET N{}", FlagString(flag));
-	return opcode_name;
 }
 
-std::string Op::ReturnFlagSet(EmulatorContext* context, CpuFlag flag)
+void Op::ReturnFlagSet(EmulatorContext* context, CpuFlag flag)
 {
 	bool flag_result = context->cpu->GetFlag(flag);
 
@@ -2067,14 +1862,9 @@ std::string Op::ReturnFlagSet(EmulatorContext* context, CpuFlag flag)
 		context->cpu->ProgramCounter += 1;
 		context->cycles += 8;
 	}
-
-	std::string opcode_name = std::format("RET {}", FlagString(flag));
-	return opcode_name;
 }
 
-
-
-std::string Op::Daa(EmulatorContext* context)
+void Op::Daa(EmulatorContext* context)
 {
 	bool subtract_flag = context->cpu->GetFlag(CpuFlag::Subtraction);
 	bool carry_flag = context->cpu->GetFlag(CpuFlag::Carry);
@@ -2116,12 +1906,9 @@ std::string Op::Daa(EmulatorContext* context)
 	context->cpu->SetRegister(RegisterType8::REG_A, value);
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 4;
-
-	std::string opcode_name = std::format("DAA");
-	return opcode_name;
 }
 
-std::string Op::ComplementA(EmulatorContext* context)
+void Op::ComplementA(EmulatorContext* context)
 {
 	uint8_t value = context->cpu->GetRegister(RegisterType8::REG_A);
 	value = ~value;
@@ -2133,12 +1920,9 @@ std::string Op::ComplementA(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 4;
-
-	std::string opcode_name = std::format("CPL");
-	return opcode_name;
 }
 
-std::string Op::SetCarryFlag(EmulatorContext* context)
+void Op::SetCarryFlag(EmulatorContext* context)
 {
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);
 	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
@@ -2146,12 +1930,9 @@ std::string Op::SetCarryFlag(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 4;
-
-	std::string opcode_name = std::format("SCF");
-	return opcode_name;
 }
 
-std::string Op::Rst(EmulatorContext* context, uint8_t offset)
+void Op::Rst(EmulatorContext* context, uint8_t offset)
 {
 	context->cpu->StackPointer -= 2;
 
@@ -2163,12 +1944,9 @@ std::string Op::Rst(EmulatorContext* context, uint8_t offset)
 
 	context->cpu->ProgramCounter = offset;
 	context->cycles += 16;
-
-	std::string opcode_name = std::format("RST 0x{:x}", offset);
-	return opcode_name;
 }
 
-std::string Op::ComplementCarryFlag(EmulatorContext* context)
+void Op::ComplementCarryFlag(EmulatorContext* context)
 {
 	// 0x3F
 	bool flag = context->cpu->GetFlag(CpuFlag::Carry);
@@ -2179,12 +1957,9 @@ std::string Op::ComplementCarryFlag(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 4;
-
-	std::string opcode_name = std::format("CCF");
-	return opcode_name;
 }
 
-std::string Op::AddCarryR8(EmulatorContext* context, RegisterType8 reg)
+void Op::AddCarryR8(EmulatorContext* context, RegisterType8 reg)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t result_b = context->cpu->GetRegister(reg);
@@ -2201,12 +1976,9 @@ std::string Op::AddCarryR8(EmulatorContext* context, RegisterType8 reg)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 4;
-
-	std::string opcode_name = std::format("ADC A, {}", RegisterTypeString8(reg));
-	return opcode_name;
 }
 
-std::string Op::AddCarryIndirectHL(EmulatorContext* context)
+void Op::AddCarryIndirectHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 
@@ -2225,12 +1997,9 @@ std::string Op::AddCarryIndirectHL(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 8;
-
-	std::string opcode_name = std::format("ADC A, [HL]");
-	return opcode_name;
 }
 
-std::string Op::SubCarryR8(EmulatorContext* context, RegisterType8 reg)
+void Op::SubCarryR8(EmulatorContext* context, RegisterType8 reg)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t result_b = context->cpu->GetRegister(reg);
@@ -2249,12 +2018,9 @@ std::string Op::SubCarryR8(EmulatorContext* context, RegisterType8 reg)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 4;
-
-	std::string opcode_name = std::format("SBC A, {}", RegisterTypeString8(reg));
-	return opcode_name;
 }
 
-std::string Op::SubCarryIndirectHL(EmulatorContext* context)
+void Op::SubCarryIndirectHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
@@ -2274,12 +2040,9 @@ std::string Op::SubCarryIndirectHL(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 8;
-
-	std::string opcode_name = std::format("SBC A, [HL]");
-	return opcode_name;
 }
 
-std::string Op::RotateRegisterLeftCarryA(EmulatorContext* context)
+void Op::RotateRegisterLeftCarryA(EmulatorContext* context)
 {
 	uint8_t value = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t bit7 = (value >> 7);
@@ -2296,12 +2059,9 @@ std::string Op::RotateRegisterLeftCarryA(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 4;
-
-	std::string opcode_name = std::format("RLCA");
-	return opcode_name;
 }
 
-std::string Op::RotateRegisterRightCarryA(EmulatorContext* context)
+void Op::RotateRegisterRightCarryA(EmulatorContext* context)
 {
 	uint8_t value = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t bit0 = (value & 0x1);
@@ -2318,7 +2078,4 @@ std::string Op::RotateRegisterRightCarryA(EmulatorContext* context)
 
 	context->cpu->ProgramCounter += 1;
 	context->cycles += 4;
-
-	std::string opcode_name = std::format("RRCA");
-	return opcode_name;
 }

@@ -9,165 +9,165 @@ struct EmulatorContext;
 
 namespace Op
 {
-	std::string Nop(EmulatorContext* context);
+	void Nop(EmulatorContext* context);
 
-	std::string Stop(EmulatorContext* context);
+	void Stop(EmulatorContext* context);
 
-	std::string EnableInterrupts(EmulatorContext* context);
+	void EnableInterrupts(EmulatorContext* context);
 
-	std::string DisableInterrupts(EmulatorContext* context);
+	void DisableInterrupts(EmulatorContext* context);
 
-	std::string JumpN16(EmulatorContext* context);
+	void JumpN16(EmulatorContext* context);
 
-	std::string JumpFlagN16(EmulatorContext* context, CpuFlag flag, bool condition);
+	void JumpFlagN16(EmulatorContext* context, CpuFlag flag, bool condition);
 
-	std::string JumpHL(EmulatorContext* context);
+	void JumpHL(EmulatorContext* context);
 
-	std::string JumpRelativeN8(EmulatorContext* context);
+	void JumpRelativeN8(EmulatorContext* context);
 
-	std::string JumpRelativeFlagN8(EmulatorContext* context, CpuFlag flag, bool condition);
+	void JumpRelativeFlagN8(EmulatorContext* context, CpuFlag flag, bool condition);
 
-	std::string JumpRelativeFlagNotSet(EmulatorContext* context, CpuFlag flag);
+	void JumpRelativeFlagNotSet(EmulatorContext* context, CpuFlag flag);
 
-	std::string JumpRelativeFlagSet(EmulatorContext* context, CpuFlag flag);
+	void JumpRelativeFlagSet(EmulatorContext* context, CpuFlag flag);
 
-	std::string XorR8(EmulatorContext* context, RegisterType8 type);
+	void XorR8(EmulatorContext* context, RegisterType8 type);
 
-	std::string XorN8(EmulatorContext* context);
+	void XorN8(EmulatorContext* context);
 
-	std::string XorR16(EmulatorContext* context, RegisterType16 type);
+	void XorR16(EmulatorContext* context, RegisterType16 type);
 
-	std::string LoadN16(EmulatorContext* context, RegisterType16 type);
+	void LoadN16(EmulatorContext* context, RegisterType16 type);
 
-	std::string LoadR8(EmulatorContext* context, RegisterType8 reg1, RegisterType8 reg2);
+	void LoadR8(EmulatorContext* context, RegisterType8 reg1, RegisterType8 reg2);
 
-	std::string LoadN8(EmulatorContext* context, RegisterType8 type);
+	void LoadN8(EmulatorContext* context, RegisterType8 type);
 
-	std::string LoadIndirectSP(EmulatorContext* context);
+	void LoadIndirectSP(EmulatorContext* context);
 
-	std::string LoadHLFromSP(EmulatorContext* context);
+	void LoadHLFromSP(EmulatorContext* context);
 
-	std::string LoadHLFromSPRelative(EmulatorContext* context);
+	void LoadHLFromSPRelative(EmulatorContext* context);
 
-	std::string StoreIncrementHL(EmulatorContext* context);
+	void StoreIncrementHL(EmulatorContext* context);
 
-	std::string StoreDecrementHL(EmulatorContext* context);
+	void StoreDecrementHL(EmulatorContext* context);
 
-	std::string LoadIncrementHL(EmulatorContext* context);
+	void LoadIncrementHL(EmulatorContext* context);
 
-	std::string LoadDecrementHL(EmulatorContext* context);
+	void LoadDecrementHL(EmulatorContext* context);
 
-	std::string StoreIndirectR8(EmulatorContext* context, RegisterType8 reg);
+	void StoreIndirectR8(EmulatorContext* context, RegisterType8 reg);
 
-	std::string LoadIndirectR8(EmulatorContext* context, RegisterType8 reg);
+	void LoadIndirectR8(EmulatorContext* context, RegisterType8 reg);
 
-	std::string StoreFF00(EmulatorContext* context);
+	void StoreFF00(EmulatorContext* context);
 
-	std::string LoadFF00(EmulatorContext* context);
+	void LoadFF00(EmulatorContext* context);
 
-	std::string StoreR8(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg_pointer);
+	void StoreR8(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg_pointer);
 
-	std::string StoreN8(EmulatorContext* context, RegisterType16 reg_pointer);
+	void StoreN8(EmulatorContext* context, RegisterType16 reg_pointer);
 
-	std::string LoadIndirectR16(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg_pointer);
+	void LoadIndirectR16(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg_pointer);
 
-	std::string StoreIndirectAC(EmulatorContext* context);
+	void StoreIndirectAC(EmulatorContext* context);
 
-	std::string LoadIndirectAC(EmulatorContext* context);
+	void LoadIndirectAC(EmulatorContext* context);
 
-	std::string AddR8(EmulatorContext* context, RegisterType8 reg);
+	void AddR8(EmulatorContext* context, RegisterType8 reg);
 
-	std::string AddN8(EmulatorContext* context);
+	void AddN8(EmulatorContext* context);
 
-	std::string SubR8(EmulatorContext* context, RegisterType8 reg);
+	void SubR8(EmulatorContext* context, RegisterType8 reg);
 
-	std::string SubIndirectHL(EmulatorContext* context);
+	void SubIndirectHL(EmulatorContext* context);
 
-	std::string SubN8(EmulatorContext* context);
+	void SubN8(EmulatorContext* context);
 
-	std::string AddIndirectHL(EmulatorContext* context);
+	void AddIndirectHL(EmulatorContext* context);
 
-	std::string AddSP(EmulatorContext* context);
+	void AddSP(EmulatorContext* context);
 
-	std::string AddR16(EmulatorContext* context, RegisterType16 reg);
+	void AddR16(EmulatorContext* context, RegisterType16 reg);
 
-	std::string IncR8(EmulatorContext* context, RegisterType8 reg);
+	void IncR8(EmulatorContext* context, RegisterType8 reg);
 
-	std::string DecR8(EmulatorContext* context, RegisterType8 reg);
+	void DecR8(EmulatorContext* context, RegisterType8 reg);
 
-	std::string CallN16(EmulatorContext* context);
+	void CallN16(EmulatorContext* context);
 
-	std::string CallN16FlagNotSet(EmulatorContext* context, CpuFlag flag);
+	void CallN16FlagNotSet(EmulatorContext* context, CpuFlag flag);
 
-	std::string CallN16FlagSet(EmulatorContext* context, CpuFlag flag);
+	void CallN16FlagSet(EmulatorContext* context, CpuFlag flag);
 
-	std::string Return(EmulatorContext* context);
+	void Return(EmulatorContext* context);
 
-	std::string ReturnInterrupt(EmulatorContext* context);
+	void ReturnInterrupt(EmulatorContext* context);
 
-	std::string ReturnFlagNotSet(EmulatorContext* context, CpuFlag flag);
+	void ReturnFlagNotSet(EmulatorContext* context, CpuFlag flag);
 
-	std::string ReturnFlagSet(EmulatorContext* context, CpuFlag flag);
+	void ReturnFlagSet(EmulatorContext* context, CpuFlag flag);
 
-	std::string CompareR8(EmulatorContext* context, RegisterType8 reg);
+	void CompareR8(EmulatorContext* context, RegisterType8 reg);
 
-	std::string CompareN8(EmulatorContext* context);
+	void CompareN8(EmulatorContext* context);
 
-	std::string CompareIndirectHL(EmulatorContext* context);
+	void CompareIndirectHL(EmulatorContext* context);
 
-	std::string PushR16(EmulatorContext* context, RegisterType16 reg);
+	void PushR16(EmulatorContext* context, RegisterType16 reg);
 
-	std::string PopR16(EmulatorContext* context, RegisterType16 reg);
+	void PopR16(EmulatorContext* context, RegisterType16 reg);
 
-	std::string IncR16(EmulatorContext* context, RegisterType16 reg);
+	void IncR16(EmulatorContext* context, RegisterType16 reg);
 
-	std::string DecR16(EmulatorContext* context, RegisterType16 reg);
+	void DecR16(EmulatorContext* context, RegisterType16 reg);
 
-	std::string DecIndirectHL(EmulatorContext* context);
+	void DecIndirectHL(EmulatorContext* context);
 
-	std::string IncIndirectHL(EmulatorContext* context);
+	void IncIndirectHL(EmulatorContext* context);
 
-	std::string OrR8(EmulatorContext* context, RegisterType8 reg);
+	void OrR8(EmulatorContext* context, RegisterType8 reg);
 
-	std::string OrN8(EmulatorContext* context);
+	void OrN8(EmulatorContext* context);
 
-	std::string OrHL(EmulatorContext* context);
+	void OrHL(EmulatorContext* context);
 
-	std::string AndR8(EmulatorContext* context, RegisterType8 reg);
+	void AndR8(EmulatorContext* context, RegisterType8 reg);
 
-	std::string AndIndirectHL(EmulatorContext* context);
+	void AndIndirectHL(EmulatorContext* context);
 
-	std::string AndN8(EmulatorContext* context);
+	void AndN8(EmulatorContext* context);
 
-	std::string ExtendedPrefix(EmulatorContext* context);
+	void ExtendedPrefix(EmulatorContext* context);
 
-	std::string RotateRegisterRightA(EmulatorContext* context);
+	void RotateRegisterRightA(EmulatorContext* context);
 
-	std::string RotateRegisterLeftA(EmulatorContext* context);
+	void RotateRegisterLeftA(EmulatorContext* context);
 
-	std::string AddCarryN8(EmulatorContext* context);
+	void AddCarryN8(EmulatorContext* context);
 
-	std::string SubCarryN8(EmulatorContext* context);
+	void SubCarryN8(EmulatorContext* context);
 
-	std::string Daa(EmulatorContext* context);
+	void Daa(EmulatorContext* context);
 
-	std::string ComplementA(EmulatorContext* context);
+	void ComplementA(EmulatorContext* context);
 
-	std::string SetCarryFlag(EmulatorContext* context);
+	void SetCarryFlag(EmulatorContext* context);
 
-	std::string Rst(EmulatorContext* context, uint8_t offset);
+	void Rst(EmulatorContext* context, uint8_t offset);
 
-	std::string ComplementCarryFlag(EmulatorContext* context);
+	void ComplementCarryFlag(EmulatorContext* context);
 
-	std::string AddCarryR8(EmulatorContext* context, RegisterType8 reg);
+	void AddCarryR8(EmulatorContext* context, RegisterType8 reg);
 
-	std::string AddCarryIndirectHL(EmulatorContext* context);
+	void AddCarryIndirectHL(EmulatorContext* context);
 
-	std::string SubCarryR8(EmulatorContext* context, RegisterType8 reg);
+	void SubCarryR8(EmulatorContext* context, RegisterType8 reg);
 
-	std::string SubCarryIndirectHL(EmulatorContext* context);
+	void SubCarryIndirectHL(EmulatorContext* context);
 
-	std::string RotateRegisterLeftCarryA(EmulatorContext* context);
+	void RotateRegisterLeftCarryA(EmulatorContext* context);
 
-	std::string RotateRegisterRightCarryA(EmulatorContext* context);
+	void RotateRegisterRightCarryA(EmulatorContext* context);
 }

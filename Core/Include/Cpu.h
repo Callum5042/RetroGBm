@@ -52,7 +52,7 @@ public:
 	uint16_t ProgramCounter = 0;
 	uint16_t StackPointer = 0;
 
-	std::string Execute(EmulatorContext* context, const uint8_t opcode);
+	void Execute(EmulatorContext* context, const uint8_t opcode);
 
 	// Registers
 	void SetRegister(RegisterType8 type, uint8_t data);
