@@ -16,6 +16,7 @@
 #include "Display.h"
 #include "Ppu.h"
 #include "Dma.h"
+#include "Joypad.h"
 
 struct EmulatorContext
 {
@@ -62,6 +63,7 @@ public:
 	inline Display* GetDisplay() { return m_Display.get(); }
 	inline Ppu* GetPpu() { return m_Ppu.get(); }
 	inline Dma* GetDma() { return m_Dma.get(); }
+	inline Joypad* GetJoypad() { return m_Joypad.get(); }
 
 private:
 
@@ -80,4 +82,5 @@ private:
 	std::unique_ptr<Display> m_Display;
 	std::unique_ptr<Ppu> m_Ppu;
 	std::unique_ptr<Dma> m_Dma;
+	std::unique_ptr<Joypad> m_Joypad;
 };

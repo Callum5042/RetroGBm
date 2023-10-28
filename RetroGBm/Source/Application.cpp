@@ -118,6 +118,14 @@ void Application::HandleEvents(const SDL_Event& e)
 			HandleWindowEvents(e);
 			break;
 
+		case SDL_KEYDOWN:
+			HandleKey(true, e.key.keysym.scancode);
+			break;
+
+		case SDL_KEYUP:
+			HandleKey(false, e.key.keysym.scancode);
+			break;
+
 		default:
 			break;
 	}
@@ -263,4 +271,35 @@ void Application::UpdateMainWindow()
 	}
 
 	SDL_UpdateTexture(m_MainTexture, NULL, m_MainSurface->pixels, m_MainSurface->pitch);
+}
+
+void Application::HandleKey(bool state, SDL_Scancode scancode)
+{
+	switch (scancode)
+	{
+		case SDL_SCANCODE_Z:
+			m_Emulator->GetJoypad()->SetJoypad(JoypadButton::B, state);
+			break;
+		case SDL_SCANCODE_X:
+			m_Emulator->GetJoypad()->SetJoypad(JoypadButton::A, state);
+			break;
+		case SDL_SCANCODE_RETURN:
+			m_Emulator->GetJoypad()->SetJoypad(JoypadButton::Start, state);
+			break;
+		case SDL_SCANCODE_TAB:
+			m_Emulator->GetJoypad()->SetJoypad(JoypadButton::Select, state);
+			break;
+		case SDL_SCANCODE_UP:
+			m_Emulator->GetJoypad()->SetJoypad(JoypadButton::Up, state);
+			break;
+		case SDL_SCANCODE_DOWN:
+			m_Emulator->GetJoypad()->SetJoypad(JoypadButton::Down, state);
+			break;
+		case SDL_SCANCODE_LEFT:
+			m_Emulator->GetJoypad()->SetJoypad(JoypadButton::Left, state);
+			break;
+		case SDL_SCANCODE_RIGHT:
+			m_Emulator->GetJoypad()->SetJoypad(JoypadButton::Right, state);
+			break;
+	}
 }
