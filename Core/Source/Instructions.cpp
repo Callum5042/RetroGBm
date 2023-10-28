@@ -9,8 +9,6 @@ void Op::Nop(EmulatorContext* context)
 {
 	context->cycles += 4;
 	context->cpu->ProgramCounter += 1;
-
-
 }
 
 void Op::Stop(EmulatorContext* context)
@@ -18,6 +16,17 @@ void Op::Stop(EmulatorContext* context)
 	context->cycles += 4;
 	context->cpu->ProgramCounter++;
 	Emulator::Instance->Stop();
+}
+
+void Op::Halt(EmulatorContext* context)
+{
+	context->cycles += 4;
+	context->cpu->ProgramCounter++;
+
+	if (Emulator::Instance->GetCpu()->GetInterruptMasterFlag())
+	{
+		Emulator::Instance->SetHalt(true);
+	}
 }
 
 void Op::EnableInterrupts(EmulatorContext* context)

@@ -26,4 +26,9 @@ private:
 	TimerContext context;
 
 	int m_TimerCount = 0;
+
+	int m_DividerClocksToWait = 0;
+	int m_TimerClocksToWait = 0;
+	int m_TimerOverflowWaitCycles = 0;
+	bool m_TimerOverflown = false;
 };

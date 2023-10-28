@@ -11,45 +11,96 @@ void Timer::Init()
 
 void Timer::Tick()
 {
-	uint16_t prev_div = context.div;
-	context.div++;
-
-	bool timer_update = false;
-	m_TimerCount -=4;
-	if (m_TimerCount <= 0)
+	m_DividerClocksToWait--;
+	if (m_DividerClocksToWait <= 0)
 	{
-		const int cpu_clock = 4 * 1024 * 1024;
-		switch (context.tac & (0b11))
-		{
-			case 0b00:
-				m_TimerCount = cpu_clock / 4096;
-				break;
-			case 0b01:
-				m_TimerCount = cpu_clock / 262144;
-				break;
-			case 0b10:
-				m_TimerCount = cpu_clock / 65536;
-				break;
-			case 0b11:
-				m_TimerCount = cpu_clock / 16384;
-				break;
-		}
-
-		context.tima++;
-		if (context.tima == 0xFF)
-		{
-			timer_update = true;
-		}
+		m_DividerClocksToWait = 256;
+		context.div++;
 	}
-
-	// Read bit 2
+	
 	bool timer_enabled = context.tac & (1 << 2);
-	if (timer_enabled && timer_update)
+	if (timer_enabled)
 	{
-		timer_update = false;
-		context.tima = context.tma;
-		Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::Timer);
+		m_TimerClocksToWait--;
+		if (m_TimerClocksToWait <= 0)
+		{
+			const int cpu_clock = 4 * 1024 * 1024;
+			switch (context.tac & (0b11))
+			{
+				case 0b00:
+					m_TimerClocksToWait = cpu_clock / 4096;
+					break;
+				case 0b10:
+					m_TimerClocksToWait = cpu_clock / 262144;
+					break;
+				case 0b01:
+					m_TimerClocksToWait = cpu_clock / 65536;
+					break;
+				case 0b11:
+					m_TimerClocksToWait = cpu_clock / 16384;
+					break;
+			}
+
+			context.tima++;
+			if (context.tima == 0)
+			{
+				m_TimerOverflowWaitCycles = 8;
+				m_TimerOverflown = true;
+			}
+		}
 	}
+
+	if (m_TimerOverflown)
+	{
+		m_TimerOverflowWaitCycles -= 1;
+		if (m_TimerOverflowWaitCycles <= 0)
+		{
+			m_TimerOverflown = false;
+
+			context.tima = context.tma;
+			Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::Timer);
+		}
+	}
+
+	//uint16_t prev_div = context.div;
+	//context.div++;
+
+	//bool timer_update = false;
+	//m_TimerCount -=4;
+	//if (m_TimerCount <= 0)
+	//{
+	//	const int cpu_clock = 4 * 1024 * 1024;
+	//	switch (context.tac & (0b11))
+	//	{
+	//		case 0b00:
+	//			m_TimerCount = cpu_clock / 4096;
+	//			break;
+	//		case 0b01:
+	//			m_TimerCount = cpu_clock / 262144;
+	//			break;
+	//		case 0b10:
+	//			m_TimerCount = cpu_clock / 65536;
+	//			break;
+	//		case 0b11:
+	//			m_TimerCount = cpu_clock / 16384;
+	//			break;
+	//	}
+
+	//	context.tima++;
+	//	if (context.tima == 0xFF)
+	//	{
+	//		timer_update = true;
+	//	}
+	//}
+
+	//// Read bit 2
+	//bool timer_enabled = context.tac & (1 << 2);
+	//if (timer_enabled && timer_update)
+	//{
+	//	timer_update = false;
+	//	context.tima = context.tma;
+	//	Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::Timer);
+	//}
 }
 
 uint8_t Timer::Read(uint16_t address)

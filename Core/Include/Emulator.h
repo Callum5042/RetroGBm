@@ -38,6 +38,7 @@ public:
 	void Tick();
 
 	void Stop();
+	void SetHalt(bool value);
 	inline bool IsRunning() { return m_Running; }
 
 	uint8_t GetOpCode() const;
@@ -88,4 +89,5 @@ private:
 	std::unique_ptr<Joypad> m_Joypad;
 
 	bool m_Running = true;
+	bool m_Halted = false;
 };

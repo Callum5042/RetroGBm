@@ -69,6 +69,11 @@ void Emulator::Stop()
 	m_Running = false;
 }
 
+void Emulator::SetHalt(bool value)
+{
+	m_Halted = value;
+}
+
 void Emulator::Tick()
 {
 	// Fetch
@@ -90,7 +95,14 @@ void Emulator::Tick()
 											// m_DebugFile << debug_format << '\n';
 
 	// Execute
-	m_Cpu->Execute(&m_Context, opcode);
+	if (!m_Halted)
+	{
+		m_Cpu->Execute(&m_Context, opcode);
+	}
+	else
+	{
+		m_Context.cycles += 4;
+	}
 
 	// Tick timer
 	for (int i = 0; i < m_Context.cycles; ++i)
