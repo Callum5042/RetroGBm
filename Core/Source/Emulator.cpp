@@ -64,6 +64,11 @@ bool Emulator::LoadRom(const std::string& path)
 	return true;
 }
 
+void Emulator::Stop()
+{
+	m_Running = false;
+}
+
 void Emulator::Tick()
 {
 	// Fetch

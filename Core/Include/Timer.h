@@ -24,4 +24,6 @@ public:
 
 private:
 	TimerContext context;
+
+	int m_TimerCount = 0;
 };

@@ -17,8 +17,7 @@ void Op::Stop(EmulatorContext* context)
 {
 	context->cycles += 4;
 	context->cpu->ProgramCounter++;
-
-	throw std::exception("STOP not implemented");
+	Emulator::Instance->Stop();
 }
 
 void Op::EnableInterrupts(EmulatorContext* context)

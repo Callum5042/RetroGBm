@@ -15,33 +15,40 @@ void Timer::Tick()
 	context.div++;
 
 	bool timer_update = false;
-	switch (context.tac & (0b11))
+	m_TimerCount -=4;
+	if (m_TimerCount <= 0)
 	{
-		case 0b00:
-			timer_update = (prev_div & (1 << 9)) && !(context.div & (1 << 9));
-			break;
-		case 0b01:
-			timer_update = (prev_div & (1 << 3)) && !(context.div & (1 << 3));
-			break;
-		case 0b10:
-			timer_update = (prev_div & (1 << 5)) && !(context.div & (1 << 5));
-			break;
-		case 0b11:
-			timer_update = (prev_div & (1 << 7)) && !(context.div & (1 << 7));
-			break;
+		const int cpu_clock = 4 * 1024 * 1024;
+		switch (context.tac & (0b11))
+		{
+			case 0b00:
+				m_TimerCount = cpu_clock / 4096;
+				break;
+			case 0b01:
+				m_TimerCount = cpu_clock / 262144;
+				break;
+			case 0b10:
+				m_TimerCount = cpu_clock / 65536;
+				break;
+			case 0b11:
+				m_TimerCount = cpu_clock / 16384;
+				break;
+		}
+
+		context.tima++;
+		if (context.tima == 0xFF)
+		{
+			timer_update = true;
+		}
 	}
 
 	// Read bit 2
 	bool timer_enabled = context.tac & (1 << 2);
 	if (timer_enabled && timer_update)
 	{
-		context.tima++;
-
-		if (context.tima == 0xFF)
-		{
-			context.tima = context.tma;
-			Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::Timer);
-		}
+		timer_update = false;
+		context.tima = context.tma;
+		Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::Timer);
 	}
 }
 

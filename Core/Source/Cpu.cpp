@@ -443,8 +443,8 @@ void Cpu::Execute(EmulatorContext* context, const uint8_t opcode)
 		case 0x0F:
 			Op::RotateRegisterRightCarryA(context);
 			break;
-			//case 0x10:
-			//	Op::Stop(context);
+		case 0x10:
+			Op::Stop(context);
 			break;
 		case 0x11:
 			Op::LoadN16(context, RegisterType16::REG_DE);
