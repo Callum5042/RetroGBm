@@ -3,6 +3,13 @@
 #include <cstring>
 #include "Emulator.h"
 #include <algorithm>
+#include <SDL.h>
+
+Ppu::Ppu()
+{
+	m_Bus = Emulator::Instance;
+	m_Display = Emulator::Instance->GetDisplay();
+}  
 
 void Ppu::Init()
 {
@@ -24,7 +31,6 @@ void Ppu::Init()
 	context.fetched_entry_count = 0;
 	context.window_line = 0;
 
-	m_Display = Emulator::Instance->GetDisplay();
 	m_Display->Init();
 	m_Display->SetLcdMode(LcdMode::OAM);
 }
@@ -111,7 +117,7 @@ void Ppu::PixelTransfer()
 		m_Display->SetLcdMode(LcdMode::HBlank);
 		if (m_Display->IsStatInterruptHBlank())
 		{
-			// Emulator::Instance->m_Cpu.RequestInterrupts(InterruptType::LCD_STAT);
+			Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::STAT);
 		}
 	}
 }
@@ -148,7 +154,7 @@ void Ppu::HBlank()
 
 			if (m_Display->IsStatInterruptVBlank())
 			{
-				// Emulator::Instance->m_Cpu.RequestInterrupts(InterruptType::LCD_STAT);
+				Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::STAT);
 			}
 
 			context.current_frame++;
@@ -165,7 +171,7 @@ void Ppu::HBlank()
 
 void Ppu::CalculateFPS()
 {
-	/*uint32_t end = SDL_GetTicks();
+	uint32_t end = SDL_GetTicks();
 	uint32_t frame_time = end - m_PreviousFrameTime;
 
 	if (frame_time < m_TargetFrameTime)
@@ -179,14 +185,14 @@ void Ppu::CalculateFPS()
 		m_StartTimer = end;
 		m_FrameCount = 0;
 
-		if (Emulator::Instance->m_Cartridge.NeedSave())
+		/*if (m_Bus->m_Cartridge.NeedSave())
 		{
-			Emulator::Instance->m_Cartridge.BatterySave();
-		}
+			m_Bus->m_Cartridge.BatterySave();
+		}*/
 	}
 
 	m_FrameCount++;
-	m_PreviousFrameTime = SDL_GetTicks();*/
+	m_PreviousFrameTime = SDL_GetTicks();
 }
 
 void Ppu::PipelineReset()
@@ -241,7 +247,7 @@ void Ppu::IncementLY()
 
 		if (m_Display->IsStatInterruptLYC())
 		{
-			// Emulator::Instance->m_Cpu.RequestInterrupts(InterruptType::LCD_STAT);
+			Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::STAT);
 		}
 	}
 	else
@@ -451,7 +457,7 @@ void Ppu::LoadSpriteData(uint8_t offset)
 			tile_index &= ~(1);
 		}
 
-		context.pfc.fetch_oam_data[(i * 2) + offset] = Emulator::Instance->ReadBus(0x8000 + (tile_index * 16) + ty + offset);
+		context.pfc.fetch_oam_data[(i * 2) + offset] = m_Bus->ReadBus(0x8000 + (tile_index * 16) + ty + offset);
 	}
 }
 
@@ -469,7 +475,7 @@ void Ppu::LoadWindowTile()
 		{
 			uint8_t w_tile_y = context.window_line / 8;
 
-			context.pfc.bgw_fetch_data[0] = Emulator::Instance->ReadBus(m_Display->GetWindowTileBaseAddress() + ((context.pfc.fetch_x + 7 - m_Display->context.wx) / 8) + (w_tile_y * 32));
+			context.pfc.bgw_fetch_data[0] = m_Bus->ReadBus(m_Display->GetWindowTileBaseAddress() + ((context.pfc.fetch_x + 7 - m_Display->context.wx) / 8) + (w_tile_y * 32));
 			if (m_Display->GetBackgroundTileData() == 0x8800)
 			{
 				context.pfc.bgw_fetch_data[0] += 128;
@@ -491,7 +497,7 @@ void Ppu::PixelFetcher()
 			{
 				// Load background tile
 				int16_t address = m_Display->GetBackgroundTileBaseAddress();
-				context.pfc.bgw_fetch_data[0] = Emulator::Instance->ReadBus(address + (context.pfc.map_x / 8) + (((context.pfc.map_y / 8)) * 32));
+				context.pfc.bgw_fetch_data[0] = m_Bus->ReadBus(address + (context.pfc.map_x / 8) + (((context.pfc.map_y / 8)) * 32));
 
 				if (m_Display->GetBackgroundTileData() == 0x8800)
 				{
@@ -514,7 +520,7 @@ void Ppu::PixelFetcher()
 
 		case FetchState::TileDataLow:
 		{
-			context.pfc.bgw_fetch_data[1] = Emulator::Instance->ReadBus(m_Display->GetBackgroundTileData() + (context.pfc.bgw_fetch_data[0] * 16) + context.pfc.tile_y);
+			context.pfc.bgw_fetch_data[1] = m_Bus->ReadBus(m_Display->GetBackgroundTileData() + (context.pfc.bgw_fetch_data[0] * 16) + context.pfc.tile_y);
 			LoadSpriteData(0);
 			context.pfc.current_fetch_state = FetchState::TileDataHigh;
 			break;
@@ -522,7 +528,7 @@ void Ppu::PixelFetcher()
 
 		case FetchState::TileDataHigh:
 		{
-			context.pfc.bgw_fetch_data[2] = Emulator::Instance->ReadBus(m_Display->GetBackgroundTileData() + (context.pfc.bgw_fetch_data[0] * 16) + context.pfc.tile_y + 1);
+			context.pfc.bgw_fetch_data[2] = m_Bus->ReadBus(m_Display->GetBackgroundTileData() + (context.pfc.bgw_fetch_data[0] * 16) + context.pfc.tile_y + 1);
 			LoadSpriteData(1);
 			context.pfc.current_fetch_state = FetchState::Idle;
 			break;

@@ -2,6 +2,12 @@
 #include "Ppu.h"
 #include "Emulator.h"
 
+Dma::Dma()
+{
+	m_Bus = Emulator::Instance;
+	m_Ppu = Emulator::Instance->GetPpu();
+}
+
 void Dma::Start(uint8_t start)
 {
 	context.active = true;
@@ -23,7 +29,7 @@ void Dma::Tick()
 		return;
 	}
 
-	Emulator::Instance->GetPpu()->WriteOam(context.byte, Emulator::Instance->ReadBus((context.value * 0x100) + context.byte));
+	m_Ppu->WriteOam(context.byte, m_Bus->ReadBus((context.value * 0x100) + context.byte));
 
 	context.byte++;
 	context.active = context.byte < 0xA0;

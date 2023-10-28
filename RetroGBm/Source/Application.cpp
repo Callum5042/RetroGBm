@@ -209,8 +209,8 @@ void Application::UpdateTileWindow()
 			SDL_Rect rc = {};
 			for (int tileY = 0; tileY < 16; tileY += 2)
 			{
-				uint8_t b1 = Emulator::Instance->ReadBus(addr + (tileNum * 16) + tileY);
-				uint8_t b2 = Emulator::Instance->ReadBus(addr + (tileNum * 16) + tileY + 1);
+				uint8_t b1 = m_Emulator->ReadBus(addr + (tileNum * 16) + tileY);
+				uint8_t b2 = m_Emulator->ReadBus(addr + (tileNum * 16) + tileY + 1);
 
 				for (int bit = 7; bit >= 0; bit--)
 				{
