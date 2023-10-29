@@ -102,6 +102,11 @@ void Emulator::Tick()
 	else
 	{
 		m_Context.cycles += 4;
+
+		if (m_Cpu->GetInterruptFlags())
+		{
+			m_Halted = false;
+		}
 	}
 
 	// Tick timer

@@ -3,6 +3,7 @@
 #include "Emulator.h"
 #include "Cpu.h"
 #include "ExtendedInstructions.h"
+#include <iostream>
 using namespace Op;
 
 void Op::Nop(EmulatorContext* context)
@@ -15,7 +16,9 @@ void Op::Stop(EmulatorContext* context)
 {
 	context->cycles += 4;
 	context->cpu->ProgramCounter++;
-	Emulator::Instance->Stop();
+	// Emulator::Instance->Stop();
+
+	std::cout << "Stop\n";
 }
 
 void Op::Halt(EmulatorContext* context)
@@ -24,6 +27,10 @@ void Op::Halt(EmulatorContext* context)
 	context->cpu->ProgramCounter++;
 
 	if (Emulator::Instance->GetCpu()->GetInterruptMasterFlag())
+	{
+		Emulator::Instance->SetHalt(true);
+	}
+	else
 	{
 		Emulator::Instance->SetHalt(true);
 	}

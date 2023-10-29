@@ -341,23 +341,18 @@ void Cpu::HandleInterrupts()
 	{
 		if (InterruptCheck(0x40, InterruptFlag::VBlank))
 		{
-			Emulator::Instance->SetHalt(false);
 		}
 		else if (InterruptCheck(0x48, InterruptFlag::STAT))
 		{
-			Emulator::Instance->SetHalt(false);
 		}
 		else if (InterruptCheck(0x50, InterruptFlag::Timer))
 		{
-			Emulator::Instance->SetHalt(false);
 		}
 		else if (InterruptCheck(0x58, InterruptFlag::Serial))
 		{
-			Emulator::Instance->SetHalt(false);
 		}
 		else if (InterruptCheck(0x60, InterruptFlag::Joypad))
 		{
-			Emulator::Instance->SetHalt(false);
 		}
 
 		m_EnablingInterrupts = false;
@@ -377,8 +372,8 @@ bool Cpu::InterruptCheck(uint16_t address, InterruptFlag flag)
 		ProgramCounter = address;
 
 		m_InterruptFlags &= ~static_cast<int>(flag);
-		// ctx->halted = false;
-		// m_InterruptMasterFlag = false;
+		Emulator::Instance->SetHalt(false);
+		m_InterruptMasterFlag = false;
 
 		return true;
 	}
