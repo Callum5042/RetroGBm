@@ -37,6 +37,10 @@ public:
 
 	void Tick();
 
+	void Stop();
+	void SetHalt(bool value);
+	inline bool IsRunning() { return m_Running; }
+
 	uint8_t GetOpCode() const;
 	inline EmulatorContext* GetContext() { return &m_Context; }
 
@@ -83,4 +87,7 @@ private:
 	std::unique_ptr<Ppu> m_Ppu;
 	std::unique_ptr<Dma> m_Dma;
 	std::unique_ptr<Joypad> m_Joypad;
+
+	bool m_Running = true;
+	bool m_Halted = false;
 };

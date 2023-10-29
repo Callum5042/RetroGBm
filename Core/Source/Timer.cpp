@@ -11,36 +11,44 @@ void Timer::Init()
 
 void Timer::Tick()
 {
-	uint16_t prev_div = context.div;
-	context.div++;
-
-	bool timer_update = false;
-	switch (context.tac & (0b11))
+	// Increment div every 256 ticks
+	m_DividerClocksToWait++;
+	if (m_DividerClocksToWait >= 256)
 	{
-		case 0b00:
-			timer_update = (prev_div & (1 << 9)) && !(context.div & (1 << 9));
-			break;
-		case 0b01:
-			timer_update = (prev_div & (1 << 3)) && !(context.div & (1 << 3));
-			break;
-		case 0b10:
-			timer_update = (prev_div & (1 << 5)) && !(context.div & (1 << 5));
-			break;
-		case 0b11:
-			timer_update = (prev_div & (1 << 7)) && !(context.div & (1 << 7));
-			break;
+		m_DividerClocksToWait = 0;
+		context.div++;
 	}
-
-	// Read bit 2
+	
+	// Increment tima from tac
 	bool timer_enabled = context.tac & (1 << 2);
-	if (timer_enabled && timer_update)
+	if (timer_enabled)
 	{
-		context.tima++;
-
-		if (context.tima == 0xFF)
+		m_TimerClocksToWait--;
+		if (m_TimerClocksToWait <= 0)
 		{
-			context.tima = context.tma;
-			Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::Timer);
+			const int cpu_clock = 4 * 1024 * 1024;
+			switch (context.tac & (0b11))
+			{
+				case 0b00:
+					m_TimerClocksToWait = cpu_clock / 4096;
+					break;
+				case 0b10:
+					m_TimerClocksToWait = cpu_clock / 262144;
+					break;
+				case 0b01:
+					m_TimerClocksToWait = cpu_clock / 65536;
+					break;
+				case 0b11:
+					m_TimerClocksToWait = cpu_clock / 16384;
+					break;
+			}
+
+			context.tima++;
+			if (context.tima == 0xFF)
+			{
+				context.tima = context.tma;
+				Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::Timer);
+			}
 		}
 	}
 }

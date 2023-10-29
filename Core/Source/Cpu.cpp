@@ -341,23 +341,18 @@ void Cpu::HandleInterrupts()
 	{
 		if (InterruptCheck(0x40, InterruptFlag::VBlank))
 		{
-
 		}
 		else if (InterruptCheck(0x48, InterruptFlag::STAT))
 		{
-
 		}
 		else if (InterruptCheck(0x50, InterruptFlag::Timer))
 		{
-
 		}
 		else if (InterruptCheck(0x58, InterruptFlag::Serial))
 		{
-
 		}
 		else if (InterruptCheck(0x60, InterruptFlag::Joypad))
 		{
-
 		}
 
 		m_EnablingInterrupts = false;
@@ -377,8 +372,8 @@ bool Cpu::InterruptCheck(uint16_t address, InterruptFlag flag)
 		ProgramCounter = address;
 
 		m_InterruptFlags &= ~static_cast<int>(flag);
-		// ctx->halted = false;
-		// m_InterruptMasterFlag = false;
+		Emulator::Instance->SetHalt(false);
+		m_InterruptMasterFlag = false;
 
 		return true;
 	}
@@ -443,8 +438,8 @@ void Cpu::Execute(EmulatorContext* context, const uint8_t opcode)
 		case 0x0F:
 			Op::RotateRegisterRightCarryA(context);
 			break;
-			//case 0x10:
-			//	Op::Stop(context);
+		case 0x10:
+			Op::Stop(context);
 			break;
 		case 0x11:
 			Op::LoadN16(context, RegisterType16::REG_DE);
@@ -748,6 +743,9 @@ void Cpu::Execute(EmulatorContext* context, const uint8_t opcode)
 			break;
 		case 0x75:
 			Op::StoreR8(context, RegisterType8::REG_L, RegisterType16::REG_HL);
+			break;
+		case 0x76:
+			Op::Halt(context);
 			break;
 		case 0x77:
 			Op::StoreR8(context, RegisterType8::REG_A, RegisterType16::REG_HL);

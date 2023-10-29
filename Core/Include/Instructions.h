@@ -65,6 +65,8 @@ namespace Op
 
 	void LoadFF00(EmulatorContext* context);
 
+	void Halt(EmulatorContext* context);
+
 	void StoreR8(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg_pointer);
 
 	void StoreN8(EmulatorContext* context, RegisterType16 reg_pointer);

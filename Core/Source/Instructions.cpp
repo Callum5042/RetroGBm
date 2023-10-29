@@ -3,22 +3,37 @@
 #include "Emulator.h"
 #include "Cpu.h"
 #include "ExtendedInstructions.h"
+#include <iostream>
 using namespace Op;
 
 void Op::Nop(EmulatorContext* context)
 {
 	context->cycles += 4;
 	context->cpu->ProgramCounter += 1;
-
-
 }
 
 void Op::Stop(EmulatorContext* context)
 {
 	context->cycles += 4;
 	context->cpu->ProgramCounter++;
+	// Emulator::Instance->Stop();
 
-	throw std::exception("STOP not implemented");
+	std::cout << "Stop\n";
+}
+
+void Op::Halt(EmulatorContext* context)
+{
+	context->cycles += 4;
+	context->cpu->ProgramCounter++;
+
+	if (Emulator::Instance->GetCpu()->GetInterruptMasterFlag())
+	{
+		Emulator::Instance->SetHalt(true);
+	}
+	else
+	{
+		Emulator::Instance->SetHalt(true);
+	}
 }
 
 void Op::EnableInterrupts(EmulatorContext* context)
