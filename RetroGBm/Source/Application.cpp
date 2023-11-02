@@ -126,6 +126,8 @@ void Application::Run()
 		else
 		{
 			m_MainRenderer->Clear();
+			m_Model->UpdateTexture(m_Emulator->Instance->GetPpu()->context.video_buffer.data(), sizeof(uint32_t) * m_Emulator->Instance->GetPpu()->ScreenResolutionX);
+			m_Model->Render();
 			m_MainRenderer->Present();
 
 			m_TileRenderer->Clear();
@@ -178,6 +180,16 @@ void Application::Init()
 
 	m_TileRenderer = new DX::Renderer(m_TileWindow);
 	m_TileRenderer->Create();
+
+	// Shader
+	DX::Shader shader(m_MainRenderer);
+	shader.LoadPixelShader(L"D:/Sources/RetroGBm/RetroGBm/Shaders/PixelShader.hlsl");
+	shader.LoadVertexShader(L"D:/Sources/RetroGBm/RetroGBm/Shaders/VertexShader.hlsl");
+	shader.Use();
+
+	// Model
+	m_Model = new DX::Model(m_MainRenderer);
+	m_Model->Create();
 }
 
 LRESULT Application::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)

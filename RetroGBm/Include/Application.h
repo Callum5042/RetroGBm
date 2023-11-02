@@ -6,6 +6,8 @@
 #include <memory>
 #include "Window.h"
 #include "Renderer.h"
+#include "Shader.h"
+#include "Model.h"
 
 class Emulator;
 
@@ -53,6 +55,10 @@ private:
 
 	float m_TileWindowScale = 4.0f;
 
+	DX::Shader* m_Shader = nullptr;
+
 	// Emulator
 	std::unique_ptr<Emulator> m_Emulator;
+
+	DX::Model* m_Model = nullptr;
 };
