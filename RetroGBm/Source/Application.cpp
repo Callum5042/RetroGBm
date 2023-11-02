@@ -172,10 +172,10 @@ void Application::CreateMainWindow()
 
 void Application::CreateTileWindow()
 {
-	const int debug_width = (16 * 8 * m_TileWindowScale) + (16 * m_TileWindowScale);
-	const int debug_height = (24 * 8 * m_TileWindowScale) + (64 * m_TileWindowScale);
+	const int window_width = static_cast<int>(16 * 8 * m_TileWindowScale);
+	const int window_height = static_cast<int>(24 * 8 * m_TileWindowScale);
 
-	m_TileWindow = SDL_CreateWindow("RetroGBm Tilemap", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 16 * 8 * m_TileWindowScale, 24 * 8 * m_TileWindowScale, SDL_WINDOW_SHOWN);
+	m_TileWindow = SDL_CreateWindow("RetroGBm Tilemap", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_width, window_height, SDL_WINDOW_SHOWN);
 	if (m_TileWindow == nullptr)
 	{
 		throw std::exception("SDL_CreateWindow failed");
@@ -186,6 +186,9 @@ void Application::CreateTileWindow()
 	{
 		throw std::exception("SDL_CreateRenderer failed");
 	}
+
+	const int debug_width = static_cast<int>((16 * 8 * m_TileWindowScale) + (16 * m_TileWindowScale));
+	const int debug_height = static_cast<int>((24 * 8 * m_TileWindowScale) + (64 * m_TileWindowScale));
 
 	m_TileTexture = SDL_CreateTexture(m_TileRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, debug_width, debug_height);
 	m_TileSurface = SDL_CreateRGBSurface(0, debug_width, debug_height, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
@@ -227,20 +230,20 @@ void Application::UpdateTileWindow()
 
 					uint8_t color = hi | lo;
 
-					rc.x = xDraw + (x * m_TileWindowScale) + ((7 - bit) * m_TileWindowScale);
-					rc.y = yDraw + (y * m_TileWindowScale) + (tileY / 2 * m_TileWindowScale);
-					rc.w = m_TileWindowScale;
-					rc.h = m_TileWindowScale;
+					rc.x = static_cast<int>(xDraw + (x * m_TileWindowScale) + ((7 - bit) * m_TileWindowScale));
+					rc.y = static_cast<int>(yDraw + (y * m_TileWindowScale) + (tileY / 2 * m_TileWindowScale));
+					rc.w = static_cast<int>(m_TileWindowScale);
+					rc.h = static_cast<int>(m_TileWindowScale);
 
 					SDL_FillRect(m_TileSurface, &rc, tile_colours[color]);
 				}
 			}
 
-			xDraw += (8 * m_TileWindowScale);
+			xDraw += static_cast<int>(8 * m_TileWindowScale);
 			tileNum++;
 		}
 
-		yDraw += (8 * m_TileWindowScale);
+		yDraw += static_cast<int>(8 * m_TileWindowScale);
 		xDraw = 0;
 	}
 
@@ -261,10 +264,10 @@ void Application::UpdateMainWindow()
 	{
 		for (int x = 0; x < screen_resolution_x; x++)
 		{
-			rc.x = x * m_TileWindowScale;
-			rc.y = line_num * m_TileWindowScale;
-			rc.w = m_TileWindowScale;
-			rc.h = m_TileWindowScale;
+			rc.x = static_cast<int>(x * m_TileWindowScale);
+			rc.y = static_cast<int>(line_num * m_TileWindowScale);
+			rc.w = static_cast<int>(m_TileWindowScale);
+			rc.h = static_cast<int>(m_TileWindowScale);
 
 			SDL_FillRect(m_MainSurface, &rc, video_buffer[x + (line_num * screen_resolution_x)]);
 		}
