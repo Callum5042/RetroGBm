@@ -27,6 +27,7 @@
     <ClInclude Include="Include\ExtendedInstructions.h" />
     <ClInclude Include="Include\Instructions.h" />
     <ClInclude Include="Include\Joypad.h" />
+    <ClInclude Include="Include\Pch.h" />
     <ClInclude Include="Include\Ppu.h" />
     <ClInclude Include="Include\Ram.h" />
     <ClInclude Include="Include\Timer.h" />
@@ -42,6 +43,10 @@
     <ClCompile Include="Source\Cpu.cpp" />
     <ClCompile Include="Source\Emulator.cpp" />
     <ClCompile Include="Source\Instructions.cpp" />
+    <ClCompile Include="Source\Pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pch.h</PrecompiledHeaderFile>
+    </ClCompile>
     <ClCompile Include="Source\Ppu.cpp" />
     <ClCompile Include="Source\Ram.cpp" />
     <ClCompile Include="Source\Timer.cpp" />
@@ -146,11 +151,11 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>
-      </PrecompiledHeaderFile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>Pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)Include;$(SolutionDir)External\SDL2\Include</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>

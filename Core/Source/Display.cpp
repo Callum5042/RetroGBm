@@ -1,6 +1,8 @@
+#include "Pch.h"
 #include "Display.h"
 #include "Cpu.h"
 #include "Emulator.h"
+#include "Dma.h"
 
 void Display::Init()
 {

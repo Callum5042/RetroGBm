@@ -1,3 +1,4 @@
+#include "Pch.h"
 #include "Joypad.h"
 
 void Joypad::Write(uint8_t value)

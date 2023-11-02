@@ -1,9 +1,11 @@
+#include "Pch.h"
 #include "Instructions.h"
-#include "Bus.h"
-#include "Emulator.h"
-#include "Cpu.h"
 #include "ExtendedInstructions.h"
+#include "Emulator.h"
+#include "Bus.h"
+#include "Cpu.h"
 #include <iostream>
+#include <format>
 using namespace Op;
 
 void Op::Nop(EmulatorContext* context)

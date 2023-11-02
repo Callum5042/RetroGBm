@@ -5,8 +5,9 @@
 #include <SDL.h>
 #pragma warning(pop) 
 
-#include <Emulator.h>
 #include <memory>
+
+class Emulator;
 
 class Application
 {

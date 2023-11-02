@@ -2,21 +2,21 @@
 
 #include <memory>
 #include <unordered_map>
-#include <functional>
 #include <vector>
 #include <array>
 #include <string>
 #include <fstream>
 
 #include "Bus.h"
-#include "Cpu.h"
-#include "Timer.h"
-#include "Ram.h"
-#include "Cartridge.h"
-#include "Display.h"
-#include "Ppu.h"
-#include "Dma.h"
-#include "Joypad.h"
+
+class Cpu;
+class Ppu;
+class Ram;
+class Dma;
+class Timer;
+class Cartridge;
+class Joypad;
+class Display;
 
 struct EmulatorContext
 {

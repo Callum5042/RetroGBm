@@ -1,3 +1,4 @@
+#include "Pch.h"
 #include "Bus.h"
 #include "Emulator.h"
 

@@ -1,3 +1,4 @@
+#include "Pch.h"
 #include "Emulator.h"
 #include "Cpu.h"
 #include "Bus.h"
@@ -5,7 +6,15 @@
 
 #include <iostream>
 #include <exception>
-#include <string>
+
+#include "Cpu.h"
+#include "Ppu.h"
+#include "Ram.h"
+#include "Dma.h"
+#include "Timer.h"
+#include "Cartridge.h"
+#include "Joypad.h"
+#include "Display.h"
 
 Emulator* Emulator::Instance = nullptr;
 

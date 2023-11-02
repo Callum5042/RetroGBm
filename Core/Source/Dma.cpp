@@ -1,3 +1,4 @@
+#include "Pch.h"
 #include "Dma.h"
 #include "Ppu.h"
 #include "Emulator.h"

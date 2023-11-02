@@ -1,6 +1,7 @@
+#include "Pch.h"
 #include "Ppu.h"
+#include "Cpu.h"
 #include "Display.h"
-#include <cstring>
 #include "Emulator.h"
 #include <algorithm>
 
