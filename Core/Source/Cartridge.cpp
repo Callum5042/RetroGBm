@@ -7,7 +7,7 @@
 
 namespace
 {
-    std::map<uint8_t, std::string> license_codes = 
+    static std::map<uint8_t, std::string> license_codes = 
     {
         { 0x00, "None" },
         { 0x01, "Nintendo" },
@@ -158,7 +158,7 @@ namespace
         { 0xFF, "LJN" }
     };
 
-    std::map<uint8_t, std::string> cartridge_codes =
+    static std::map<uint8_t, std::string> cartridge_codes =
     {
         { 0x00,	"ROM ONLY" },
         { 0x01,	"MBC1" },
@@ -200,45 +200,45 @@ bool Cartridge::Load(const std::string& filepath)
 
     std::ifstream file(filepath, std::ios::binary);
 
-    context.data.clear();
-    context.data.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+    m_CartridgeInfo.data.clear();
+    m_CartridgeInfo.data.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
 
     // Nintendo logo
-    context.header.nintendo_logo.resize(48);
-    std::copy(context.data.data() + 0x0104, context.data.data() + 0x0134, context.header.nintendo_logo.data());
+    m_CartridgeInfo.header.nintendo_logo.resize(48);
+    std::copy(m_CartridgeInfo.data.data() + 0x0104, m_CartridgeInfo.data.data() + 0x0134, m_CartridgeInfo.header.nintendo_logo.data());
 
     // Title
-    context.title.resize(16);
-    std::copy(context.data.data() + 0x0134, context.data.data() + 0x0144, context.title.data());
+    m_CartridgeInfo.title.resize(16);
+    std::copy(m_CartridgeInfo.data.data() + 0x0134, m_CartridgeInfo.data.data() + 0x0144, m_CartridgeInfo.title.data());
 
     // Manufacturer code
-    context.header.manufacturer_code.resize(4);
-    std::copy(context.data.data() + 0x013F, context.data.data() + 0x0143, context.header.manufacturer_code.data());
+    m_CartridgeInfo.header.manufacturer_code.resize(4);
+    std::copy(m_CartridgeInfo.data.data() + 0x013F, m_CartridgeInfo.data.data() + 0x0143, m_CartridgeInfo.header.manufacturer_code.data());
 
     // Cartridge type
-    context.header.cartridge_type_code = context.data[0x0147];
-    context.header.cartridge_type = cartridge_codes[context.header.cartridge_type_code];
+    m_CartridgeInfo.header.cartridge_type_code = m_CartridgeInfo.data[0x0147];
+    m_CartridgeInfo.header.cartridge_type = cartridge_codes[m_CartridgeInfo.header.cartridge_type_code];
 
     // Rom size
-    uint8_t rom_size = context.data[0x0148];
-    context.header.rom_size = 32768 * (1 << rom_size);
-    context.header.rom_banks = static_cast<int>(std::pow(2, rom_size + 1));
+    uint8_t rom_size = m_CartridgeInfo.data[0x0148];
+    m_CartridgeInfo.header.rom_size = 32768 * (1 << rom_size);
+    m_CartridgeInfo.header.rom_banks = static_cast<int>(std::pow(2, rom_size + 1));
 
     // Ram size
-    uint8_t ram_size = context.data[0x0149];
+    uint8_t ram_size = m_CartridgeInfo.data[0x0149];
     switch (ram_size)
     {
         case 0x02:
-            context.header.ram_size = 1024 * 8;
+            m_CartridgeInfo.header.ram_size = 1024 * 8;
             break;
         case 0x03:
-            context.header.ram_size = 1024 * 32;
+            m_CartridgeInfo.header.ram_size = 1024 * 32;
             break;
         case 0x04:
-            context.header.ram_size = 1024 * 128;
+            m_CartridgeInfo.header.ram_size = 1024 * 128;
             break;
         case 0x05:
-            context.header.ram_size = 1024 * 64;
+            m_CartridgeInfo.header.ram_size = 1024 * 64;
             break;
     }
 
@@ -246,15 +246,15 @@ bool Cartridge::Load(const std::string& filepath)
     // TODO
 
     // Old licensee code
-    uint8_t license_code = context.data[0x014B];
-    context.header.license_code = license_code;
-    context.header.license = ::license_codes[license_code];
+    uint8_t license_code = m_CartridgeInfo.data[0x014B];
+    m_CartridgeInfo.header.license_code = license_code;
+    m_CartridgeInfo.header.license = ::license_codes[license_code];
 
     // Version
-    context.header.version = context.data[0x014C];
+    m_CartridgeInfo.header.version = m_CartridgeInfo.data[0x014C];
 
     // Print some info
-    std::cout << "Cartridge Type: " << context.header.cartridge_type << '\n';
+    std::cout << "Cartridge Type: " << m_CartridgeInfo.header.cartridge_type << '\n';
 
     return true;
 }
@@ -264,7 +264,7 @@ bool Cartridge::Checksum(uint8_t* result)
     uint8_t checksum = 0;
     for (uint16_t address = 0x0134; address <= 0x014C; address++)
     {
-        checksum = checksum - context.data[address] - 1;
+        checksum = checksum - m_CartridgeInfo.data[address] - 1;
     }
 
     *result = checksum;
@@ -273,10 +273,10 @@ bool Cartridge::Checksum(uint8_t* result)
 
 uint8_t Cartridge::Read(uint16_t address)
 {
-    return context.data[address];
+    return m_CartridgeInfo.data[address];
 }
 
 void Cartridge::Write(uint16_t address, uint8_t value)
 {
-    // context.data[address] = value;
+    // m_CartridgeInfo.data[address] = value;
 }
