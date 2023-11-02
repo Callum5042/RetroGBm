@@ -1,8 +1,8 @@
+#include "Pch.h"
 #include "Ppu.h"
 #include "Cpu.h"
 #include "Display.h"
 #include "Emulator.h"
-#include <cstring>
 #include <algorithm>
 
 #pragma warning(push)

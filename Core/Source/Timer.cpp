@@ -1,3 +1,4 @@
+#include "Pch.h"
 #include "Timer.h"
 #include "Emulator.h"
 #include "Cpu.h"
