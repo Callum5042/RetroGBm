@@ -3,10 +3,11 @@
 #include <algorithm>
 #include <map>
 #include <cstdint>
+#include <iostream>
 
 namespace
 {
-    std::map<uint8_t, std::string> license_codes = 
+    static std::map<uint8_t, std::string> license_codes = 
     {
         { 0x00, "None" },
         { 0x01, "Nintendo" },
@@ -157,7 +158,7 @@ namespace
         { 0xFF, "LJN" }
     };
 
-    std::map<uint8_t, std::string> cartridge_codes =
+    static std::map<uint8_t, std::string> cartridge_codes =
     {
         { 0x00,	"ROM ONLY" },
         { 0x01,	"MBC1" },
@@ -190,107 +191,92 @@ namespace
     };
 }
 
-bool LoadCartridge(const std::filesystem::path& path, CartridgeInfo* cartridge_info)
+bool Cartridge::Load(const std::string& filepath)
 {
-	if (!std::filesystem::exists(path))
-	{
-		return false;
-	}
+    if (!std::filesystem::exists(filepath))
+    {
+        return false;
+    }
 
-	std::ifstream file(path, std::ios::binary);
+    std::ifstream file(filepath, std::ios::binary);
 
-	cartridge_info->data.clear();
-	cartridge_info->data.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+    m_CartridgeInfo.data.clear();
+    m_CartridgeInfo.data.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
 
     // Nintendo logo
-    cartridge_info->header.nintendo_logo.resize(48);
-    std::copy(cartridge_info->data.data() + 0x0104, cartridge_info->data.data() + 0x0134, cartridge_info->header.nintendo_logo.data());
+    m_CartridgeInfo.header.nintendo_logo.resize(48);
+    std::copy(m_CartridgeInfo.data.data() + 0x0104, m_CartridgeInfo.data.data() + 0x0134, m_CartridgeInfo.header.nintendo_logo.data());
 
-	// Title
-	cartridge_info->title.resize(16);
-	std::copy(cartridge_info->data.data() + 0x0134, cartridge_info->data.data() + 0x0144, cartridge_info->title.data());
+    // Title
+    m_CartridgeInfo.title.resize(16);
+    std::copy(m_CartridgeInfo.data.data() + 0x0134, m_CartridgeInfo.data.data() + 0x0144, m_CartridgeInfo.title.data());
 
-	// Manufacturer code
-	cartridge_info->header.manufacturer_code.resize(4);
-	std::copy(cartridge_info->data.data() + 0x013F, cartridge_info->data.data() + 0x0143, cartridge_info->header.manufacturer_code.data());
+    // Manufacturer code
+    m_CartridgeInfo.header.manufacturer_code.resize(4);
+    std::copy(m_CartridgeInfo.data.data() + 0x013F, m_CartridgeInfo.data.data() + 0x0143, m_CartridgeInfo.header.manufacturer_code.data());
 
-	// Cartridge type
-	cartridge_info->header.cartridge_type_code = cartridge_info->data[0x0147];
-    cartridge_info->header.cartridge_type = cartridge_codes[cartridge_info->header.cartridge_type_code];
+    // Cartridge type
+    m_CartridgeInfo.header.cartridge_type_code = m_CartridgeInfo.data[0x0147];
+    m_CartridgeInfo.header.cartridge_type = cartridge_codes[m_CartridgeInfo.header.cartridge_type_code];
 
-	// Rom size
-	uint8_t rom_size = cartridge_info->data[0x0148];
-	cartridge_info->header.rom_size = 32768 * (1 << rom_size);
-	cartridge_info->header.rom_banks = static_cast<int>(std::pow(2, rom_size + 1));
+    // Rom size
+    uint8_t rom_size = m_CartridgeInfo.data[0x0148];
+    m_CartridgeInfo.header.rom_size = 32768 * (1 << rom_size);
+    m_CartridgeInfo.header.rom_banks = static_cast<int>(std::pow(2, rom_size + 1));
 
-	// Ram size
-	uint8_t ram_size = cartridge_info->data[0x0149];
-	switch (ram_size)
-	{
-		case 0x02:
-			cartridge_info->header.ram_size = 1024 * 8;
-			break;
-		case 0x03:
-			cartridge_info->header.ram_size = 1024 * 32;
-			break;
-		case 0x04:
-			cartridge_info->header.ram_size = 1024 * 128;
-			break;
-		case 0x05:
-			cartridge_info->header.ram_size = 1024 * 64;
-			break;
-	}
+    // Ram size
+    uint8_t ram_size = m_CartridgeInfo.data[0x0149];
+    switch (ram_size)
+    {
+        case 0x02:
+            m_CartridgeInfo.header.ram_size = 1024 * 8;
+            break;
+        case 0x03:
+            m_CartridgeInfo.header.ram_size = 1024 * 32;
+            break;
+        case 0x04:
+            m_CartridgeInfo.header.ram_size = 1024 * 128;
+            break;
+        case 0x05:
+            m_CartridgeInfo.header.ram_size = 1024 * 64;
+            break;
+    }
 
-	// Destination code
-	// TODO
-	
-	// Old licensee code
-	uint8_t license_code = cartridge_info->data[0x014B];
-	cartridge_info->header.license_code = license_code;
-    cartridge_info->header.license = ::license_codes[license_code];
+    // Destination code
+    // TODO
 
-	// Version
-	cartridge_info->header.version = cartridge_info->data[0x014C];
+    // Old licensee code
+    uint8_t license_code = m_CartridgeInfo.data[0x014B];
+    m_CartridgeInfo.header.license_code = license_code;
+    m_CartridgeInfo.header.license = ::license_codes[license_code];
 
-	return true;
+    // Version
+    m_CartridgeInfo.header.version = m_CartridgeInfo.data[0x014C];
+
+    // Print some info
+    std::cout << "Cartridge Type: " << m_CartridgeInfo.header.cartridge_type << '\n';
+
+    return true;
 }
 
-bool CartridgeChecksum(const CartridgeInfo* info, uint8_t* checksum_result)
+bool Cartridge::Checksum(uint8_t* result)
 {
     uint8_t checksum = 0;
     for (uint16_t address = 0x0134; address <= 0x014C; address++)
     {
-        checksum = checksum - info->data[address] - 1;
+        checksum = checksum - m_CartridgeInfo.data[address] - 1;
     }
 
-    *checksum_result = checksum;
+    *result = checksum;
     return (checksum & 0xFF);
-}
-
-bool Cartridge::Load(char* cart)
-{
-    return LoadCartridge(cart, &context);
 }
 
 uint8_t Cartridge::Read(uint16_t address)
 {
-    return context.data[address];
+    return m_CartridgeInfo.data[address];
 }
 
 void Cartridge::Write(uint16_t address, uint8_t value)
 {
-    context.data[address] = value;
-}
-
-bool Cartridge::NeedSave()
-{
-    return false;
-}
-
-void Cartridge::BatteryLoad()
-{
-}
-
-void Cartridge::BatterySave()
-{
+    // m_CartridgeInfo.data[address] = value;
 }

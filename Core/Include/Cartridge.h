@@ -57,24 +57,20 @@ struct CartridgeInfo
 	CartridgeHeader header;
 };
 
-bool LoadCartridge(const std::filesystem::path& path, CartridgeInfo* cartridge_info);
-
-bool CartridgeChecksum(const CartridgeInfo* info, uint8_t* checksum_result);
-
 class Cartridge
 {
 public:
 	Cartridge() = default;
 	virtual ~Cartridge() = default;
 
-	bool Load(char* cart);
+	bool Load(const std::string& filepath);
+	bool Checksum(uint8_t* result);
 
 	uint8_t Read(uint16_t address);
 	void Write(uint16_t address, uint8_t value);
 
-	bool NeedSave();
-	void BatteryLoad();
-	void BatterySave();
+	inline const CartridgeInfo* GetCartridgeInfo() { return &m_CartridgeInfo; }
 
-	CartridgeInfo context;
+private:
+	CartridgeInfo m_CartridgeInfo;
 };

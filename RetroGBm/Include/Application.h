@@ -1,6 +1,10 @@
 #pragma once
 
+#pragma warning(push)
+#pragma warning(disable : 26819)
 #include <SDL.h>
+#pragma warning(pop) 
+
 #include <Emulator.h>
 #include <memory>
 
