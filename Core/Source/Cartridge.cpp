@@ -279,7 +279,7 @@ uint8_t Cartridge::Read(uint16_t address)
 
 void Cartridge::Write(uint16_t address, uint8_t value)
 {
-    context.data[address] = value;
+    // context.data[address] = value;
 }
 
 bool Cartridge::NeedSave()

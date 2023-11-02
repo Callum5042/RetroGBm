@@ -39,6 +39,8 @@ bool Emulator::LoadRom(const std::string& path)
 		return false;
 	}
 
+	std::cout << "Cartridge Type: " << m_Cartridge->context.header.cartridge_type << '\n';
+
 	uint8_t checksum_result = 0x1;
 	// bool checksum = CartridgeChecksum(m_Context.cartridge.get(), &checksum_result);
 
