@@ -39,10 +39,8 @@ bool Emulator::LoadRom(const std::string& path)
 		return false;
 	}
 
-	std::cout << "Cartridge Type: " << m_Cartridge->context.header.cartridge_type << '\n';
-
-	uint8_t checksum_result = 0x1;
-	// bool checksum = CartridgeChecksum(m_Context.cartridge.get(), &checksum_result);
+	uint8_t checksum_result = 0;
+	bool checksum = m_Cartridge->Checksum(&checksum_result);
 
 	// Set program counter to 0x100 to skip boot rom
 	m_Cpu->ProgramCounter = 0x100;
