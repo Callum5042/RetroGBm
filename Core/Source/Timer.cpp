@@ -14,7 +14,7 @@ void Timer::Init()
 void Timer::Tick()
 {
 	// Increment div every 256 ticks
-	m_DividerClocksToWait++;
+	m_DividerClocksToWait += 4;
 	if (m_DividerClocksToWait >= 256)
 	{
 		m_DividerClocksToWait = 0;
@@ -25,7 +25,7 @@ void Timer::Tick()
 	bool timer_enabled = context.tac & (1 << 2);
 	if (timer_enabled)
 	{
-		m_TimerClocksToWait--;
+		m_TimerClocksToWait -= 4;
 		if (m_TimerClocksToWait <= 0)
 		{
 			const int cpu_clock = 4 * 1024 * 1024;
