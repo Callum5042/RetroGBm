@@ -100,8 +100,8 @@ void DX::Renderer::CreateDeviceAndContext()
 
 void DX::Renderer::CreateSwapChain(int width, int height)
 {
-	// Get the Win32 window from SDL_Window
-	auto hwnd = m_Window->GetHwnd();
+	// Get the Win32 window handle
+	HWND hwnd = m_Window->GetHwnd();
 
 	// Query the device until we get the DXGIFactory
 	ComPtr<IDXGIDevice> dxgiDevice = nullptr;

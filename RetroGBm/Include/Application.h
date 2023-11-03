@@ -24,9 +24,6 @@ public:
 private:
 	void Init();
 	void Run();
-	/*void HandleEvents(const SDL_Event& e);
-	void HandleWindowEvents(const SDL_Event& e);
-	void HandleKey(bool state, SDL_Scancode scancode);*/
 	std::atomic_bool m_Running = true;
 
 	// Main window
