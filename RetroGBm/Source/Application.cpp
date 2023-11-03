@@ -191,7 +191,7 @@ void Application::Init()
 	m_TileRenderTarget->Create(m_TileWindow.get());
 
 	const int debug_width = static_cast<int>((16 * 8) + (16));
-	const int debug_height = static_cast<int>((24 * 8) + (64));
+	const int debug_height = static_cast<int>((24 * 8) + (24));
 	m_TileRenderTexture = m_RenderDevice->CreateTexture();
 	m_TileRenderTexture->Create(debug_width, debug_height);
 }
