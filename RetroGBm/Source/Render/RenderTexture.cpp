@@ -1,18 +1,28 @@
-#include "Model.h"
+#include "Render/RenderTexture.h"
+#include "Render/RenderDevice.h"
 #include <vector>
-#include <DirectXMath.h>
-#include <DirectXColors.h>
 
-DX::Model::Model(DX::Renderer* renderer) : m_DxRenderer(renderer)
+namespace DX
+{
+	inline void Check(HRESULT hr)
+	{
+#ifdef _DEBUG
+		if (FAILED(hr))
+		{
+			throw std::exception();
+		}
+#endif
+	}
+}
+
+Render::RenderTexture::RenderTexture(RenderDevice* device) : m_RenderDevice(device)
 {
 }
 
-void DX::Model::Create(int width, int height)
+void Render::RenderTexture::Create(int width, int height)
 {
 	m_Width = width;
 	m_Height = height;
-
-	auto d3dDevice = m_DxRenderer->GetDevice();
 
 	// Vertex data
 	std::vector<Vertex> vertices =
@@ -43,7 +53,7 @@ void DX::Model::Create(int width, int height)
 	D3D11_SUBRESOURCE_DATA vertex_subdata = {};
 	vertex_subdata.pSysMem = vertices.data();
 
-	DX::Check(d3dDevice->CreateBuffer(&vertexbuffer_desc, &vertex_subdata, m_d3dVertexBuffer.ReleaseAndGetAddressOf()));
+	DX::Check(m_RenderDevice->GetDevice()->CreateBuffer(&vertexbuffer_desc, &vertex_subdata, m_d3dVertexBuffer.ReleaseAndGetAddressOf()));
 
 	// Create index buffer
 	D3D11_BUFFER_DESC index_buffer_desc = {};
@@ -54,44 +64,40 @@ void DX::Model::Create(int width, int height)
 	D3D11_SUBRESOURCE_DATA index_subdata = {};
 	index_subdata.pSysMem = indices.data();
 
-	DX::Check(d3dDevice->CreateBuffer(&index_buffer_desc, &index_subdata, m_d3dIndexBuffer.ReleaseAndGetAddressOf()));
+	DX::Check(m_RenderDevice->GetDevice()->CreateBuffer(&index_buffer_desc, &index_subdata, m_d3dIndexBuffer.ReleaseAndGetAddressOf()));
 
 	// Create texture
 	CreateTexture();
 }
 
-void DX::Model::Render()
+void Render::RenderTexture::Render()
 {
-	auto d3dDeviceContext = m_DxRenderer->GetDeviceContext();
-
 	// We need the stride and offset
 	UINT vertex_stride = sizeof(Vertex);
-	auto vertex_offset = 0u;
+	UINT vertex_offset = 0;
 
 	// Bind the vertex buffer to the Input Assembler
-	d3dDeviceContext->IASetVertexBuffers(0, 1, m_d3dVertexBuffer.GetAddressOf(), &vertex_stride, &vertex_offset);
+	m_RenderDevice->GetDeviceContext()->IASetVertexBuffers(0, 1, m_d3dVertexBuffer.GetAddressOf(), &vertex_stride, &vertex_offset);
 
 	// Bind the index buffer to the Input Assembler
-	d3dDeviceContext->IASetIndexBuffer(m_d3dIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+	m_RenderDevice->GetDeviceContext()->IASetIndexBuffer(m_d3dIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
 	// Bind the geometry topology to the Input Assembler
-	d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_RenderDevice->GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Bind texture to the pixel shader
-	d3dDeviceContext->PSSetShaderResources(0, 1, m_TexturShadereResourceView.GetAddressOf());
+	m_RenderDevice->GetDeviceContext()->PSSetShaderResources(0, 1, m_TexturShadereResourceView.GetAddressOf());
 
 	// Render geometry
-	d3dDeviceContext->DrawIndexed(m_IndexCount, 0, 0);
+	m_RenderDevice->GetDeviceContext()->DrawIndexed(m_IndexCount, 0, 0);
 }
 
-void DX::Model::UpdateTexture(void* video_buffer, int video_pitch)
+void Render::RenderTexture::Update(void* video_buffer, int video_pitch)
 {
-	auto deviceContext = m_DxRenderer->GetDeviceContext();
-
 	D3D11_MAPPED_SUBRESOURCE resource = {};
 
 	//  Disable GPU access to the vertex buffer data
-	deviceContext->Map(m_Texture.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+	m_RenderDevice->GetDeviceContext()->Map(m_Texture.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
 
 	// Data
 	uint8_t* src = static_cast<uint8_t*>(video_buffer);
@@ -106,13 +112,11 @@ void DX::Model::UpdateTexture(void* video_buffer, int video_pitch)
 	}
 
 	//  Enable GPU access to the vertex buffer data
-	deviceContext->Unmap(m_Texture.Get(), 0);
+	m_RenderDevice->GetDeviceContext()->Unmap(m_Texture.Get(), 0);
 }
 
-void DX::Model::CreateTexture()
+void Render::RenderTexture::CreateTexture()
 {
-	auto d3dDevice = m_DxRenderer->GetDevice();
-
 	D3D11_TEXTURE2D_DESC desc = {};
 	desc.Width = m_Width;
 	desc.Height = m_Height;
@@ -123,11 +127,11 @@ void DX::Model::CreateTexture()
 	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
-	DX::Check(d3dDevice->CreateTexture2D(&desc, nullptr, m_Texture.GetAddressOf()));
+	DX::Check(m_RenderDevice->GetDevice()->CreateTexture2D(&desc, nullptr, m_Texture.GetAddressOf()));
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
 	SRVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	SRVDesc.Texture2D.MipLevels = 1;
-	DX::Check(d3dDevice->CreateShaderResourceView(m_Texture.Get(), &SRVDesc, m_TexturShadereResourceView.GetAddressOf()));
+	DX::Check(m_RenderDevice->GetDevice()->CreateShaderResourceView(m_Texture.Get(), &SRVDesc, m_TexturShadereResourceView.GetAddressOf()));
 }

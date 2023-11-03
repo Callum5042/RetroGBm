@@ -57,8 +57,8 @@ void Application::Run()
 {
 	// Emulator runs on a background thread
 	m_Emulator = std::make_unique<Emulator>();
-	// m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\Tetris.gb");
-	m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\individual\\02-interrupts.gb");
+	m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\Tetris.gb");
+	// m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\individual\\02-interrupts.gb");
 	// m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\cpu_instrs.gb");
 
 	std::thread emulator_thread([&]
@@ -85,20 +85,22 @@ void Application::Run()
 		}
 		else
 		{
-			m_MainTexture->UpdateTexture(m_Emulator->Instance->GetPpu()->context.video_buffer.data(), sizeof(uint32_t) * m_Emulator->Instance->GetPpu()->ScreenResolutionX);
+			// Update textures
+			m_MainRenderTexture->Update(m_Emulator->Instance->GetPpu()->context.video_buffer.data(), sizeof(uint32_t) * m_Emulator->Instance->GetPpu()->ScreenResolutionX);
 			UpdateTilemapTexture();
 
-			// Render main window
-			m_MainRenderer->Clear();
-			m_MainShader->Use();
-			m_MainTexture->Render();
-			m_MainRenderer->Present();
+			// Apply shader
+			m_RenderShader->Use();
 
-			// Render tilemap window
-			m_TileRenderer->Clear();
-			m_TileShader->Use();
-			m_TileTexture->Render();
-			m_TileRenderer->Present();
+			// Render main window
+			m_MainRenderTarget->Clear();
+			m_MainRenderTexture->Render();
+			m_MainRenderTarget->Present();
+
+			// Render debug window
+			m_TileRenderTarget->Clear();
+			m_TileRenderTexture->Render();
+			m_TileRenderTarget->Present();
 		}
 	}
 
@@ -156,20 +158,27 @@ void Application::UpdateTilemapTexture()
 		xDraw = 0;
 	}
 
-	m_TileTexture->UpdateTexture(buffer.data(), debug_width * sizeof(uint32_t));
+	m_TileRenderTexture->Update(buffer.data(), debug_width * sizeof(uint32_t));
 }
 
 void Application::Init()
 {
+	// Render device
+	m_RenderDevice = std::make_unique<Render::RenderDevice>();
+	m_RenderDevice->Create();
+
+	m_RenderShader = std::make_unique<Render::RenderShader>(m_RenderDevice.get());
+	m_RenderShader->Create();
+
 	// Main window
 	m_MainWindow = std::make_unique<Window>(this);
 	m_MainWindow->Create("RetroGBm", 800, 600);
 
-	m_MainRenderer = std::make_unique<DX::Renderer>(m_MainWindow.get());
-	m_MainRenderer->Create(); 
-	
-	m_MainTexture = std::make_unique<DX::Model>(m_MainRenderer.get());
-	m_MainTexture->Create(160, 144);
+	m_MainRenderTarget = m_RenderDevice->CreateRenderTarget();
+	m_MainRenderTarget->Create(m_MainWindow.get());
+
+	m_MainRenderTexture = m_RenderDevice->CreateTexture();
+	m_MainRenderTexture->Create(160, 144);
 
 	// Tilemap window
 	const int window_width = static_cast<int>(16 * 8 * m_TileWindowScale);
@@ -178,21 +187,11 @@ void Application::Init()
 	m_TileWindow = std::make_unique<Window>();
 	m_TileWindow->Create("RetroGBm Tilemap", window_width, window_height);
 
-	m_TileRenderer = std::make_unique<DX::Renderer>(m_TileWindow.get());
-	m_TileRenderer->Create();
+	m_TileRenderTarget = m_RenderDevice->CreateRenderTarget();
+	m_TileRenderTarget->Create(m_TileWindow.get());
 
 	const int debug_width = static_cast<int>((16 * 8) + (16));
 	const int debug_height = static_cast<int>((24 * 8) + (64));
-
-	m_TileTexture = std::make_unique<DX::Model>(m_TileRenderer.get());
-	m_TileTexture->Create(debug_width, debug_height);
-
-	// Shader
-	m_MainShader = std::make_unique<DX::Shader>(m_MainRenderer.get());
-	m_MainShader->LoadPixelShader(L"D:/Sources/RetroGBm/RetroGBm/Shaders/PixelShader.hlsl");
-	m_MainShader->LoadVertexShader(L"D:/Sources/RetroGBm/RetroGBm/Shaders/VertexShader.hlsl");
-
-	m_TileShader = std::make_unique<DX::Shader>(m_TileRenderer.get());
-	m_TileShader->LoadPixelShader(L"D:/Sources/RetroGBm/RetroGBm/Shaders/PixelShader.hlsl");
-	m_TileShader->LoadVertexShader(L"D:/Sources/RetroGBm/RetroGBm/Shaders/VertexShader.hlsl");
+	m_TileRenderTexture = m_RenderDevice->CreateTexture();
+	m_TileRenderTexture->Create(debug_width, debug_height);
 }

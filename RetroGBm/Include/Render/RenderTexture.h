@@ -1,10 +1,15 @@
 #pragma once
 
-#include "Renderer.h"
-#include <vector>
+#include <d3d11_1.h>
 
-namespace DX
+// This include is requires for using DirectX smart pointers (ComPtr)
+#include <wrl\client.h>
+using Microsoft::WRL::ComPtr;
+
+namespace Render
 {
+	class RenderDevice;
+
 	struct Vertex
 	{
 		// Vertex position
@@ -17,11 +22,13 @@ namespace DX
 		float v = 0;
 	};
 
-	class Model
+	class RenderTexture
 	{
+		RenderDevice* m_RenderDevice = nullptr;
+
 	public:
-		Model(DX::Renderer* renderer);
-		virtual ~Model() = default;
+		RenderTexture(RenderDevice* device);
+		virtual ~RenderTexture() = default;
 
 		// Create device
 		void Create(int width, int height);
@@ -30,11 +37,9 @@ namespace DX
 		void Render();
 
 		// Update texture
-		void UpdateTexture(void* video_buffer, int video_pitch);
+		void Update(void* video_buffer, int video_pitch);
 
 	private:
-		DX::Renderer* m_DxRenderer = nullptr;
-
 		// Number of vertices to draw
 		UINT m_VertexCount = 0;
 		UINT m_IndexCount = 0;

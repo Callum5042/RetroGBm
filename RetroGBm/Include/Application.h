@@ -5,9 +5,11 @@
 
 #include <memory>
 #include "Window.h"
-#include "Renderer.h"
-#include "Shader.h"
-#include "Model.h"
+
+#include "Render/RenderDevice.h"
+#include "Render/RenderShader.h"
+#include "Render/RenderTarget.h"
+#include "Render/RenderTexture.h"
 
 class Emulator;
 
@@ -28,19 +30,21 @@ private:
 
 	// Main window
 	std::unique_ptr<Window> m_MainWindow = nullptr;
-	std::unique_ptr<DX::Renderer> m_MainRenderer = nullptr;
-	std::unique_ptr<DX::Shader> m_MainShader = nullptr;
-	std::unique_ptr<DX::Model> m_MainTexture = nullptr;
+	std::unique_ptr<Render::RenderTarget> m_MainRenderTarget = nullptr;
+	std::unique_ptr<Render::RenderTexture> m_MainRenderTexture = nullptr;
 
 	// Tile window
 	std::unique_ptr<Window> m_TileWindow = nullptr;
-	std::unique_ptr<DX::Renderer> m_TileRenderer = nullptr;
-	std::unique_ptr<DX::Shader> m_TileShader = nullptr;
-	std::unique_ptr<DX::Model> m_TileTexture = nullptr;
+	std::unique_ptr<Render::RenderTarget> m_TileRenderTarget = nullptr;
+	std::unique_ptr<Render::RenderTexture> m_TileRenderTexture = nullptr;
 	void UpdateTilemapTexture();
 
 	float m_TileWindowScale = 4.0f;
 
 	// Emulator
 	std::unique_ptr<Emulator> m_Emulator;
+
+	// Rendering
+	std::unique_ptr<Render::RenderDevice> m_RenderDevice = nullptr;
+	std::unique_ptr<Render::RenderShader> m_RenderShader = nullptr;
 };

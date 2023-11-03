@@ -146,9 +146,10 @@
   <ItemGroup>
     <ClCompile Include="Source\Application.cpp" />
     <ClCompile Include="Source\Main.cpp" />
-    <ClCompile Include="Source\Model.cpp" />
-    <ClCompile Include="Source\Renderer.cpp" />
-    <ClCompile Include="Source\Shader.cpp" />
+    <ClCompile Include="Source\Render\RenderDevice.cpp" />
+    <ClCompile Include="Source\Render\RenderShader.cpp" />
+    <ClCompile Include="Source\Render\RenderTarget.cpp" />
+    <ClCompile Include="Source\Render\RenderTexture.cpp" />
     <ClCompile Include="Source\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -172,9 +173,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Application.h" />
-    <ClInclude Include="Include\Model.h" />
-    <ClInclude Include="Include\Renderer.h" />
-    <ClInclude Include="Include\Shader.h" />
+    <ClInclude Include="Include\Render\RenderDevice.h" />
+    <ClInclude Include="Include\Render\RenderShader.h" />
+    <ClInclude Include="Include\Render\RenderTarget.h" />
+    <ClInclude Include="Include\Render\RenderTexture.h" />
     <ClInclude Include="Include\Window.h" />
   </ItemGroup>
   <ItemGroup>
