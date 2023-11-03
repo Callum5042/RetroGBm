@@ -19,9 +19,6 @@ public:
 
 	int Start();
 
-	// Handle messages
-	LRESULT HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
 private:
 	void Init();
 	void Run();
@@ -31,34 +28,20 @@ private:
 	std::atomic_bool m_Running = true;
 
 	// Main window
-	Window* m_MainWindow = nullptr;
-	DX::Renderer* m_MainRenderer = nullptr;
-
-	/*void CreateMainWindow();
-	void UpdateMainWindow();
-	SDL_Window* m_MainWindow = nullptr;
-	SDL_Renderer* m_MainRenderer = nullptr;
-	SDL_Texture* m_MainTexture = nullptr;
-	SDL_Surface* m_MainSurface = nullptr;*/
+	std::unique_ptr<Window> m_MainWindow = nullptr;
+	std::unique_ptr<DX::Renderer> m_MainRenderer = nullptr;
+	std::unique_ptr<DX::Shader> m_MainShader = nullptr;
+	std::unique_ptr<DX::Model> m_MainTexture = nullptr;
 
 	// Tile window
-	Window* m_TileWindow = nullptr;
-	DX::Renderer* m_TileRenderer = nullptr;
-
-	/*void CreateTileWindow();
-	void UpdateTileWindow();
-	SDL_Window* m_TileWindow = nullptr;
-	SDL_Renderer* m_TileRenderer = nullptr;
-	SDL_Texture* m_TileTexture = nullptr;
-	SDL_Surface* m_TileSurface = nullptr;
-	float m_TileWindowScale = 4.0f;*/
+	std::unique_ptr<Window> m_TileWindow = nullptr;
+	std::unique_ptr<DX::Renderer> m_TileRenderer = nullptr;
+	std::unique_ptr<DX::Shader> m_TileShader = nullptr;
+	std::unique_ptr<DX::Model> m_TileTexture = nullptr;
+	void UpdateTilemapTexture();
 
 	float m_TileWindowScale = 4.0f;
 
-	DX::Shader* m_Shader = nullptr;
-
 	// Emulator
 	std::unique_ptr<Emulator> m_Emulator;
-
-	DX::Model* m_Model = nullptr;
 };

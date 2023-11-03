@@ -5,6 +5,7 @@
 #include <iostream>
 #include <format>
 #include <string>
+#include <algorithm>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -13,54 +14,12 @@
 #include <Ppu.h>
 #include <Joypad.h>
 
-namespace
-{
-	static Application* GetWindow(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-	{
-		Application* application = nullptr;
-		if (uMsg == WM_NCCREATE)
-		{
-			CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
-			application = reinterpret_cast<Application*>(pCreate->lpCreateParams);
-			SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(application));
-		}
-		else
-		{
-			application = reinterpret_cast<Application*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-		}
-
-		return application;
-	}
-
-	LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-	{
-		// Application handling
-		Application* application = GetWindow(hwnd, msg, wParam, lParam);
-		if (application == nullptr)
-		{
-			return DefWindowProc(hwnd, msg, wParam, lParam);
-		}
-
-		return application->HandleMessage(hwnd, msg, wParam, lParam);
-	}
-}
-
 Application::Application()
 {
 }
 
 Application::~Application()
 {
-	//// Cleanup main window
-	//SDL_DestroyRenderer(m_MainRenderer);
-	//SDL_DestroyWindow(m_MainWindow);
-
-	//// Cleanup tile window
-	//SDL_DestroyRenderer(m_TileRenderer);
-	//SDL_DestroyWindow(m_TileWindow);
-
-	//// Cleanup SDL
-	//SDL_Quit();
 }
 
 int Application::Start()
@@ -125,90 +84,172 @@ void Application::Run()
 		}
 		else
 		{
+			m_MainTexture->UpdateTexture(m_Emulator->Instance->GetPpu()->context.video_buffer.data(), sizeof(uint32_t) * m_Emulator->Instance->GetPpu()->ScreenResolutionX);
+			UpdateTilemapTexture();
+
+			// Render main window
 			m_MainRenderer->Clear();
-			m_Model->UpdateTexture(m_Emulator->Instance->GetPpu()->context.video_buffer.data(), sizeof(uint32_t) * m_Emulator->Instance->GetPpu()->ScreenResolutionX);
-			m_Model->Render();
+			m_MainShader->Use();
+			m_MainTexture->Render();
 			m_MainRenderer->Present();
 
+			// Render tilemap window
 			m_TileRenderer->Clear();
+			m_TileShader->Use();
+			m_TileTexture->Render();
 			m_TileRenderer->Present();
 		}
-
-		//SDL_Event e = {};
-		//if (SDL_PollEvent(&e))
-		//{
-		//	HandleEvents(e);
-		//}
-		//else
-		//{
-		//	// Update windows
-		//	UpdateMainWindow();
-		//	UpdateTileWindow();
-
-		//	// Display main window
-		//	SDL_SetRenderDrawColor(m_MainRenderer, 0, 0, 0, 255);
-		//	SDL_RenderClear(m_MainRenderer);
-		//	SDL_RenderCopy(m_MainRenderer, m_MainTexture, NULL, NULL);
-		//	SDL_RenderPresent(m_MainRenderer);
-
-		//	// Display tile window
-		//	SDL_SetRenderDrawColor(m_TileRenderer, 0, 0, 0, 255);
-		//	SDL_RenderClear(m_TileRenderer);
-		//	SDL_RenderCopy(m_TileRenderer, m_TileTexture, NULL, NULL);
-		//	SDL_RenderPresent(m_TileRenderer);
-		//}
 	}
 
 	emulator_thread.join();
 }
 
+void Application::UpdateTilemapTexture()
+{
+	const int debug_width = static_cast<int>((16 * 8) + (16));
+	const int debug_height = static_cast<int>((24 * 8) + (64));
+
+	std::vector<uint32_t> buffer;
+	buffer.resize(debug_width * debug_height);
+	std::fill(buffer.begin(), buffer.end(), 0x0);
+
+	int xDraw = 0;
+	int yDraw = 0;
+	int tile_number = 0;
+	
+	const uint16_t address = 0x8000;
+	const unsigned long tile_colours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
+	
+	// 384 tiles, 24 x 16
+	for (int y = 0; y < 24; y++)
+	{
+		for (int x = 0; x < 16; x++)
+		{
+			// Display tile (16 bytes big - 2bits per pixel)
+			for (int tileY = 0; tileY < 16; tileY += 2)
+			{
+				uint8_t byte1 = m_Emulator->ReadBus(address + (tile_number * 16) + tileY);
+				uint8_t byte2 = m_Emulator->ReadBus(address + (tile_number * 16) + tileY + 1);
+	
+				for (int bit = 7; bit >= 0; bit--)
+				{
+					// Get pixel colour from palette
+					uint8_t high = (static_cast<bool>(byte1 & (1 << bit))) << 1;
+					uint8_t low = (static_cast<bool>(byte2 & (1 << bit))) << 0;
+					uint32_t colour = tile_colours[high | low];
+
+					// Calculate pixel position in buffer
+					int x1 = xDraw + (x) + ((7 - bit));
+					int y1 = yDraw + (y) + (tileY / 2);
+					buffer[x1 + (y1 * debug_width)] = colour;
+				}
+			}
+	
+			// Drawing 8 pixels at a time
+			xDraw += 8;
+			tile_number++;
+		}
+	
+		// Drawing 8 pixels at a time
+		yDraw += 8;
+		xDraw = 0;
+	}
+
+	m_TileTexture->UpdateTexture(buffer.data(), debug_width * sizeof(uint32_t));
+}
+
 void Application::Init()
 {
 	// Main window
-	m_MainWindow = new Window();
+	m_MainWindow = std::make_unique<Window>();
 	m_MainWindow->Create("RetroGBm", 800, 600);
 
-	m_MainRenderer = new DX::Renderer(m_MainWindow);
-	m_MainRenderer->Create();
+	m_MainRenderer = std::make_unique<DX::Renderer>(m_MainWindow.get());
+	m_MainRenderer->Create(); 
+	
+	m_MainTexture = std::make_unique<DX::Model>(m_MainRenderer.get());
+	m_MainTexture->Create(160, 144);
 
 	// Tilemap window
 	const int window_width = static_cast<int>(16 * 8 * m_TileWindowScale);
 	const int window_height = static_cast<int>(24 * 8 * m_TileWindowScale);
 
-	m_TileWindow = new Window();
-	m_TileWindow->Create("RetroGBm tilemap", window_width, window_height);
+	m_TileWindow = std::make_unique<Window>();
+	m_TileWindow->Create("RetroGBm Tilemap", window_width, window_height);
 
-	m_TileRenderer = new DX::Renderer(m_TileWindow);
+	m_TileRenderer = std::make_unique<DX::Renderer>(m_TileWindow.get());
 	m_TileRenderer->Create();
 
+	const int debug_width = static_cast<int>((16 * 8) + (16));
+	const int debug_height = static_cast<int>((24 * 8) + (64));
+
+	m_TileTexture = std::make_unique<DX::Model>(m_TileRenderer.get());
+	m_TileTexture->Create(debug_width, debug_height);
+
 	// Shader
-	DX::Shader shader(m_MainRenderer);
-	shader.LoadPixelShader(L"D:/Sources/RetroGBm/RetroGBm/Shaders/PixelShader.hlsl");
-	shader.LoadVertexShader(L"D:/Sources/RetroGBm/RetroGBm/Shaders/VertexShader.hlsl");
-	shader.Use();
+	m_MainShader = std::make_unique<DX::Shader>(m_MainRenderer.get());
+	m_MainShader->LoadPixelShader(L"D:/Sources/RetroGBm/RetroGBm/Shaders/PixelShader.hlsl");
+	m_MainShader->LoadVertexShader(L"D:/Sources/RetroGBm/RetroGBm/Shaders/VertexShader.hlsl");
 
-	// Model
-	m_Model = new DX::Model(m_MainRenderer);
-	m_Model->Create();
+	m_TileShader = std::make_unique<DX::Shader>(m_TileRenderer.get());
+	m_TileShader->LoadPixelShader(L"D:/Sources/RetroGBm/RetroGBm/Shaders/PixelShader.hlsl");
+	m_TileShader->LoadVertexShader(L"D:/Sources/RetroGBm/RetroGBm/Shaders/VertexShader.hlsl");
 }
 
-LRESULT Application::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	switch (msg)
-	{
-		case WM_DESTROY:
-			PostQuitMessage(0);
-			return 0;
-
-		case WM_KEYDOWN:
-		case WM_KEYUP:
-			// HandleKeyboardEvent(msg, wParam, lParam);
-			return 0;
-	}
-
-	return DefWindowProc(hwnd, msg, wParam, lParam);
-}
-
+//void Application::UpdateTilemapTexture()
+//{
+//	const int debug_width = static_cast<int>((16 * 8 * m_TileWindowScale) + (16 * m_TileWindowScale));
+//	const int debug_height = static_cast<int>((24 * 8 * m_TileWindowScale) + (64 * m_TileWindowScale));
+//
+//	std::vector<uint8_t> buffer;
+//
+//	int xDraw = 0;
+//	int yDraw = 0;
+//	int tileNum = 0;
+//	
+//	uint16_t addr = 0x8000;
+//	
+//	// 384 tiles, 24 x 16
+//	for (int y = 0; y < 24; y++)
+//	{
+//		for (int x = 0; x < 16; x++)
+//		{
+//			// Display tile
+//			const unsigned long tile_colours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
+//	
+//			for (int tileY = 0; tileY < 16; tileY += 2)
+//			{
+//				uint8_t b1 = m_Emulator->ReadBus(addr + (tileNum * 16) + tileY);
+//				uint8_t b2 = m_Emulator->ReadBus(addr + (tileNum * 16) + tileY + 1);
+//	
+//				for (int bit = 7; bit >= 0; bit--)
+//				{
+//					uint8_t hi = !!(b1 & (1 << bit)) << 1;
+//					uint8_t lo = !!(b2 & (1 << bit));
+//	
+//					uint8_t color = hi | lo;
+//
+//					buffer.push_back(tile_colours[color]);
+//	
+//					/*rc.x = static_cast<int>(xDraw + (x * m_TileWindowScale) + ((7 - bit) * m_TileWindowScale));
+//					rc.y = static_cast<int>(yDraw + (y * m_TileWindowScale) + (tileY / 2 * m_TileWindowScale));
+//					rc.w = static_cast<int>(m_TileWindowScale);
+//					rc.h = static_cast<int>(m_TileWindowScale);
+//	
+//					SDL_FillRect(m_TileSurface, &rc, tile_colours[color]);*/
+//				}
+//			}
+//	
+//			xDraw += static_cast<int>(8 * m_TileWindowScale);
+//			tileNum++;
+//		}
+//	
+//		yDraw += static_cast<int>(8 * m_TileWindowScale);
+//		xDraw = 0;
+//	}
+//	
+//	m_TileTexture->UpdateTexture(buffer.data(), sizeof(uint8_t) * debug_width);
+//}
 
 //void Application::HandleEvents(const SDL_Event& e)
 //{

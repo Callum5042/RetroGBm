@@ -24,7 +24,7 @@ namespace DX
 		virtual ~Model() = default;
 
 		// Create device
-		void Create();
+		void Create(int width, int height);
 
 		// Render the model
 		void Render();
@@ -49,5 +49,9 @@ namespace DX
 		ComPtr<ID3D11Texture2D> m_Texture = nullptr;
 		ComPtr<ID3D11ShaderResourceView> m_TexturShadereResourceView = nullptr;
 		void CreateTexture();
+
+		// Size
+		int m_Width = 0;
+		int m_Height = 0;
 	};
 }

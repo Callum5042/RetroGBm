@@ -7,8 +7,11 @@ DX::Model::Model(DX::Renderer* renderer) : m_DxRenderer(renderer)
 {
 }
 
-void DX::Model::Create()
+void DX::Model::Create(int width, int height)
 {
+	m_Width = width;
+	m_Height = height;
+
 	auto d3dDevice = m_DxRenderer->GetDevice();
 
 	// Vertex data
@@ -95,8 +98,7 @@ void DX::Model::UpdateTexture(void* video_buffer, int video_pitch)
 	uint8_t* dst = static_cast<uint8_t*>(resource.pData);
 
 	// Update the texture
-	const int HEIGHT = 144;
-	for (int row = 0; row < HEIGHT; ++row)
+	for (int row = 0; row < m_Height; ++row)
 	{
 		std::memcpy(dst, src, resource.RowPitch);
 		src += video_pitch;
@@ -112,8 +114,8 @@ void DX::Model::CreateTexture()
 	auto d3dDevice = m_DxRenderer->GetDevice();
 
 	D3D11_TEXTURE2D_DESC desc = {};
-	desc.Width = 160;
-	desc.Height = 144;
+	desc.Width = m_Width;
+	desc.Height = m_Height;
 	desc.MipLevels = desc.ArraySize = 1;
 	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	desc.SampleDesc.Count = 1;

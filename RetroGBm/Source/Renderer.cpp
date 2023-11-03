@@ -82,8 +82,7 @@ void DX::Renderer::CreateDeviceAndContext()
 
 	// Create device and device context
 	D3D_FEATURE_LEVEL featureLevel;
-	DX::Check(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, deviceFlag, featureLevels, numFeatureLevels,
-			  D3D11_SDK_VERSION, m_d3dDevice.ReleaseAndGetAddressOf(), &featureLevel, m_d3dDeviceContext.ReleaseAndGetAddressOf()));
+	DX::Check(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, deviceFlag, featureLevels, numFeatureLevels, D3D11_SDK_VERSION, m_d3dDevice.ReleaseAndGetAddressOf(), &featureLevel, m_d3dDeviceContext.ReleaseAndGetAddressOf()));
 
 	// Check if Direct3D 11.1 is supported, if not fall back to Direct3D 11
 	if (featureLevel != D3D_FEATURE_LEVEL_11_1)
