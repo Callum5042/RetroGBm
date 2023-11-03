@@ -1,11 +1,15 @@
 #pragma once
 
-#pragma warning(push)
-#pragma warning(disable : 26819)
-#include <SDL.h>
-#pragma warning(pop) 
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 
 #include <memory>
+#include "Window.h"
+
+#include "Render/RenderDevice.h"
+#include "Render/RenderShader.h"
+#include "Render/RenderTarget.h"
+#include "Render/RenderTexture.h"
 
 class Emulator;
 
@@ -17,31 +21,32 @@ public:
 
 	int Start();
 
+	inline Emulator* GetEmulator() { return m_Emulator.get(); }
+
 private:
 	void Init();
 	void Run();
-	void HandleEvents(const SDL_Event& e);
-	void HandleWindowEvents(const SDL_Event& e);
-	void HandleKey(bool state, SDL_Scancode scancode);
 	std::atomic_bool m_Running = true;
 
 	// Main window
+	std::unique_ptr<Window> m_MainWindow = nullptr;
+	std::unique_ptr<Render::RenderTarget> m_MainRenderTarget = nullptr;
+	std::unique_ptr<Render::RenderTexture> m_MainRenderTexture = nullptr;
 	void CreateMainWindow();
-	void UpdateMainWindow();
-	SDL_Window* m_MainWindow = nullptr;
-	SDL_Renderer* m_MainRenderer = nullptr;
-	SDL_Texture* m_MainTexture = nullptr;
-	SDL_Surface* m_MainSurface = nullptr;
 
 	// Tile window
-	void CreateTileWindow();
-	void UpdateTileWindow();
-	SDL_Window* m_TileWindow = nullptr;
-	SDL_Renderer* m_TileRenderer = nullptr;
-	SDL_Texture* m_TileTexture = nullptr;
-	SDL_Surface* m_TileSurface = nullptr;
+	std::unique_ptr<Window> m_TileWindow = nullptr;
+	std::unique_ptr<Render::RenderTarget> m_TileRenderTarget = nullptr;
+	std::unique_ptr<Render::RenderTexture> m_TileRenderTexture = nullptr;
+	void CreateTilemapWindow();
+	void UpdateTilemapTexture();
+
 	float m_TileWindowScale = 4.0f;
 
 	// Emulator
 	std::unique_ptr<Emulator> m_Emulator;
+
+	// Rendering
+	std::unique_ptr<Render::RenderDevice> m_RenderDevice = nullptr;
+	std::unique_ptr<Render::RenderShader> m_RenderShader = nullptr;
 };

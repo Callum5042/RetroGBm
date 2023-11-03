@@ -11,7 +11,5 @@
 #include <cstdint>
 #include <algorithm>
 
-#pragma warning(push)
-#pragma warning(disable : 26819)
-#include <SDL.h>
-#pragma warning(pop) 
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <format>
 #include <string>
+#include <algorithm>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -19,16 +20,6 @@ Application::Application()
 
 Application::~Application()
 {
-	// Cleanup main window
-	SDL_DestroyRenderer(m_MainRenderer);
-	SDL_DestroyWindow(m_MainWindow);
-
-	// Cleanup tile window
-	SDL_DestroyRenderer(m_TileRenderer);
-	SDL_DestroyWindow(m_TileWindow);
-
-	// Cleanup SDL
-	SDL_Quit();
 }
 
 int Application::Start()
@@ -54,7 +45,8 @@ int Application::Start()
 		SetConsoleTextAttribute(console_handle, console_info.wAttributes);
 
 		// Display error window
-		SDL_ShowSimpleMessageBox(NULL, "Error", e.what(), nullptr);
+		MessageBoxA(NULL, e.what(), "Error", MB_OK);
+
 		return -1;
 	}
 
@@ -65,7 +57,7 @@ void Application::Run()
 {
 	// Emulator runs on a background thread
 	m_Emulator = std::make_unique<Emulator>();
-	m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\Tetris.gb");
+	m_Emulator->LoadRom("Tetris.gb");
 	// m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\individual\\02-interrupts.gb");
 	// m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\cpu_instrs.gb");
 
@@ -80,231 +72,142 @@ void Application::Run()
 	// UI runs on main thread
 	while (m_Running)
 	{
-		SDL_Event e = {};
-		if (SDL_PollEvent(&e))
+		MSG msg = {};
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			HandleEvents(e);
+			if (msg.message == WM_QUIT)
+			{
+				m_Running = false;
+			}
+
+			TranslateMessage(&msg);
+			DispatchMessageW(&msg);
 		}
 		else
 		{
-			// Update windows
-			UpdateMainWindow();
-			UpdateTileWindow();
+			// Update textures
+			m_MainRenderTexture->Update(m_Emulator->Instance->GetPpu()->context.video_buffer.data(), sizeof(uint32_t) * m_Emulator->Instance->GetPpu()->ScreenResolutionX);
+			UpdateTilemapTexture();
 
-			// Display main window
-			SDL_SetRenderDrawColor(m_MainRenderer, 0, 0, 0, 255);
-			SDL_RenderClear(m_MainRenderer);
-			SDL_RenderCopy(m_MainRenderer, m_MainTexture, NULL, NULL);
-			SDL_RenderPresent(m_MainRenderer);
+			// Apply shader
+			m_RenderShader->Use();
 
-			// Display tile window
-			SDL_SetRenderDrawColor(m_TileRenderer, 0, 0, 0, 255);
-			SDL_RenderClear(m_TileRenderer);
-			SDL_RenderCopy(m_TileRenderer, m_TileTexture, NULL, NULL);
-			SDL_RenderPresent(m_TileRenderer);
+			// Render main window
+			m_MainRenderTarget->Clear();
+			m_MainRenderTexture->Render();
+			m_MainRenderTarget->Present();
+
+			// Render debug window
+			m_TileRenderTarget->Clear();
+			m_TileRenderTexture->Render();
+			m_TileRenderTarget->Present();
 		}
 	}
 
 	emulator_thread.join();
 }
 
-void Application::HandleEvents(const SDL_Event& e)
+void Application::UpdateTilemapTexture()
 {
-	switch (e.type)
-	{
-		case SDL_QUIT:
-			m_Running = false;
-			break;
+	const int debug_width = static_cast<int>((16 * 8) + (16));
+	const int debug_height = static_cast<int>((24 * 8) + (64));
 
-		case SDL_WINDOWEVENT:
-			HandleWindowEvents(e);
-			break;
+	std::vector<uint32_t> buffer;
+	buffer.resize(debug_width * debug_height);
+	std::fill(buffer.begin(), buffer.end(), 0x0);
 
-		case SDL_KEYDOWN:
-			HandleKey(true, e.key.keysym.scancode);
-			break;
-
-		case SDL_KEYUP:
-			HandleKey(false, e.key.keysym.scancode);
-			break;
-
-		default:
-			break;
-	}
-}
-
-void Application::HandleWindowEvents(const SDL_Event& e)
-{
-	switch (e.window.event)
-	{
-		case SDL_WINDOWEVENT_CLOSE:
-			m_Running = false;
-			break;
-	}
-}
-
-void Application::Init()
-{
-	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
-	{
-		throw std::exception("SDL_Init failed");
-	}
-
-	CreateMainWindow();
-	CreateTileWindow();
-}
-
-void Application::CreateMainWindow()
-{
-	m_MainWindow = SDL_CreateWindow("RetroGBm", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_SHOWN);
-	if (m_MainWindow == nullptr)
-	{
-		throw std::exception("SDL_CreateWindow failed");
-	}
-
-	m_MainRenderer = SDL_CreateRenderer(m_MainWindow, -1, SDL_RENDERER_ACCELERATED);
-	if (m_MainRenderer == nullptr)
-	{
-		throw std::exception("SDL_CreateRenderer failed");
-	}
-
-	m_MainTexture = SDL_CreateTexture(m_MainRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 800, 600);
-	m_MainSurface = SDL_CreateRGBSurface(0, 800, 600, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
-}
-
-void Application::CreateTileWindow()
-{
-	const int window_width = static_cast<int>(16 * 8 * m_TileWindowScale);
-	const int window_height = static_cast<int>(24 * 8 * m_TileWindowScale);
-
-	m_TileWindow = SDL_CreateWindow("RetroGBm Tilemap", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_width, window_height, SDL_WINDOW_SHOWN);
-	if (m_TileWindow == nullptr)
-	{
-		throw std::exception("SDL_CreateWindow failed");
-	}
-
-	m_TileRenderer = SDL_CreateRenderer(m_TileWindow, -1, SDL_RENDERER_ACCELERATED);
-	if (m_TileRenderer == nullptr)
-	{
-		throw std::exception("SDL_CreateRenderer failed");
-	}
-
-	const int debug_width = static_cast<int>((16 * 8 * m_TileWindowScale) + (16 * m_TileWindowScale));
-	const int debug_height = static_cast<int>((24 * 8 * m_TileWindowScale) + (64 * m_TileWindowScale));
-
-	m_TileTexture = SDL_CreateTexture(m_TileRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, debug_width, debug_height);
-	m_TileSurface = SDL_CreateRGBSurface(0, debug_width, debug_height, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
-}
-
-void Application::UpdateTileWindow()
-{
 	int xDraw = 0;
 	int yDraw = 0;
-	int tileNum = 0;
-
-	SDL_Rect rc = {};
-	rc.x = 0;
-	rc.y = 0;
-	rc.w = m_TileSurface->w;
-	rc.h = m_TileSurface->h;
-	SDL_FillRect(m_TileSurface, &rc, 0xFF111111);
-
-	uint16_t addr = 0x8000;
-
+	int tile_number = 0;
+	
+	const uint16_t address = 0x8000;
+	const unsigned long tile_colours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
+	
 	// 384 tiles, 24 x 16
 	for (int y = 0; y < 24; y++)
 	{
 		for (int x = 0; x < 16; x++)
 		{
-			// Display tile
-			const unsigned long tile_colours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
-
-			SDL_Rect rc = {};
+			// Display tile (16 bytes big - 2bits per pixel)
 			for (int tileY = 0; tileY < 16; tileY += 2)
 			{
-				uint8_t b1 = m_Emulator->ReadBus(addr + (tileNum * 16) + tileY);
-				uint8_t b2 = m_Emulator->ReadBus(addr + (tileNum * 16) + tileY + 1);
-
+				uint8_t byte1 = m_Emulator->ReadBus(address + (tile_number * 16) + tileY);
+				uint8_t byte2 = m_Emulator->ReadBus(address + (tile_number * 16) + tileY + 1);
+	
 				for (int bit = 7; bit >= 0; bit--)
 				{
-					uint8_t hi = !!(b1 & (1 << bit)) << 1;
-					uint8_t lo = !!(b2 & (1 << bit));
+					// Get pixel colour from palette
+					uint8_t high = (static_cast<bool>(byte1 & (1 << bit))) << 1;
+					uint8_t low = (static_cast<bool>(byte2 & (1 << bit))) << 0;
+					uint32_t colour = tile_colours[high | low];
 
-					uint8_t color = hi | lo;
-
-					rc.x = static_cast<int>(xDraw + (x * m_TileWindowScale) + ((7 - bit) * m_TileWindowScale));
-					rc.y = static_cast<int>(yDraw + (y * m_TileWindowScale) + (tileY / 2 * m_TileWindowScale));
-					rc.w = static_cast<int>(m_TileWindowScale);
-					rc.h = static_cast<int>(m_TileWindowScale);
-
-					SDL_FillRect(m_TileSurface, &rc, tile_colours[color]);
+					// Calculate pixel position in buffer
+					int x1 = xDraw + (x) + ((7 - bit));
+					int y1 = yDraw + (y) + (tileY / 2);
+					buffer[x1 + (y1 * debug_width)] = colour;
 				}
 			}
-
-			xDraw += static_cast<int>(8 * m_TileWindowScale);
-			tileNum++;
+	
+			// Drawing 8 pixels at a time
+			xDraw += 8;
+			tile_number++;
 		}
-
-		yDraw += static_cast<int>(8 * m_TileWindowScale);
+	
+		// Drawing 8 pixels at a time
+		yDraw += 8;
 		xDraw = 0;
 	}
 
-	SDL_UpdateTexture(m_TileTexture, NULL, m_TileSurface->pixels, m_TileSurface->pitch);
+	m_TileRenderTexture->Update(buffer.data(), debug_width * sizeof(uint32_t));
 }
 
-void Application::UpdateMainWindow()
+void Application::Init()
 {
-	SDL_Rect rc = {};
-	rc.x = rc.y = 0;
-	rc.w = rc.h = 2048;
+	// Render device
+	m_RenderDevice = std::make_unique<Render::RenderDevice>();
+	m_RenderDevice->Create();
 
-	auto& video_buffer = Emulator::Instance->GetPpu()->context.video_buffer;
-	int screen_resolution_x = Emulator::Instance->GetPpu()->ScreenResolutionX;
-	int screen_resolution_y = Emulator::Instance->GetPpu()->ScreenResolutionY;
+	m_RenderShader = std::make_unique<Render::RenderShader>(m_RenderDevice.get());
+	m_RenderShader->Create();
 
-	for (int line_num = 0; line_num < screen_resolution_y; line_num++)
-	{
-		for (int x = 0; x < screen_resolution_x; x++)
-		{
-			rc.x = static_cast<int>(x * m_TileWindowScale);
-			rc.y = static_cast<int>(line_num * m_TileWindowScale);
-			rc.w = static_cast<int>(m_TileWindowScale);
-			rc.h = static_cast<int>(m_TileWindowScale);
-
-			SDL_FillRect(m_MainSurface, &rc, video_buffer[x + (line_num * screen_resolution_x)]);
-		}
-	}
-
-	SDL_UpdateTexture(m_MainTexture, NULL, m_MainSurface->pixels, m_MainSurface->pitch);
+	// Create windows
+	CreateMainWindow();
+	CreateTilemapWindow();
 }
 
-void Application::HandleKey(bool state, SDL_Scancode scancode)
+void Application::CreateMainWindow()
 {
-	switch (scancode)
-	{
-		case SDL_SCANCODE_Z:
-			m_Emulator->GetJoypad()->SetJoypad(JoypadButton::B, state);
-			break;
-		case SDL_SCANCODE_X:
-			m_Emulator->GetJoypad()->SetJoypad(JoypadButton::A, state);
-			break;
-		case SDL_SCANCODE_RETURN:
-			m_Emulator->GetJoypad()->SetJoypad(JoypadButton::Start, state);
-			break;
-		case SDL_SCANCODE_TAB:
-			m_Emulator->GetJoypad()->SetJoypad(JoypadButton::Select, state);
-			break;
-		case SDL_SCANCODE_UP:
-			m_Emulator->GetJoypad()->SetJoypad(JoypadButton::Up, state);
-			break;
-		case SDL_SCANCODE_DOWN:
-			m_Emulator->GetJoypad()->SetJoypad(JoypadButton::Down, state);
-			break;
-		case SDL_SCANCODE_LEFT:
-			m_Emulator->GetJoypad()->SetJoypad(JoypadButton::Left, state);
-			break;
-		case SDL_SCANCODE_RIGHT:
-			m_Emulator->GetJoypad()->SetJoypad(JoypadButton::Right, state);
-			break;
-	}
+	// Window
+	m_MainWindow = std::make_unique<Window>(this);
+	m_MainWindow->Create("RetroGBm", 800, 600);
+
+	// Target
+	m_MainRenderTarget = m_RenderDevice->CreateRenderTarget();
+	m_MainRenderTarget->Create(m_MainWindow.get());
+	m_MainRenderTarget->DisableFullscreenAltEnter();
+
+	// Texture
+	m_MainRenderTexture = m_RenderDevice->CreateTexture();
+	m_MainRenderTexture->Create(160, 144);
+}
+
+void Application::CreateTilemapWindow()
+{
+	// Window
+	const int window_width = static_cast<int>(16 * 8 * m_TileWindowScale);
+	const int window_height = static_cast<int>(24 * 8 * m_TileWindowScale);
+
+	m_TileWindow = std::make_unique<Window>();
+	m_TileWindow->Create("RetroGBm Tilemap", window_width, window_height);
+
+	// Target
+	m_TileRenderTarget = m_RenderDevice->CreateRenderTarget();
+	m_TileRenderTarget->Create(m_TileWindow.get());
+	m_TileRenderTarget->DisableFullscreenAltEnter();
+
+	// Texture
+	const int debug_width = static_cast<int>((16 * 8) + (16));
+	const int debug_height = static_cast<int>((24 * 8) + (24));
+	m_TileRenderTexture = m_RenderDevice->CreateTexture();
+	m_TileRenderTexture->Create(debug_width, debug_height);
 }

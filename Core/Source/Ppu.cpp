@@ -4,11 +4,11 @@
 #include "Display.h"
 #include "Emulator.h"
 #include <algorithm>
+#include <chrono>
+#include <thread>
 
-#pragma warning(push)
-#pragma warning(disable : 26819)
-#include <SDL.h>
-#pragma warning(pop) 
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 
 Ppu::Ppu()
 {
@@ -176,12 +176,13 @@ void Ppu::HBlank()
 
 void Ppu::CalculateFPS()
 {
-	uint32_t end = SDL_GetTicks();
+	uint32_t end = static_cast<uint32_t>(GetTickCount64());
 	uint32_t frame_time = end - m_PreviousFrameTime;
 
 	if (frame_time < m_TargetFrameTime)
 	{
-		SDL_Delay((m_TargetFrameTime - frame_time));
+		const std::chrono::duration<double, std::milli> elapsed(m_TargetFrameTime - frame_time);
+		std::this_thread::sleep_for(elapsed);
 	}
 
 	if (end - m_StartTimer >= 1000)
@@ -197,7 +198,7 @@ void Ppu::CalculateFPS()
 	}
 
 	m_FrameCount++;
-	m_PreviousFrameTime = SDL_GetTicks();
+	m_PreviousFrameTime = static_cast<uint32_t>(GetTickCount64());
 }
 
 void Ppu::PipelineReset()
