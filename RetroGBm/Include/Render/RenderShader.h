@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string>
 #include <d3d11_1.h>
 
 // This include is requires for using DirectX smart pointers (ComPtr)
@@ -26,12 +25,12 @@ namespace Render
 
 	private:
 		// Create vertex shader
-		void LoadVertexShader(const std::wstring& vertex_shader_path);
+		void LoadVertexShader();
 		ComPtr<ID3D11VertexShader> m_VertexShader = nullptr;
 		ComPtr<ID3D11InputLayout> m_VertexLayout = nullptr;
 
 		// Create pixel shader
-		void LoadPixelShader(const std::wstring& pixel_shader_path);
+		void LoadPixelShader();
 		ComPtr<ID3D11PixelShader> m_PixelShader = nullptr;
 
 		// Sampler

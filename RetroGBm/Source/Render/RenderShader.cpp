@@ -1,7 +1,8 @@
 #include "Render/RenderShader.h"
 #include "Render/RenderDevice.h"
-#include <D3DCompiler.h>
-#pragma comment(lib, "d3dcompiler.lib")
+
+#include "../Shaders/PixelShader.hlsl.h"
+#include "../Shaders/VertexShader.hlsl.h"
 
 namespace DX
 {
@@ -22,8 +23,8 @@ Render::RenderShader::RenderShader(RenderDevice* device) : m_RenderDevice(device
 
 void Render::RenderShader::Create()
 {
-	LoadPixelShader(L"D:/Sources/RetroGBm/RetroGBm/Shaders/PixelShader.hlsl");
-	LoadVertexShader(L"D:/Sources/RetroGBm/RetroGBm/Shaders/VertexShader.hlsl");
+	LoadPixelShader();
+	LoadVertexShader();
 
 	// Sampler
 	D3D11_SAMPLER_DESC sampler_desc = {};
@@ -55,16 +56,10 @@ void Render::RenderShader::Use()
 	m_RenderDevice->GetDeviceContext()->PSSetSamplers(0, 1, m_AnisotropicSampler.GetAddressOf());
 }
 
-void Render::RenderShader::LoadVertexShader(const std::wstring& vertex_shader_path)
+void Render::RenderShader::LoadVertexShader()
 {
-	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
-
-	ComPtr<ID3DBlob> shader_blob = nullptr;
-	ID3DBlob* error = nullptr;
-	DX::Check(D3DCompileFromFile(vertex_shader_path.c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_0", flags, 0, shader_blob.GetAddressOf(), &error));
-
 	// Create the vertex shader
-	DX::Check(m_RenderDevice->GetDevice()->CreateVertexShader(shader_blob->GetBufferPointer(), shader_blob->GetBufferSize(), nullptr, m_VertexShader.ReleaseAndGetAddressOf()));
+	DX::Check(m_RenderDevice->GetDevice()->CreateVertexShader(g_VertexShader, sizeof(g_VertexShader), nullptr, m_VertexShader.ReleaseAndGetAddressOf()));
 
 	// Describe the memory layout
 	D3D11_INPUT_ELEMENT_DESC layout[] =
@@ -73,18 +68,11 @@ void Render::RenderShader::LoadVertexShader(const std::wstring& vertex_shader_pa
 		{ "TEXTURE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
-	UINT numElements = ARRAYSIZE(layout);
-	DX::Check(m_RenderDevice->GetDevice()->CreateInputLayout(layout, numElements, shader_blob->GetBufferPointer(), shader_blob->GetBufferSize(), m_VertexLayout.ReleaseAndGetAddressOf()));
+	UINT number_elements = ARRAYSIZE(layout);
+	DX::Check(m_RenderDevice->GetDevice()->CreateInputLayout(layout, number_elements, g_VertexShader, sizeof(g_VertexShader), m_VertexLayout.ReleaseAndGetAddressOf()));
 }
 
-void Render::RenderShader::LoadPixelShader(const std::wstring& pixel_shader_path)
+void Render::RenderShader::LoadPixelShader()
 {
-	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
-
-	ComPtr<ID3DBlob> shader_blob = nullptr;
-	ID3DBlob* error = nullptr;
-	DX::Check(D3DCompileFromFile(pixel_shader_path.c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_0", flags, 0, shader_blob.GetAddressOf(), &error));
-
-	// Create pixel shader
-	DX::Check(m_RenderDevice->GetDevice()->CreatePixelShader(shader_blob->GetBufferPointer(), shader_blob->GetBufferSize(), nullptr, m_PixelShader.ReleaseAndGetAddressOf()));
+	m_RenderDevice->GetDevice()->CreatePixelShader(g_PixelShader, sizeof(g_PixelShader), nullptr, m_PixelShader.ReleaseAndGetAddressOf());
 }
