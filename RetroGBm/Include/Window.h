@@ -6,10 +6,15 @@
 #include <string>
 
 class Application;
+namespace Render
+{
+	class RenderTarget;
+}
 
 class Window
 {
 	Application* m_Application = nullptr;
+	Render::RenderTarget* m_RenderTarget = nullptr;
 
 public:
 	Window() = default;
@@ -27,9 +32,14 @@ public:
 	// Get Win32 handle
 	inline HWND GetHwnd() { return m_Window; }
 
+	// Attach render target
+	void AttachRenderTarget(Render::RenderTarget* renderTarget);
+
 private:
 	HWND m_Window = nullptr;
 
 	void HandleKeyboardEvent(UINT msg, WPARAM wParam, LPARAM lParam);
 	void HandleKey(bool state, WORD scancode);
+
+	void OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 };

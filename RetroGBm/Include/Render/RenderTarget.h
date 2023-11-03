@@ -27,6 +27,12 @@ namespace Render
 		void Clear();
 		void Present();
 
+		// Enable ALT+ENTER to enter fullscreen
+		void EnableFullscreenAltEnter();
+
+		// Disable ALT+ENTER exit fullscreen
+		void DisableFullscreenAltEnter();
+
 	private:
 		// Swapchain
 		ComPtr<IDXGISwapChain> m_SwapChain = nullptr;

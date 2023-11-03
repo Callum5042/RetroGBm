@@ -23,6 +23,7 @@ Render::RenderTarget::RenderTarget(RenderDevice* device) : m_RenderDevice(device
 void Render::RenderTarget::Create(Window* window)
 {
 	m_Window = window;
+	m_Window->AttachRenderTarget(this);
 
 	// Query window size
 	int window_width = 0;
@@ -78,6 +79,38 @@ void Render::RenderTarget::Present()
 	{
 		DX::Check(m_SwapChain->Present(0, 0));
 	}
+}
+
+void Render::RenderTarget::EnableFullscreenAltEnter()
+{
+	// Query the device until we get the DXGIFactory
+	ComPtr<IDXGIDevice> dxgiDevice = nullptr;
+	DX::Check(m_RenderDevice->GetDevice().As(&dxgiDevice));
+
+	ComPtr<IDXGIAdapter> adapter = nullptr;
+	DX::Check(dxgiDevice->GetAdapter(adapter.GetAddressOf()));
+
+	ComPtr<IDXGIFactory> dxgiFactory = nullptr;
+	DX::Check(adapter->GetParent(__uuidof(IDXGIFactory), reinterpret_cast<void**>(dxgiFactory.GetAddressOf())));
+
+	// Enable ALT+ENTER
+	DX::Check(dxgiFactory->MakeWindowAssociation(m_Window->GetHwnd(), NULL));
+}
+
+void Render::RenderTarget::DisableFullscreenAltEnter()
+{
+	// Query the device until we get the DXGIFactory
+	ComPtr<IDXGIDevice> dxgiDevice = nullptr;
+	DX::Check(m_RenderDevice->GetDevice().As(&dxgiDevice));
+
+	ComPtr<IDXGIAdapter> adapter = nullptr;
+	DX::Check(dxgiDevice->GetAdapter(adapter.GetAddressOf()));
+
+	ComPtr<IDXGIFactory> dxgiFactory = nullptr;
+	DX::Check(adapter->GetParent(__uuidof(IDXGIFactory), reinterpret_cast<void**>(dxgiFactory.GetAddressOf())));
+
+	// Disable ALT+ENTER
+	DX::Check(dxgiFactory->MakeWindowAssociation(m_Window->GetHwnd(), DXGI_MWA_NO_ALT_ENTER));
 }
 
 void Render::RenderTarget::CreateSwapChain(int width, int height)

@@ -5,6 +5,7 @@
 #include "Application.h"
 #include <Emulator.h>
 #include <Joypad.h>
+#include "Render/RenderTarget.h"
 
 namespace
 {
@@ -94,6 +95,18 @@ LRESULT Window::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			PostQuitMessage(0);
 			return 0;
 
+		case WM_SYSCHAR:
+			// Disable beeping when we ALT key combo is pressed
+			return 1;
+
+		case WM_SIZE:
+			OnResized(hwnd, msg, wParam, lParam);
+			return 0;
+
+		/*case WM_EXITSIZEMOVE:
+			OnResized(hwnd, msg, wParam, lParam);
+			return 0;*/
+
 		case WM_KEYDOWN:
 		case WM_KEYUP:
 			// std::wcout << "Key event from window: " << GetWindowTitle() << '\n';
@@ -122,6 +135,11 @@ std::wstring Window::GetWindowTitle()
 	GetWindowText(m_Window, title.data(), window_tile_length);
 
 	return std::wstring(title.data(), title.size());
+}
+
+void Window::AttachRenderTarget(Render::RenderTarget* renderTarget)
+{
+	m_RenderTarget = renderTarget;
 }
 
 void Window::HandleKeyboardEvent(UINT msg, WPARAM wParam, LPARAM lParam)
@@ -186,5 +204,22 @@ void Window::HandleKey(bool state, WORD scancode)
 		case VK_RIGHT:
 			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Right, state);
 			break;
+	}
+}
+
+void Window::OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	// Don't resize on minimized
+	if (wParam == SIZE_MINIMIZED)
+		return;
+
+	// Get window size
+	int width, height;
+	this->GetSize(&width, &height);
+
+	// Resize target
+	if (m_RenderTarget != nullptr)
+	{
+		m_RenderTarget->Resize(width, height);
 	}
 }

@@ -176,6 +176,7 @@ void Application::Init()
 
 	m_MainRenderTarget = m_RenderDevice->CreateRenderTarget();
 	m_MainRenderTarget->Create(m_MainWindow.get());
+	m_MainRenderTarget->DisableFullscreenAltEnter();
 
 	m_MainRenderTexture = m_RenderDevice->CreateTexture();
 	m_MainRenderTexture->Create(160, 144);
@@ -189,6 +190,7 @@ void Application::Init()
 
 	m_TileRenderTarget = m_RenderDevice->CreateRenderTarget();
 	m_TileRenderTarget->Create(m_TileWindow.get());
+	m_TileRenderTarget->DisableFullscreenAltEnter();
 
 	const int debug_width = static_cast<int>((16 * 8) + (16));
 	const int debug_height = static_cast<int>((24 * 8) + (24));
