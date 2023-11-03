@@ -5,10 +5,15 @@
 
 #include <string>
 
+class Application;
+
 class Window
 {
+	Application* m_Application = nullptr;
+
 public:
 	Window() = default;
+	Window(Application* application);
 	virtual ~Window();
 
 	void Create(const std::string& title, int width, int height);
@@ -24,4 +29,7 @@ public:
 
 private:
 	HWND m_Window = nullptr;
+
+	void HandleKeyboardEvent(UINT msg, WPARAM wParam, LPARAM lParam);
+	void HandleKey(bool state, WORD scancode);
 };

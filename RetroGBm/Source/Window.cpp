@@ -2,6 +2,9 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include "Application.h"
+#include <Emulator.h>
+#include <Joypad.h>
 
 namespace
 {
@@ -42,6 +45,10 @@ namespace
 
 		return std::wstring(buffer.data(), chars_converted);
 	}
+}
+
+Window::Window(Application* application) : m_Application(application)
+{
 }
 
 Window::~Window()
@@ -89,8 +96,8 @@ LRESULT Window::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 		case WM_KEYDOWN:
 		case WM_KEYUP:
-			std::wcout << "Key event from window: " << GetWindowTitle() << '\n';
-			// HandleKeyboardEvent(msg, wParam, lParam);
+			// std::wcout << "Key event from window: " << GetWindowTitle() << '\n';
+			HandleKeyboardEvent(msg, wParam, lParam);
 			return 0;
 	}
 
@@ -115,4 +122,69 @@ std::wstring Window::GetWindowTitle()
 	GetWindowText(m_Window, title.data(), window_tile_length);
 
 	return std::wstring(title.data(), title.size());
+}
+
+void Window::HandleKeyboardEvent(UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	// Decode win32 message
+	WORD key_flags = HIWORD(lParam);
+	bool repeat = (key_flags & KF_REPEAT) == KF_REPEAT;
+	bool alt_down = (key_flags & KF_ALTDOWN) == KF_ALTDOWN;
+	WORD scan_code = LOBYTE(key_flags);
+	BOOL extended_key = (key_flags & KF_EXTENDED) == KF_EXTENDED;
+
+	if (extended_key)
+	{
+		scan_code = MAKEWORD(scan_code, 0xE0);
+	}
+
+	if (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN)
+	{
+		HandleKey(true, scan_code);
+	}
+	else if (msg == WM_KEYUP || msg == WM_SYSKEYUP)
+	{
+		HandleKey(false, scan_code);
+	}
+}
+
+void Window::HandleKey(bool state, WORD scancode)
+{
+	if (m_Application == nullptr)
+	{
+		return;
+	}
+
+	const WORD ZKey = 0x5A;
+	const WORD XKey = 0x58;
+
+	UINT key = MapVirtualKeyW(scancode, MAPVK_VSC_TO_VK_EX);
+
+	switch (key)
+	{
+		case ZKey:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::B, state);
+			break;
+		case XKey:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::A, state);
+			break;
+		case VK_RETURN:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Start, state);
+			break;
+		case VK_TAB:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Select, state);
+			break;
+		case VK_UP:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Up, state);
+			break;
+		case VK_DOWN:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Down, state);
+			break;
+		case VK_LEFT:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Left, state);
+			break;
+		case VK_RIGHT:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Right, state);
+			break;
+	}
 }

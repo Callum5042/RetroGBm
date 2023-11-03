@@ -19,6 +19,8 @@ public:
 
 	int Start();
 
+	inline Emulator* GetEmulator() { return m_Emulator.get(); }
+
 private:
 	void Init();
 	void Run();

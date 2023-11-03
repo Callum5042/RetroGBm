@@ -161,7 +161,7 @@ void Application::UpdateTilemapTexture()
 void Application::Init()
 {
 	// Main window
-	m_MainWindow = std::make_unique<Window>();
+	m_MainWindow = std::make_unique<Window>(this);
 	m_MainWindow->Create("RetroGBm", 800, 600);
 
 	m_MainRenderer = std::make_unique<DX::Renderer>(m_MainWindow.get());
