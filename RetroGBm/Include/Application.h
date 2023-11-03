@@ -32,11 +32,13 @@ private:
 	std::unique_ptr<Window> m_MainWindow = nullptr;
 	std::unique_ptr<Render::RenderTarget> m_MainRenderTarget = nullptr;
 	std::unique_ptr<Render::RenderTexture> m_MainRenderTexture = nullptr;
+	void CreateMainWindow();
 
 	// Tile window
 	std::unique_ptr<Window> m_TileWindow = nullptr;
 	std::unique_ptr<Render::RenderTarget> m_TileRenderTarget = nullptr;
 	std::unique_ptr<Render::RenderTexture> m_TileRenderTexture = nullptr;
+	void CreateTilemapWindow();
 	void UpdateTilemapTexture();
 
 	float m_TileWindowScale = 4.0f;

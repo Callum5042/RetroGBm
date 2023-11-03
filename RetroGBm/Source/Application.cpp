@@ -170,28 +170,42 @@ void Application::Init()
 	m_RenderShader = std::make_unique<Render::RenderShader>(m_RenderDevice.get());
 	m_RenderShader->Create();
 
-	// Main window
+	// Create windows
+	CreateMainWindow();
+	CreateTilemapWindow();
+}
+
+void Application::CreateMainWindow()
+{
+	// Window
 	m_MainWindow = std::make_unique<Window>(this);
 	m_MainWindow->Create("RetroGBm", 800, 600);
 
+	// Target
 	m_MainRenderTarget = m_RenderDevice->CreateRenderTarget();
 	m_MainRenderTarget->Create(m_MainWindow.get());
 	m_MainRenderTarget->DisableFullscreenAltEnter();
 
+	// Texture
 	m_MainRenderTexture = m_RenderDevice->CreateTexture();
 	m_MainRenderTexture->Create(160, 144);
+}
 
-	// Tilemap window
+void Application::CreateTilemapWindow()
+{
+	// Window
 	const int window_width = static_cast<int>(16 * 8 * m_TileWindowScale);
 	const int window_height = static_cast<int>(24 * 8 * m_TileWindowScale);
 
 	m_TileWindow = std::make_unique<Window>();
 	m_TileWindow->Create("RetroGBm Tilemap", window_width, window_height);
 
+	// Target
 	m_TileRenderTarget = m_RenderDevice->CreateRenderTarget();
 	m_TileRenderTarget->Create(m_TileWindow.get());
 	m_TileRenderTarget->DisableFullscreenAltEnter();
 
+	// Texture
 	const int debug_width = static_cast<int>((16 * 8) + (16));
 	const int debug_height = static_cast<int>((24 * 8) + (24));
 	m_TileRenderTexture = m_RenderDevice->CreateTexture();
