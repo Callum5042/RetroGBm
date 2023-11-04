@@ -55,7 +55,7 @@ void Render::RenderTarget::Resize(int width, int height)
 void Render::RenderTarget::Clear()
 {
 	// Clear the render target view to the chosen colour
-	m_RenderDevice->GetDeviceContext()->ClearRenderTargetView(m_RenderTargetView.Get(), reinterpret_cast<const float*>(&DirectX::Colors::SteelBlue));
+	m_RenderDevice->GetDeviceContext()->ClearRenderTargetView(m_RenderTargetView.Get(), reinterpret_cast<const float*>(&DirectX::Colors::WhiteSmoke));
 	m_RenderDevice->GetDeviceContext()->ClearDepthStencilView(m_DepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	// Bind the render target view to the pipeline's output merger stage

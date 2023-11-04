@@ -5,6 +5,7 @@
 
 #include <memory>
 #include "Window.h"
+#include "MainWindow.h"
 
 #include "Render/RenderDevice.h"
 #include "Render/RenderShader.h"
@@ -23,13 +24,16 @@ public:
 
 	inline Emulator* GetEmulator() { return m_Emulator.get(); }
 
+	void LoadRom(const std::string& file);
+	void StopEmulator();
+
 private:
 	void Init();
 	void Run();
 	std::atomic_bool m_Running = true;
 
 	// Main window
-	std::unique_ptr<Window> m_MainWindow = nullptr;
+	std::unique_ptr<MainWindow> m_MainWindow = nullptr;
 	std::unique_ptr<Render::RenderTarget> m_MainRenderTarget = nullptr;
 	std::unique_ptr<Render::RenderTexture> m_MainRenderTexture = nullptr;
 	void CreateMainWindow();

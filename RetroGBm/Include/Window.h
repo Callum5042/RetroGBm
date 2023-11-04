@@ -13,6 +13,7 @@ namespace Render
 
 class Window
 {
+protected:
 	Application* m_Application = nullptr;
 	Render::RenderTarget* m_RenderTarget = nullptr;
 
@@ -21,7 +22,7 @@ public:
 	Window(Application* application);
 	virtual ~Window();
 
-	void Create(const std::string& title, int width, int height);
+	virtual void Create(const std::string& title, int width, int height);
 	LRESULT HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 	std::wstring GetWindowTitle();
@@ -39,6 +40,7 @@ private:
 	HWND m_Window = nullptr;
 
 	void HandleKeyboardEvent(UINT msg, WPARAM wParam, LPARAM lParam);
+	virtual void HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam);
 	void HandleKey(bool state, WORD scancode);
 
 	void OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
