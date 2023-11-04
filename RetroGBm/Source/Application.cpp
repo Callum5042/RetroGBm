@@ -61,7 +61,7 @@ void Application::LoadRom(const std::string& file)
 
 void Application::StopEmulator()
 {
-	m_Emulator = std::make_unique<Emulator>();
+	m_Emulator->Stop();
 }
 
 void Application::Run()
