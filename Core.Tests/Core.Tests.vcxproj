@@ -167,6 +167,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CpuTests.cpp" />
+    <ClCompile Include="RamTests.cpp" />
     <ClCompile Include="TimerTests.cpp" />
   </ItemGroup>
   <ItemGroup>

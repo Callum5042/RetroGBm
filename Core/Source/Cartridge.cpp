@@ -279,5 +279,6 @@ uint8_t Cartridge::Read(uint16_t address)
 
 void Cartridge::Write(uint16_t address, uint8_t value)
 {
+    std::cout << "Unsupported CartridgeWrite 0x" << std::hex << address << '\n';
     // m_CartridgeInfo.data[address] = value;
 }
