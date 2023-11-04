@@ -147,6 +147,7 @@
   <ItemGroup>
     <ClCompile Include="Source\Application.cpp" />
     <ClCompile Include="Source\Main.cpp" />
+    <ClCompile Include="Source\MainWindow.cpp" />
     <ClCompile Include="Source\Render\RenderDevice.cpp" />
     <ClCompile Include="Source\Render\RenderShader.cpp" />
     <ClCompile Include="Source\Render\RenderTarget.cpp" />
@@ -174,6 +175,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Application.h" />
+    <ClInclude Include="Include\MainWindow.h" />
     <ClInclude Include="Include\Render\RenderDevice.h" />
     <ClInclude Include="Include\Render\RenderShader.h" />
     <ClInclude Include="Include\Render\RenderTarget.h" />

@@ -5,6 +5,7 @@
 
 #include <memory>
 #include "Window.h"
+#include "MainWindow.h"
 
 #include "Render/RenderDevice.h"
 #include "Render/RenderShader.h"
@@ -29,7 +30,7 @@ private:
 	std::atomic_bool m_Running = true;
 
 	// Main window
-	std::unique_ptr<Window> m_MainWindow = nullptr;
+	std::unique_ptr<MainWindow> m_MainWindow = nullptr;
 	std::unique_ptr<Render::RenderTarget> m_MainRenderTarget = nullptr;
 	std::unique_ptr<Render::RenderTexture> m_MainRenderTexture = nullptr;
 	void CreateMainWindow();

@@ -7,6 +7,9 @@
 #include <Joypad.h>
 #include "Render/RenderTarget.h"
 
+#define IDM_MYMENURESOURCE 3
+#define IDM_FILE_NEW 5
+
 namespace
 {
 	static Window* GetWindow(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -70,6 +73,7 @@ void Window::Create(const std::string& title, int width, int height)
 	wc.hIcon = LoadIcon(0, IDI_APPLICATION);
 	wc.hCursor = LoadCursor(0, IDC_ARROW);
 	wc.lpszClassName = window_title.c_str();
+	wc.lpszMenuName = MAKEINTRESOURCE(IDM_MYMENURESOURCE);
 
 	if (!RegisterClass(&wc))
 	{
@@ -112,6 +116,10 @@ LRESULT Window::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			// std::wcout << "Key event from window: " << GetWindowTitle() << '\n';
 			HandleKeyboardEvent(msg, wParam, lParam);
 			return 0;
+
+		case WM_COMMAND:
+			HandleMenu(msg, wParam, lParam);
+			break;
 	}
 
 	return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -164,6 +172,10 @@ void Window::HandleKeyboardEvent(UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		HandleKey(false, scan_code);
 	}
+}
+
+void Window::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
+{
 }
 
 void Window::HandleKey(bool state, WORD scancode)
