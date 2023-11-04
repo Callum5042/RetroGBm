@@ -17,6 +17,9 @@ private:
 	static const UINT m_MenuFileCloseId = 102;
 	static const UINT m_MenuFileExitId = 103;
 
+	HMENU m_DebugMenuItem;
+	static const UINT m_MenuDebugTilemap = 201;
+
 	void OpenDialog();
 	bool OpenFileDialog(std::string* filepath);
 };

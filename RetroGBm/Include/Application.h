@@ -24,6 +24,9 @@ public:
 
 	inline Emulator* GetEmulator() { return m_Emulator.get(); }
 
+	void LoadRom(const std::string& file);
+	void StopEmulator();
+
 private:
 	void Init();
 	void Run();

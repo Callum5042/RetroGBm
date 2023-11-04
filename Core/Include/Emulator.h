@@ -98,6 +98,6 @@ private:
 	std::unique_ptr<Dma> m_Dma;
 	std::unique_ptr<Joypad> m_Joypad;
 
-	bool m_Running = true;
+	bool m_Running = false;
 	bool m_Halted = false;
 };

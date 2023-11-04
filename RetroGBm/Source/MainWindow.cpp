@@ -34,7 +34,11 @@ void MainWindow::Create(const std::string& title, int width, int height)
 	AppendMenuW(filemenu, MF_STRING, m_MenuFileCloseId, L"Close");
 	AppendMenuW(filemenu, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(filemenu, MF_STRING, m_MenuFileExitId, L"Exit");
-	AppendMenuW(menubar, MF_POPUP, (UINT_PTR)filemenu, L"&File");
+	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(filemenu), L"&File");
+
+	m_DebugMenuItem = CreateMenu();
+	AppendMenuW(m_DebugMenuItem, MF_CHECKED, m_MenuDebugTilemap, L"Tilemap");
+	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_DebugMenuItem), L"Debug");
 
 	SetMenu(this->GetHwnd(), menubar);
 }
@@ -48,11 +52,26 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			OpenDialog();
 			break;
 		case m_MenuFileCloseId:
-			MessageBox(NULL, L"Close", L"Menu", MB_OK);
+			m_Application->StopEmulator();
 			break;
 		case m_MenuFileExitId:
 			PostQuitMessage(0);
 			break;
+		case m_MenuDebugTilemap:
+		{
+			UINT menu_state = GetMenuState(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND);
+			if (menu_state & MF_CHECKED)
+			{
+				CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND | MF_UNCHECKED);
+			}
+			else
+			{
+				CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND | MF_CHECKED);
+			}
+
+			// CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYPOSITION | MF_CHECKED);
+			break;
+		}
 	}
 }
 
@@ -61,10 +80,7 @@ void MainWindow::OpenDialog()
 	std::string path;
 	if (OpenFileDialog(&path))
 	{
-		// MessageBoxA(NULL, path.c_str(), "File Path", MB_OK);
-
-
-		m_Application->GetEmulator()->LoadRom(path);
+		m_Application->LoadRom(path);
 	}
 }
 

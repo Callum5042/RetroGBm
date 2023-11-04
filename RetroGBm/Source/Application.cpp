@@ -53,20 +53,34 @@ int Application::Start()
 	return 0;
 }
 
+void Application::LoadRom(const std::string& file)
+{
+	m_Emulator = std::make_unique<Emulator>();
+	m_Emulator->LoadRom(file);
+}
+
+void Application::StopEmulator()
+{
+	m_Emulator = std::make_unique<Emulator>();
+}
+
 void Application::Run()
 {
 	// Emulator runs on a background thread
 	m_Emulator = std::make_unique<Emulator>();
-	m_Emulator->LoadRom("Tetris.gb");
-	//m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\dmg-acid2.gb");
-	//m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\individual\\09-op r,r.gb");
+	// m_Emulator->LoadRom("Tetris.gb");
+	// m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\dmg-acid2.gb");
+	// m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\individual\\09-op r,r.gb");
 	// m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\cpu_instrs.gb");
 
 	std::thread emulator_thread([&]
 	{
-		while (m_Running && m_Emulator->IsRunning())
+		while (m_Running)
 		{
-			m_Emulator->Tick();
+			if (m_Emulator->IsRunning())
+			{
+				m_Emulator->Tick();
+			}
 		}
 	});
 
@@ -86,22 +100,35 @@ void Application::Run()
 		}
 		else
 		{
-			// Update textures
-			m_MainRenderTexture->Update(m_Emulator->Instance->GetPpu()->context.video_buffer.data(), sizeof(uint32_t) * m_Emulator->Instance->GetPpu()->ScreenResolutionX);
-			UpdateTilemapTexture();
+			if (m_Emulator->IsRunning())
+			{
+				// Update textures
+				m_MainRenderTexture->Update(m_Emulator->Instance->GetPpu()->context.video_buffer.data(), sizeof(uint32_t) * m_Emulator->Instance->GetPpu()->ScreenResolutionX);
+				UpdateTilemapTexture();
 
-			// Apply shader
-			m_RenderShader->Use();
+				// Apply shader
+				m_RenderShader->Use();
 
-			// Render main window
-			m_MainRenderTarget->Clear();
-			m_MainRenderTexture->Render();
-			m_MainRenderTarget->Present();
+				// Render main window
+				m_MainRenderTarget->Clear();
+				m_MainRenderTexture->Render();
+				m_MainRenderTarget->Present();
 
-			// Render debug window
-			m_TileRenderTarget->Clear();
-			m_TileRenderTexture->Render();
-			m_TileRenderTarget->Present();
+				// Render debug window
+				m_TileRenderTarget->Clear();
+				m_TileRenderTexture->Render();
+				m_TileRenderTarget->Present();
+			}
+			else
+			{
+				// Render main window
+				m_MainRenderTarget->Clear();
+				m_MainRenderTarget->Present();
+
+				// Render debug window
+				m_TileRenderTarget->Clear();
+				m_TileRenderTarget->Present();
+			}
 		}
 	}
 
@@ -120,10 +147,10 @@ void Application::UpdateTilemapTexture()
 	int xDraw = 0;
 	int yDraw = 0;
 	int tile_number = 0;
-	
+
 	const uint16_t address = 0x8000;
 	const unsigned long tile_colours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
-	
+
 	// 384 tiles, 24 x 16
 	for (int y = 0; y < 24; y++)
 	{
@@ -134,7 +161,7 @@ void Application::UpdateTilemapTexture()
 			{
 				uint8_t byte1 = m_Emulator->ReadBus(address + (tile_number * 16) + tileY);
 				uint8_t byte2 = m_Emulator->ReadBus(address + (tile_number * 16) + tileY + 1);
-	
+
 				for (int bit = 7; bit >= 0; bit--)
 				{
 					// Get pixel colour from palette
@@ -143,17 +170,17 @@ void Application::UpdateTilemapTexture()
 					uint32_t colour = tile_colours[high | low];
 
 					// Calculate pixel position in buffer
-					int x1 = xDraw + (x) + ((7 - bit));
-					int y1 = yDraw + (y) + (tileY / 2);
+					int x1 = xDraw + (x)+((7 - bit));
+					int y1 = yDraw + (y)+(tileY / 2);
 					buffer[x1 + (y1 * debug_width)] = colour;
 				}
 			}
-	
+
 			// Drawing 8 pixels at a time
 			xDraw += 8;
 			tile_number++;
 		}
-	
+
 		// Drawing 8 pixels at a time
 		yDraw += 8;
 		xDraw = 0;

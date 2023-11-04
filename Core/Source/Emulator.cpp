@@ -66,10 +66,10 @@ bool Emulator::LoadRom(const std::string& path)
 		m_Cpu->SetFlag(CpuFlag::HalfCarry, true);
 	}
 
-
 	m_Timer->Init();
 	m_Ppu->Init();
 
+	m_Running = true;
 	return true;
 }
 
