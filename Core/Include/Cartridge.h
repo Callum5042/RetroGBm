@@ -39,7 +39,7 @@ enum class CartridgeType : uint8_t
 struct CartridgeHeader
 {
 	std::string manufacturer_code;
-	uint8_t cartridge_type_code;
+	CartridgeType cartridge_type_code;
 	std::string cartridge_type;
 	int rom_size = 0;
 	int rom_banks = 0;

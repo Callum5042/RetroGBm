@@ -159,36 +159,36 @@ namespace
         { 0xFF, "LJN" }
     };
 
-    static std::map<uint8_t, std::string> cartridge_codes =
+    static std::map<CartridgeType, std::string> cartridge_codes =
     {
-        { 0x00,	"ROM ONLY" },
-        { 0x01,	"MBC1" },
-        { 0x02,	"MBC1 + RAM" },
-        { 0x03,	"MBC1 + RAM + BATTERY" },
-        { 0x05,	"MBC2" },
-        { 0x06,	"MBC2 + BATTERY" },
-        { 0x08,	"ROM + RAM 1" },
-        { 0x09,	"ROM + RAM + BATTERY 1" },
-        { 0x0B,	"MMM01" },
-        { 0x0C,	"MMM01 + RAM" },
-        { 0x0D,	"MMM01 + RAM + BATTERY" },
-        { 0x0F,	"MBC3 + TIMER + BATTERY" },
-        { 0x10,	"MBC3 + TIMER + RAM + BATTERY 2" },
-        { 0x11,	"MBC3" },
-        { 0x12,	"MBC3 + RAM 2" },
-        { 0x13,	"MBC3 + RAM + BATTERY 2" },
-        { 0x19,	"MBC5" },
-        { 0x1A,	"MBC5 + RAM" },
-        { 0x1B,	"MBC5 + RAM + BATTERY" },
-        { 0x1C,	"MBC5 + RUMBLE" },
-        { 0x1D,	"MBC5 + RUMBLE + RAM" },
-        { 0x1E,	"MBC5 + RUMBLE + RAM + BATTERY" },
-        { 0x20,	"MBC6" },
-        { 0x22,	"MBC7 + SENSOR + RUMBLE + RAM + BATTERY" },
-        { 0xFC,	"POCKET CAMERA" },
-        { 0xFD,	"BANDAI TAMA5" },
-        { 0xFE,	"HuC3" },
-        { 0xFF,	"HuC1 + RAM + BATTERY" }
+        { CartridgeType::ROM_ONLY, "ROM ONLY" },
+        { CartridgeType::MBC1, "MBC1" },
+        { CartridgeType::MBC1_RAM, "MBC1 + RAM" },
+        { CartridgeType::MBC1_RAM_BATTERY, "MBC1 + RAM + BATTERY" },
+        { CartridgeType::MBC2, "MBC2" },
+        { CartridgeType::MBC2_BATTERY, "MBC2 + BATTERY" },
+        { CartridgeType::ROM_RAM, "ROM + RAM 1" },
+        { CartridgeType::ROM_RAM_BATTERY, "ROM + RAM + BATTERY 1" },
+        { CartridgeType::MMM01, "MMM01" },
+        { CartridgeType::MMM01_RAM, "MMM01 + RAM" },
+        { CartridgeType::MMM01_RAM_BATTERY, "MMM01 + RAM + BATTERY" },
+        { CartridgeType::MBC3_TIMER_BATTERY, "MBC3 + TIMER + BATTERY" },
+        { CartridgeType::MBC3_TIMER_RAM_BATTERY, "MBC3 + TIMER + RAM + BATTERY 2" },
+        { CartridgeType::MBC3, "MBC3" },
+        { CartridgeType::MBC3_RAM, "MBC3 + RAM 2" },
+        { CartridgeType::MBC3_RAM_BATTERY, "MBC3 + RAM + BATTERY 2" },
+        { CartridgeType::MBC5, "MBC5" },
+        { CartridgeType::MBC5_RAM, "MBC5 + RAM" },
+        { CartridgeType::MBC5_RAM_BATTERY, "MBC5 + RAM + BATTERY" },
+        { CartridgeType::MBC5_RUMBLE, "MBC5 + RUMBLE" },
+        { CartridgeType::MBC5_RUMBLE_RAM, "MBC5 + RUMBLE + RAM" },
+        { CartridgeType::MBC5_RUMBLE_RAM_BATTERY, "MBC5 + RUMBLE + RAM + BATTERY" },
+        { CartridgeType::MBC6, "MBC6" },
+        { CartridgeType::MBC7_SENSOR_RUMBLE_RAM_BATTERY, "MBC7 + SENSOR + RUMBLE + RAM + BATTERY" },
+        { CartridgeType::POCKET_CAMERA, "POCKET CAMERA" },
+        { CartridgeType::BANDAI_TAMA5, "BANDAI TAMA5" },
+        { CartridgeType::HuC3, "HuC3" },
+        { CartridgeType::HuC1_RAM_BATTERY, "HuC1 + RAM + BATTERY" }
     };
 }
 
@@ -217,7 +217,7 @@ bool Cartridge::Load(const std::string& filepath)
     std::copy(m_CartridgeInfo.data.data() + 0x013F, m_CartridgeInfo.data.data() + 0x0143, m_CartridgeInfo.header.manufacturer_code.data());
 
     // Cartridge type
-    m_CartridgeInfo.header.cartridge_type_code = m_CartridgeInfo.data[0x0147];
+    m_CartridgeInfo.header.cartridge_type_code = static_cast<CartridgeType>(m_CartridgeInfo.data[0x0147]);
     m_CartridgeInfo.header.cartridge_type = cartridge_codes[m_CartridgeInfo.header.cartridge_type_code];
 
     // Rom size
