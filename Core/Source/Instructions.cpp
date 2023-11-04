@@ -2,7 +2,6 @@
 #include "Instructions.h"
 #include "ExtendedInstructions.h"
 #include "Emulator.h"
-#include "Bus.h"
 #include "Cpu.h"
 #include <iostream>
 #include <format>
@@ -55,8 +54,8 @@ void Op::DisableInterrupts(EmulatorContext* context)
 
 void Op::JumpN16(EmulatorContext* context)
 {
-	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
-	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
+	uint8_t low = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
+	uint8_t high = context->bus->ReadBus(context->cpu->ProgramCounter + 2);
 	uint16_t data = low | (high << 8);
 
 	context->cpu->ProgramCounter = data;
@@ -65,8 +64,8 @@ void Op::JumpN16(EmulatorContext* context)
 
 void Op::JumpFlagN16(EmulatorContext* context, CpuFlag flag, bool condition)
 {
-	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
-	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
+	uint8_t low = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
+	uint8_t high = context->bus->ReadBus(context->cpu->ProgramCounter + 2);
 	uint16_t data = low | (high << 8);
 
 	bool enabled = context->cpu->GetFlag(flag);
@@ -92,7 +91,7 @@ void Op::JumpHL(EmulatorContext* context)
 
 void Op::JumpRelativeN8(EmulatorContext* context)
 {
-	int8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	int8_t data = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
 	uint16_t address = static_cast<int16_t>(context->cpu->ProgramCounter + data + 2);
 
 	context->cpu->ProgramCounter = address;
@@ -101,7 +100,7 @@ void Op::JumpRelativeN8(EmulatorContext* context)
 
 void Op::JumpRelativeFlagN8(EmulatorContext* context, CpuFlag flag, bool condition)
 {
-	int8_t data = ReadFromBus(context, context->cpu->ProgramCounter++);
+	int8_t data = context->bus->ReadBus(context->cpu->ProgramCounter++);
 	uint16_t current_pc = context->cpu->ProgramCounter;
 
 	bool enabled = context->cpu->GetFlag(flag);
@@ -135,7 +134,7 @@ void Op::XorR8(EmulatorContext* context, RegisterType8 type)
 void Op::XorN8(EmulatorContext* context)
 {
 	uint8_t reg_a = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint8_t data = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
 
 	uint8_t result = reg_a ^ data;
 	context->cpu->SetRegister(RegisterType8::REG_A, result);
@@ -151,7 +150,7 @@ void Op::XorN8(EmulatorContext* context)
 void Op::XorR16(EmulatorContext* context, RegisterType16 type)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
-	uint8_t data = ReadFromBus(context, address);
+	uint8_t data = context->bus->ReadBus(address);
 
 	uint8_t reg_a = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint8_t result = reg_a ^ data;
@@ -177,7 +176,7 @@ void Op::LoadR8(EmulatorContext* context, RegisterType8 reg1, RegisterType8 reg2
 
 void Op::LoadN8(EmulatorContext* context, RegisterType8 type)
 {
-	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint8_t data = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
 	context->cpu->SetRegister(type, data);
 
 	context->cycles += 8;
@@ -186,8 +185,8 @@ void Op::LoadN8(EmulatorContext* context, RegisterType8 type)
 
 void Op::LoadN16(EmulatorContext* context, RegisterType16 type)
 {
-	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
-	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
+	uint8_t low = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
+	uint8_t high = context->bus->ReadBus(context->cpu->ProgramCounter + 2);
 
 	uint16_t result = (high << 8) | low;
 
@@ -198,16 +197,16 @@ void Op::LoadN16(EmulatorContext* context, RegisterType16 type)
 
 void Op::LoadIndirectSP(EmulatorContext* context)
 {
-	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
-	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
+	uint8_t low = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
+	uint8_t high = context->bus->ReadBus(context->cpu->ProgramCounter + 2);
 	uint16_t address = (high << 8) | low;
 
 	uint16_t data = context->cpu->GetRegister(RegisterType16::REG_SP);
 	uint8_t data_low = data & 0xFF;
 	uint8_t data_high = (data >> 8) & 0xFF;
 
-	WriteToBus(context, address + 0, data_low);
-	WriteToBus(context, address + 1, data_high);
+	context->bus->WriteBus(address + 0, data_low);
+	context->bus->WriteBus(address + 1, data_high);
 
 	context->cpu->ProgramCounter += 3;
 	context->cycles += 20;
@@ -225,7 +224,7 @@ void Op::LoadHLFromSP(EmulatorContext* context)
 void Op::LoadHLFromSPRelative(EmulatorContext* context)
 {
 	uint16_t reg_data = context->cpu->GetRegister(RegisterType16::REG_SP);
-	int8_t data = static_cast<int8_t>(ReadFromBus(context, context->cpu->ProgramCounter + 1));
+	int8_t data = static_cast<int8_t>(context->bus->ReadBus(context->cpu->ProgramCounter + 1));
 	uint16_t result = data + reg_data;
 
 	context->cpu->SetRegister(RegisterType16::REG_HL, result);
@@ -246,7 +245,7 @@ void Op::StoreIncrementHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
-	WriteToBus(context, address, data);
+	context->bus->WriteBus(address, data);
 
 	context->cpu->SetRegister(RegisterType16::REG_HL, address + 1);
 
@@ -258,7 +257,7 @@ void Op::StoreDecrementHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
-	WriteToBus(context, address, data);
+	context->bus->WriteBus(address, data);
 
 	context->cpu->SetRegister(RegisterType16::REG_HL, address - 1);
 
@@ -269,7 +268,7 @@ void Op::StoreDecrementHL(EmulatorContext* context)
 void Op::LoadIncrementHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
-	uint8_t data = ReadFromBus(context, address);
+	uint8_t data = context->bus->ReadBus(address);
 
 	context->cpu->SetRegister(RegisterType8::REG_A, data);
 	context->cpu->SetRegister(RegisterType16::REG_HL, address + 1);
@@ -281,7 +280,7 @@ void Op::LoadIncrementHL(EmulatorContext* context)
 void Op::LoadDecrementHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
-	uint8_t data = ReadFromBus(context, address);
+	uint8_t data = context->bus->ReadBus(address);
 
 	context->cpu->SetRegister(RegisterType8::REG_A, data);
 	context->cpu->SetRegister(RegisterType16::REG_HL, address - 1);
@@ -292,12 +291,12 @@ void Op::LoadDecrementHL(EmulatorContext* context)
 
 void Op::StoreIndirectR8(EmulatorContext* context, RegisterType8 reg)
 {
-	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
-	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
+	uint8_t low = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
+	uint8_t high = context->bus->ReadBus(context->cpu->ProgramCounter + 2);
 	uint16_t address = low | (high << 8);
 
 	uint8_t data = context->cpu->GetRegister(reg);
-	WriteToBus(context, address, data);
+	context->bus->WriteBus(address, data);
 
 	context->cycles += 16;
 	context->cpu->ProgramCounter += 3;
@@ -305,11 +304,11 @@ void Op::StoreIndirectR8(EmulatorContext* context, RegisterType8 reg)
 
 void Op::LoadIndirectR8(EmulatorContext* context, RegisterType8 reg)
 {
-	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
-	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
+	uint8_t low = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
+	uint8_t high = context->bus->ReadBus(context->cpu->ProgramCounter + 2);
 	uint16_t address = low | (high << 8);
 
-	uint8_t data = ReadFromBus(context, address);
+	uint8_t data = context->bus->ReadBus(address);
 	context->cpu->SetRegister(reg, data);
 
 	context->cycles += 16;
@@ -318,18 +317,18 @@ void Op::LoadIndirectR8(EmulatorContext* context, RegisterType8 reg)
 
 void Op::StoreFF00(EmulatorContext* context)
 {
-	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint8_t data = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
 	uint8_t reg_data = context->cpu->GetRegister(RegisterType8::REG_A);
 
-	WriteToBus(context, 0xFF00 + data, reg_data);
+	context->bus->WriteBus(0xFF00 + data, reg_data);
 	context->cycles += 12;
 	context->cpu->ProgramCounter += 2;
 }
 
 void Op::LoadFF00(EmulatorContext* context)
 {
-	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
-	uint8_t result = ReadFromBus(context, 0xFF00 + data);
+	uint8_t data = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
+	uint8_t result = context->bus->ReadBus(0xFF00 + data);
 
 	context->cpu->SetRegister(RegisterType8::REG_A, result);
 	context->cycles += 12;
@@ -340,7 +339,7 @@ void Op::StoreR8(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg
 {
 	uint8_t data = context->cpu->GetRegister(reg);
 	uint16_t address = context->cpu->GetRegister(reg_pointer);
-	WriteToBus(context, address, data);
+	context->bus->WriteBus(address, data);
 
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 1;
@@ -348,9 +347,9 @@ void Op::StoreR8(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg
 
 void Op::StoreN8(EmulatorContext* context, RegisterType16 reg_pointer)
 {
-	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint8_t data = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
 	uint16_t address = context->cpu->GetRegister(reg_pointer);
-	WriteToBus(context, address, data);
+	context->bus->WriteBus(address, data);
 
 	context->cycles += 12;
 	context->cpu->ProgramCounter += 2;
@@ -359,7 +358,7 @@ void Op::StoreN8(EmulatorContext* context, RegisterType16 reg_pointer)
 void Op::LoadIndirectR16(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg_pointer)
 {
 	uint16_t address = context->cpu->GetRegister(reg_pointer);
-	uint8_t data = ReadFromBus(context, address);
+	uint8_t data = context->bus->ReadBus(address);
 	context->cpu->SetRegister(reg, data);
 
 	context->cycles += 8;
@@ -370,7 +369,7 @@ void Op::StoreIndirectAC(EmulatorContext* context)
 {
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint16_t address = context->cpu->GetRegister(RegisterType8::REG_C);
-	WriteToBus(context, 0xFF00 + address, data);
+	context->bus->WriteBus(0xFF00 + address, data);
 
 	context->cycles += 8;
 	context->cpu->ProgramCounter += 1;
@@ -379,7 +378,7 @@ void Op::StoreIndirectAC(EmulatorContext* context)
 void Op::LoadIndirectAC(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType8::REG_C);
-	uint8_t data = ReadFromBus(context, 0xFF00 + address);
+	uint8_t data = context->bus->ReadBus(0xFF00 + address);
 	context->cpu->SetRegister(RegisterType8::REG_A, data);
 
 	context->cycles += 8;
@@ -406,7 +405,7 @@ void Op::AddR8(EmulatorContext* context, RegisterType8 reg)
 void Op::AddN8(EmulatorContext* context)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t result_b = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint8_t result_b = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
 
 	uint16_t result = result_a + result_b;
 	context->cpu->SetFlag(CpuFlag::Zero, (result & 0xFF) == 0x0);
@@ -441,7 +440,7 @@ void Op::SubIndirectHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t result_b = ReadFromBus(context, address);
+	uint8_t result_b = context->bus->ReadBus(address);
 
 	uint16_t result = result_a - result_b;
 	context->cpu->SetFlag(CpuFlag::Zero, (result & 0xFF) == 0x0);
@@ -458,7 +457,7 @@ void Op::SubIndirectHL(EmulatorContext* context)
 void Op::SubN8(EmulatorContext* context)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t result_b = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint8_t result_b = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
 
 	uint16_t result = result_a - result_b;
 	context->cpu->SetFlag(CpuFlag::Zero, (result & 0xFF) == 0x0);
@@ -477,7 +476,7 @@ void Op::AddIndirectHL(EmulatorContext* context)
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t result_b = ReadFromBus(context, address);
+	uint8_t result_b = context->bus->ReadBus(address);
 
 	uint16_t result = result_a + result_b;
 	context->cpu->SetFlag(CpuFlag::Zero, (result & 0xFF) == 0x0);
@@ -494,7 +493,7 @@ void Op::AddIndirectHL(EmulatorContext* context)
 void Op::AddSP(EmulatorContext* context)
 {
 	uint16_t reg_sp = context->cpu->GetRegister(RegisterType16::REG_SP);
-	int8_t data = static_cast<int8_t>(ReadFromBus(context, context->cpu->ProgramCounter + 1));
+	int8_t data = static_cast<int8_t>(context->bus->ReadBus(context->cpu->ProgramCounter + 1));
 
 	uint16_t result = reg_sp + data;
 	context->cpu->SetRegister(RegisterType16::REG_SP, result);
@@ -556,15 +555,15 @@ void Op::CallN16(EmulatorContext* context)
 {
 	context->cpu->StackPointer -= 2;
 
-	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
-	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
+	uint8_t low = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
+	uint8_t high = context->bus->ReadBus(context->cpu->ProgramCounter + 2);
 	uint16_t address = low | (high << 8);
 
 	uint8_t pc_high = (context->cpu->ProgramCounter + 3) >> 8;
 	uint8_t pc_low = (context->cpu->ProgramCounter + 3) & 0xFF;
 
-	WriteToBus(context, context->cpu->StackPointer + 1, pc_high);
-	WriteToBus(context, context->cpu->StackPointer + 0, pc_low);
+	context->bus->WriteBus(context->cpu->StackPointer + 1, pc_high);
+	context->bus->WriteBus(context->cpu->StackPointer + 0, pc_low);
 	context->cpu->ProgramCounter = address;
 
 	context->cycles += 24;
@@ -572,8 +571,8 @@ void Op::CallN16(EmulatorContext* context)
 
 void Op::CallN16FlagNotSet(EmulatorContext* context, CpuFlag flag)
 {
-	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
-	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
+	uint8_t low = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
+	uint8_t high = context->bus->ReadBus(context->cpu->ProgramCounter + 2);
 	uint16_t address = low | (high << 8);
 
 	bool flag_result = context->cpu->GetFlag(flag);
@@ -584,8 +583,8 @@ void Op::CallN16FlagNotSet(EmulatorContext* context, CpuFlag flag)
 		uint8_t pc_high = (context->cpu->ProgramCounter + 3) >> 8;
 		uint8_t pc_low = (context->cpu->ProgramCounter + 3) & 0xFF;
 
-		WriteToBus(context, context->cpu->StackPointer + 1, pc_high);
-		WriteToBus(context, context->cpu->StackPointer + 0, pc_low);
+		context->bus->WriteBus(context->cpu->StackPointer + 1, pc_high);
+		context->bus->WriteBus(context->cpu->StackPointer + 0, pc_low);
 
 		context->cpu->ProgramCounter = address;
 		context->cycles += 24;
@@ -599,8 +598,8 @@ void Op::CallN16FlagNotSet(EmulatorContext* context, CpuFlag flag)
 
 void Op::CallN16FlagSet(EmulatorContext* context, CpuFlag flag)
 {
-	uint8_t low = ReadFromBus(context, context->cpu->ProgramCounter + 1);
-	uint8_t high = ReadFromBus(context, context->cpu->ProgramCounter + 2);
+	uint8_t low = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
+	uint8_t high = context->bus->ReadBus(context->cpu->ProgramCounter + 2);
 	uint16_t address = low | (high << 8);
 
 	bool flag_result = context->cpu->GetFlag(flag);
@@ -611,8 +610,8 @@ void Op::CallN16FlagSet(EmulatorContext* context, CpuFlag flag)
 		uint8_t pc_high = (context->cpu->ProgramCounter + 3) >> 8;
 		uint8_t pc_low = (context->cpu->ProgramCounter + 3) & 0xFF;
 
-		WriteToBus(context, context->cpu->StackPointer + 1, pc_high);
-		WriteToBus(context, context->cpu->StackPointer + 0, pc_low);
+		context->bus->WriteBus(context->cpu->StackPointer + 1, pc_high);
+		context->bus->WriteBus(context->cpu->StackPointer + 0, pc_low);
 
 		context->cpu->ProgramCounter = address;
 		context->cycles += 24;
@@ -628,8 +627,8 @@ void Op::Return(EmulatorContext* context)
 {
 	context->cpu->StackPointer += 2;
 
-	uint8_t high = ReadFromBus(context, context->cpu->StackPointer - 1);
-	uint8_t low = ReadFromBus(context, context->cpu->StackPointer - 2);
+	uint8_t high = context->bus->ReadBus(context->cpu->StackPointer - 1);
+	uint8_t low = context->bus->ReadBus(context->cpu->StackPointer - 2);
 	uint16_t address = low | (high << 8);
 
 	context->cpu->ProgramCounter = address;
@@ -640,8 +639,8 @@ void Op::ReturnInterrupt(EmulatorContext* context)
 {
 	context->cpu->StackPointer += 2;
 
-	uint8_t high = ReadFromBus(context, context->cpu->StackPointer - 1);
-	uint8_t low = ReadFromBus(context, context->cpu->StackPointer - 2);
+	uint8_t high = context->bus->ReadBus(context->cpu->StackPointer - 1);
+	uint8_t low = context->bus->ReadBus(context->cpu->StackPointer - 2);
 	uint16_t address = low | (high << 8);
 
 	context->cpu->EnableMasterInterrupts();
@@ -669,7 +668,7 @@ void Op::CompareR8(EmulatorContext* context, RegisterType8 reg)
 void Op::CompareN8(EmulatorContext* context)
 {
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t value = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint8_t value = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
 
 	uint8_t result = data - value;
 
@@ -687,7 +686,7 @@ void Op::CompareIndirectHL(EmulatorContext* context)
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 
 	uint8_t data = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t value = ReadFromBus(context, address);
+	uint8_t value = context->bus->ReadBus(address);
 
 	uint8_t result = data - value;
 
@@ -708,8 +707,8 @@ void Op::PushR16(EmulatorContext* context, RegisterType16 reg)
 	uint8_t high = address >> 8;
 	uint8_t low = address & 0xFF;
 
-	WriteToBus(context, context->cpu->StackPointer + 1, high);
-	WriteToBus(context, context->cpu->StackPointer + 0, low);
+	context->bus->WriteBus(context->cpu->StackPointer + 1, high);
+	context->bus->WriteBus(context->cpu->StackPointer + 0, low);
 
 	context->cycles += 16;
 	context->cpu->ProgramCounter += 1;
@@ -719,8 +718,8 @@ void Op::PopR16(EmulatorContext* context, RegisterType16 reg)
 {
 	context->cpu->StackPointer += 2;
 
-	uint8_t high = ReadFromBus(context, context->cpu->StackPointer - 1);
-	uint8_t low = ReadFromBus(context, context->cpu->StackPointer - 2);
+	uint8_t high = context->bus->ReadBus(context->cpu->StackPointer - 1);
+	uint8_t low = context->bus->ReadBus(context->cpu->StackPointer - 2);
 
 	uint16_t data = high << 8 | low;
 	context->cpu->SetRegister(reg, data);
@@ -750,10 +749,10 @@ void Op::DecR16(EmulatorContext* context, RegisterType16 reg)
 void Op::DecIndirectHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
-	uint8_t data = ReadFromBus(context, address);
+	uint8_t data = context->bus->ReadBus(address);
 	uint8_t result = data - 1;
 
-	WriteToBus(context, address, result);
+	context->bus->WriteBus(address, result);
 	context->cpu->SetFlag(CpuFlag::Subtraction, true);
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
 	context->cpu->SetFlag(CpuFlag::HalfCarry, (data & 0xF) < (1 & 0xF));
@@ -765,10 +764,10 @@ void Op::DecIndirectHL(EmulatorContext* context)
 void Op::IncIndirectHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
-	uint8_t data = ReadFromBus(context, address);
+	uint8_t data = context->bus->ReadBus(address);
 	uint8_t result = data + 1;
 
-	WriteToBus(context, address, result);
+	context->bus->WriteBus(address, result);
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
 	context->cpu->SetFlag(CpuFlag::HalfCarry, (data & 0xF) + (1 & 0xF) > 0xF);
@@ -780,7 +779,7 @@ void Op::IncIndirectHL(EmulatorContext* context)
 void Op::JumpRelativeFlagNotSet(EmulatorContext* context, CpuFlag flag)
 {
 	bool flag_result = context->cpu->GetFlag(flag);
-	int8_t data = static_cast<int8_t>(ReadFromBus(context, context->cpu->ProgramCounter + 1));
+	int8_t data = static_cast<int8_t>(context->bus->ReadBus(context->cpu->ProgramCounter + 1));
 	uint16_t address = static_cast<int16_t>(context->cpu->ProgramCounter + data + 2);
 
 	if (!flag_result)
@@ -798,7 +797,7 @@ void Op::JumpRelativeFlagNotSet(EmulatorContext* context, CpuFlag flag)
 void Op::JumpRelativeFlagSet(EmulatorContext* context, CpuFlag flag)
 {
 	bool flag_result = context->cpu->GetFlag(flag);
-	int8_t data = static_cast<int8_t>(ReadFromBus(context, context->cpu->ProgramCounter + 1));
+	int8_t data = static_cast<int8_t>(context->bus->ReadBus(context->cpu->ProgramCounter + 1));
 	uint16_t address = static_cast<int16_t>(context->cpu->ProgramCounter + data + 2);
 
 	if (flag_result)
@@ -833,7 +832,7 @@ void Op::OrR8(EmulatorContext* context, RegisterType8 reg)
 void Op::OrN8(EmulatorContext* context)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint8_t data = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
 
 	uint8_t result = result_a | data;
 	context->cpu->SetRegister(RegisterType8::REG_A, result);
@@ -851,7 +850,7 @@ void Op::OrHL(EmulatorContext* context)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
-	uint8_t result_r = ReadFromBus(context, address);
+	uint8_t result_r = context->bus->ReadBus(address);
 
 	uint8_t result = result_a | result_r;
 	context->cpu->SetRegister(RegisterType8::REG_A, result);
@@ -885,7 +884,7 @@ void Op::AndIndirectHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t result_r = ReadFromBus(context, address);
+	uint8_t result_r = context->bus->ReadBus(address);
 	uint8_t result = result_a & result_r;
 	context->cpu->SetRegister(RegisterType8::REG_A, result);
 
@@ -901,7 +900,7 @@ void Op::AndIndirectHL(EmulatorContext* context)
 void Op::AndN8(EmulatorContext* context)
 {
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t result_r = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint8_t result_r = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
 	uint8_t result = result_a & result_r;
 	context->cpu->SetRegister(RegisterType8::REG_A, result);
 
@@ -954,7 +953,7 @@ void Op::RotateRegisterLeftA(EmulatorContext* context)
 
 void Op::ExtendedPrefix(EmulatorContext* context)
 {
-	uint8_t extended_op = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint8_t extended_op = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
 
 	switch (extended_op)
 	{
@@ -1798,7 +1797,7 @@ void Op::ExtendedPrefix(EmulatorContext* context)
 void Op::AddCarryN8(EmulatorContext* context)
 {
 	uint8_t reg = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint8_t data = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
 
 	bool carry_flag = context->cpu->GetFlag(CpuFlag::Carry);
 	uint16_t result = reg + data + (carry_flag ? 1 : 0);
@@ -1819,7 +1818,7 @@ void Op::AddCarryN8(EmulatorContext* context)
 void Op::SubCarryN8(EmulatorContext* context)
 {
 	uint8_t reg = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t data = ReadFromBus(context, context->cpu->ProgramCounter + 1);
+	uint8_t data = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
 
 	bool carry_flag = context->cpu->GetFlag(CpuFlag::Carry);
 	uint8_t carry_value = (carry_flag ? 1 : 0);
@@ -1845,8 +1844,8 @@ void Op::ReturnFlagNotSet(EmulatorContext* context, CpuFlag flag)
 	{
 		context->cpu->StackPointer += 2;
 
-		uint8_t high = ReadFromBus(context, context->cpu->StackPointer - 1);
-		uint8_t low = ReadFromBus(context, context->cpu->StackPointer - 2);
+		uint8_t high = context->bus->ReadBus(context->cpu->StackPointer - 1);
+		uint8_t low = context->bus->ReadBus(context->cpu->StackPointer - 2);
 		uint16_t address = high << 8 | low;
 
 		context->cpu->ProgramCounter = address;
@@ -1867,8 +1866,8 @@ void Op::ReturnFlagSet(EmulatorContext* context, CpuFlag flag)
 	{
 		context->cpu->StackPointer += 2;
 
-		uint8_t high = ReadFromBus(context, context->cpu->StackPointer - 1);
-		uint8_t low = ReadFromBus(context, context->cpu->StackPointer - 2);
+		uint8_t high = context->bus->ReadBus(context->cpu->StackPointer - 1);
+		uint8_t low = context->bus->ReadBus(context->cpu->StackPointer - 2);
 		uint16_t address = high << 8 | low;
 
 		context->cpu->ProgramCounter = address;
@@ -1956,8 +1955,8 @@ void Op::Rst(EmulatorContext* context, uint8_t offset)
 	uint8_t pc_high = (context->cpu->ProgramCounter + 1) >> 8;
 	uint8_t pc_low = (context->cpu->ProgramCounter + 1) & 0xFF;
 
-	WriteToBus(context, context->cpu->StackPointer + 1, pc_high);
-	WriteToBus(context, context->cpu->StackPointer + 0, pc_low);
+	context->bus->WriteBus(context->cpu->StackPointer + 1, pc_high);
+	context->bus->WriteBus(context->cpu->StackPointer + 0, pc_low);
 
 	context->cpu->ProgramCounter = offset;
 	context->cycles += 16;
@@ -2000,7 +1999,7 @@ void Op::AddCarryIndirectHL(EmulatorContext* context)
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t result_b = ReadFromBus(context, address);
+	uint8_t result_b = context->bus->ReadBus(address);
 
 	bool carry_flag = context->cpu->GetFlag(CpuFlag::Carry);
 
@@ -2041,7 +2040,7 @@ void Op::SubCarryIndirectHL(EmulatorContext* context)
 {
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 	uint8_t result_a = context->cpu->GetRegister(RegisterType8::REG_A);
-	uint8_t result_b = ReadFromBus(context, address);
+	uint8_t result_b = context->bus->ReadBus(address);
 
 	bool carry_flag = context->cpu->GetFlag(CpuFlag::Carry);
 	uint8_t carry_value = (carry_flag ? 1 : 0);

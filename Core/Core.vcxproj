@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\Bus.h" />
     <ClInclude Include="Include\Cartridge.h" />
     <ClInclude Include="Include\Cpu.h" />
     <ClInclude Include="Include\Display.h" />
@@ -38,7 +37,6 @@
     <ClCompile Include="Source\Display.cpp" />
     <ClCompile Include="Source\Dma.cpp" />
     <ClCompile Include="Source\ExtendedInstructions.cpp" />
-    <ClCompile Include="Source\Bus.cpp" />
     <ClCompile Include="Source\Cartridge.cpp" />
     <ClCompile Include="Source\Cpu.cpp" />
     <ClCompile Include="Source\Emulator.cpp" />

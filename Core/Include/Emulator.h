@@ -7,8 +7,6 @@
 #include <string>
 #include <fstream>
 
-#include "Bus.h"
-
 class Cpu;
 class Ppu;
 class Ram;
@@ -17,13 +15,25 @@ class Timer;
 class Cartridge;
 class Joypad;
 class Display;
+class IBus;
 
 struct EmulatorContext
 {
 	Cpu* cpu = nullptr;
+	IBus* bus = nullptr;
 
 	uint64_t ticks = 0;
 	int cycles = 0;
+};
+
+class IBus
+{
+public:
+	IBus() = default;
+	virtual ~IBus() = default;
+
+	virtual uint8_t ReadBus(uint16_t address) = 0;
+	virtual void WriteBus(uint16_t address, uint8_t value) = 0;
 };
 
 class Emulator : public IBus
