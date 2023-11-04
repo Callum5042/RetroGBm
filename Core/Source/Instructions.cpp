@@ -531,7 +531,7 @@ void Op::IncR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetRegister(reg, result);
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
-	context->cpu->SetFlag(CpuFlag::HalfCarry, (data & 0xF) + (1 & 0xF) > 0xF);
+	context->cpu->SetFlag(CpuFlag::HalfCarry, ((data & 0xF) + 1) > 0xF);
 
 	context->cycles += 4;
 	context->cpu->ProgramCounter += 1;
@@ -545,7 +545,7 @@ void Op::DecR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetRegister(reg, result);
 	context->cpu->SetFlag(CpuFlag::Subtraction, true);
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
-	context->cpu->SetFlag(CpuFlag::HalfCarry, (data & 0xF) < (1 & 0xF));
+	context->cpu->SetFlag(CpuFlag::HalfCarry, (data & 0xF) < 1);
 
 	context->cycles += 4;
 	context->cpu->ProgramCounter += 1;
