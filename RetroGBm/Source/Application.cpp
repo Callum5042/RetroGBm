@@ -57,9 +57,9 @@ void Application::Run()
 {
 	// Emulator runs on a background thread
 	m_Emulator = std::make_unique<Emulator>();
-	m_Emulator->LoadRom("Tetris.gb");
-	//m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\individual\\02-interrupts.gb");
-	//m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\individual\\02-interrupts.gb");
+	//m_Emulator->LoadRom("Tetris.gb");
+	//m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\dmg-acid2.gb");
+	m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\individual\\09-op r,r.gb");
 	// m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\cpu_instrs.gb");
 
 	std::thread emulator_thread([&]

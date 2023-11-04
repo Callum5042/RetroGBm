@@ -1,7 +1,6 @@
 #include "Pch.h"
 #include "Emulator.h"
 #include "Cpu.h"
-#include "Bus.h"
 #include "Instructions.h"
 
 #include <iostream>
@@ -33,6 +32,7 @@ Emulator::Emulator()
 
 	m_DebugFile.open("debug.txt");
 	m_Context.cpu = m_Cpu.get();
+	m_Context.bus = this;
 }
 
 Emulator::~Emulator()

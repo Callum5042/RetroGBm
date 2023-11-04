@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+class Cpu;
+
 struct TimerContext
 {
 	uint16_t div;
@@ -12,8 +14,11 @@ struct TimerContext
 
 class Timer
 {
+	Cpu* m_Cpu = nullptr;
+
 public:
-	Timer() = default;
+	Timer();
+	Timer(Cpu* cpu);
 	virtual ~Timer() = default;
 
 	void Init();
@@ -22,8 +27,10 @@ public:
 	uint8_t Read(uint16_t address);
 	void Write(uint16_t address, uint8_t value);
 
+	inline const TimerContext* GetContext() { return &m_Context; }
+
 private:
-	TimerContext context;
+	TimerContext m_Context = {};
 
 	int m_TimerCount = 0;
 

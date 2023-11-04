@@ -80,8 +80,7 @@ uint8_t Cpu::GetRegister(RegisterType8 type) const
 	auto it = m_Registers.find(type);
 	if (it == m_Registers.end())
 	{
-		// TODO: Should this should throw an exception or just log and continue
-		return 0;
+		throw std::exception("GetRegister failed unable to find register type");
 	}
 
 	return it->second;
@@ -196,8 +195,7 @@ bool Cpu::GetFlag(CpuFlag flag) const
 			return ((flag_register >> 4) & 1) != 0;
 	}
 
-	// TODO: Should this should throw an exception or just log and continue
-	return false;
+	throw std::exception("unsupported CpuFlag in function GetFlag");
 }
 
 std::string Cpu::Details()
