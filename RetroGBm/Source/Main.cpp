@@ -8,16 +8,10 @@
 // https://gekkio.fi/files/gb-docs/gbctr.pdf
 
 #ifdef _CONSOLE
-
 int main(int argc, char** argv)
-{
-	std::unique_ptr<Application> application = std::make_unique<Application>();
-	return application->Start();
-}
-
 #else
-
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, int nCmdShow)
+#endif
 {
 #ifdef _DEBUG
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -27,5 +21,3 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 	std::unique_ptr<Application> application = std::make_unique<Application>();
 	return application->Start();
 }
-
-#endif // _CONSOLE

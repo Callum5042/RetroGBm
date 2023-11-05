@@ -302,6 +302,7 @@ uint8_t Cartridge::Read(uint16_t address)
     }
 
     std::cout << "Unsupported CartridgeRead 0x" << std::hex << address << '\n';
+    return 0xFF;
 }
 
 void Cartridge::Write(uint16_t address, uint8_t value)
