@@ -258,14 +258,6 @@ bool Cartridge::Load(const std::string& filepath)
 	// Print some info
 	std::cout << "Cartridge Type: " << m_CartridgeInfo.header.cartridge_type << '\n';
 
-	// Initialise 125 possible rom banks
-	//for (int i = 0; i < 125; ++i)
-	//{
-	//    // 16kb each
-	//    m_CartridgeInfo.rom_banks[i].resize(0x4000);
-	//    std::fill(m_CartridgeInfo.rom_banks[i].begin(), m_CartridgeInfo.rom_banks[i].end(), 0x0);
-	//}
-
 	// Initialise 3 possible rom banks
 	for (int i = 0; i < 3; ++i)
 	{
@@ -347,6 +339,7 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 	{
 		// Only the lower 5 bits are used - discard the rest
 		m_CartridgeInfo.rom_bank_controller = value & 0x1F;
+		std::cout << "ROM bank selected: " << static_cast<int>(m_CartridgeInfo.rom_bank_controller) << '\n';
 		return;
 	}
 
@@ -354,6 +347,7 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 	if (address >= 0x4000 && address <= 0x5FFF)
 	{
 		m_CartridgeInfo.ram_bank_controller = value & 0b11;
+		std::cout << "RAM bank selected: " << static_cast<int>(m_CartridgeInfo.ram_bank_controller) << '\n';
 		return;
 	}
 
@@ -370,5 +364,4 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 	}
 
 	std::cout << "Unsupported CartridgeWrite 0x" << std::hex << address << '\n';
-	// m_CartridgeInfo.data[address] = value;
 }
