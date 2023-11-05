@@ -39,7 +39,7 @@ enum class CartridgeType : uint8_t
 struct CartridgeHeader
 {
 	std::string manufacturer_code;
-	uint8_t cartridge_type_code;
+	CartridgeType cartridge_type_code;
 	std::string cartridge_type;
 	int rom_size = 0;
 	int rom_banks = 0;
@@ -55,6 +55,13 @@ struct CartridgeInfo
 	std::string title;
 	std::vector<uint8_t> data;
 	CartridgeHeader header;
+
+	bool enabled_ram = false;
+	uint8_t rom_bank_controller = 0;
+	uint8_t* rom_bank_memory = nullptr;
+
+	uint8_t ram_bank_controller = 0;
+	std::vector<uint8_t> ram_banks[3];
 };
 
 class Cartridge

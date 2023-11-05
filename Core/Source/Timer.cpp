@@ -79,7 +79,7 @@ uint8_t Timer::Read(uint16_t address)
 			return m_Context.tac;
 	}
 
-	return 0;
+	return 0xFF;
 }
 
 void Timer::Write(uint16_t address, uint8_t value)

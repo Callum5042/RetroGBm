@@ -58,7 +58,7 @@ uint8_t Display::Read(uint16_t address)
 		case 0xFF4B:
 			return context.wx;
 		default:
-			return 0;
+			return 0xFF;
 	}
 }
 
