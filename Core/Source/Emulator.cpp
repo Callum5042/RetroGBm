@@ -30,14 +30,13 @@ Emulator::Emulator()
 	m_Dma = std::make_unique<Dma>();
 	m_Joypad = std::make_unique<Joypad>();
 
-	m_DebugFile.open("debug.txt");
 	m_Context.cpu = m_Cpu.get();
 	m_Context.bus = this;
 }
 
 Emulator::~Emulator()
 {
-	m_DebugFile.close();
+	m_TraceLog.close();
 }
 
 bool Emulator::LoadRom(const std::string& path)
@@ -83,6 +82,20 @@ void Emulator::SetHalt(bool value)
 	m_Halted = value;
 }
 
+void Emulator::ToggleTraceLog(bool enable)
+{
+	if (enable)
+	{
+		m_EnableTraceLog = true;
+		m_TraceLog.open("retrogbm-tracelog.txt");
+	}
+	else
+	{
+		m_EnableTraceLog = false;
+		m_TraceLog.close();
+	}
+}
+
 void Emulator::Tick()
 {
 	// Fetch
@@ -91,17 +104,19 @@ void Emulator::Tick()
 	const uint8_t opcode = this->ReadBus(m_Cpu->ProgramCounter);
 	m_CurrentOpCode = opcode;
 
-	/*std::string debug_format = std::format("OP:{:X} PC:{:X} AF:{:X} BC:{:X} DE:{:X} HL:{:X} SP:{:X}",
-											opcode,
-											m_Context.cpu->ProgramCounter,
-											m_Context.cpu->GetRegister(RegisterType16::REG_AF),
-											m_Context.cpu->GetRegister(RegisterType16::REG_BC),
-											m_Context.cpu->GetRegister(RegisterType16::REG_DE),
-											m_Context.cpu->GetRegister(RegisterType16::REG_HL),
-											m_Context.cpu->StackPointer);*/
+	if (IsTraceLogEnabled())
+	{
+		std::string debug_format = std::format("OP:{:X} PC:{:X} AF:{:X} BC:{:X} DE:{:X} HL:{:X} SP:{:X}",
+											   opcode,
+											   m_Context.cpu->ProgramCounter,
+											   m_Context.cpu->GetRegister(RegisterType16::REG_AF),
+											   m_Context.cpu->GetRegister(RegisterType16::REG_BC),
+											   m_Context.cpu->GetRegister(RegisterType16::REG_DE),
+											   m_Context.cpu->GetRegister(RegisterType16::REG_HL),
+											   m_Context.cpu->StackPointer);
 
-											// std::cout << debug_format << '\n';
-											// m_DebugFile << debug_format << '\n';
+		m_TraceLog << debug_format << std::endl;
+	}
 
 	// Execute
 	if (!m_Halted)
@@ -136,21 +151,21 @@ void Emulator::Tick()
 	m_Cpu->HandleInterrupts();
 
 	// Debug
-	{
-		uint8_t data = this->ReadBus(0xFF02);
-		if (data == 0x81)
-		{
-			uint8_t c = this->ReadBus(0xFF01);
+	//{
+	//	uint8_t data = this->ReadBus(0xFF02);
+	//	if (data == 0x81)
+	//	{
+	//		uint8_t c = this->ReadBus(0xFF01);
 
-			m_DebugMessage += static_cast<char>(c);
-			this->WriteBus(0xFF02, 0);
-		}
+	//		m_DebugMessage += static_cast<char>(c);
+	//		this->WriteBus(0xFF02, 0);
+	//	}
 
-		if (!m_DebugMessage.empty())
-		{
-			// std::cout << "\tDEBUG: " << m_DebugMessage << '\n';
-		}
-	}
+	//	if (!m_DebugMessage.empty())
+	//	{
+	//		// std::cout << "\tDEBUG: " << m_DebugMessage << '\n';
+	//	}
+	//}
 }
 
 uint8_t Emulator::GetOpCode() const
