@@ -79,6 +79,10 @@ public:
 	inline Dma* GetDma() { return m_Dma.get(); }
 	inline Joypad* GetJoypad() { return m_Joypad.get(); }
 
+	// Trace log
+	void ToggleTraceLog(bool enable);
+	inline bool IsTraceLogEnabled() const { return m_EnableTraceLog; }
+
 private:
 
 	char m_SerialData[2] = { 0, 0 };
@@ -86,7 +90,6 @@ private:
 	uint8_t m_CurrentOpCode = 0x0;
 
 	std::string m_DebugMessage;
-	std::ofstream m_DebugFile;
 
 	// Subcomponents
 	std::unique_ptr<Cpu> m_Cpu;
@@ -100,4 +103,7 @@ private:
 
 	bool m_Running = false;
 	bool m_Halted = false;
+
+	bool m_EnableTraceLog = false;
+	std::ofstream m_TraceLog;
 };

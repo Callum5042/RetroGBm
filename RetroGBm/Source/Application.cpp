@@ -55,7 +55,10 @@ int Application::Start()
 
 void Application::LoadRom(const std::string& file)
 {
+	bool enable_tracelog = m_Emulator->IsTraceLogEnabled();
+
 	m_Emulator = std::make_unique<Emulator>();
+	m_Emulator->ToggleTraceLog(enable_tracelog);
 	m_Emulator->LoadRom(file);
 }
 

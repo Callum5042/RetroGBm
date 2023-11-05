@@ -38,6 +38,7 @@ void MainWindow::Create(const std::string& title, int width, int height)
 
 	m_DebugMenuItem = CreateMenu();
 	AppendMenuW(m_DebugMenuItem, MF_CHECKED, m_MenuDebugTilemap, L"Tilemap");
+	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTracelog, L"Tracelog");
 	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_DebugMenuItem), L"Debug");
 
 	SetMenu(this->GetHwnd(), menubar);
@@ -72,6 +73,24 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			// CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYPOSITION | MF_CHECKED);
 			break;
 		}
+		case m_MenuDebugTracelog:
+			ToggleTracelog();
+			break;
+	}
+}
+
+void MainWindow::ToggleTracelog()
+{
+	UINT menu_state = GetMenuState(m_DebugMenuItem, m_MenuDebugTracelog, MF_BYCOMMAND);
+	if (menu_state & MF_CHECKED)
+	{
+		CheckMenuItem(m_DebugMenuItem, m_MenuDebugTracelog, MF_BYCOMMAND | MF_UNCHECKED);
+		m_Application->GetEmulator()->ToggleTraceLog(false);
+	}
+	else
+	{
+		CheckMenuItem(m_DebugMenuItem, m_MenuDebugTracelog, MF_BYCOMMAND | MF_CHECKED);
+		m_Application->GetEmulator()->ToggleTraceLog(true);
 	}
 }
 

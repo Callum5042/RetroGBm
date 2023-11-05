@@ -19,7 +19,9 @@ private:
 
 	HMENU m_DebugMenuItem;
 	static const UINT m_MenuDebugTilemap = 201;
+	static const UINT m_MenuDebugTracelog = 202;
 
 	void OpenDialog();
 	bool OpenFileDialog(std::string* filepath);
+	void ToggleTracelog();
 };
