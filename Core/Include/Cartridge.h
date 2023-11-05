@@ -60,6 +60,9 @@ struct CartridgeInfo
 	uint8_t rom_bank_controller = 0;
 	uint8_t* rom_bank_memory = nullptr;
 	// std::unordered_map<uint8_t, std::vector<uint8_t>> rom_banks;
+
+	uint8_t ram_bank_controller = 0;
+	std::vector<uint8_t> ram_banks[3];
 };
 
 class Cartridge
