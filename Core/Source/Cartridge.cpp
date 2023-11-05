@@ -307,8 +307,6 @@ uint8_t Cartridge::Read(uint16_t address)
 	{
 		if (m_CartridgeInfo.enabled_ram)
 		{
-			std::cout << "(RAM) Unsupported CartridgeRead 0x" << std::hex << address << '\n';
-
 			uint8_t index = m_CartridgeInfo.ram_bank_controller;
 			return m_CartridgeInfo.ram_banks[index][address - 0xA000];
 		}
@@ -339,7 +337,7 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 	{
 		// Only the lower 5 bits are used - discard the rest
 		m_CartridgeInfo.rom_bank_controller = value & 0x1F;
-		std::cout << "ROM bank selected: " << static_cast<int>(m_CartridgeInfo.rom_bank_controller) << '\n';
+		// std::cout << "ROM bank selected: " << static_cast<int>(m_CartridgeInfo.rom_bank_controller) << '\n';
 		return;
 	}
 
@@ -347,7 +345,7 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 	if (address >= 0x4000 && address <= 0x5FFF)
 	{
 		m_CartridgeInfo.ram_bank_controller = value & 0b11;
-		std::cout << "RAM bank selected: " << static_cast<int>(m_CartridgeInfo.ram_bank_controller) << '\n';
+		// std::cout << "RAM bank selected: " << static_cast<int>(m_CartridgeInfo.ram_bank_controller) << '\n';
 		return;
 	}
 
