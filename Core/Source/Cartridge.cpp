@@ -5,6 +5,7 @@
 #include <map>
 #include <cstdint>
 #include <iostream>
+#undef max
 
 namespace
 {
@@ -257,6 +258,14 @@ bool Cartridge::Load(const std::string& filepath)
     // Print some info
     std::cout << "Cartridge Type: " << m_CartridgeInfo.header.cartridge_type << '\n';
 
+    // Initialise 125 possible rom banks
+    //for (int i = 0; i < 125; ++i)
+    //{
+    //    // 16kb each
+    //    m_CartridgeInfo.rom_banks[i].resize(0x4000);
+    //    std::fill(m_CartridgeInfo.rom_banks[i].begin(), m_CartridgeInfo.rom_banks[i].end(), 0x0);
+    //}
+
     return true;
 }
 
@@ -274,11 +283,51 @@ bool Cartridge::Checksum(uint8_t* result)
 
 uint8_t Cartridge::Read(uint16_t address)
 {
-    return m_CartridgeInfo.data[address];
+    // Always read from fixed cartridge data 0x0000 to 0x7FFF
+    if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::ROM_ONLY || address < 0x4000)
+    {
+        return m_CartridgeInfo.data[address];
+    }
+
+    // Read from ROM bank for addresses in range 0x4000 to 0x7FFF
+    if (address >= 0x4000 && address <= 0x7FFF)
+    {
+        // std::cout << "Read ROM Bank 0x" << std::hex << address << '\n';
+        return m_CartridgeInfo.data[(address - 0x4000) + (0x4000 * std::max<uint8_t>(m_CartridgeInfo.rom_bank_controller, 1))];
+    }
+
+    if (address >= 0xA000 && address <= 0xBFFF)
+    {
+        std::cout << "(RAM) Unsupported CartridgeRead 0x" << std::hex << address << '\n';
+    }
+
+    std::cout << "Unsupported CartridgeRead 0x" << std::hex << address << '\n';
 }
 
 void Cartridge::Write(uint16_t address, uint8_t value)
 {
+    // Discard writes if cartridge is ROM only
+    if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::ROM_ONLY)
+    {
+        return;
+    }
+
+    // Set RAM
+    if (address >= 0x000 && address <= 0x1FFF)
+    {
+        // Only enable ram if the lower 4 bits are 0xA otherwise disable ram
+        m_CartridgeInfo.enabled_ram = (value & 0xF) == 0xA;
+        return;
+    }
+
+    // Set ROM bank controller register
+    if (address >= 0x2000 && address <= 0x3FFF)
+    {
+        // Only the lower 5 bits are used - discard the rest
+        m_CartridgeInfo.rom_bank_controller = value & 0x1E;
+        return;
+    }
+
     std::cout << "Unsupported CartridgeWrite 0x" << std::hex << address << '\n';
     // m_CartridgeInfo.data[address] = value;
 }

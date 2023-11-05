@@ -197,7 +197,7 @@ uint8_t Emulator::ReadIO(uint16_t address)
 	}
 
 	std::cout << "Unsupported ReadBus 0x" << std::hex << address << '\n';
-	return 0;
+	return 0xFF;
 }
 
 void Emulator::WriteIO(uint16_t address, uint8_t value)
