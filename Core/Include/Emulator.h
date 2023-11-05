@@ -77,7 +77,9 @@ public:
 	inline Display* GetDisplay() { return m_Display.get(); }
 	inline Ppu* GetPpu() { return m_Ppu.get(); }
 	inline Dma* GetDma() { return m_Dma.get(); }
+	inline Ram* GetRam() { return m_Ram.get(); }
 	inline Joypad* GetJoypad() { return m_Joypad.get(); }
+	inline Cartridge* GetCartridge() { return m_Cartridge.get(); }
 
 	// Trace log
 	void ToggleTraceLog(bool enable);

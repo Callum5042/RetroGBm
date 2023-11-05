@@ -16,7 +16,7 @@ void Op::Nop(EmulatorContext* context)
 void Op::Stop(EmulatorContext* context)
 {
 	context->cycles += 4;
-	context->cpu->ProgramCounter++;
+	context->cpu->ProgramCounter += 2;
 	// Emulator::Instance->Stop();
 
 	std::cout << "Stop\n";
