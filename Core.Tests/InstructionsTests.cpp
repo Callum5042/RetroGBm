@@ -326,5 +326,22 @@ namespace CoreTests
 			// Assert
 			Assert::AreEqual(0xA, static_cast<int>(emulator.ReadBus(0xC000)));
 		}
+
+		TEST_METHOD(Pop16_Pushed16_ShouldPop16_BeSameValue)
+		{
+			// Arrange
+			Emulator emulator;
+			emulator.GetCpu()->ProgramCounter = 0x32;
+
+			emulator.GetCpu()->SetRegister(RegisterType16::REG_BC, 0xAABB);
+			Op::PushR16(emulator.GetContext(), RegisterType16::REG_BC);
+			emulator.GetCpu()->SetRegister(RegisterType16::REG_BC, 0x0);
+
+			// Act
+			Op::PopR16(emulator.GetContext(), RegisterType16::REG_BC);
+
+			// Assert
+			Assert::AreEqual(0xAABB, static_cast<int>(emulator.GetCpu()->GetRegister(RegisterType16::REG_BC)));
+		}
 	};
 }
