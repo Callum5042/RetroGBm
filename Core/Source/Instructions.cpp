@@ -488,7 +488,7 @@ void Op::AddIndirectHL(EmulatorContext* context)
 
 	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result & 0xFF));
 
-	context->cpu->ProgramCounter += 2;
+	context->cpu->ProgramCounter += 1;
 	context->cycles += 8;
 }
 
@@ -895,7 +895,7 @@ void Op::AndIndirectHL(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, true);
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
-	context->cpu->ProgramCounter += 2;
+	context->cpu->ProgramCounter += 1;
 	context->cycles += 8;
 }
 
