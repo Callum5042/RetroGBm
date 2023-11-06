@@ -1,6 +1,7 @@
 #include "CppUnitTest.h"
 #include <Emulator.h>
 #include <Instructions.h>
+#include <Cartridge.h>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -273,6 +274,74 @@ namespace CoreTests
 			Assert::IsTrue(emulator.GetCpu()->GetFlag(CpuFlag::Subtraction));
 			Assert::IsFalse(emulator.GetCpu()->GetFlag(CpuFlag::Zero));
 			Assert::IsTrue(emulator.GetCpu()->GetFlag(CpuFlag::HalfCarry));
+		}
+
+		TEST_METHOD(LoadN8_SetRegisterToBusValue)
+		{
+			// Arrange
+			Emulator emulator;
+			emulator.GetCpu()->SetRegister(RegisterType8::REG_D, 0x0);
+			emulator.GetCpu()->ProgramCounter = 0x32;
+
+			const_cast<CartridgeInfo*>(emulator.GetCartridge()->GetCartridgeInfo())->data.resize(0x3FFF);
+			const_cast<CartridgeInfo*>(emulator.GetCartridge()->GetCartridgeInfo())->data[0x33] = 0xA;
+
+			// Act
+			Op::LoadN8(emulator.GetContext(), RegisterType8::REG_D);
+
+			// Assert
+			Assert::AreEqual(0xA, static_cast<int>(emulator.GetCpu()->GetRegister(RegisterType8::REG_D)));
+		}
+
+		TEST_METHOD(StoreN8_SetValuePointerToAtBusToBusValue)
+		{
+			// Arrange
+			Emulator emulator;
+			emulator.GetCpu()->SetRegister(RegisterType16::REG_HL, 0xC000);
+			emulator.GetCpu()->ProgramCounter = 0x32;
+
+			const_cast<CartridgeInfo*>(emulator.GetCartridge()->GetCartridgeInfo())->data.resize(0xFFFF);
+			const_cast<CartridgeInfo*>(emulator.GetCartridge()->GetCartridgeInfo())->data[0x33] = 0xA;
+			emulator.WriteBus(0xC000, 0x0);
+
+			// Act
+			Op::StoreN8(emulator.GetContext(), RegisterType16::REG_HL);
+
+			// Assert
+			Assert::AreEqual(0xA, static_cast<int>(emulator.ReadBus(0xC000)));
+		}
+
+		TEST_METHOD(StoreR8_SetValuePointerToAtBusToBusValue)
+		{
+			// Arrange
+			Emulator emulator;
+			emulator.GetCpu()->SetRegister(RegisterType16::REG_HL, 0xC000);
+			emulator.GetCpu()->SetRegister(RegisterType8::REG_D, 0xA);
+			emulator.GetCpu()->ProgramCounter = 0x32;
+			emulator.WriteBus(0xC000, 0x0);
+
+			// Act
+			Op::StoreR8(emulator.GetContext(), RegisterType8::REG_D, RegisterType16::REG_HL);
+
+			// Assert
+			Assert::AreEqual(0xA, static_cast<int>(emulator.ReadBus(0xC000)));
+		}
+
+		TEST_METHOD(Pop16_Pushed16_ShouldPop16_BeSameValue)
+		{
+			// Arrange
+			Emulator emulator;
+			emulator.GetCpu()->ProgramCounter = 0x32;
+
+			emulator.GetCpu()->SetRegister(RegisterType16::REG_BC, 0xAABB);
+			Op::PushR16(emulator.GetContext(), RegisterType16::REG_BC);
+			emulator.GetCpu()->SetRegister(RegisterType16::REG_BC, 0x0);
+
+			// Act
+			Op::PopR16(emulator.GetContext(), RegisterType16::REG_BC);
+
+			// Assert
+			Assert::AreEqual(0xAABB, static_cast<int>(emulator.GetCpu()->GetRegister(RegisterType16::REG_BC)));
 		}
 	};
 }

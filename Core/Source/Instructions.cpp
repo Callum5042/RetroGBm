@@ -16,7 +16,7 @@ void Op::Nop(EmulatorContext* context)
 void Op::Stop(EmulatorContext* context)
 {
 	context->cycles += 4;
-	context->cpu->ProgramCounter++;
+	context->cpu->ProgramCounter += 2;
 	// Emulator::Instance->Stop();
 
 	std::cout << "Stop\n";
@@ -315,18 +315,20 @@ void Op::LoadIndirectR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->ProgramCounter += 3;
 }
 
-void Op::StoreFF00(EmulatorContext* context)
+void Op::StoreIO(EmulatorContext* context)
 {
 	uint8_t data = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
 	uint8_t reg_data = context->cpu->GetRegister(RegisterType8::REG_A);
 
+	// 0xFF00 is the start of the hardware registers
 	context->bus->WriteBus(0xFF00 + data, reg_data);
 	context->cycles += 12;
 	context->cpu->ProgramCounter += 2;
 }
 
-void Op::LoadFF00(EmulatorContext* context)
+void Op::LoadIO(EmulatorContext* context)
 {
+	// 0xFF00 is the start of the hardware registers
 	uint8_t data = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
 	uint8_t result = context->bus->ReadBus(0xFF00 + data);
 
@@ -486,7 +488,7 @@ void Op::AddIndirectHL(EmulatorContext* context)
 
 	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result & 0xFF));
 
-	context->cpu->ProgramCounter += 2;
+	context->cpu->ProgramCounter += 1;
 	context->cycles += 8;
 }
 
@@ -893,7 +895,7 @@ void Op::AndIndirectHL(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, true);
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
-	context->cpu->ProgramCounter += 2;
+	context->cpu->ProgramCounter += 1;
 	context->cycles += 8;
 }
 

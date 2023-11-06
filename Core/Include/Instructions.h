@@ -58,9 +58,9 @@ namespace Op
 
 	void LoadIndirectR8(EmulatorContext* context, RegisterType8 reg);
 
-	void StoreFF00(EmulatorContext* context);
+	void StoreIO(EmulatorContext* context);
 
-	void LoadFF00(EmulatorContext* context);
+	void LoadIO(EmulatorContext* context);
 
 	void Halt(EmulatorContext* context);
 
