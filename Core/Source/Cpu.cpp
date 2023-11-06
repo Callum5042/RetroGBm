@@ -1053,7 +1053,7 @@ void Cpu::Execute(EmulatorContext* context, const uint8_t opcode)
 			Op::Rst(context, 0x18);
 			break;
 		case 0xE0:
-			Op::StoreFF00(context);
+			Op::StoreIO(context);
 			break;
 		case 0xE1:
 			Op::PopR16(context, RegisterType16::REG_HL);
@@ -1086,7 +1086,7 @@ void Cpu::Execute(EmulatorContext* context, const uint8_t opcode)
 			Op::Rst(context, 0x28);
 			break;
 		case 0xF0:
-			Op::LoadFF00(context);
+			Op::LoadIO(context);
 			break;
 		case 0xF1:
 			Op::PopR16(context, RegisterType16::REG_AF);
