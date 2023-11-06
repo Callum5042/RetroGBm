@@ -104,23 +104,23 @@ void Emulator::Tick()
 	const uint8_t opcode = this->ReadBus(m_Cpu->ProgramCounter);
 	m_CurrentOpCode = opcode;
 
-	if (IsTraceLogEnabled())
-	{
-		std::string debug_format = std::format("OP:{:X},PC:{:X},AF:{:X},BC:{:X},DE:{:X},HL:{:X},SP:{:X}",
-											   opcode,
-											   m_Context.cpu->ProgramCounter,
-											   m_Context.cpu->GetRegister(RegisterType16::REG_AF),
-											   m_Context.cpu->GetRegister(RegisterType16::REG_BC),
-											   m_Context.cpu->GetRegister(RegisterType16::REG_DE),
-											   m_Context.cpu->GetRegister(RegisterType16::REG_HL),
-											   m_Context.cpu->StackPointer);
-
-		m_TraceLog << debug_format << std::endl;
-	}
-
 	// Execute
 	if (!m_Halted)
 	{
+		if (IsTraceLogEnabled())
+		{
+			std::string debug_format = std::format("OP:{:X},PC:{:X},AF:{:X},BC:{:X},DE:{:X},HL:{:X},SP:{:X}",
+												   opcode,
+												   m_Context.cpu->ProgramCounter,
+												   m_Context.cpu->GetRegister(RegisterType16::REG_AF),
+												   m_Context.cpu->GetRegister(RegisterType16::REG_BC),
+												   m_Context.cpu->GetRegister(RegisterType16::REG_DE),
+												   m_Context.cpu->GetRegister(RegisterType16::REG_HL),
+												   m_Context.cpu->StackPointer);
+
+			m_TraceLog << debug_format << std::endl;
+		}
+
 		m_Cpu->Execute(&m_Context, opcode);
 	}
 	else
@@ -132,6 +132,9 @@ void Emulator::Tick()
 			m_Halted = false;
 		}
 	}
+
+	// Check flag
+	m_Cpu->HandleInterrupts();
 
 	// Tick timer
 	for (int i = 0; i < m_Context.cycles / 4; ++i)
@@ -146,9 +149,6 @@ void Emulator::Tick()
 	}
 
 	m_Context.cycles = 0;
-
-	// Check flag
-	m_Cpu->HandleInterrupts();
 
 	// Debug
 	//{
