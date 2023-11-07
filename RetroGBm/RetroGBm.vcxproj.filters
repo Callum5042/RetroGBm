@@ -93,9 +93,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="C:\Users\Callum\Desktop\GameboyIcon.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
     <Image Include="..\GameboyIcon.ico">
       <Filter>Resource Files</Filter>
     </Image>

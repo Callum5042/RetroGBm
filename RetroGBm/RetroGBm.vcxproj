@@ -225,7 +225,6 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\GameboyIcon.ico" />
-    <Image Include="C:\Users\Callum\Desktop\GameboyIcon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
