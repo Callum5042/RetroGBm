@@ -71,7 +71,7 @@ void Window::Create(const std::string& title, int width, int height)
 	wc.lpfnWndProc = MainWndProc;
 	wc.hInstance = hInstance;
 	wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
-	wc.hCursor = LoadCursor(0, MAKEINTRESOURCE(IDI_ICON1));
+	wc.hCursor = LoadCursor(0, IDC_ARROW);
 	wc.lpszClassName = window_title.c_str();
 	wc.lpszMenuName = MAKEINTRESOURCE(IDM_MYMENURESOURCE);
 
