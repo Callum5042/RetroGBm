@@ -53,7 +53,7 @@ namespace CoreTests
 			Assert::AreEqual(0xFF, static_cast<int>(result));
 		}
 
-		TEST_METHOD(Tick_DivIncreasedBy4Every256Ticks)
+		TEST_METHOD(Tick_DivIncreasedBy1EveryTick)
 		{
 			// Arrange
 			Timer timer(nullptr);
@@ -61,45 +61,73 @@ namespace CoreTests
 			const_cast<TimerContext*>(timer.GetContext())->div = 0;
 
 			// Act
-			for (int i = 0; i <= 256; ++i)
-			{
-				timer.Tick();
-			}
+			timer.Tick();
 
 			// Assert
-			Assert::AreEqual(0x4, static_cast<int>(timer.GetContext()->div));
+			Assert::AreEqual(0x1, static_cast<int>(timer.GetContext()->div));
 		}
 
-		TEST_METHOD(Tick_TmaIncreases4Every1024Ticks_Plus1ForFirstTick_Tac100)
-		{
-			// Arrange
-			Timer timer(nullptr);
-			timer.Init();
-			timer.Write(0xFF07, 0b100);
-
-			// Act
-			for (int i = 0; i <= 1024; ++i)
-			{
-				timer.Tick();
-			}
-
-			// Assert
-			Assert::AreEqual(0x5, static_cast<int>(timer.GetContext()->tima));
-		}
-
-		TEST_METHOD(Tick_TmaOverflown_ResetTimaToTma_TimerInterruptIsRequested)
+		TEST_METHOD(Tick_TmaOverflown_TimaIsZero_ResetNotYetDone)
 		{
 			// Arrange
 			Cpu mockCpu;
 
 			Timer timer(&mockCpu);
 			timer.Init();
-			timer.Write(0xFF07, 0b100);
+			timer.Write(0xFF07, 0b110);
 			timer.Write(0xFF06, 0xA);
-			timer.Write(0xFF05, 0xFE);
+			timer.Write(0xFF05, 0xFF);
+			timer.Write(0xFF04, 0);
 
 			// Act
-			timer.Tick();
+			for (int i = 0; i < 16; ++i)
+			{
+				timer.Tick();
+			}
+
+			// Assert
+			Assert::AreEqual(0x0, static_cast<int>(timer.GetContext()->tima));
+		}
+
+		TEST_METHOD(Tick_TmaOverflown_TimaIsIncremented)
+		{
+			// Arrange
+			Cpu mockCpu;
+
+			Timer timer(&mockCpu);
+			timer.Init();
+			timer.Write(0xFF07, 0b110);
+			timer.Write(0xFF06, 0xA);
+			timer.Write(0xFF05, 0x5);
+			timer.Write(0xFF04, 0);
+
+			// Act
+			for (int i = 0; i < 16; ++i)
+			{
+				timer.Tick();
+			}
+
+			// Assert
+			Assert::AreEqual(0x6, static_cast<int>(timer.GetContext()->tima));
+		}
+
+		TEST_METHOD(Tick_TmaOverflown_TimaIsZero_ResetIsDone4CyclesLater)
+		{
+			// Arrange
+			Cpu mockCpu;
+
+			Timer timer(&mockCpu);
+			timer.Init();
+			timer.Write(0xFF07, 0b110);
+			timer.Write(0xFF06, 0xA);
+			timer.Write(0xFF05, 0xFF);
+			timer.Write(0xFF04, 0);
+
+			// Act
+			for (int i = 0; i < 20; ++i)
+			{
+				timer.Tick();
+			}
 
 			// Assert
 			Assert::AreEqual(0xA, static_cast<int>(timer.GetContext()->tima));

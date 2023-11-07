@@ -32,10 +32,7 @@ public:
 private:
 	TimerContext m_Context = {};
 
-	int m_TimerCount = 0;
-
-	int m_DividerClocksToWait = 0;
-	int m_TimerClocksToWait = 0;
-	int m_TimerOverflowWaitCycles = 0;
-	bool m_TimerOverflown = false;
+	bool m_TimerHasOverflown = false;
+	int m_TimerOverflowTicks = 0;
+	int m_PreviousFallingEdge = 0;
 };

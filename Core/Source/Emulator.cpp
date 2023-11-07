@@ -298,8 +298,6 @@ uint8_t Emulator::ReadBus(uint16_t address)
 		}
 
 		return m_Ppu->ReadOam(address);
-
-		return 0;
 	}
 	else if (address < 0xFF00)
 	{
