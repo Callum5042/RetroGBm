@@ -6,9 +6,9 @@
 #include <Emulator.h>
 #include <Joypad.h>
 #include "Render/RenderTarget.h"
+#include "../resource.h"
 
 #define IDM_MYMENURESOURCE 3
-#define IDM_FILE_NEW 5
 
 namespace
 {
@@ -70,8 +70,8 @@ void Window::Create(const std::string& title, int width, int height)
 	wc.style = CS_VREDRAW | CS_HREDRAW;
 	wc.lpfnWndProc = MainWndProc;
 	wc.hInstance = hInstance;
-	wc.hIcon = LoadIcon(0, IDI_APPLICATION);
-	wc.hCursor = LoadCursor(0, IDC_ARROW);
+	wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
+	wc.hCursor = LoadCursor(0, MAKEINTRESOURCE(IDI_ICON1));
 	wc.lpszClassName = window_title.c_str();
 	wc.lpszMenuName = MAKEINTRESOURCE(IDM_MYMENURESOURCE);
 
