@@ -224,7 +224,7 @@
     <ResourceCompile Include="RetroGBm.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\GameboyIcon.ico" />
+    <Image Include="GameboyIcon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
