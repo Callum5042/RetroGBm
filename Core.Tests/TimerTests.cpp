@@ -67,36 +67,67 @@ namespace CoreTests
 			Assert::AreEqual(0x1, static_cast<int>(timer.GetContext()->div));
 		}
 
-		TEST_METHOD(Tick_TmaIncreases1Every1024Ticks_Plus1ForFirstTick_Tac100)
-		{
-			// Arrange
-			Timer timer(nullptr);
-			timer.Init();
-			timer.Write(0xFF07, 0b100);
-
-			// Act
-			for (int i = 0; i <= 1024; ++i)
-			{
-				timer.Tick();
-			}
-
-			// Assert
-			Assert::AreEqual(0x2, static_cast<int>(timer.GetContext()->tima));
-		}
-
-		TEST_METHOD(Tick_TmaOverflown_ResetTimaToTma_TimerInterruptIsRequested)
+		TEST_METHOD(Tick_TmaOverflown_TimaIsZero_ResetNotYetDone)
 		{
 			// Arrange
 			Cpu mockCpu;
 
 			Timer timer(&mockCpu);
 			timer.Init();
-			timer.Write(0xFF07, 0b100);
+			timer.Write(0xFF07, 0b110);
 			timer.Write(0xFF06, 0xA);
-			timer.Write(0xFF05, 0xFE);
+			timer.Write(0xFF05, 0xFF);
+			timer.Write(0xFF04, 0);
 
 			// Act
-			timer.Tick();
+			for (int i = 0; i < 16; ++i)
+			{
+				timer.Tick();
+			}
+
+			// Assert
+			Assert::AreEqual(0x0, static_cast<int>(timer.GetContext()->tima));
+		}
+
+		TEST_METHOD(Tick_TmaOverflown_TimaIsIncremented)
+		{
+			// Arrange
+			Cpu mockCpu;
+
+			Timer timer(&mockCpu);
+			timer.Init();
+			timer.Write(0xFF07, 0b110);
+			timer.Write(0xFF06, 0xA);
+			timer.Write(0xFF05, 0x5);
+			timer.Write(0xFF04, 0);
+
+			// Act
+			for (int i = 0; i < 16; ++i)
+			{
+				timer.Tick();
+			}
+
+			// Assert
+			Assert::AreEqual(0x6, static_cast<int>(timer.GetContext()->tima));
+		}
+
+		TEST_METHOD(Tick_TmaOverflown_TimaIsZero_ResetIsDone4CyclesLater)
+		{
+			// Arrange
+			Cpu mockCpu;
+
+			Timer timer(&mockCpu);
+			timer.Init();
+			timer.Write(0xFF07, 0b110);
+			timer.Write(0xFF06, 0xA);
+			timer.Write(0xFF05, 0xFF);
+			timer.Write(0xFF04, 0);
+
+			// Act
+			for (int i = 0; i < 20; ++i)
+			{
+				timer.Tick();
+			}
 
 			// Assert
 			Assert::AreEqual(0xA, static_cast<int>(timer.GetContext()->tima));
