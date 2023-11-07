@@ -53,7 +53,7 @@ namespace CoreTests
 			Assert::AreEqual(0xFF, static_cast<int>(result));
 		}
 
-		TEST_METHOD(Tick_DivIncreasedBy4Every256Ticks)
+		TEST_METHOD(Tick_DivIncreasedBy1EveryTick)
 		{
 			// Arrange
 			Timer timer(nullptr);
@@ -61,16 +61,13 @@ namespace CoreTests
 			const_cast<TimerContext*>(timer.GetContext())->div = 0;
 
 			// Act
-			for (int i = 0; i <= 256; ++i)
-			{
-				timer.Tick();
-			}
+			timer.Tick();
 
 			// Assert
-			Assert::AreEqual(0x4, static_cast<int>(timer.GetContext()->div));
+			Assert::AreEqual(0x1, static_cast<int>(timer.GetContext()->div));
 		}
 
-		TEST_METHOD(Tick_TmaIncreases4Every1024Ticks_Plus1ForFirstTick_Tac100)
+		TEST_METHOD(Tick_TmaIncreases1Every1024Ticks_Plus1ForFirstTick_Tac100)
 		{
 			// Arrange
 			Timer timer(nullptr);
@@ -84,7 +81,7 @@ namespace CoreTests
 			}
 
 			// Assert
-			Assert::AreEqual(0x5, static_cast<int>(timer.GetContext()->tima));
+			Assert::AreEqual(0x2, static_cast<int>(timer.GetContext()->tima));
 		}
 
 		TEST_METHOD(Tick_TmaOverflown_ResetTimaToTma_TimerInterruptIsRequested)

@@ -22,44 +22,52 @@ void Timer::Init()
 
 void Timer::Tick()
 {
-	// Increment div every 256 ticks
-	m_DividerClocksToWait += 4;
-	if (m_DividerClocksToWait >= 256)
+	// Increment div every tick
+	m_Context.div++;
+
+	// Detect falling edge
+	int val = 0;
+	switch (m_Context.tac & (0b11))
 	{
-		m_DividerClocksToWait = 0;
-		m_Context.div++;
+		case 0b00:
+			val = (m_Context.div >> 9) & 0x1;
+			break;
+		case 0b10:
+			val = (m_Context.div >> 3) & 0x1;
+			break;
+		case 0b01:
+			val = (m_Context.div >> 5) & 0x1;
+			break;
+		case 0b11:
+			val = (m_Context.div >> 7) & 0x1;
+			break;
 	}
-	
+
+	val &= m_Context.tac & (1 << 2);
+	bool timer_enabled = (m_PreviousFallingEdge == 1 && val == 0);
+	m_PreviousFallingEdge = val;
+
 	// Increment tima from tac
-	bool timer_enabled = m_Context.tac & (1 << 2);
 	if (timer_enabled)
 	{
-		m_TimerClocksToWait -= 4;
-		if (m_TimerClocksToWait <= 0)
+		m_Context.tima++;
+		if (m_Context.tima == 0x0)
 		{
-			const int cpu_clock = 4 * 1024 * 1024;
-			switch (m_Context.tac & (0b11))
-			{
-				case 0b00:
-					m_TimerClocksToWait = cpu_clock / 4096;
-					break;
-				case 0b10:
-					m_TimerClocksToWait = cpu_clock / 262144;
-					break;
-				case 0b01:
-					m_TimerClocksToWait = cpu_clock / 65536;
-					break;
-				case 0b11:
-					m_TimerClocksToWait = cpu_clock / 16384;
-					break;
-			}
+			// Have to delay the interrupt and resetting the tima by 4 ticks
+			m_TimerHasOverflown = true;
+			m_TimerOverflowTicks = 4;
+		}
+	}
 
-			m_Context.tima++;
-			if (m_Context.tima == 0xFF)
-			{
-				m_Context.tima = m_Context.tma;
-				m_Cpu->RequestInterrupt(InterruptFlag::Timer);
-			}
+	// Handle overflow
+	if (m_TimerHasOverflown)
+	{
+		m_TimerOverflowTicks--;
+		if (m_TimerOverflowTicks < 0)
+		{
+			m_TimerHasOverflown = false;
+			m_Context.tima = m_Context.tma;
+			m_Cpu->RequestInterrupt(InterruptFlag::Timer);
 		}
 	}
 }
@@ -91,11 +99,29 @@ void Timer::Write(uint16_t address, uint8_t value)
 			m_Context.div = 0;
 			break;
 		case 0xFF05:
-			m_Context.tima = value;
+		{
+			// Writes to tima is ignored if the TMA was going to be loaded in the same cycle
+			bool tmaBeingLoaded = m_TimerHasOverflown && m_TimerOverflowTicks == 0;
+			if (!tmaBeingLoaded)
+			{
+				m_TimerHasOverflown = false;
+				m_Context.tima = value;
+			}
 			break;
+		}
 		case 0xFF06:
+		{
 			m_Context.tma = value;
+
+			// If TMA is being loaded in same cycle then also load tma as tima
+			bool tmaBeingLoaded = m_TimerHasOverflown && m_TimerOverflowTicks == 0;
+			if (!tmaBeingLoaded)
+			{
+				m_Context.tima = m_Context.tma;
+			}
+
 			break;
+		}
 		case 0xFF07:
 			m_Context.tac = value;
 			break;
