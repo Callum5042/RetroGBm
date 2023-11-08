@@ -47,7 +47,7 @@ void Timer::Tick()
 	m_PreviousFallingEdge = timer_update;
 
 	// Increment tima from tac
-	bool timer_enabled = m_Context.tac & (1 << 2);
+	bool timer_enabled = (m_Context.tac >> 2) & 0x1;
 	if (timer_enabled && update)
 	{
 		m_Context.tima++;
