@@ -36,12 +36,16 @@ public:
 	// Attach render target
 	void AttachRenderTarget(Render::RenderTarget* renderTarget);
 
+protected:
+	virtual void OnClose();
+
 private:
 	HWND m_Window = nullptr;
 
 	void HandleKeyboardEvent(UINT msg, WPARAM wParam, LPARAM lParam);
 	virtual void HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam);
 	void HandleKey(bool state, WORD scancode);
-
 	void OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+	std::wstring m_RegisterClassName;
 };

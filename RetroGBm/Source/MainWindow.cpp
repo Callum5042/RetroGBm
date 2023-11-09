@@ -37,7 +37,7 @@ void MainWindow::Create(const std::string& title, int width, int height)
 	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(filemenu), L"&File");
 
 	m_DebugMenuItem = CreateMenu();
-	AppendMenuW(m_DebugMenuItem, MF_CHECKED, m_MenuDebugTilemap, L"Tilemap");
+	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTilemap, L"Tilemap");
 	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTracelog, L"Tracelog");
 	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_DebugMenuItem), L"Debug");
 
@@ -64,10 +64,12 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			if (menu_state & MF_CHECKED)
 			{
 				CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND | MF_UNCHECKED);
+				m_Application->CloseTileWindow();
 			}
 			else
 			{
 				CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND | MF_CHECKED);
+				m_Application->CreateTileWindow();
 			}
 
 			// CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYPOSITION | MF_CHECKED);
@@ -76,6 +78,18 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		case m_MenuDebugTracelog:
 			ToggleTracelog();
 			break;
+	}
+}
+
+void MainWindow::ToggleTileWindowMenuItem(bool checked)
+{
+	if (checked)
+	{
+		CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND | MF_CHECKED);
+	}
+	else
+	{
+		CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND | MF_UNCHECKED);
 	}
 }
 
@@ -163,4 +177,10 @@ bool MainWindow::OpenFileDialog(std::string* filepath)
 	CoUninitialize();
 
 	return true;
+}
+
+void MainWindow::OnClose()
+{
+	Window::OnClose();
+	PostQuitMessage(0);
 }

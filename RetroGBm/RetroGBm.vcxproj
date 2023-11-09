@@ -153,6 +153,7 @@
     <ClCompile Include="Source\Render\RenderShader.cpp" />
     <ClCompile Include="Source\Render\RenderTarget.cpp" />
     <ClCompile Include="Source\Render\RenderTexture.cpp" />
+    <ClCompile Include="Source\TileWindow.cpp" />
     <ClCompile Include="Source\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -162,6 +163,7 @@
     <ClInclude Include="Include\Render\RenderShader.h" />
     <ClInclude Include="Include\Render\RenderTarget.h" />
     <ClInclude Include="Include\Render\RenderTexture.h" />
+    <ClInclude Include="Include\TileWindow.h" />
     <ClInclude Include="Include\Window.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Shaders\PixelShader.hlsl.h" />

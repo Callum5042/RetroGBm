@@ -10,6 +10,11 @@ public:
 
 	virtual void Create(const std::string& title, int width, int height) override;
 
+	void ToggleTileWindowMenuItem(bool checked);
+
+protected:
+	virtual void OnClose() override;
+
 private:
 
 	virtual void HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam) override;
@@ -17,7 +22,7 @@ private:
 	static const UINT m_MenuFileCloseId = 102;
 	static const UINT m_MenuFileExitId = 103;
 
-	HMENU m_DebugMenuItem;
+	HMENU m_DebugMenuItem = NULL;
 	static const UINT m_MenuDebugTilemap = 201;
 	static const UINT m_MenuDebugTracelog = 202;
 

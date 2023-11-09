@@ -1,11 +1,12 @@
 #pragma once
 
+#include <memory>
+
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-#include <memory>
-#include "Window.h"
 #include "MainWindow.h"
+#include "TileWindow.h"
 
 #include "Render/RenderDevice.h"
 #include "Render/RenderShader.h"
@@ -23,9 +24,15 @@ public:
 	int Start();
 
 	inline Emulator* GetEmulator() { return m_Emulator.get(); }
+	inline Render::RenderDevice* GetRenderDevice() { return m_RenderDevice.get(); }
 
 	void LoadRom(const std::string& file);
 	void StopEmulator();
+
+	void CreateTileWindow();
+	void CloseTileWindow();
+
+	inline MainWindow* GetMainWindow() const { return m_MainWindow.get(); }
 
 private:
 	void Init();
@@ -39,13 +46,7 @@ private:
 	void CreateMainWindow();
 
 	// Tile window
-	std::unique_ptr<Window> m_TileWindow = nullptr;
-	std::unique_ptr<Render::RenderTarget> m_TileRenderTarget = nullptr;
-	std::unique_ptr<Render::RenderTexture> m_TileRenderTexture = nullptr;
-	void CreateTilemapWindow();
-	void UpdateTilemapTexture();
-
-	float m_TileWindowScale = 4.0f;
+	std::unique_ptr<TileWindow> m_TileWindow = nullptr;
 
 	// Emulator
 	std::unique_ptr<Emulator> m_Emulator;
