@@ -156,20 +156,6 @@
     <ClCompile Include="Source\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="Resources\dmg_boot.bin">
-      <FileType>Document</FileType>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Resources\pokemon-crystal.gbc">
-      <FileType>Document</FileType>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Resources\Super Mario Land.gb">
-      <FileType>Document</FileType>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Resources\Tetris.gb">
-      <FileType>Document</FileType>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="Include\Application.h" />
     <ClInclude Include="Include\MainWindow.h" />
     <ClInclude Include="Include\Render\RenderDevice.h" />

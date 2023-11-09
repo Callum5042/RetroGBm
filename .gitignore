@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Ignore GB non-test ROMS
+*.gb
+!testroms/*.gb
