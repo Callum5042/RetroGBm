@@ -164,3 +164,9 @@ bool MainWindow::OpenFileDialog(std::string* filepath)
 
 	return true;
 }
+
+void MainWindow::OnClose()
+{
+	Window::OnClose();
+	PostQuitMessage(0);
+}

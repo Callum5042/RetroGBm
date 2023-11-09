@@ -10,6 +10,9 @@ public:
 
 	virtual void Create(const std::string& title, int width, int height) override;
 
+protected:
+	virtual void OnClose() override;
+
 private:
 
 	virtual void HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam) override;

@@ -95,8 +95,8 @@ LRESULT Window::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
 	{
-		case WM_DESTROY:
-			PostQuitMessage(0);
+		case WM_CLOSE:
+			OnClose();
 			return 0;
 
 		case WM_SYSCHAR:
@@ -234,4 +234,9 @@ void Window::OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		m_RenderTarget->Resize(width, height);
 	}
+}
+
+void Window::OnClose()
+{
+	DestroyWindow(m_Window);
 }
