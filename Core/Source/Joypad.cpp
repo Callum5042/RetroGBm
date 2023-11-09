@@ -68,12 +68,13 @@ void Joypad::SetJoypad(JoypadButton button, bool state)
 
 uint8_t Joypad::GamepadGetOutput()
 {
-	// Set 1100 1111 by default (bit 4 and 5 are used by the emulator to set the button/dpad enabled state)
-	uint8_t output = 0xCF;
+	// Set 1111 1111 by default (bit 4 and 5 are used by the emulator to set the button/dpad enabled state)
+	uint8_t output = 0xFF;
 
 	// Can only set the start/select/a/b buttons if bit 5 is set
 	if (!m_SelectButtons)
 	{
+		output &= ~(1 << 5);
 		if (m_JoypadState.start)
 		{
 			output &= ~(1 << 3);
@@ -95,6 +96,7 @@ uint8_t Joypad::GamepadGetOutput()
 	// Can only set the up/down/left/right buttons if bit 4 is set
 	if (!m_SelectDPad)
 	{
+		output &= ~(1 << 4);
 		if (m_JoypadState.left)
 		{
 			output &= ~(1 << 1);
