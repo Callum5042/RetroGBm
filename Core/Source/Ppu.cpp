@@ -176,29 +176,16 @@ void Ppu::HBlank()
 
 void Ppu::CalculateFPS()
 {
-	uint32_t end = static_cast<uint32_t>(GetTickCount64());
-	uint32_t frame_time = end - m_PreviousFrameTime;
+	m_EndFrame = std::chrono::high_resolution_clock::now();
+	float frame_time = std::chrono::duration<float, std::milli>(m_EndFrame - m_StartFrame).count();
 
 	if (frame_time < m_TargetFrameTime)
 	{
-		const std::chrono::duration<double, std::milli> elapsed(m_TargetFrameTime - frame_time);
-		std::this_thread::sleep_for(elapsed);
+		/*const std::chrono::duration<double, std::milli> elapsed(m_TargetFrameTime - frame_time);
+		std::this_thread::sleep_for(elapsed);*/
 	}
 
-	if (end - m_StartTimer >= 1000)
-	{
-		uint32_t fps = m_FrameCount;
-		m_StartTimer = end;
-		m_FrameCount = 0;
-
-		/*if (m_Bus->m_Cartridge.NeedSave())
-		{
-			m_Bus->m_Cartridge.BatterySave();
-		}*/
-	}
-
-	m_FrameCount++;
-	m_PreviousFrameTime = static_cast<uint32_t>(GetTickCount64());
+	m_StartFrame = std::chrono::high_resolution_clock::now();
 }
 
 void Ppu::PipelineReset()

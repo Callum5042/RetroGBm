@@ -5,6 +5,7 @@
 #include <vector>
 #include <array>
 #include <queue>
+#include <chrono>
 
 class IBus;
 
@@ -102,10 +103,12 @@ public:
 
 	// Calculate FPS
 	void CalculateFPS();
-	uint32_t m_TargetFrameTime = 1000 / 60;
-	long m_PreviousFrameTime = 0;
-	long m_StartTimer = 0;
-	long m_FrameCount = 0;
+	float m_TargetFrameTime = 1000.0f / 60.0f;
+
+	std::chrono::high_resolution_clock m_FpsClock;
+	std::chrono::high_resolution_clock::time_point m_StartFrame;
+	std::chrono::high_resolution_clock::time_point m_EndFrame;
+
 
 	// Pipeline
 	void PipelineReset();
