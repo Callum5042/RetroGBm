@@ -73,6 +73,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)bin\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName)-Debug</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)bin\$(Platform)-$(Configuration)\</OutDir>
