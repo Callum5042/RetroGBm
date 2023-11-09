@@ -41,11 +41,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="Resources\dmg_boot.bin">
-      <Filter>Resource Files</Filter>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="Include\Application.h">
       <Filter>Header Files</Filter>
     </ClInclude>
