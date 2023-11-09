@@ -1,5 +1,16 @@
 #include "Pch.h"
 #include "Joypad.h"
+#include "Cpu.h"
+#include "Emulator.h"
+
+Joypad::Joypad()
+{
+	m_Cpu = Emulator::Instance->GetCpu();
+}
+
+Joypad::Joypad(Cpu* cpu) : m_Cpu(cpu)
+{
+}
 
 void Joypad::Write(uint8_t value)
 {
@@ -9,6 +20,8 @@ void Joypad::Write(uint8_t value)
 
 void Joypad::SetJoypad(JoypadButton button, bool state)
 {
+	uint8_t previous_state = this->GamepadGetOutput() & 0b111;
+
 	switch (button)
 	{
 		case JoypadButton::A:
@@ -35,6 +48,21 @@ void Joypad::SetJoypad(JoypadButton button, bool state)
 		case JoypadButton::Right:
 			m_JoypadState.right = state;
 			break;
+	}
+
+	// Request interrupt when any button has been pressed
+	uint8_t current_state = this->GamepadGetOutput() & 0b111;
+	if (current_state != previous_state)
+	{
+		for (int i = 0; i < 3; ++i)
+		{
+			// Button pressed state is 0
+			if ((current_state & (1 << i)) == 0 && (previous_state & (1 << i)) == 1)
+			{
+				m_Cpu->RequestInterrupt(InterruptFlag::Joypad);
+				break;
+			}
+		}
 	}
 }
 
