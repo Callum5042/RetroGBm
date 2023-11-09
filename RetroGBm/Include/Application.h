@@ -1,11 +1,12 @@
 #pragma once
 
+#include <memory>
+
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-#include <memory>
-#include "Window.h"
 #include "MainWindow.h"
+#include "TileWindow.h"
 
 #include "Render/RenderDevice.h"
 #include "Render/RenderShader.h"
@@ -39,7 +40,7 @@ private:
 	void CreateMainWindow();
 
 	// Tile window
-	std::unique_ptr<Window> m_TileWindow = nullptr;
+	std::unique_ptr<TileWindow> m_TileWindow = nullptr;
 	std::unique_ptr<Render::RenderTarget> m_TileRenderTarget = nullptr;
 	std::unique_ptr<Render::RenderTexture> m_TileRenderTexture = nullptr;
 	void CreateTilemapWindow();

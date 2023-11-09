@@ -228,7 +228,7 @@ void Application::CreateTilemapWindow()
 	const int window_width = static_cast<int>(16 * 8 * m_TileWindowScale);
 	const int window_height = static_cast<int>(24 * 8 * m_TileWindowScale);
 
-	m_TileWindow = std::make_unique<Window>();
+	m_TileWindow = std::make_unique<TileWindow>(this);
 	m_TileWindow->Create("RetroGBm Tilemap", window_width, window_height);
 
 	// Target
