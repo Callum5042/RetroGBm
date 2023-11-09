@@ -43,6 +43,16 @@ enum class InterruptFlag
 	Joypad = 16,
 };
 
+inline InterruptFlag operator&(InterruptFlag a, InterruptFlag b)
+{
+	return static_cast<InterruptFlag>(static_cast<int>(a) & static_cast<int>(b));
+}
+
+inline InterruptFlag operator&(int a, InterruptFlag b)
+{
+	return static_cast<InterruptFlag>(a & static_cast<int>(b));
+}
+
 class Cpu
 {
 public:

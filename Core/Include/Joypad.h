@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+class Cpu;
+
 enum class JoypadButton
 {
 	A,
@@ -28,8 +30,11 @@ struct JoypadState
 
 class Joypad
 {
+	Cpu* m_Cpu = nullptr;
+
 public:
-	Joypad() = default;
+	Joypad();
+	Joypad(Cpu* cpu);
 	virtual ~Joypad() = default;
 
 	void Write(uint8_t value);
@@ -37,7 +42,7 @@ public:
 	uint8_t GamepadGetOutput();
 
 private:
-	bool m_SelectButtons;
-	bool m_SelectDPad;
-	JoypadState m_JoypadState;
+	bool m_SelectButtons = false;
+	bool m_SelectDPad = false;
+	JoypadState m_JoypadState = {};
 };

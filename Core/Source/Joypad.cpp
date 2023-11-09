@@ -1,5 +1,16 @@
 #include "Pch.h"
 #include "Joypad.h"
+#include "Cpu.h"
+#include "Emulator.h"
+
+Joypad::Joypad()
+{
+	m_Cpu = Emulator::Instance->GetCpu();
+}
+
+Joypad::Joypad(Cpu* cpu) : m_Cpu(cpu)
+{
+}
 
 void Joypad::Write(uint8_t value)
 {
@@ -9,6 +20,8 @@ void Joypad::Write(uint8_t value)
 
 void Joypad::SetJoypad(JoypadButton button, bool state)
 {
+	uint8_t previous_state = this->GamepadGetOutput() & 0b111;
+
 	switch (button)
 	{
 		case JoypadButton::A:
@@ -36,16 +49,32 @@ void Joypad::SetJoypad(JoypadButton button, bool state)
 			m_JoypadState.right = state;
 			break;
 	}
+
+	// Request interrupt when any button has been pressed
+	uint8_t current_state = this->GamepadGetOutput() & 0b111;
+	if (current_state != previous_state)
+	{
+		for (int i = 0; i < 3; ++i)
+		{
+			// Button pressed state is 0
+			if ((current_state & (1 << i)) == 0 && (previous_state & (1 << i)) == 1)
+			{
+				m_Cpu->RequestInterrupt(InterruptFlag::Joypad);
+				break;
+			}
+		}
+	}
 }
 
 uint8_t Joypad::GamepadGetOutput()
 {
-	// Set 1100 1111 by default (bit 4 and 5 are used by the emulator to set the button/dpad enabled state)
-	uint8_t output = 0xCF;
+	// Set 1111 1111 by default (bit 4 and 5 are used by the emulator to set the button/dpad enabled state)
+	uint8_t output = 0xFF;
 
 	// Can only set the start/select/a/b buttons if bit 5 is set
 	if (!m_SelectButtons)
 	{
+		output &= ~(1 << 5);
 		if (m_JoypadState.start)
 		{
 			output &= ~(1 << 3);
@@ -67,6 +96,7 @@ uint8_t Joypad::GamepadGetOutput()
 	// Can only set the up/down/left/right buttons if bit 4 is set
 	if (!m_SelectDPad)
 	{
+		output &= ~(1 << 4);
 		if (m_JoypadState.left)
 		{
 			output &= ~(1 << 1);
