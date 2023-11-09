@@ -293,10 +293,10 @@ uint8_t Cartridge::Read(uint16_t address)
 	if (address >= 0x4000 && address <= 0x7FFF)
 	{
 		uint8_t bank_number = m_CartridgeInfo.rom_bank_controller;
-		if (bank_number == 0x0 || bank_number == 0x20 || bank_number == 0x40 || bank_number == 0x60)
+		/*if (bank_number == 0x0 || bank_number == 0x20 || bank_number == 0x40 || bank_number == 0x60)
 		{
 			bank_number++;
-		}
+		}*/
 
 		// std::cout << "Read ROM Bank 0x" << std::hex << address << '\n';
 		return m_CartridgeInfo.data[(address - 0x4000) + (0x4000 * bank_number)];
@@ -329,14 +329,44 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 	{
 		// Only enable ram if the lower 4 bits are 0xA otherwise disable ram
 		m_CartridgeInfo.enabled_ram = (value & 0xF) == 0xA;
+
+		if (IsMBC3())
+		{
+			// TODO: Enable/disable RTC
+		}
+
 		return;
 	}
 
 	// Set ROM bank controller register
 	if (address >= 0x2000 && address <= 0x3FFF)
 	{
-		// Only the lower 5 bits are used - discard the rest
-		m_CartridgeInfo.rom_bank_controller = value & 0x1F;
+		if (IsMBC1())
+		{
+			uint8_t bank_number = value & 0x1F;
+			if (bank_number == 0x0 || bank_number == 0x20 || bank_number == 0x40 || bank_number == 0x60)
+			{
+				bank_number++;
+			}
+
+			m_CartridgeInfo.rom_bank_controller = bank_number;
+		}
+		else if (IsMBC3())
+		{
+			uint8_t bank_number = value;
+			if (bank_number == 0x0)
+			{
+				bank_number++;
+			}
+
+			m_CartridgeInfo.rom_bank_controller = bank_number;
+		}
+		else
+		{
+			// Only the lower 5 bits are used - discard the rest
+			m_CartridgeInfo.rom_bank_controller = value & 0x1F;
+		}
+
 		// std::cout << "ROM bank selected: " << static_cast<int>(m_CartridgeInfo.rom_bank_controller) << '\n';
 		return;
 	}
@@ -345,6 +375,15 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 	if (address >= 0x4000 && address <= 0x5FFF)
 	{
 		m_CartridgeInfo.ram_bank_controller = value & 0b11;
+
+		if (IsMBC3())
+		{
+			if (value >= 0x08 && value <= 0x0C)
+			{
+				std::cout << "Set RTC register\n";
+			}
+		}
+
 		// std::cout << "RAM bank selected: " << static_cast<int>(m_CartridgeInfo.ram_bank_controller) << '\n';
 		return;
 	}
@@ -362,4 +401,40 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 	}
 
 	std::cout << "Unsupported CartridgeWrite 0x" << std::hex << address << '\n';
+}
+
+bool Cartridge::IsMBC1()
+{
+	if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::MBC1)
+	{
+		return true;
+	}
+	else if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::MBC1_RAM)
+	{
+		return true;
+	}
+	else if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::MBC1_RAM_BATTERY)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool Cartridge::IsMBC3()
+{
+	if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::MBC3)
+	{
+		return true;
+	}
+	else if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::MBC3_RAM)
+	{
+		return true;
+	}
+	else if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::MBC3_RAM_BATTERY)
+	{
+		return true;
+	}
+
+	return false;
 }

@@ -57,7 +57,7 @@ struct CartridgeInfo
 	CartridgeHeader header;
 
 	bool enabled_ram = false;
-	uint8_t rom_bank_controller = 0;
+	uint8_t rom_bank_controller = 1;
 	uint8_t* rom_bank_memory = nullptr;
 
 	uint8_t ram_bank_controller = 0;
@@ -80,4 +80,7 @@ public:
 
 private:
 	CartridgeInfo m_CartridgeInfo;
+
+	bool IsMBC1();
+	bool IsMBC3();
 };
