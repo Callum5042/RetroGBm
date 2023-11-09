@@ -10,6 +10,8 @@ public:
 
 	virtual void Create(const std::string& title, int width, int height) override;
 
+	void ToggleTileWindowMenuItem(bool checked);
+
 protected:
 	virtual void OnClose() override;
 

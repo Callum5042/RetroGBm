@@ -58,12 +58,16 @@ Window::Window(Application* application) : m_Application(application)
 Window::~Window()
 {
 	DestroyWindow(m_Window);
+
+	HINSTANCE hInstance = GetModuleHandle(NULL);
+	UnregisterClassW(m_RegisterClassName.c_str(), hInstance);
 }
 
 void Window::Create(const std::string& title, int width, int height)
 {
 	HINSTANCE hInstance = GetModuleHandle(NULL);
 	const std::wstring window_title = ConvertToWString(title);
+	m_RegisterClassName = window_title;
 
 	// Setup window class
 	WNDCLASS wc = {};
@@ -72,7 +76,7 @@ void Window::Create(const std::string& title, int width, int height)
 	wc.hInstance = hInstance;
 	wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
 	wc.hCursor = LoadCursor(0, IDC_ARROW);
-	wc.lpszClassName = window_title.c_str();
+	wc.lpszClassName = m_RegisterClassName.c_str();
 	wc.lpszMenuName = MAKEINTRESOURCE(IDM_MYMENURESOURCE);
 
 	if (!RegisterClass(&wc))

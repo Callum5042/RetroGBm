@@ -47,4 +47,5 @@ private:
 	void HandleKey(bool state, WORD scancode);
 	void OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+	std::wstring m_RegisterClassName;
 };

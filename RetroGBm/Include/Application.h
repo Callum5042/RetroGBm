@@ -24,9 +24,15 @@ public:
 	int Start();
 
 	inline Emulator* GetEmulator() { return m_Emulator.get(); }
+	inline Render::RenderDevice* GetRenderDevice() { return m_RenderDevice.get(); }
 
 	void LoadRom(const std::string& file);
 	void StopEmulator();
+
+	void CreateTileWindow();
+	void CloseTileWindow();
+
+	inline MainWindow* GetMainWindow() const { return m_MainWindow.get(); }
 
 private:
 	void Init();
@@ -41,12 +47,6 @@ private:
 
 	// Tile window
 	std::unique_ptr<TileWindow> m_TileWindow = nullptr;
-	std::unique_ptr<Render::RenderTarget> m_TileRenderTarget = nullptr;
-	std::unique_ptr<Render::RenderTexture> m_TileRenderTexture = nullptr;
-	void CreateTilemapWindow();
-	void UpdateTilemapTexture();
-
-	float m_TileWindowScale = 4.0f;
 
 	// Emulator
 	std::unique_ptr<Emulator> m_Emulator;
