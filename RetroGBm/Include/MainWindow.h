@@ -22,7 +22,7 @@ private:
 	static const UINT m_MenuFileCloseId = 102;
 	static const UINT m_MenuFileExitId = 103;
 
-	HMENU m_DebugMenuItem;
+	HMENU m_DebugMenuItem = NULL;
 	static const UINT m_MenuDebugTilemap = 201;
 	static const UINT m_MenuDebugTracelog = 202;
 
