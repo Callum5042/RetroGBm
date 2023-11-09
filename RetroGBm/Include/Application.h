@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <thread>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -50,6 +51,7 @@ private:
 
 	// Emulator
 	std::unique_ptr<Emulator> m_Emulator;
+	std::thread m_EmulatorThread;
 
 	// Rendering
 	std::unique_ptr<Render::RenderDevice> m_RenderDevice = nullptr;

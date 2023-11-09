@@ -55,37 +55,37 @@ int Application::Start()
 
 void Application::LoadRom(const std::string& file)
 {
+	StopEmulator();
+
 	bool enable_tracelog = m_Emulator->IsTraceLogEnabled();
 
 	m_Emulator = std::make_unique<Emulator>();
 	m_Emulator->ToggleTraceLog(enable_tracelog);
 	m_Emulator->LoadRom(file);
+
+	// Emulator runs on a background thread
+	m_EmulatorThread = std::thread([&]
+	{
+		while (m_Emulator->IsRunning())
+		{
+			m_Emulator->Tick();
+		}
+	});
 }
 
 void Application::StopEmulator()
 {
 	m_Emulator->Stop();
+	if (m_EmulatorThread.joinable())
+	{
+		m_EmulatorThread.join();
+	}
 }
 
 void Application::Run()
 {
-	// Emulator runs on a background thread
+	
 	m_Emulator = std::make_unique<Emulator>();
-	// m_Emulator->LoadRom("Tetris.gb");
-	// m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\dmg-acid2.gb");
-	// m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\individual\\09-op r,r.gb");
-	// m_Emulator->LoadRom("D:\\Sources\\RetroGBm\\RetroGBm\\Resources\\testroms\\cpu_instrs\\cpu_instrs.gb");
-
-	std::thread emulator_thread([&]
-	{
-		while (m_Running)
-		{
-			if (m_Emulator->IsRunning())
-			{
-				m_Emulator->Tick();
-			}
-		}
-	});
 
 	// UI runs on main thread
 	while (m_Running)
@@ -137,7 +137,8 @@ void Application::Run()
 		}
 	}
 
-	emulator_thread.join();
+	m_Emulator->Stop();
+	m_EmulatorThread.join();
 }
 
 void Application::Init()
@@ -173,7 +174,7 @@ void Application::CreateMainWindow()
 void Application::CreateTileWindow()
 {
 	m_TileWindow = std::make_unique<TileWindow>(this);
-	
+
 	const int window_width = static_cast<int>(16 * 8 * m_TileWindow->GetTileWindowScale());
 	const int window_height = static_cast<int>(24 * 8 * m_TileWindow->GetTileWindowScale());
 	m_TileWindow->Create("RetroGBm Tilemap", window_width, window_height);
