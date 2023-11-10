@@ -74,7 +74,7 @@ namespace CoreTests
 
 			Timer timer(&mockCpu);
 			timer.Init();
-			timer.Write(0xFF07, 0b110);
+			timer.Write(0xFF07, 0b101);
 			timer.Write(0xFF06, 0xA);
 			timer.Write(0xFF05, 0xFF);
 			timer.Write(0xFF04, 0);
@@ -96,7 +96,7 @@ namespace CoreTests
 
 			Timer timer(&mockCpu);
 			timer.Init();
-			timer.Write(0xFF07, 0b110);
+			timer.Write(0xFF07, 0b101);
 			timer.Write(0xFF06, 0xA);
 			timer.Write(0xFF05, 0x5);
 			timer.Write(0xFF04, 0);
@@ -118,7 +118,7 @@ namespace CoreTests
 
 			Timer timer(&mockCpu);
 			timer.Init();
-			timer.Write(0xFF07, 0b110);
+			timer.Write(0xFF07, 0b101);
 			timer.Write(0xFF06, 0xA);
 			timer.Write(0xFF05, 0xFF);
 			timer.Write(0xFF04, 0);

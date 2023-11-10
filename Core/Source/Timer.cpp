@@ -26,29 +26,29 @@ void Timer::Tick()
 	m_Context.div++;
 
 	// Detect falling edge
-	int timer_update = 0;
+	bool bitstate = false;
 	switch (m_Context.tac & (0b11))
 	{
 		case 0b00:
-			timer_update = (m_Context.div >> 9) & 0x1;
-			break;
-		case 0b10:
-			timer_update = (m_Context.div >> 3) & 0x1;
+			bitstate = (m_Context.div >> 9) & 0x1;
 			break;
 		case 0b01:
-			timer_update = (m_Context.div >> 5) & 0x1;
+			bitstate = (m_Context.div >> 3) & 0x1;
+			break;
+		case 0b10:
+			bitstate = (m_Context.div >> 5) & 0x1;
 			break;
 		case 0b11:
-			timer_update = (m_Context.div >> 7) & 0x1;
+			bitstate = (m_Context.div >> 7) & 0x1;
 			break;
 	}
 
-	bool update = (m_PreviousFallingEdge == 1 && timer_update == 0);
-	m_PreviousFallingEdge = timer_update;
+	bool timer_update = !bitstate && m_BitPreviousState;
+	m_BitPreviousState = bitstate;
 
 	// Increment tima from tac
 	bool timer_enabled = (m_Context.tac >> 2) & 0x1;
-	if (timer_enabled && update)
+	if (timer_enabled && timer_update)
 	{
 		m_Context.tima++;
 		if (m_Context.tima == 0x0)
