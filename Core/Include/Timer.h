@@ -32,7 +32,7 @@ public:
 private:
 	TimerContext m_Context = {};
 
+	bool m_BitPreviousState = false;
 	bool m_TimerHasOverflown = false;
 	int m_TimerOverflowTicks = 0;
-	int m_PreviousFallingEdge = 0;
 };

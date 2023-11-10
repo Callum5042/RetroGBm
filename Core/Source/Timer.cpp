@@ -22,28 +22,29 @@ void Timer::Init()
 
 void Timer::Tick()
 {
-	uint16_t previous_div = m_Context.div;
-
 	// Increment div every tick
 	m_Context.div++;
 
 	// Detect falling edge
-	bool timer_update = false;
+	bool bitstate = false;
 	switch (m_Context.tac & (0b11))
 	{
 		case 0b00:
-			timer_update = !((m_Context.div >> 9) & 0x1) && ((previous_div >> 9) & 0x1);
+			bitstate = (m_Context.div >> 9) & 0x1;
 			break;
 		case 0b01:
-			timer_update = !((m_Context.div >> 3) & 0x1) && ((previous_div >> 3) & 0x1);
+			bitstate = (m_Context.div >> 3) & 0x1;
 			break;
 		case 0b10:
-			timer_update = !((m_Context.div >> 5) & 0x1) && ((previous_div >> 5) & 0x1);
+			bitstate = (m_Context.div >> 5) & 0x1;
 			break;
 		case 0b11:
-			timer_update = !((m_Context.div >> 7) & 0x1) && ((previous_div >> 7) & 0x1);
+			bitstate = (m_Context.div >> 7) & 0x1;
 			break;
 	}
+
+	bool timer_update = !bitstate && m_BitPreviousState;
+	m_BitPreviousState = bitstate;
 
 	// Increment tima from tac
 	bool timer_enabled = (m_Context.tac >> 2) & 0x1;
