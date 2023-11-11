@@ -5,6 +5,8 @@
 #include <map>
 #include <cstdint>
 #include <iostream>
+#include <format>
+#include <string>
 #undef max
 
 namespace
@@ -212,6 +214,7 @@ bool Cartridge::Load(const std::string& filepath)
 	// Title
 	m_CartridgeInfo.title.resize(16);
 	std::copy(m_CartridgeInfo.data.data() + 0x0134, m_CartridgeInfo.data.data() + 0x0144, m_CartridgeInfo.title.data());
+	m_CartridgeInfo.title.erase(m_CartridgeInfo.title.find('\0'));
 
 	// Manufacturer code
 	m_CartridgeInfo.header.manufacturer_code.resize(4);
@@ -265,7 +268,13 @@ bool Cartridge::Load(const std::string& filepath)
 	// Load RAM if battery is support
 	if (HasBattery())
 	{
-		// TODO: Load from a file
+		std::string filename = std::format("{}.save", m_CartridgeInfo.title);
+
+		std::ifstream battery(filename, std::ios::in | std::ios::binary);
+		battery.read(reinterpret_cast<char*>(&m_CartridgeInfo.ram_bank_controller), 1);
+		battery.read(reinterpret_cast<char*>(m_CartridgeInfo.external_ram.data()), m_CartridgeInfo.external_ram.size());
+
+		battery.close();
 	}
 
 	return true;
@@ -337,7 +346,17 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 			// TODO: Enable/disable RTC
 		}
 
+		// Save to file each time we disable the ram
+		if (HasBattery() && !m_CartridgeInfo.enabled_ram)
+		{
+			std::string filename = std::format("{}.save", m_CartridgeInfo.title);
 
+			std::ofstream battery(filename, std::ios::out | std::ios::binary);
+			battery.write(reinterpret_cast<char*>(&m_CartridgeInfo.ram_bank_controller), 1);
+			battery.write(reinterpret_cast<char*>(m_CartridgeInfo.external_ram.data()), m_CartridgeInfo.external_ram.size());
+
+			battery.close();
+		}
 
 		return;
 	}
@@ -399,16 +418,6 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 		{
 			uint8_t index = m_CartridgeInfo.ram_bank_controller;
 			m_CartridgeInfo.external_ram[(index * 0x8000) + address - 0xA000] = value;
-
-			// Save to file each time we write to the RAM
-			if (HasBattery())
-			{
-				/*std::ofstream battery(std::format("{}.battery", m_CartridgeInfo.title), std::ios::out | std::ios::binary);
-				battery.write(reinterpret_cast<char*>(&m_CartridgeInfo.ram_bank_controller), 1);
-				battery.write(reinterpret_cast<char*>(m_CartridgeInfo.external_ram.data()), m_CartridgeInfo.external_ram.size());
-
-				battery.close();*/
-			}
 		}
 
 		return;
