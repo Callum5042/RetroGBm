@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+class Ppu;
+
 struct DisplayContext
 {
 	// Registers
@@ -33,6 +35,8 @@ enum class LcdMode
 
 class Display
 {
+	friend class Ppu;
+
 public:
 	Display() = default;
 	virtual ~Display() = default;
@@ -60,8 +64,8 @@ public:
 	void SetLcdMode(LcdMode mode);
 	LcdMode GetLcdMode();
 
-	DisplayContext context = {};
-
 private:
+
+	DisplayContext context = {};
 	const unsigned long m_DefaultColours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
 };

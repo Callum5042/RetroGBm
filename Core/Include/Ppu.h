@@ -8,6 +8,7 @@
 #include <chrono>
 
 class IBus;
+class Cpu;
 
 enum class FetchState
 {
@@ -43,6 +44,7 @@ struct PpuContext
 class Ppu
 {
 	IBus* m_Bus = nullptr;
+	Cpu* m_Cpu = nullptr;
 	Display* m_Display = nullptr;
 
 public:
@@ -63,12 +65,19 @@ public:
 	// Modes
 	void UpdateOam();
 	void PixelTransfer();
-	void VBlank();
 	void HBlank();
+	void VBlank();
 
 	// Dimensions
-	int ScreenResolutionX = 144;
-	int ScreenResolutionY = 160;
+	int ScreenResolutionX = 160;
+	int ScreenResolutionY = 144;
 
 	PpuContext m_Context;
+
+private:
+	int m_PixelX = 0;
+
+	// Accessible areas
+	bool CanAccessVRam();
+	bool CanAccessOAM();
 };
