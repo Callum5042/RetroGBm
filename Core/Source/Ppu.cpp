@@ -77,28 +77,35 @@ void Ppu::UpdateOam()
 
 void Ppu::PixelTransfer()
 {
-	// Divide by 8
-	int position_x = (m_PixelX + m_Display->context.scx) & 0xFF;
-	int position_y = (m_Display->context.ly + m_Display->context.scy) & 0xFF;
+	if (m_Display->IsBackgroundEnabled())
+	{
+		// Divide by 8
+		int position_x = (m_PixelX + m_Display->context.scx) & 0xFF;
+		int position_y = (m_Display->context.ly + m_Display->context.scy) & 0xFF;
 
-	// Fetch tile
-	uint16_t base_address = m_Display->GetBackgroundTileBaseAddress();
-	uint8_t tile_id = m_Bus->ReadBus(base_address + (position_x >> 3) + (position_y >> 3) * 32);
+		// Fetch tile
+		uint16_t base_address = m_Display->GetBackgroundTileBaseAddress();
+		uint8_t tile_id = m_Bus->ReadBus(base_address + (position_x >> 3) + (position_y >> 3) * 32);
 
-	// Fetch tile data
-	uint16_t offset_x = (tile_id << 4);
-	uint16_t offset_y = ((position_y & 0x7) << 1);
+		// Fetch tile data
+		uint16_t offset_x = (tile_id << 4);
+		uint16_t offset_y = ((position_y & 0x7) << 1);
 
-	uint16_t tile_address = m_Display->GetBackgroundTileData();
-	uint8_t byte1 = m_Bus->ReadBus(tile_address + offset_x + offset_y);
-	uint8_t byte2 = m_Bus->ReadBus(tile_address + offset_x + offset_y + 1);
+		uint16_t tile_address = m_Display->GetBackgroundTileData();
+		uint8_t byte1 = m_Bus->ReadBus(tile_address + offset_x + offset_y);
+		uint8_t byte2 = m_Bus->ReadBus(tile_address + offset_x + offset_y + 1);
 
-	const unsigned long tile_colours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
-	uint8_t high = (static_cast<bool>(byte1 & (1 << (7 - (position_x % 8))))) << 1;
-	uint8_t low = (static_cast<bool>(byte2 & (1 << (7 - (position_x % 8))))) << 0;
+		const unsigned long tile_colours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
+		uint8_t high = (static_cast<bool>(byte1 & (1 << (7 - (position_x % 8))))) << 1;
+		uint8_t low = (static_cast<bool>(byte2 & (1 << (7 - (position_x % 8))))) << 0;
 
-	uint32_t colour = tile_colours[high | low];
-	m_Context.video_buffer[m_PixelX + (m_Display->context.ly * ScreenResolutionX)] = colour;
+		uint32_t colour = tile_colours[high | low];
+		m_Context.video_buffer[m_PixelX + (m_Display->context.ly * ScreenResolutionX)] = colour;
+	}
+	else
+	{
+		m_Context.video_buffer[m_PixelX + (m_Display->context.ly * ScreenResolutionX)] = 0xFFFFFFFF;
+	}
 
 	// Check if we are at end of the line
 	m_PixelX++;
