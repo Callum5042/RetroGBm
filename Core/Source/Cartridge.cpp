@@ -5,6 +5,8 @@
 #include <map>
 #include <cstdint>
 #include <iostream>
+#include <format>
+#include <string>
 #undef max
 
 namespace
@@ -212,6 +214,7 @@ bool Cartridge::Load(const std::string& filepath)
 	// Title
 	m_CartridgeInfo.title.resize(16);
 	std::copy(m_CartridgeInfo.data.data() + 0x0134, m_CartridgeInfo.data.data() + 0x0144, m_CartridgeInfo.title.data());
+	m_CartridgeInfo.title.erase(m_CartridgeInfo.title.find('\0'));
 
 	// Manufacturer code
 	m_CartridgeInfo.header.manufacturer_code.resize(4);
@@ -258,12 +261,20 @@ bool Cartridge::Load(const std::string& filepath)
 	// Print some info
 	std::cout << "Cartridge Type: " << m_CartridgeInfo.header.cartridge_type << '\n';
 
-	// Initialise 3 possible rom banks
-	for (int i = 0; i < 3; ++i)
+	// Initialise 3 possible rom banks (32kb each)
+	m_CartridgeInfo.external_ram.resize(0x8000 * 3);
+	std::fill(m_CartridgeInfo.external_ram.begin(), m_CartridgeInfo.external_ram.end(), 0x0);
+
+	// Load RAM if battery is support
+	if (HasBattery())
 	{
-		// 32kb each
-		m_CartridgeInfo.ram_banks[i].resize(0x8000);
-		std::fill(m_CartridgeInfo.ram_banks[i].begin(), m_CartridgeInfo.ram_banks[i].end(), 0x0);
+		std::string filename = std::format("{}.save", m_CartridgeInfo.title);
+
+		std::ifstream battery(filename, std::ios::in | std::ios::binary);
+		battery.read(reinterpret_cast<char*>(&m_CartridgeInfo.ram_bank_controller), 1);
+		battery.read(reinterpret_cast<char*>(m_CartridgeInfo.external_ram.data()), m_CartridgeInfo.external_ram.size());
+
+		battery.close();
 	}
 
 	return true;
@@ -308,7 +319,7 @@ uint8_t Cartridge::Read(uint16_t address)
 		if (m_CartridgeInfo.enabled_ram)
 		{
 			uint8_t index = m_CartridgeInfo.ram_bank_controller;
-			return m_CartridgeInfo.ram_banks[index][address - 0xA000];
+			return m_CartridgeInfo.external_ram[(index * 0x8000) + address - 0xA000];
 		}
 	}
 
@@ -333,6 +344,18 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 		if (IsMBC3())
 		{
 			// TODO: Enable/disable RTC
+		}
+
+		// Save to file each time we disable the ram
+		if (HasBattery() && !m_CartridgeInfo.enabled_ram)
+		{
+			std::string filename = std::format("{}.save", m_CartridgeInfo.title);
+
+			std::ofstream battery(filename, std::ios::out | std::ios::binary);
+			battery.write(reinterpret_cast<char*>(&m_CartridgeInfo.ram_bank_controller), 1);
+			battery.write(reinterpret_cast<char*>(m_CartridgeInfo.external_ram.data()), m_CartridgeInfo.external_ram.size());
+
+			battery.close();
 		}
 
 		return;
@@ -394,7 +417,7 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 		if (m_CartridgeInfo.enabled_ram)
 		{
 			uint8_t index = m_CartridgeInfo.ram_bank_controller;
-			m_CartridgeInfo.ram_banks[index][address - 0xA000] = value;
+			m_CartridgeInfo.external_ram[(index * 0x8000) + address - 0xA000] = value;
 		}
 
 		return;
@@ -405,36 +428,39 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 
 bool Cartridge::IsMBC1()
 {
-	if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::MBC1)
+	switch (m_CartridgeInfo.header.cartridge_type_code)
 	{
-		return true;
+		case CartridgeType::MBC1:
+		case CartridgeType::MBC1_RAM:
+		case CartridgeType::MBC1_RAM_BATTERY:
+			return true;
+		default:
+			return false;
 	}
-	else if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::MBC1_RAM)
-	{
-		return true;
-	}
-	else if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::MBC1_RAM_BATTERY)
-	{
-		return true;
-	}
-
-	return false;
 }
 
 bool Cartridge::IsMBC3()
 {
-	if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::MBC3)
+	switch (m_CartridgeInfo.header.cartridge_type_code)
 	{
-		return true;
+		case CartridgeType::MBC3:
+		case CartridgeType::MBC3_RAM:
+		case CartridgeType::MBC3_RAM_BATTERY:
+			return true;
+		default:
+			return false;
 	}
-	else if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::MBC3_RAM)
-	{
-		return true;
-	}
-	else if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::MBC3_RAM_BATTERY)
-	{
-		return true;
-	}
+}
 
-	return false;
+bool Cartridge::HasBattery()
+{
+	switch (m_CartridgeInfo.header.cartridge_type_code)
+	{
+		case CartridgeType::MBC1_RAM_BATTERY: 
+		case CartridgeType::MBC3_RAM_BATTERY:
+		case CartridgeType::MBC5_RAM_BATTERY:
+			return true;
+		default: 
+			return false;
+	}
 }
