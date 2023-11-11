@@ -81,4 +81,6 @@ private:
 	// Accessible areas
 	bool CanAccessVRam();
 	bool CanAccessOAM();
+
+	void IncrementLY();
 };

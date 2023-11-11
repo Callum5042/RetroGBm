@@ -112,7 +112,7 @@ void Ppu::PixelTransfer()
 	if (m_PixelX > ScreenResolutionX)
 	{
 		m_PixelX = 0;
-		m_Display->context.ly++;
+		IncrementLY();
 		m_Display->SetLcdMode(LcdMode::HBlank);
 	}
 }
@@ -141,9 +141,9 @@ void Ppu::VBlank()
 	if (m_Context.dot_ticks >= 456)
 	{
 		m_Context.dot_ticks = 0;
-		m_Display->context.ly++;
+		IncrementLY();
 
-		// 153 total lines in a frame (144 on screen, 10 extra for VBlank mode) (4560 dot ticks)
+		// 154 total lines in a frame (144 on screen, 10 extra for VBlank mode) (4560 dot ticks)
 		if (m_Display->context.ly >= 154)
 		{
 			m_Display->context.ly = 0;
@@ -167,4 +167,19 @@ bool Ppu::CanAccessOAM()
 	}
 
 	return true;
+}
+
+void Ppu::IncrementLY()
+{
+	m_Display->context.ly++;
+
+	if (m_Display->context.ly == m_Display->context.lyc)
+	{
+		m_Display->context.stat |= 0b100;
+		m_Cpu->RequestInterrupt(InterruptFlag::STAT);
+	}
+	else
+	{
+		m_Display->context.stat &= ~0b100;
+	}
 }
