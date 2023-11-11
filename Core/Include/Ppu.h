@@ -77,6 +77,7 @@ public:
 
 private:
 	int m_PixelX = 0;
+	int m_WindowLineCounter = 0;
 
 	// Accessible areas
 	bool CanAccessVRam();

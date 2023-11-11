@@ -121,7 +121,7 @@ void Ppu::PixelTransfer()
 		{
 			// Divide by 8
 			int position_x = (m_PixelX - m_Display->context.wx + 7) & 0xFF;
-			int position_y = (m_Display->context.ly - m_Display->context.wy) & 0xFF;
+			int position_y = (m_WindowLineCounter - m_Display->context.wy) & 0xFF;
 
 			// Fetch tile
 			uint16_t base_address = m_Display->GetWindowTileBaseAddress();
@@ -190,6 +190,8 @@ void Ppu::VBlank()
 		if (m_Display->context.ly >= 154)
 		{
 			m_Display->context.ly = 0;
+			m_WindowLineCounter = 0;
+
 			m_Display->SetLcdMode(LcdMode::OAM);
 		}
 	}
@@ -224,5 +226,11 @@ void Ppu::IncrementLY()
 	else
 	{
 		m_Display->context.stat &= ~0b100;
+	}
+
+	// Internal window line counter
+	if (m_Display->IsWindowEnabled() && m_Display->IsWindowInView(m_PixelX))
+	{
+		m_WindowLineCounter++;
 	}
 }
