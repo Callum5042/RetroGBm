@@ -18,6 +18,12 @@ Ppu::Ppu()
 
 void Ppu::Init()
 {
+	m_Context.video_buffer.resize(0x8000);
+	std::fill(m_Context.video_ram.begin(), m_Context.video_ram.end(), 0);
+
+	m_Context.video_buffer.resize(ScreenResolutionX * ScreenResolutionY * sizeof(uint32_t));
+	std::fill(m_Context.video_buffer.begin(), m_Context.video_buffer.end(), 0);
+
 
 
 	m_Display->Init();
