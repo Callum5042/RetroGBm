@@ -49,7 +49,7 @@ class Ppu
 
 public:
 	Ppu();
-	Ppu(Cpu* cpu, Display* display);
+	Ppu(IBus* bus, Cpu* cpu, Display* display);
 	virtual ~Ppu() = default;
 
 	void Init();

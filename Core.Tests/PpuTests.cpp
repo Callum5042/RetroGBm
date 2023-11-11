@@ -2,11 +2,21 @@
 #include <Display.h>
 #include <Ppu.h>
 #include <Cpu.h>
+#include <Emulator.h>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace CoreTests
 {
+	class NullBus : public IBus
+	{
+	public:
+		NullBus() = default;
+
+		uint8_t ReadBus(uint16_t address) override { return 0; }
+		void WriteBus(uint16_t address, uint8_t value) override { }
+	};
+
 	TEST_CLASS(PpuTests)
 	{
 	public:
@@ -15,8 +25,9 @@ namespace CoreTests
 			// Arrange
 			Cpu cpu;
 			Display display;
+			NullBus bus;
 
-			Ppu ppu(&cpu, &display);
+			Ppu ppu(&bus, &cpu, &display);
 
 			// Act
 			ppu.Init();
@@ -34,8 +45,9 @@ namespace CoreTests
 			// Arrange
 			Cpu cpu;
 			Display display;
+			NullBus bus;
 
-			Ppu ppu(&cpu, &display);
+			Ppu ppu(&bus, &cpu, &display);
 			ppu.Init();
 
 			// Act
@@ -54,8 +66,9 @@ namespace CoreTests
 			// Arrange
 			Cpu cpu;
 			Display display;
+			NullBus bus;
 
-			Ppu ppu(&cpu, &display);
+			Ppu ppu(&bus, &cpu, &display);
 			ppu.Init();
 
 			// Act
@@ -75,8 +88,9 @@ namespace CoreTests
 			// Arrange
 			Cpu cpu;
 			Display display;
+			NullBus bus;
 
-			Ppu ppu(&cpu, &display);
+			Ppu ppu(&bus, &cpu, &display);
 			ppu.Init();
 
 			// Act
@@ -98,8 +112,9 @@ namespace CoreTests
 			// Arrange
 			Cpu cpu;
 			Display display;
+			NullBus bus;
 
-			Ppu ppu(&cpu, &display);
+			Ppu ppu(&bus, &cpu, &display);
 			ppu.Init();
 
 			const_cast<DisplayContext*>(display.GetContext())->ly = 144;
