@@ -77,27 +77,28 @@ void Ppu::UpdateOam()
 
 void Ppu::PixelTransfer()
 {
-	// if (m_Display->context.ly < 20)
-	{
-		int position_x = static_cast<int>(m_PixelX / 8);
-		int position_y = static_cast<int>(m_Display->context.ly / 8);
+	// Divide by 8
+	int position_x = (m_PixelX >> 3);
+	int position_y = (m_Display->context.ly >> 3);
 
-		// Fetch tile
-		uint16_t base_address = m_Display->GetBackgroundTileBaseAddress();
-		uint8_t tile_id = m_Bus->ReadBus(base_address + position_x + (position_y * 32));
+	// Fetch tile
+	uint16_t base_address = m_Display->GetBackgroundTileBaseAddress();
+	uint8_t tile_id = m_Bus->ReadBus(base_address + position_x + (position_y * 32));
 
-		// Fetch tile data
-		uint16_t tile_address = m_Display->GetBackgroundTileData();
-		uint8_t byte1 = m_Bus->ReadBus(tile_address + (tile_id * 16) + ((m_Display->context.ly & 0x7) << 1));
-		uint8_t byte2 = m_Bus->ReadBus(tile_address + (tile_id * 16) + ((m_Display->context.ly & 0x7) << 1) + 1);
+	// Fetch tile data
+	uint16_t offset_x = (tile_id << 4); // *16);
+	uint16_t offset_y = ((m_Display->context.ly & 0x7) << 1);
 
-		const unsigned long tile_colours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
-		uint8_t high = (static_cast<bool>(byte1 & (1 << (7 - (m_PixelX % 8))))) << 1;
-		uint8_t low = (static_cast<bool>(byte2 & (1 <<  (7 -(m_PixelX % 8))))) << 0;
+	uint16_t tile_address = m_Display->GetBackgroundTileData();
+	uint8_t byte1 = m_Bus->ReadBus(tile_address + offset_x + offset_y);
+	uint8_t byte2 = m_Bus->ReadBus(tile_address + offset_x + offset_y + 1);
 
-		uint32_t colour = tile_colours[high | low];
-		m_Context.video_buffer[m_PixelX + (m_Display->context.ly * ScreenResolutionX)] = colour;
-	}
+	const unsigned long tile_colours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
+	uint8_t high = (static_cast<bool>(byte1 & (1 << (7 - (m_PixelX % 8))))) << 1;
+	uint8_t low = (static_cast<bool>(byte2 & (1 << (7 - (m_PixelX % 8))))) << 0;
+
+	uint32_t colour = tile_colours[high | low];
+	m_Context.video_buffer[m_PixelX + (m_Display->context.ly * ScreenResolutionX)] = colour;
 
 	// Check if we are at end of the line
 	m_PixelX++;
