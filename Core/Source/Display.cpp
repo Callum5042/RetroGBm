@@ -284,3 +284,19 @@ bool Display::IsStatInterruptLYC()
 
 	return false;
 }
+
+bool Display::IsWindowInView(int pixel_x)
+{
+	const int ScreenResolutionX = 160;
+	const int ScreenResolutionY = 144;
+
+	if (context.ly >= context.wy && context.ly < context.wy + ScreenResolutionY)
+	{
+		if ((pixel_x >= context.wx - 7) && (pixel_x < context.wx + ScreenResolutionX - 7))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}

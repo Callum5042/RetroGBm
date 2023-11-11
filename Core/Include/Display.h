@@ -50,6 +50,7 @@ public:
 	bool IsWindowEnabled();
 	bool IsBackgroundEnabled();
 	bool IsObjectEnabled();
+	bool IsWindowInView(int pixel_x);
 
 	uint8_t GetObjectHeight();
 	uint16_t GetBackgroundTileBaseAddress();

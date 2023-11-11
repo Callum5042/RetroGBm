@@ -117,7 +117,37 @@ void Ppu::PixelTransfer()
 	// Window
 	if (m_Display->IsWindowEnabled())
 	{
-		//m_Context.video_buffer[m_PixelX + (m_Display->context.ly * ScreenResolutionX)] = 0xFFFFFFFF;
+		if (m_Display->IsWindowInView(m_PixelX))
+		{
+			// Divide by 8
+			int position_x = (m_PixelX - m_Display->context.wx + 7) & 0xFF;
+			int position_y = (m_Display->context.ly - m_Display->context.wy) & 0xFF;
+
+			// Fetch tile
+			uint16_t base_address = m_Display->GetWindowTileBaseAddress();
+			uint8_t tile_id = m_Bus->ReadBus(base_address + (position_x >> 3) + (position_y >> 3) * 32);
+
+			// Check if we are getting tiles from block 1
+			if (m_Display->GetBackgroundAndWindowTileData() == 0x8800)
+			{
+				tile_id += 128;
+			}
+
+			// Fetch tile data
+			uint16_t offset_x = (tile_id << 4);
+			uint16_t offset_y = ((position_y & 0x7) << 1);
+
+			uint16_t tile_address = m_Display->GetBackgroundAndWindowTileData();
+			uint8_t byte1 = m_Bus->ReadBus(tile_address + offset_x + offset_y);
+			uint8_t byte2 = m_Bus->ReadBus(tile_address + offset_x + offset_y + 1);
+
+			const unsigned long tile_colours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
+			uint8_t high = (static_cast<bool>(byte1 & (1 << (7 - (position_x % 8))))) << 1;
+			uint8_t low = (static_cast<bool>(byte2 & (1 << (7 - (position_x % 8))))) << 0;
+
+			uint32_t colour = tile_colours[high | low];
+			m_Context.video_buffer[m_PixelX + (m_Display->context.ly * ScreenResolutionX)] = colour;
+		}
 	}
 
 	// Check if we are at end of the line
