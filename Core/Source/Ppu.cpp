@@ -15,11 +15,15 @@ Ppu::Ppu()
 	m_Bus = Emulator::Instance;
 	m_Cpu = Emulator::Instance->GetCpu();
 	m_Display = Emulator::Instance->GetDisplay();
-}  
+}
+
+Ppu::Ppu(Cpu* cpu, Display* display) : m_Cpu(cpu), m_Display(display)
+{
+}
 
 void Ppu::Init()
 {
-	m_Context.video_buffer.resize(0x8000);
+	m_Context.video_ram.resize(0x8000);
 	std::fill(m_Context.video_ram.begin(), m_Context.video_ram.end(), 0);
 
 	m_Context.video_buffer.resize(ScreenResolutionX * ScreenResolutionY * sizeof(uint32_t));
@@ -78,7 +82,6 @@ void Ppu::PixelTransfer()
 	if (m_PixelX > ScreenResolutionX)
 	{
 		m_Display->context.ly++;
-
 		m_Display->SetLcdMode(LcdMode::HBlank);
 	}
 }
@@ -89,6 +92,7 @@ void Ppu::HBlank()
 	if (m_Context.dot_ticks >= 456)
 	{
 		m_Context.dot_ticks = 0;
+
 		if (m_Display->context.ly < 144)
 		{
 			m_Display->SetLcdMode(LcdMode::OAM);

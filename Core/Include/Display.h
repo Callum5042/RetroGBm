@@ -64,6 +64,8 @@ public:
 	void SetLcdMode(LcdMode mode);
 	LcdMode GetLcdMode();
 
+	inline const DisplayContext* GetContext() { return &context; }
+
 private:
 
 	DisplayContext context = {};
