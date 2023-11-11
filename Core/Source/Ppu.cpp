@@ -7,9 +7,6 @@
 #include <chrono>
 #include <thread>
 
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-
 Ppu::Ppu()
 {
 	m_Bus = Emulator::Instance;
@@ -29,7 +26,8 @@ void Ppu::Init()
 	m_Context.video_buffer.resize(ScreenResolutionX * ScreenResolutionY * sizeof(uint32_t));
 	std::fill(m_Context.video_buffer.begin(), m_Context.video_buffer.end(), 0);
 
-
+	m_Context.oam_ram.resize(40);
+	std::fill(m_Context.oam_ram.begin(), m_Context.oam_ram.end(), OamData());
 
 	m_Display->Init();
 	m_Display->SetLcdMode(LcdMode::OAM);
@@ -64,6 +62,18 @@ void Ppu::WriteVideoRam(uint16_t address, uint8_t value)
 uint8_t Ppu::ReadVideoRam(uint16_t address)
 {
 	return m_Context.video_ram[address - 0x8000];
+}
+
+void Ppu::WriteOam(uint16_t address, uint8_t value)
+{
+	uint8_t* ptr = reinterpret_cast<uint8_t*>(m_Context.oam_ram.data());
+	ptr[address - 0xFE00] = value;
+}
+
+uint8_t Ppu::ReadOam(uint16_t address)
+{
+	uint8_t* ptr = reinterpret_cast<uint8_t*>(m_Context.oam_ram.data());
+	return ptr[address - 0xFE00];
 }
 
 void Ppu::UpdateOam()

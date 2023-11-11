@@ -297,8 +297,7 @@ uint8_t Emulator::ReadBus(uint16_t address)
 			return 0xFF;
 		}
 
-		return 0xFF;
-		// return m_Ppu->ReadOam(address);
+		return m_Ppu->ReadOam(address);
 	}
 	else if (address < 0xFF00)
 	{
@@ -353,8 +352,7 @@ void Emulator::WriteBus(uint16_t address, uint8_t value)
 			return;
 		}
 
-		return;
-		// m_Ppu->WriteOam(address, value);
+		m_Ppu->WriteOam(address, value);
 	}
 	else if (address < 0xFF00)
 	{

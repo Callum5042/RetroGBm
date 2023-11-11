@@ -30,7 +30,7 @@ void Dma::Tick()
 		return;
 	}
 
-	// m_Ppu->WriteOam(context.byte, m_Bus->ReadBus((context.value * 0x100) + context.byte));
+	m_Ppu->WriteOam(context.byte, m_Bus->ReadBus((context.value * 0x100) + context.byte));
 
 	context.byte++;
 	context.active = context.byte < 0xA0;

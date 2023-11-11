@@ -19,6 +19,20 @@ enum class FetchState
 	Push,
 };
 
+struct OamData
+{
+	uint8_t position_y;
+	uint8_t position_x;
+	uint8_t tile_id;
+
+	uint8_t gcb_palette : 3;
+	bool bank : 1;
+	bool dmg_palette : 1;
+	bool flip_x : 1;
+	bool flip_y : 1;
+	bool priority : 1;
+};
+
 struct PpuContext
 {
 	//pixel_fifo_context pfc;
@@ -39,6 +53,8 @@ struct PpuContext
 	uint32_t dot_ticks;
 	std::vector<uint32_t> video_buffer;
 	std::vector<uint8_t> video_ram;
+
+	std::vector<OamData> oam_ram;
 };
 
 class Ppu
@@ -56,8 +72,8 @@ public:
 	void Tick();
 
 	// OAM
-	/*void WriteOam(uint16_t address, uint8_t value);
-	uint8_t ReadOam(uint16_t address);*/
+	void WriteOam(uint16_t address, uint8_t value);
+	uint8_t ReadOam(uint16_t address);
 
 	// VRAM
 	void WriteVideoRam(uint16_t address, uint8_t value);
