@@ -69,5 +69,52 @@ namespace CoreTests
 			Assert::AreEqual(0, static_cast<int>(ppu.m_Context.dot_ticks));
 			Assert::AreEqual(1, static_cast<int>(display.GetContext()->ly));
 		}
+
+		TEST_METHOD(Tick_65664Ticks_EnterVBlankMode)
+		{
+			// Arrange
+			Cpu cpu;
+			Display display;
+
+			Ppu ppu(&cpu, &display);
+			ppu.Init();
+
+			// Act
+			for (int i = 0; i < 65664; ++i)
+			{
+				ppu.Tick();
+			}
+
+			// Assert
+			Assert::AreEqual(static_cast<int>(LcdMode::VBlank), static_cast<int>(display.GetLcdMode()));
+			Assert::IsTrue(static_cast<bool>(cpu.GetInterruptFlags() & InterruptFlag::VBlank));
+
+			Assert::AreEqual(0, static_cast<int>(ppu.m_Context.dot_ticks));
+			Assert::AreEqual(144, static_cast<int>(display.GetContext()->ly));
+		}
+
+		TEST_METHOD(Tick_IsInVBlankMode_TickFor4560Dots_Resets)
+		{
+			// Arrange
+			Cpu cpu;
+			Display display;
+
+			Ppu ppu(&cpu, &display);
+			ppu.Init();
+
+			const_cast<DisplayContext*>(display.GetContext())->ly = 144;
+			display.SetLcdMode(LcdMode::VBlank);
+
+			// Act
+			for (int i = 0; i < 4560; ++i)
+			{
+				ppu.Tick();
+			}
+
+			// Assert
+			Assert::AreEqual(static_cast<int>(LcdMode::OAM), static_cast<int>(display.GetLcdMode()));
+			Assert::AreEqual(0, static_cast<int>(ppu.m_Context.dot_ticks));
+			Assert::AreEqual(0, static_cast<int>(display.GetContext()->ly));
+		}
 	};
 }
