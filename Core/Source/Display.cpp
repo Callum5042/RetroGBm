@@ -203,7 +203,7 @@ uint16_t Display::GetBackgroundTileBaseAddress()
 	return 0x9800;
 }
 
-uint16_t Display::GetBackgroundTileData()
+uint16_t Display::GetBackgroundAndWindowTileData()
 {
 	// Check if bit 4 is set
 	if (context.lcdc & (1 << 4))

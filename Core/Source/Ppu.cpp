@@ -77,6 +77,7 @@ void Ppu::UpdateOam()
 
 void Ppu::PixelTransfer()
 {
+	// Background
 	if (m_Display->IsBackgroundEnabled())
 	{
 		// Divide by 8
@@ -87,11 +88,17 @@ void Ppu::PixelTransfer()
 		uint16_t base_address = m_Display->GetBackgroundTileBaseAddress();
 		uint8_t tile_id = m_Bus->ReadBus(base_address + (position_x >> 3) + (position_y >> 3) * 32);
 
+		// Check if we are getting tiles from block 1
+		if (m_Display->GetBackgroundAndWindowTileData() == 0x8800)
+		{
+			tile_id += 128;
+		}
+
 		// Fetch tile data
 		uint16_t offset_x = (tile_id << 4);
 		uint16_t offset_y = ((position_y & 0x7) << 1);
 
-		uint16_t tile_address = m_Display->GetBackgroundTileData();
+		uint16_t tile_address = m_Display->GetBackgroundAndWindowTileData();
 		uint8_t byte1 = m_Bus->ReadBus(tile_address + offset_x + offset_y);
 		uint8_t byte2 = m_Bus->ReadBus(tile_address + offset_x + offset_y + 1);
 
@@ -105,6 +112,12 @@ void Ppu::PixelTransfer()
 	else
 	{
 		m_Context.video_buffer[m_PixelX + (m_Display->context.ly * ScreenResolutionX)] = 0xFFFFFFFF;
+	}
+
+	// Window
+	if (m_Display->IsWindowEnabled())
+	{
+		//m_Context.video_buffer[m_PixelX + (m_Display->context.ly * ScreenResolutionX)] = 0xFFFFFFFF;
 	}
 
 	// Check if we are at end of the line
