@@ -61,7 +61,7 @@ struct CartridgeInfo
 	uint8_t* rom_bank_memory = nullptr;
 
 	uint8_t ram_bank_controller = 0;
-	std::vector<uint8_t> ram_banks[3];
+	std::vector<uint8_t> external_ram;
 };
 
 class Cartridge

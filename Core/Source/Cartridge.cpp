@@ -258,12 +258,14 @@ bool Cartridge::Load(const std::string& filepath)
 	// Print some info
 	std::cout << "Cartridge Type: " << m_CartridgeInfo.header.cartridge_type << '\n';
 
-	// Initialise 3 possible rom banks
-	for (int i = 0; i < 3; ++i)
+	// Initialise 3 possible rom banks (32kb each)
+	m_CartridgeInfo.external_ram.resize(0x8000 * 3);
+	std::fill(m_CartridgeInfo.external_ram.begin(), m_CartridgeInfo.external_ram.end(), 0x0);
+
+	// Load RAM if battery is support
+	if (HasBattery())
 	{
-		// 32kb each
-		m_CartridgeInfo.ram_banks[i].resize(0x8000);
-		std::fill(m_CartridgeInfo.ram_banks[i].begin(), m_CartridgeInfo.ram_banks[i].end(), 0x0);
+		// TODO: Load from a file
 	}
 
 	return true;
@@ -308,7 +310,7 @@ uint8_t Cartridge::Read(uint16_t address)
 		if (m_CartridgeInfo.enabled_ram)
 		{
 			uint8_t index = m_CartridgeInfo.ram_bank_controller;
-			return m_CartridgeInfo.ram_banks[index][address - 0xA000];
+			return m_CartridgeInfo.external_ram[(index * 0x8000) + address - 0xA000];
 		}
 	}
 
@@ -334,6 +336,8 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 		{
 			// TODO: Enable/disable RTC
 		}
+
+
 
 		return;
 	}
@@ -394,7 +398,17 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 		if (m_CartridgeInfo.enabled_ram)
 		{
 			uint8_t index = m_CartridgeInfo.ram_bank_controller;
-			m_CartridgeInfo.ram_banks[index][address - 0xA000] = value;
+			m_CartridgeInfo.external_ram[(index * 0x8000) + address - 0xA000] = value;
+
+			// Save to file each time we write to the RAM
+			if (HasBattery())
+			{
+				/*std::ofstream battery(std::format("{}.battery", m_CartridgeInfo.title), std::ios::out | std::ios::binary);
+				battery.write(reinterpret_cast<char*>(&m_CartridgeInfo.ram_bank_controller), 1);
+				battery.write(reinterpret_cast<char*>(m_CartridgeInfo.external_ram.data()), m_CartridgeInfo.external_ram.size());
+
+				battery.close();*/
+			}
 		}
 
 		return;
