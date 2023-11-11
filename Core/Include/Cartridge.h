@@ -83,4 +83,6 @@ private:
 
 	bool IsMBC1();
 	bool IsMBC3();
+
+	bool HasBattery();
 };

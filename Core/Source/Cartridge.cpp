@@ -405,36 +405,39 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 
 bool Cartridge::IsMBC1()
 {
-	if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::MBC1)
+	switch (m_CartridgeInfo.header.cartridge_type_code)
 	{
-		return true;
+		case CartridgeType::MBC1:
+		case CartridgeType::MBC1_RAM:
+		case CartridgeType::MBC1_RAM_BATTERY:
+			return true;
+		default:
+			return false;
 	}
-	else if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::MBC1_RAM)
-	{
-		return true;
-	}
-	else if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::MBC1_RAM_BATTERY)
-	{
-		return true;
-	}
-
-	return false;
 }
 
 bool Cartridge::IsMBC3()
 {
-	if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::MBC3)
+	switch (m_CartridgeInfo.header.cartridge_type_code)
 	{
-		return true;
+		case CartridgeType::MBC3:
+		case CartridgeType::MBC3_RAM:
+		case CartridgeType::MBC3_RAM_BATTERY:
+			return true;
+		default:
+			return false;
 	}
-	else if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::MBC3_RAM)
-	{
-		return true;
-	}
-	else if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::MBC3_RAM_BATTERY)
-	{
-		return true;
-	}
+}
 
-	return false;
+bool Cartridge::HasBattery()
+{
+	switch (m_CartridgeInfo.header.cartridge_type_code)
+	{
+		case CartridgeType::MBC1_RAM_BATTERY: 
+		case CartridgeType::MBC3_RAM_BATTERY:
+		case CartridgeType::MBC5_RAM_BATTERY:
+			return true;
+		default: 
+			return false;
+	}
 }
