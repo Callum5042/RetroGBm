@@ -8,6 +8,7 @@
 #include <chrono>
 
 class IBus;
+class Cpu;
 
 enum class FetchState
 {
@@ -18,70 +19,39 @@ enum class FetchState
 	Push,
 };
 
-struct pixel_fifo_context
-{
-	FetchState current_fetch_state;
-	uint8_t line_x;
-	uint8_t pushed_x;
-	uint8_t fetch_x;
-	uint8_t bgw_fetch_data[3];
-	uint8_t fetch_oam_data[6]; //oam data..
-	uint8_t map_y;
-	uint8_t map_x;
-	uint8_t tile_y;
-	uint8_t fifo_x;
-
-	std::queue<uint32_t> pixel_queue;
-};
-
-// The order of these variables are mapped to the memory and cannot be changed
 struct OamData
 {
-	uint8_t y; // Byte 1 - Y Position
-	uint8_t x; // Byte 2 - X Position
-	uint8_t tile_index; // Byte 3 - Tile Index
+	uint8_t position_y;
+	uint8_t position_x;
+	uint8_t tile_id;
 
-	uint8_t flag_cgb_palette : 3; // Byte 4 (bit 0, 1, 2) - CGB palette [CGB Mode Only]: Which of OBP0–7 to use
-	bool flag_cgb_bank : 1; // Byte 4 (bit 3) - Bank [CGB Mode Only]: 0 = Fetch tile from VRAM bank 0, 1 = Fetch tile from VRAM bank 1
-	bool flag_dmg_palette : 1; // Byte 4 (bit 4) - DMG palette [Non CGB Mode only]: 0 = OBP0, 1 = OBP1
-	bool flag_x_flip : 1; // Byte 4 (bit 5) - X flip: 0 = Normal, 1 = Entire OBJ is horizontally mirrored
-	bool flag_y_flip : 1; // Byte 4 (bit 6) - Y flip: 0 = Normal, 1 = Entire OBJ is vertically mirrored
-	bool flag_priority : 1; // Byte 4 (bit 7) - Priority: 0 = No, 1 = BG and Window colors 1–3 are drawn over this OBJ
-};
-
-struct OamLineNode
-{
-	OamData entry;
-	struct OamLineNode* next;
+	uint8_t gcb_palette : 3;
+	bool bank : 1;
+	bool dmg_palette : 1;
+	bool flip_x : 1;
+	bool flip_y : 1;
+	bool priority : 1;
 };
 
 struct PpuContext
 {
-	pixel_fifo_context pfc;
-
-	uint8_t line_sprite_count; //0 to 10 sprites.
-	OamLineNode* line_sprites; // Linked list of current sprites on line
-	std::array<OamLineNode, 10> line_entry_array;
-
-	uint8_t fetched_entry_count;
-	OamData fetched_entries[3]; //entries fetched during pipeline.
-	uint8_t window_line;
-
-	uint32_t current_frame;
 	uint32_t dot_ticks;
-
-	std::array<OamData, 40> oam_ram;
 	std::vector<uint32_t> video_buffer;
 	std::vector<uint8_t> video_ram;
+	std::vector<OamData> oam_ram;
+
+	std::vector<OamData> objects;
 };
 
 class Ppu
 {
 	IBus* m_Bus = nullptr;
+	Cpu* m_Cpu = nullptr;
 	Display* m_Display = nullptr;
 
 public:
 	Ppu();
+	Ppu(IBus* bus, Cpu* cpu, Display* display);
 	virtual ~Ppu() = default;
 
 	void Init();
@@ -98,40 +68,22 @@ public:
 	// Modes
 	void UpdateOam();
 	void PixelTransfer();
-	void VBlank();
 	void HBlank();
+	void VBlank();
 
-	// Calculate FPS
-	void CalculateFPS();
-	float m_TargetFrameTime = 1000.0f / 60.0f;
+	// Dimensions
+	int ScreenResolutionX = 160;
+	int ScreenResolutionY = 144;
 
-	std::chrono::high_resolution_clock m_FpsClock;
-	std::chrono::high_resolution_clock::time_point m_StartFrame;
-	std::chrono::high_resolution_clock::time_point m_EndFrame;
+	PpuContext m_Context;
 
+private:
+	int m_PixelX = 0;
+	int m_WindowLineCounter = 0;
 
-	// Pipeline
-	void PipelineReset();
-	void PipelineProcess();
-	bool PipelineAddPixel();
+	// Accessible areas
+	bool CanAccessVRam();
+	bool CanAccessOAM();
 
-	void LoadSpriteTile();
-	uint32_t FetchSpritePixels(int bit, uint32_t color, uint8_t bg_color);
-	void LoadSpriteData(uint8_t offset);
-	void LoadWindowTile();
-
-	void PixelFetcher();
-	void PushPixelToVideoBuffer();
-
-	bool IsWindowVisible();
-	void IncementLY();
-	void LoadSpritesForLine();
-
-	PpuContext context = {};
-
-	const uint16_t ScreenResolutionY = 144;
-	const uint16_t ScreenResolutionX = 160;
-
-	const uint16_t m_LinesPerFrame = 154;
-	const uint16_t m_DotTicksPerLine = 456;
+	void IncrementLY();
 };
