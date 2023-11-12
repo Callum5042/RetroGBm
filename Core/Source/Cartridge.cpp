@@ -214,7 +214,11 @@ bool Cartridge::Load(const std::string& filepath)
 	// Title
 	m_CartridgeInfo.title.resize(16);
 	std::copy(m_CartridgeInfo.data.data() + 0x0134, m_CartridgeInfo.data.data() + 0x0144, m_CartridgeInfo.title.data());
-	m_CartridgeInfo.title.erase(m_CartridgeInfo.title.find('\0'));
+
+	if (m_CartridgeInfo.title.find('\0') != std::string::npos)
+	{
+		m_CartridgeInfo.title.erase(m_CartridgeInfo.title.find('\0'));
+	}
 
 	// Manufacturer code
 	m_CartridgeInfo.header.manufacturer_code.resize(4);
