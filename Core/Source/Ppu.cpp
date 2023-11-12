@@ -514,6 +514,11 @@ void Ppu::PixelFetcher()
 			uint16_t offset_x = (context.pfc.background_window_tile << 4);
 			uint16_t offset_y = ((m_Display->context.ly + m_Display->context.scy) % 8) * 2;
 
+			if (IsWindowVisible() && IsWindowInView(context.pfc.fetch_x))
+			{
+				offset_y = ((context.window_line & 0x7) << 1);
+			}
+
 			uint16_t base_address = m_Display->GetBackgroundAndWindowTileData();
 			context.pfc.background_window_byte_low = m_Bus->ReadBus(base_address + offset_x + offset_y);
 
@@ -527,6 +532,11 @@ void Ppu::PixelFetcher()
 		{
 			uint16_t offset_x = (context.pfc.background_window_tile << 4);
 			uint16_t offset_y = ((m_Display->context.ly + m_Display->context.scy) % 8) * 2;
+
+			if (IsWindowVisible() && IsWindowInView(context.pfc.fetch_x))
+			{
+				offset_y = ((context.window_line & 0x7) << 1);
+			}
 
 			uint16_t base_address = m_Display->GetBackgroundAndWindowTileData();
 			context.pfc.background_window_byte_high = m_Bus->ReadBus(base_address + offset_x + offset_y + 1);
