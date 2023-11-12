@@ -49,7 +49,7 @@ public:
 
 	uint8_t GetObjectHeight();
 	uint16_t GetBackgroundTileBaseAddress();
-	uint16_t GetBackgroundTileData();
+	uint16_t GetBackgroundAndWindowTileData();
 	uint16_t GetWindowTileBaseAddress();
 
 	bool IsStatInterruptHBlank();

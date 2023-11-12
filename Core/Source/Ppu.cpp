@@ -7,14 +7,11 @@
 #include <chrono>
 #include <thread>
 
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-
 Ppu::Ppu()
 {
 	m_Bus = Emulator::Instance;
 	m_Display = Emulator::Instance->GetDisplay();
-}  
+}
 
 void Ppu::Init()
 {
@@ -206,10 +203,6 @@ void Ppu::PipelineProcess()
 {
 	if (!(context.dot_ticks & 1))
 	{
-		context.pfc.map_y = (m_Display->context.ly + m_Display->context.scy);
-		context.pfc.map_x = (context.pfc.fetch_x + m_Display->context.scx);
-		context.pfc.tile_y = ((m_Display->context.ly + m_Display->context.scy) % 8) * 2;
-
 		PixelFetcher();
 	}
 
@@ -381,8 +374,8 @@ bool Ppu::PipelineAddPixel()
 	for (int i = 0; i < 8; i++)
 	{
 		int bit = 7 - i;
-		uint8_t data_high = !!(context.pfc.bgw_fetch_data[1] & (1 << bit));
-		uint8_t data_low = !!(context.pfc.bgw_fetch_data[2] & (1 << bit)) << 1;
+		uint8_t data_high = !!(context.pfc.background_window_byte_low & (1 << bit));
+		uint8_t data_low = !!(context.pfc.background_window_byte_high & (1 << bit)) << 1;
 		uint32_t colour = m_Display->context.background_palette[data_high | data_low];
 
 		if (!m_Display->IsBackgroundEnabled())
@@ -456,22 +449,22 @@ void Ppu::LoadSpriteData(uint8_t offset)
 
 void Ppu::LoadWindowTile()
 {
-	if (!IsWindowVisible())
+	if (IsWindowVisible())
 	{
-		return;
-	}
-
-	uint8_t window_y = m_Display->context.wy;
-	if (context.pfc.fetch_x + 7 >= m_Display->context.wx && context.pfc.fetch_x + 7 < m_Display->context.wx + ScreenResolutionY + 14)
-	{
-		if (m_Display->context.ly >= window_y && m_Display->context.ly < window_y + ScreenResolutionX)
+		if (IsWindowInView(context.pfc.fetch_x))
 		{
-			uint8_t w_tile_y = context.window_line / 8;
+			// Divide by 8
+			uint8_t position_x = (context.pfc.fetch_x - m_Display->context.wx + 7) & 0xFF;
+			uint8_t position_y = context.window_line; // (m_Display->context.ly - m_Display->context.wy) & 0xFF;
 
-			context.pfc.bgw_fetch_data[0] = m_Bus->ReadBus(m_Display->GetWindowTileBaseAddress() + ((context.pfc.fetch_x + 7 - m_Display->context.wx) / 8) + (w_tile_y * 32));
-			if (m_Display->GetBackgroundTileData() == 0x8800)
+			// Fetch tile
+			uint16_t base_address = m_Display->GetWindowTileBaseAddress();
+			context.pfc.background_window_tile = m_Bus->ReadBus(base_address + (position_x >> 3) + ((position_y >> 3) * 32));
+
+			// Check if we are getting tiles from block 1
+			if (m_Display->GetBackgroundAndWindowTileData() == 0x8800)
 			{
-				context.pfc.bgw_fetch_data[0] += 128;
+				context.pfc.background_window_tile += 128;
 			}
 		}
 	}
@@ -488,15 +481,20 @@ void Ppu::PixelFetcher()
 			// Load background/window tile
 			if (m_Display->IsBackgroundEnabled())
 			{
-				// Load background tile
-				int16_t address = m_Display->GetBackgroundTileBaseAddress();
-				context.pfc.bgw_fetch_data[0] = m_Bus->ReadBus(address + (context.pfc.map_x / 8) + (((context.pfc.map_y / 8)) * 32));
+				// Divide by 8
+				int position_y = (m_Display->context.ly + m_Display->context.scy) & 0xFF;
+				int position_x = (context.pfc.fetch_x + m_Display->context.scx) & 0xFF;
 
-				if (m_Display->GetBackgroundTileData() == 0x8800)
+				// Fetch tile
+				uint16_t base_address = m_Display->GetBackgroundTileBaseAddress();
+				context.pfc.background_window_tile = m_Bus->ReadBus(base_address + (position_x >> 3) + (position_y >> 3) * 32);
+
+				if (m_Display->GetBackgroundAndWindowTileData() == 0x8800)
 				{
-					context.pfc.bgw_fetch_data[0] += 128;
+					context.pfc.background_window_tile += 128;
 				}
 
+				// Load window tile
 				LoadWindowTile();
 			}
 
@@ -513,16 +511,28 @@ void Ppu::PixelFetcher()
 
 		case FetchState::TileDataLow:
 		{
-			context.pfc.bgw_fetch_data[1] = m_Bus->ReadBus(m_Display->GetBackgroundTileData() + (context.pfc.bgw_fetch_data[0] * 16) + context.pfc.tile_y);
+			uint16_t offset_x = (context.pfc.background_window_tile << 4);
+			uint16_t offset_y = ((m_Display->context.ly + m_Display->context.scy) % 8) * 2;
+
+			uint16_t base_address = m_Display->GetBackgroundAndWindowTileData();
+			context.pfc.background_window_byte_low = m_Bus->ReadBus(base_address + offset_x + offset_y);
+
 			LoadSpriteData(0);
+
 			context.pfc.current_fetch_state = FetchState::TileDataHigh;
 			break;
 		}
 
 		case FetchState::TileDataHigh:
 		{
-			context.pfc.bgw_fetch_data[2] = m_Bus->ReadBus(m_Display->GetBackgroundTileData() + (context.pfc.bgw_fetch_data[0] * 16) + context.pfc.tile_y + 1);
+			uint16_t offset_x = (context.pfc.background_window_tile << 4);
+			uint16_t offset_y = ((m_Display->context.ly + m_Display->context.scy) % 8) * 2;
+
+			uint16_t base_address = m_Display->GetBackgroundAndWindowTileData();
+			context.pfc.background_window_byte_high = m_Bus->ReadBus(base_address + offset_x + offset_y + 1);
+
 			LoadSpriteData(1);
+
 			context.pfc.current_fetch_state = FetchState::Idle;
 			break;
 		}
@@ -560,4 +570,20 @@ void Ppu::PushPixelToVideoBuffer()
 
 		context.pfc.line_x++;
 	}
+}
+
+bool Ppu::IsWindowInView(int pixel_x)
+{
+	const int ScreenResolutionX = 160;
+	const int ScreenResolutionY = 144;
+
+	if (m_Display->context.ly >= m_Display->context.wy && m_Display->context.ly < m_Display->context.wy + ScreenResolutionY)
+	{
+		if ((pixel_x >= m_Display->context.wx - 7) && (pixel_x < m_Display->context.wx + ScreenResolutionX - 7))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }

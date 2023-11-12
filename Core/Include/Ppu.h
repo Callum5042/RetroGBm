@@ -24,11 +24,15 @@ struct pixel_fifo_context
 	uint8_t line_x;
 	uint8_t pushed_x;
 	uint8_t fetch_x;
-	uint8_t bgw_fetch_data[3];
+
+	uint8_t background_window_tile = 0;
+	uint8_t background_window_byte_low = 0;
+	uint8_t background_window_byte_high = 0;
+
+	// uint8_t bgw_fetch_data[3];
+
+
 	uint8_t fetch_oam_data[6]; //oam data..
-	uint8_t map_y;
-	uint8_t map_x;
-	uint8_t tile_y;
 	uint8_t fifo_x;
 
 	std::queue<uint32_t> pixel_queue;
@@ -134,4 +138,7 @@ public:
 
 	const uint16_t m_LinesPerFrame = 154;
 	const uint16_t m_DotTicksPerLine = 456;
+
+private:
+	bool IsWindowInView(int pixel_x);
 };
