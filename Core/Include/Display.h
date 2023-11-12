@@ -2,8 +2,6 @@
 
 #include <cstdint>
 
-class Ppu;
-
 struct DisplayContext
 {
 	// Registers
@@ -35,8 +33,6 @@ enum class LcdMode
 
 class Display
 {
-	friend class Ppu;
-
 public:
 	Display() = default;
 	virtual ~Display() = default;
@@ -50,11 +46,10 @@ public:
 	bool IsWindowEnabled();
 	bool IsBackgroundEnabled();
 	bool IsObjectEnabled();
-	bool IsWindowInView(int pixel_x);
 
 	uint8_t GetObjectHeight();
 	uint16_t GetBackgroundTileBaseAddress();
-	uint16_t GetBackgroundAndWindowTileData();
+	uint16_t GetBackgroundTileData();
 	uint16_t GetWindowTileBaseAddress();
 
 	bool IsStatInterruptHBlank();
@@ -65,10 +60,8 @@ public:
 	void SetLcdMode(LcdMode mode);
 	LcdMode GetLcdMode();
 
-	inline const DisplayContext* GetContext() { return &context; }
+	DisplayContext context = {};
 
 private:
-
-	DisplayContext context = {};
 	const unsigned long m_DefaultColours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
 };

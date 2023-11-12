@@ -138,7 +138,7 @@ void Display::Write(uint16_t address, uint8_t value)
 bool Display::IsLcdEnabled()
 {
 	// Check if bit 7 is set
-	if ((context.lcdc >> 7) & 0x1)
+	if (context.lcdc & (1 << 7))
 	{
 		return true;
 	}
@@ -149,7 +149,7 @@ bool Display::IsLcdEnabled()
 bool Display::IsWindowEnabled()
 {
 	// Check if bit 5 is set
-	if ((context.lcdc >> 5) & 0x1)
+	if (context.lcdc & (1 << 5))
 	{
 		return true;
 	}
@@ -160,7 +160,7 @@ bool Display::IsWindowEnabled()
 bool Display::IsBackgroundEnabled()
 {
 	// Check if bit 0 is set
-	if ((context.lcdc >> 0) & 0x1)
+	if (context.lcdc & (1 << 0))
 	{
 		return true;
 	}
@@ -171,7 +171,7 @@ bool Display::IsBackgroundEnabled()
 bool Display::IsObjectEnabled()
 {
 	// Check if bit 1 is set
-	if ((context.lcdc >> 1) & 0x1)
+	if ((context.lcdc & (1 << 1)))
 	{
 		return true;
 	}
@@ -182,20 +182,20 @@ bool Display::IsObjectEnabled()
 uint8_t Display::GetObjectHeight()
 {
 	// Check if bit 2 is set
-	if ((context.lcdc >> 2) & 0x1)
+	if ((context.lcdc & (1 << 2)))
 	{
 		// Object is 8x16
 		return 16;
 	}
 
-	// Object is 8x8
+	// Object is 8
 	return 8;
 }
 
 uint16_t Display::GetBackgroundTileBaseAddress()
 {
 	// Check if bit 3 is set
-	if ((context.lcdc >> 3) & 0x1)
+	if (context.lcdc & (1 << 3))
 	{
 		return 0x9C00;
 	}
@@ -203,10 +203,10 @@ uint16_t Display::GetBackgroundTileBaseAddress()
 	return 0x9800;
 }
 
-uint16_t Display::GetBackgroundAndWindowTileData()
+uint16_t Display::GetBackgroundTileData()
 {
 	// Check if bit 4 is set
-	if ((context.lcdc >> 4) & 0x1)
+	if (context.lcdc & (1 << 4))
 	{
 		return 0x8000;
 	}
@@ -217,7 +217,7 @@ uint16_t Display::GetBackgroundAndWindowTileData()
 uint16_t Display::GetWindowTileBaseAddress()
 {
 	// Check if bit 6 is set
-	if ((context.lcdc >> 6) & 0x1)
+	if (context.lcdc & (1 << 6))
 	{
 		return 0x9C00;
 	}
@@ -244,7 +244,7 @@ void Display::SetLcdMode(LcdMode mode)
 bool Display::IsStatInterruptHBlank()
 {
 	// Check if bit 3 is set
-	if ((context.stat >> 3) & 0x1)
+	if (context.stat & (1 << 3))
 	{
 		return true;
 	}
@@ -255,7 +255,7 @@ bool Display::IsStatInterruptHBlank()
 bool Display::IsStatInterruptVBlank()
 {
 	// Check if bit 4 is set
-	if ((context.stat >> 4) & 0x1)
+	if (context.stat & (1 << 4))
 	{
 		return true;
 	}
@@ -266,7 +266,7 @@ bool Display::IsStatInterruptVBlank()
 bool Display::IsStatInterruptOAM()
 {
 	// Check if bit 5 is set
-	if ((context.stat >> 5) & 0x1)
+	if (context.stat & (1 << 5))
 	{
 		return true;
 	}
@@ -277,25 +277,9 @@ bool Display::IsStatInterruptOAM()
 bool Display::IsStatInterruptLYC()
 {
 	// Check if bit 6 is set
-	if ((context.stat >> 6) & 0x1)
+	if (context.stat & (1 << 6))
 	{
 		return true;
-	}
-
-	return false;
-}
-
-bool Display::IsWindowInView(int pixel_x)
-{
-	const int ScreenResolutionX = 160;
-	const int ScreenResolutionY = 144;
-
-	if (context.ly >= context.wy && context.ly < context.wy + ScreenResolutionY)
-	{
-		if ((pixel_x >= context.wx - 7) && (pixel_x < context.wx + ScreenResolutionX - 7))
-		{
-			return true;
-		}
 	}
 
 	return false;

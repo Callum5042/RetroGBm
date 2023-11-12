@@ -30,11 +30,5 @@
     <ClCompile Include="JoypadTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PpuTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DisplayTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>
