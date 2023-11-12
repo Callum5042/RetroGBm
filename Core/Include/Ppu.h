@@ -35,26 +35,12 @@ struct OamData
 
 struct PpuContext
 {
-	//pixel_fifo_context pfc;
-
-	//uint8_t line_sprite_count; //0 to 10 sprites.
-	//OamLineNode* line_sprites; // Linked list of current sprites on line
-	//std::array<OamLineNode, 10> line_entry_array;
-
-	//uint8_t fetched_entry_count;
-	//OamData fetched_entries[3]; //entries fetched during pipeline.
-	//uint8_t window_line;
-
-	//uint32_t current_frame;
-	//uint32_t dot_ticks;
-
-	//std::array<OamData, 40> oam_ram;
-
 	uint32_t dot_ticks;
 	std::vector<uint32_t> video_buffer;
 	std::vector<uint8_t> video_ram;
-
 	std::vector<OamData> oam_ram;
+
+	std::vector<OamData> objects;
 };
 
 class Ppu
@@ -94,8 +80,6 @@ public:
 private:
 	int m_PixelX = 0;
 	int m_WindowLineCounter = 0;
-
-	std::queue<OamData> m_Objects;
 
 	// Accessible areas
 	bool CanAccessVRam();

@@ -98,10 +98,7 @@ void Ppu::UpdateOam()
 	if (m_Context.dot_ticks == 1)
 	{
 		// Ensure queue is empty
-		while (!m_Objects.empty())
-		{
-			m_Objects.pop();
-		}
+		m_Context.objects.clear();
 
 		// Find all objects on the current scan line
 		uint8_t sprite_height = m_Display->GetObjectHeight();
@@ -109,7 +106,7 @@ void Ppu::UpdateOam()
 		{
 			if ((oam.position_y <= m_Display->context.ly + 16) && (oam.position_y + sprite_height > m_Display->context.ly + 16))
 			{
-				m_Objects.push(oam);
+				m_Context.objects.push_back(oam);
 			}
 		}
 
@@ -194,57 +191,52 @@ void Ppu::PixelTransfer()
 	}
 
 	// Objects
-	if (m_Display->IsObjectEnabled() && !m_Objects.empty())
+	if (m_Display->IsObjectEnabled() && !m_Context.objects.empty())
 	{
-		OamData oam = m_Objects.front();
-
-		int current_ly = m_Display->context.ly;
-		uint8_t sprite_height = m_Display->GetObjectHeight();
-
-		int position_x = (m_PixelX - oam.position_x + 8); // (oam.position_x - m_PixelX) & 0xFF;
-		int sp_x = (oam.position_x - 8) + (m_Display->context.scx % 8);
-
-		// if ((sp_x >= m_PixelX && sp_x < m_PixelX + 8) || ((sp_x + 8) >= m_PixelX && (sp_x + 8) < m_PixelX + 8))
-		if (m_PixelX >= oam.position_x - 8 && m_PixelX < oam.position_x)
+		for (auto& oam : m_Context.objects)
 		{
-			// Check Y orientation for which direction to load the pixels
-			uint8_t ty = ((current_ly + 16) - oam.position_y) * 2;
-			if (oam.flip_y)
+			int current_ly = m_Display->context.ly;
+			uint8_t sprite_height = m_Display->GetObjectHeight();
+
+			int position_x = (m_PixelX - oam.position_x + 8); // (oam.position_x - m_PixelX) & 0xFF;
+			int sp_x = (oam.position_x - 8) + (m_Display->context.scx % 8);
+
+			// if ((sp_x >= m_PixelX && sp_x < m_PixelX + 8) || ((sp_x + 8) >= m_PixelX && (sp_x + 8) < m_PixelX + 8))
+			if (m_PixelX >= oam.position_x - 8 && m_PixelX < oam.position_x)
 			{
-				ty = ((sprite_height * 2) - 2) - ty;
+				// Check Y orientation for which direction to load the pixels
+				uint8_t ty = ((current_ly + 16) - oam.position_y) * 2;
+				if (oam.flip_y)
+				{
+					ty = ((sprite_height * 2) - 2) - ty;
+				}
+
+				// Check X oreientation
+				uint8_t bit = position_x % 8;
+				if (!oam.flip_x)
+				{
+					bit = (7 - (position_x % 8));
+				}
+
+				uint8_t tile_index = oam.tile_id;
+				if (sprite_height == 16)
+				{
+					// Remove last bit
+					tile_index &= ~(1);
+				}
+
+				uint8_t byte1 = m_Bus->ReadBus(0x8000 + (tile_index * 16) + ty + 0);
+				uint8_t byte2 = m_Bus->ReadBus(0x8000 + (tile_index * 16) + ty + 1);
+
+				uint8_t high = (static_cast<bool>(byte1 & (1 << bit))) << 1;
+				uint8_t low = (static_cast<bool>(byte2 & (1 << bit))) << 0;
+
+				if ((high | low))
+				{
+					uint32_t colour = (oam.dmg_palette ? m_Display->context.sprite2_palette[high | low] : m_Display->context.sprite1_palette[high | low]);
+					m_Context.video_buffer[m_PixelX + (m_Display->context.ly * ScreenResolutionX)] = colour;
+				}
 			}
-
-			// Check X oreientation
-			uint8_t bit = position_x % 8;
-			if (!oam.flip_x)
-			{
-				bit = (7 - (position_x % 8));
-			}
-
-			// MOO
-			uint8_t tile_index = oam.tile_id;
-			if (sprite_height == 16)
-			{
-				// Remove last bit
-				tile_index &= ~(1);
-			}
-
-			uint8_t byte1 = m_Bus->ReadBus(0x8000 + (tile_index * 16) + ty + 0);
-			uint8_t byte2 = m_Bus->ReadBus(0x8000 + (tile_index * 16) + ty + 1);
-
-			uint8_t high = (static_cast<bool>(byte1 & (1 << bit))) << 1;
-			uint8_t low = (static_cast<bool>(byte2 & (1 << bit))) << 0;
-
-			if ((high | low))
-			{
-				uint32_t colour = (oam.dmg_palette ? m_Display->context.sprite2_palette[high | low] : m_Display->context.sprite1_palette[high | low]);
-				m_Context.video_buffer[m_PixelX + (m_Display->context.ly * ScreenResolutionX)] = colour;
-			}
-		}
-
-		if (m_PixelX > oam.position_x)
-		{
-			m_Objects.pop();
 		}
 	}
 
