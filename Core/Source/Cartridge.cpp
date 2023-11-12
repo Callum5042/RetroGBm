@@ -298,7 +298,7 @@ bool Cartridge::Checksum(uint8_t* result)
 
 uint8_t Cartridge::Read(uint16_t address)
 {
-	// Always read from fixed cartridge data 0x0000 to 0x7FFF
+	// Always read from fixed cartridge data 0x0000 to 0x3FFF
 	if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::ROM_ONLY || address < 0x4000)
 	{
 		return m_CartridgeInfo.data[address];
@@ -308,12 +308,6 @@ uint8_t Cartridge::Read(uint16_t address)
 	if (address >= 0x4000 && address <= 0x7FFF)
 	{
 		uint8_t bank_number = m_CartridgeInfo.rom_bank_controller;
-		/*if (bank_number == 0x0 || bank_number == 0x20 || bank_number == 0x40 || bank_number == 0x60)
-		{
-			bank_number++;
-		}*/
-
-		// std::cout << "Read ROM Bank 0x" << std::hex << address << '\n';
 		return m_CartridgeInfo.data[(address - 0x4000) + (0x4000 * bank_number)];
 	}
 

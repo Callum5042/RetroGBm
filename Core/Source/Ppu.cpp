@@ -10,7 +10,12 @@
 Ppu::Ppu()
 {
 	m_Bus = Emulator::Instance;
+	m_Cpu = Emulator::Instance->GetCpu();
 	m_Display = Emulator::Instance->GetDisplay();
+}
+
+Ppu::Ppu(IBus* bus, Cpu* cpu, Display* display) : m_Bus(bus), m_Cpu(cpu), m_Display(display)
+{
 }
 
 void Ppu::Init()
@@ -27,10 +32,8 @@ void Ppu::Init()
 	context.pfc.line_x = 0;
 	context.pfc.pushed_x = 0;
 	context.pfc.fetch_x = 0;
-	context.pfc.current_fetch_state = FetchState::Tile;
+	context.pfc.pipeline_state = FetchState::Tile;
 
-	context.line_sprites = 0;
-	context.fetched_entry_count = 0;
 	context.window_line = 0;
 
 	m_Display->Init();
@@ -49,11 +52,11 @@ void Ppu::Tick()
 		case LcdMode::PixelTransfer:
 			PixelTransfer();
 			break;
-		case LcdMode::VBlank:
-			VBlank();
-			break;
 		case LcdMode::HBlank:
 			HBlank();
+			break;
+		case LcdMode::VBlank:
+			VBlank();
 			break;
 	}
 }
@@ -65,8 +68,8 @@ void Ppu::WriteOam(uint16_t address, uint8_t value)
 		address -= 0xFE00;
 	}
 
-	uint8_t* p = reinterpret_cast<uint8_t*>(context.oam_ram.data());
-	p[address] = value;
+	uint8_t* ptr = reinterpret_cast<uint8_t*>(context.oam_ram.data());
+	ptr[address] = value;
 }
 
 uint8_t Ppu::ReadOam(uint16_t address)
@@ -76,8 +79,8 @@ uint8_t Ppu::ReadOam(uint16_t address)
 		address -= 0xFE00;
 	}
 
-	uint8_t* p = reinterpret_cast<uint8_t*>(context.oam_ram.data());
-	return p[address];
+	uint8_t* ptr = reinterpret_cast<uint8_t*>(context.oam_ram.data());
+	return ptr[address];
 }
 
 void Ppu::WriteVideoRam(uint16_t address, uint8_t value)
@@ -98,14 +101,36 @@ void Ppu::UpdateOam()
 		m_Display->SetLcdMode(LcdMode::PixelTransfer);
 
 		// Reset pipeline
-		context.pfc.current_fetch_state = FetchState::Tile;
+		context.pfc.pipeline_state = FetchState::Tile;
 		PipelineReset();
 	}
 
-	// Read OAM only on the first tick
+	// Search and order OAMA per line
 	if (context.dot_ticks == 1)
 	{
-		LoadSpritesForLine();
+		context.fetched_oam_data.clear();
+
+		// Find all objects on the current scan line
+		uint8_t sprite_height = m_Display->GetObjectHeight();
+		for (auto& oam : context.oam_ram)
+		{
+			if ((oam.position_y + sprite_height > m_Display->context.ly + 16) && (oam.position_y <= m_Display->context.ly + 16))
+			{
+				context.fetched_oam_data.push_back(oam);
+			}
+		}
+
+		// Sort by priority and X position
+		std::sort(context.fetched_oam_data.begin(), context.fetched_oam_data.end(), [](const OamData& lhs, const OamData& rhs)
+		{
+			return (lhs.position_x < rhs.position_x);
+		});
+
+		// Limit to 10 per row
+		if (context.fetched_oam_data.size() > 10)
+		{
+			context.fetched_oam_data.erase(context.fetched_oam_data.begin() + 10, context.fetched_oam_data.end());
+		}
 	}
 }
 
@@ -119,7 +144,7 @@ void Ppu::PixelTransfer()
 		m_Display->SetLcdMode(LcdMode::HBlank);
 		if (m_Display->IsStatInterruptHBlank())
 		{
-			Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::STAT);
+			m_Cpu->RequestInterrupt(InterruptFlag::STAT);
 		}
 	}
 }
@@ -152,11 +177,11 @@ void Ppu::HBlank()
 		if (m_Display->context.ly >= ScreenResolutionY)
 		{
 			m_Display->SetLcdMode(LcdMode::VBlank);
-			Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::VBlank);
+			m_Cpu->RequestInterrupt(InterruptFlag::VBlank);
 
 			if (m_Display->IsStatInterruptVBlank())
 			{
-				Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::STAT);
+				m_Cpu->RequestInterrupt(InterruptFlag::STAT);
 			}
 
 			context.current_frame++;
@@ -220,7 +245,7 @@ bool Ppu::IsWindowVisible()
 
 void Ppu::IncementLY()
 {
-	if (IsWindowVisible() && m_Display->context.ly >= m_Display->context.wy && m_Display->context.ly < m_Display->context.wy + ScreenResolutionY)
+	if (IsWindowVisible() && (m_Display->context.ly >= m_Display->context.wy) && (m_Display->context.ly < m_Display->context.wy + ScreenResolutionY))
 	{
 		context.window_line++;
 	}
@@ -228,96 +253,23 @@ void Ppu::IncementLY()
 	m_Display->context.ly++;
 	if (m_Display->context.ly == m_Display->context.lyc)
 	{
-		// Turn on bit 2 "LYC == LY"
-		m_Display->context.stat |= (1 << 2);
-
+		m_Display->context.stat |= 0b100;
 		if (m_Display->IsStatInterruptLYC())
 		{
-			Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::STAT);
+			m_Cpu->RequestInterrupt(InterruptFlag::STAT);
 		}
 	}
 	else
 	{
-		// Turn off bit 2
-		m_Display->context.stat &= ~(1 << 2);
-	}
-}
-
-void Ppu::LoadSpritesForLine()
-{
-	context.line_sprites = 0;
-	context.line_sprite_count = 0;
-
-	int current_ly = m_Display->context.ly;
-	uint8_t sprite_height = m_Display->GetObjectHeight();
-
-	// Reset lines
-	std::fill(context.line_entry_array.begin(), context.line_entry_array.end(), OamLineNode());
-
-	// OAM supports up to 40 moveable sprites
-	for (int i = 0; i < 40; i++)
-	{
-		OamData oam_data = context.oam_ram[i];
-
-		// If X is 0 then the object is not visible
-		if (oam_data.x == 0)
-		{
-			continue;
-		}
-
-		// Only 10 sprites can be shown per scanline
-		if (context.line_sprite_count >= 10)
-		{
-			break;
-		}
-
-		// The sprite is on the current line
-		if (oam_data.y <= current_ly + 16 && oam_data.y + sprite_height > current_ly + 16)
-		{
-			OamLineNode* line_entry = &context.line_entry_array[context.line_sprite_count];
-			context.line_sprite_count++;
-
-			line_entry->entry = oam_data;
-			line_entry->next = nullptr;
-
-			if (context.line_sprites == nullptr || context.line_sprites->entry.x > oam_data.x)
-			{
-				line_entry->next = context.line_sprites;
-				context.line_sprites = line_entry;
-				continue;
-			}
-
-			// Do sorting
-			OamLineNode* current_node = context.line_sprites;
-			OamLineNode* previous_node = current_node;
-
-			while (current_node != nullptr)
-			{
-				if (current_node->entry.x > oam_data.x)
-				{
-					previous_node->next = line_entry;
-					line_entry->next = current_node;
-					break;
-				}
-
-				if (current_node->next == nullptr)
-				{
-					current_node->next = line_entry;
-					break;
-				}
-
-				previous_node = current_node;
-				current_node = current_node->next;
-			}
-		}
+		m_Display->context.stat &= ~0b100;
 	}
 }
 
 uint32_t Ppu::FetchSpritePixels(int bit, uint32_t color, uint8_t bg_color)
 {
-	for (int i = 0; i < context.fetched_entry_count; i++)
+	for (int i = 0; i < context.fetched_entries.size(); i++)
 	{
-		int sp_x = (context.fetched_entries[i].x - 8) + ((m_Display->context.scx % 8));
+		int sp_x = (context.fetched_entries[i].position_x - 8) + ((m_Display->context.scx % 8));
 		if (sp_x + 8 < context.pfc.fifo_x)
 		{
 			//past pixel point already...
@@ -332,7 +284,7 @@ uint32_t Ppu::FetchSpritePixels(int bit, uint32_t color, uint8_t bg_color)
 		}
 
 		bit = (7 - offset);
-		if (context.fetched_entries[i].flag_x_flip)
+		if (context.fetched_entries[i].flip_x)
 		{
 			bit = offset;
 		}
@@ -340,7 +292,7 @@ uint32_t Ppu::FetchSpritePixels(int bit, uint32_t color, uint8_t bg_color)
 		uint8_t hi = !!(context.pfc.fetch_oam_data[i * 2] & (1 << bit));
 		uint8_t lo = !!(context.pfc.fetch_oam_data[(i * 2) + 1] & (1 << bit)) << 1;
 
-		bool bg_priority = context.fetched_entries[i].flag_priority;
+		bool bg_priority = context.fetched_entries[i].priority;
 
 		if (!(hi | lo))
 		{
@@ -350,7 +302,7 @@ uint32_t Ppu::FetchSpritePixels(int bit, uint32_t color, uint8_t bg_color)
 
 		if (!bg_priority || bg_color == 0)
 		{
-			color = (context.fetched_entries[i].flag_dmg_palette) ? m_Display->context.sprite2_palette[hi | lo] : m_Display->context.sprite1_palette[hi | lo];
+			color = (context.fetched_entries[i].dmg_palette) ? m_Display->context.sprite2_palette[hi | lo] : m_Display->context.sprite1_palette[hi | lo];
 			if (hi | lo)
 			{
 				break;
@@ -369,13 +321,18 @@ bool Ppu::PipelineAddPixel()
 		return false;
 	}
 
-	int x = context.pfc.fetch_x - (8 - (m_Display->context.scx % 8));
-
-	for (int i = 0; i < 8; i++)
+	// Discard pixels that are not on the screen
+	int pixel_x = context.pfc.fetch_x - (8 - (m_Display->context.scx % 8));
+	if (pixel_x < 0)
 	{
-		int bit = 7 - i;
-		uint8_t data_high = !!(context.pfc.background_window_byte_low & (1 << bit));
-		uint8_t data_low = !!(context.pfc.background_window_byte_high & (1 << bit)) << 1;
+		return false;
+	}
+
+	for (int bit = 7; bit >= 0; bit--)
+	{
+		// Decode and get pixel colour from palette
+		uint8_t data_high = (static_cast<bool>(context.pfc.background_window_byte_low & (1 << bit))) << 0;
+		uint8_t data_low = (static_cast<bool>(context.pfc.background_window_byte_high & (1 << bit))) << 1;
 		uint32_t colour = m_Display->context.background_palette[data_high | data_low];
 
 		if (!m_Display->IsBackgroundEnabled())
@@ -388,11 +345,8 @@ bool Ppu::PipelineAddPixel()
 			colour = FetchSpritePixels(bit, colour, data_high | data_low);
 		}
 
-		if (x >= 0)
-		{
-			context.pfc.pixel_queue.push(colour);
-			context.pfc.fifo_x++;
-		}
+		context.pfc.pixel_queue.push(colour);
+		context.pfc.fifo_x++;
 	}
 
 	return true;
@@ -400,26 +354,42 @@ bool Ppu::PipelineAddPixel()
 
 void Ppu::LoadSpriteTile()
 {
-	OamLineNode* le = context.line_sprites;
-
-	while (le)
+	for (auto& oam : context.fetched_oam_data)
 	{
-		int sp_x = (le->entry.x - 8) + (m_Display->context.scx % 8);
+		int sp_x = (oam.position_x - 8) + (m_Display->context.scx % 8);
 
 		if ((sp_x >= context.pfc.fetch_x && sp_x < context.pfc.fetch_x + 8) || ((sp_x + 8) >= context.pfc.fetch_x && (sp_x + 8) < context.pfc.fetch_x + 8))
 		{
-			//need to add entry
-			context.fetched_entries[context.fetched_entry_count++] = le->entry;
+			context.fetched_entries.push_back(oam);
 		}
 
-		le = le->next;
-
-		if (!le || context.fetched_entry_count >= 3)
+		// Max checking 3 sprites on pixels
+		if (context.fetched_entries.size() >= 3)
 		{
-			//max checking 3 sprites on pixels
 			break;
 		}
 	}
+
+	//OamLineNode* le = context.line_sprites;
+
+	//while (le)
+	//{
+	//	int sp_x = (le->entry.position_x - 8) + (m_Display->context.scx % 8);
+
+	//	if ((sp_x >= context.pfc.fetch_x && sp_x < context.pfc.fetch_x + 8) || ((sp_x + 8) >= context.pfc.fetch_x && (sp_x + 8) < context.pfc.fetch_x + 8))
+	//	{
+	//		//need to add entry
+	//		context.fetched_entries[context.fetched_entry_count++] = le->entry;
+	//	}
+
+	//	le = le->next;
+
+	//	if (!le || context.fetched_entry_count >= 3)
+	//	{
+	//		//max checking 3 sprites on pixels
+	//		break;
+	//	}
+	//}
 }
 
 void Ppu::LoadSpriteData(uint8_t offset)
@@ -427,16 +397,16 @@ void Ppu::LoadSpriteData(uint8_t offset)
 	int current_ly = m_Display->context.ly;
 	uint8_t sprite_height = m_Display->GetObjectHeight();
 
-	for (int i = 0; i < context.fetched_entry_count; i++)
+	for (int i = 0; i < context.fetched_entries.size(); i++)
 	{
 		// Check Y orientation for which direction to load the pixels
-		uint8_t ty = ((current_ly + 16) - context.fetched_entries[i].y) * 2;
-		if (context.fetched_entries[i].flag_y_flip)
+		uint8_t ty = ((current_ly + 16) - context.fetched_entries[i].position_y) * 2;
+		if (context.fetched_entries[i].flip_y)
 		{
 			ty = ((sprite_height * 2) - 2) - ty;
 		}
 
-		uint8_t tile_index = context.fetched_entries[i].tile_index;
+		uint8_t tile_index = context.fetched_entries[i].tile_id;
 		if (sprite_height == 16)
 		{
 			// Remove last bit
@@ -472,11 +442,11 @@ void Ppu::LoadWindowTile()
 
 void Ppu::PixelFetcher()
 {
-	switch (context.pfc.current_fetch_state)
+	switch (context.pfc.pipeline_state)
 	{
 		case FetchState::Tile:
 		{
-			context.fetched_entry_count = 0;
+			context.fetched_entries.clear();
 
 			// Load background/window tile
 			if (m_Display->IsBackgroundEnabled())
@@ -499,12 +469,12 @@ void Ppu::PixelFetcher()
 			}
 
 			// Load sprite tile
-			if (m_Display->IsObjectEnabled() && context.line_sprites != nullptr)
+			if (m_Display->IsObjectEnabled())
 			{
 				LoadSpriteTile();
 			}
 
-			context.pfc.current_fetch_state = FetchState::TileDataLow;
+			context.pfc.pipeline_state = FetchState::TileDataLow;
 			context.pfc.fetch_x += 8;
 			break;
 		}
@@ -524,7 +494,7 @@ void Ppu::PixelFetcher()
 
 			LoadSpriteData(0);
 
-			context.pfc.current_fetch_state = FetchState::TileDataHigh;
+			context.pfc.pipeline_state = FetchState::TileDataHigh;
 			break;
 		}
 
@@ -543,13 +513,13 @@ void Ppu::PixelFetcher()
 
 			LoadSpriteData(1);
 
-			context.pfc.current_fetch_state = FetchState::Idle;
+			context.pfc.pipeline_state = FetchState::Idle;
 			break;
 		}
 
 		case FetchState::Idle:
 		{
-			context.pfc.current_fetch_state = FetchState::Push;
+			context.pfc.pipeline_state = FetchState::Push;
 			break;
 		}
 
@@ -557,7 +527,7 @@ void Ppu::PixelFetcher()
 		{
 			if (PipelineAddPixel())
 			{
-				context.pfc.current_fetch_state = FetchState::Tile;
+				context.pfc.pipeline_state = FetchState::Tile;
 			}
 
 			break;
