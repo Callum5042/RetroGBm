@@ -167,6 +167,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CpuTests.cpp" />
+    <ClCompile Include="DisplayTests.cpp" />
     <ClCompile Include="InstructionsTests.cpp" />
     <ClCompile Include="JoypadTests.cpp" />
     <ClCompile Include="PpuTests.cpp" />
