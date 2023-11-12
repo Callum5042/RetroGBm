@@ -188,7 +188,7 @@ uint8_t Display::GetObjectHeight()
 		return 16;
 	}
 
-	// Object is 8
+	// Object is 8x8
 	return 8;
 }
 

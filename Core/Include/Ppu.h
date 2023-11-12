@@ -95,6 +95,8 @@ private:
 	int m_PixelX = 0;
 	int m_WindowLineCounter = 0;
 
+	std::queue<OamData> m_Objects;
+
 	// Accessible areas
 	bool CanAccessVRam();
 	bool CanAccessOAM();
