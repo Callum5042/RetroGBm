@@ -146,6 +146,8 @@ void Ppu::VBlank()
 		// Keep increasing LY register until we reach the lines per frame
 		if (m_Display->m_Context.ly >= m_LinesPerFrame)
 		{
+			CheckFrameRate();
+
 			m_Display->SetLcdMode(LcdMode::OAM);
 			m_Display->m_Context.ly = 0;
 			m_Context.window_line_counter = 0;
@@ -512,4 +514,18 @@ void Ppu::FetchTileData(FetchTileByte tile_byte)
 	{
 		m_Context.pipeline.background_window_byte_high = m_Bus->ReadBus(base_address + offset_x + offset_y + 1);
 	}
+}
+
+void Ppu::CheckFrameRate()
+{
+	m_EndFrame = std::chrono::high_resolution_clock::now();
+	float frame_time = std::chrono::duration<float, std::milli>(m_EndFrame - m_StartFrame).count();
+
+	if (frame_time < m_TargetFrameTime)
+	{
+		const std::chrono::duration<double, std::milli> elapsed(m_TargetFrameTime - frame_time);
+		std::this_thread::sleep_for(elapsed);
+	}
+
+	m_StartFrame = std::chrono::high_resolution_clock::now();
 }

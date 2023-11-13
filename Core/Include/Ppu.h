@@ -5,6 +5,7 @@
 #include <vector>
 #include <array>
 #include <queue>
+#include <chrono>
 
 class IBus;
 class Cpu;
@@ -130,4 +131,12 @@ private:
 	bool IsWindowVisible();
 	bool IsWindowInView(int pixel_x);
 	void IncrementLY();
+
+	// Limit frame rate
+	void CheckFrameRate();
+	float m_TargetFrameTime = 1000.0f / 60.0f;
+
+	std::chrono::high_resolution_clock m_FpsClock;
+	std::chrono::high_resolution_clock::time_point m_StartFrame;
+	std::chrono::high_resolution_clock::time_point m_EndFrame;
 };
