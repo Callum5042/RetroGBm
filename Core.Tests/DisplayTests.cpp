@@ -33,5 +33,31 @@ namespace CoreTests
 			// Assert
 			Assert::IsTrue(result);
 		}
+
+		TEST_METHOD(IsObjectEnabled_LcdcBit2Set_ReturnsTrue)
+		{
+			// Arrange
+			Display display;
+			const_cast<DisplayContext*>(display.GetContext())->lcdc = 0b10;
+
+			// Act
+			bool result = display.IsObjectEnabled();
+
+			// Assert
+			Assert::IsTrue(result);
+		}
+
+		TEST_METHOD(IsObjectEnabled_LcdcBit2NotSet_ReturnsFalse)
+		{
+			// Arrange
+			Display display;
+			const_cast<DisplayContext*>(display.GetContext())->lcdc = 0b00;
+
+			// Act
+			bool result = display.IsObjectEnabled();
+
+			// Assert
+			Assert::IsFalse(result);
+		}
 	};
 }

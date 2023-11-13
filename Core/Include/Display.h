@@ -50,7 +50,6 @@ public:
 	bool IsWindowEnabled();
 	bool IsBackgroundEnabled();
 	bool IsObjectEnabled();
-	bool IsWindowInView(int pixel_x);
 
 	uint8_t GetObjectHeight();
 	uint16_t GetBackgroundTileBaseAddress();
@@ -65,10 +64,9 @@ public:
 	void SetLcdMode(LcdMode mode);
 	LcdMode GetLcdMode();
 
-	inline const DisplayContext* GetContext() { return &context; }
+	inline DisplayContext* GetContext() { return &m_Context; }
 
 private:
-
-	DisplayContext context = {};
+	DisplayContext m_Context = {};
 	const unsigned long m_DefaultColours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
 };

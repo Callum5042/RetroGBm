@@ -20,14 +20,11 @@ Ppu::Ppu(IBus* bus, Cpu* cpu, Display* display) : m_Bus(bus), m_Cpu(cpu), m_Disp
 
 void Ppu::Init()
 {
-	m_Context.video_ram.resize(0x8000);
-	std::fill(m_Context.video_ram.begin(), m_Context.video_ram.end(), 0);
+	m_Context.video_buffer.resize(ScreenResolutionY * ScreenResolutionX);
+	std::fill(m_Context.video_buffer.begin(), m_Context.video_buffer.end(), 0x0);
 
-	m_Context.video_buffer.resize(ScreenResolutionX * ScreenResolutionY * sizeof(uint32_t));
-	std::fill(m_Context.video_buffer.begin(), m_Context.video_buffer.end(), 0);
-
-	m_Context.oam_ram.resize(40);
-	std::fill(m_Context.oam_ram.begin(), m_Context.oam_ram.end(), OamData());
+	m_Context.video_ram.resize(0x2000);
+	std::fill(m_Context.video_ram.begin(), m_Context.video_ram.end(), 0x0);
 
 	m_Display->Init();
 	m_Display->SetLcdMode(LcdMode::OAM);
@@ -54,16 +51,6 @@ void Ppu::Tick()
 	}
 }
 
-void Ppu::WriteVideoRam(uint16_t address, uint8_t value)
-{
-	m_Context.video_ram[address - 0x8000] = value;
-}
-
-uint8_t Ppu::ReadVideoRam(uint16_t address)
-{
-	return m_Context.video_ram[address - 0x8000];
-}
-
 void Ppu::WriteOam(uint16_t address, uint8_t value)
 {
 	if (address >= 0xFE00)
@@ -86,241 +73,459 @@ uint8_t Ppu::ReadOam(uint16_t address)
 	return ptr[address];
 }
 
+void Ppu::WriteVideoRam(uint16_t address, uint8_t value)
+{
+	m_Context.video_ram[address - 0x8000] = value;
+}
+
+uint8_t Ppu::ReadVideoRam(uint16_t address)
+{
+	return m_Context.video_ram[address - 0x8000];
+}
+
 void Ppu::UpdateOam()
 {
-	// OAM takes 80 ticks
+	// Searching for objects takes 80 ticks
 	if (m_Context.dot_ticks >= 80)
 	{
+		m_Context.pipeline = PipelineContext();
 		m_Display->SetLcdMode(LcdMode::PixelTransfer);
 	}
 
 	// Search and order OAMA per line
 	if (m_Context.dot_ticks == 1)
 	{
-		// Ensure queue is empty
-		m_Context.objects.clear();
+		m_Context.objects_per_line.clear();
 
 		// Find all objects on the current scan line
 		uint8_t sprite_height = m_Display->GetObjectHeight();
 		for (auto& oam : m_Context.oam_ram)
 		{
-			if ((oam.position_y <= m_Display->context.ly + 16) && (oam.position_y + sprite_height > m_Display->context.ly + 16))
+			if ((oam.position_y + sprite_height > m_Display->m_Context.ly + 16) && (oam.position_y <= m_Display->m_Context.ly + 16))
 			{
-				m_Context.objects.push_back(oam);
+				m_Context.objects_per_line.push_back(oam);
 			}
 		}
 
 		// Sort by priority and X position
-		// TODO
+		std::sort(m_Context.objects_per_line.begin(), m_Context.objects_per_line.end(), [](const OamData& lhs, const OamData& rhs)
+		{
+			return (lhs.position_x < rhs.position_x);
+		});
+
+		// Limit to 10 per row
+		if (m_Context.objects_per_line.size() > 10)
+		{
+			m_Context.objects_per_line.erase(m_Context.objects_per_line.begin() + 10, m_Context.objects_per_line.end());
+		}
 	}
 }
 
 void Ppu::PixelTransfer()
 {
-	// Background
-	if (m_Display->IsBackgroundEnabled())
+	PipelineProcess();
+
+	// Process pixels until we finish the line
+	if (m_Context.pipeline.pushed_x >= ScreenResolutionX)
 	{
-		// Divide by 8
-		int position_x = (m_PixelX + m_Display->context.scx) & 0xFF;
-		int position_y = (m_Display->context.ly + m_Display->context.scy) & 0xFF;
-
-		// Fetch tile
-		uint16_t base_address = m_Display->GetBackgroundTileBaseAddress();
-		uint8_t tile_id = m_Bus->ReadBus(base_address + (position_x >> 3) + (position_y >> 3) * 32);
-
-		// Check if we are getting tiles from block 1
-		if (m_Display->GetBackgroundAndWindowTileData() == 0x8800)
-		{
-			tile_id += 128;
-		}
-
-		// Fetch tile data
-		uint16_t offset_x = (tile_id << 4);
-		uint16_t offset_y = ((position_y & 0x7) << 1);
-
-		uint16_t tile_address = m_Display->GetBackgroundAndWindowTileData();
-		uint8_t byte1 = m_Bus->ReadBus(tile_address + offset_x + offset_y);
-		uint8_t byte2 = m_Bus->ReadBus(tile_address + offset_x + offset_y + 1);
-
-		const unsigned long tile_colours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
-		uint8_t high = (static_cast<bool>(byte1 & (1 << (7 - (position_x % 8))))) << 1;
-		uint8_t low = (static_cast<bool>(byte2 & (1 << (7 - (position_x % 8))))) << 0;
-
-		uint32_t colour = tile_colours[high | low];
-		m_Context.video_buffer[m_PixelX + (m_Display->context.ly * ScreenResolutionX)] = colour;
-	}
-	else
-	{
-		m_Context.video_buffer[m_PixelX + (m_Display->context.ly * ScreenResolutionX)] = 0xFFFFFFFF;
-	}
-
-	// Window
-	if (m_Display->IsWindowEnabled())
-	{
-		if (m_Display->IsWindowInView(m_PixelX))
-		{
-			// Divide by 8
-			int position_x = (m_PixelX - m_Display->context.wx + 7) & 0xFF;
-			int position_y = (m_Display->context.ly - m_Display->context.wy) & 0xFF; // (m_WindowLineCounter - m_Display->context.wy) & 0xFF;
-
-			// Fetch tile
-			uint16_t base_address = m_Display->GetWindowTileBaseAddress();
-			uint8_t tile_id = m_Bus->ReadBus(base_address + (position_x >> 3) + (position_y >> 3) * 32);
-
-			// Check if we are getting tiles from block 1
-			if (m_Display->GetBackgroundAndWindowTileData() == 0x8800)
-			{
-				tile_id += 128;
-			}
-
-			// Fetch tile data
-			uint16_t offset_x = (tile_id << 4);
-			uint16_t offset_y = ((position_y & 0x7) << 1);
-
-			uint16_t tile_address = m_Display->GetBackgroundAndWindowTileData();
-			uint8_t byte1 = m_Bus->ReadBus(tile_address + offset_x + offset_y);
-			uint8_t byte2 = m_Bus->ReadBus(tile_address + offset_x + offset_y + 1);
-
-			const unsigned long tile_colours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
-			uint8_t high = (static_cast<bool>(byte1 & (1 << (7 - (position_x % 8))))) << 1;
-			uint8_t low = (static_cast<bool>(byte2 & (1 << (7 - (position_x % 8))))) << 0;
-
-			uint32_t colour = tile_colours[high | low];
-			m_Context.video_buffer[m_PixelX + (m_Display->context.ly * ScreenResolutionX)] = colour;
-		}
-	}
-
-	// Objects
-	if (m_Display->IsObjectEnabled() && !m_Context.objects.empty())
-	{
-		for (auto& oam : m_Context.objects)
-		{
-			int current_ly = m_Display->context.ly;
-			uint8_t sprite_height = m_Display->GetObjectHeight();
-
-			int position_x = (m_PixelX - oam.position_x + 8); // (oam.position_x - m_PixelX) & 0xFF;
-			int sp_x = (oam.position_x - 8) + (m_Display->context.scx % 8);
-
-			// if ((sp_x >= m_PixelX && sp_x < m_PixelX + 8) || ((sp_x + 8) >= m_PixelX && (sp_x + 8) < m_PixelX + 8))
-			if (m_PixelX >= oam.position_x - 8 && m_PixelX < oam.position_x)
-			{
-				// Check Y orientation for which direction to load the pixels
-				uint8_t ty = ((current_ly + 16) - oam.position_y) * 2;
-				if (oam.flip_y)
-				{
-					ty = ((sprite_height * 2) - 2) - ty;
-				}
-
-				// Check X oreientation
-				uint8_t bit = position_x % 8;
-				if (!oam.flip_x)
-				{
-					bit = (7 - (position_x % 8));
-				}
-
-				uint8_t tile_index = oam.tile_id;
-				if (sprite_height == 16)
-				{
-					// Remove last bit
-					tile_index &= ~(1);
-				}
-
-				uint8_t byte1 = m_Bus->ReadBus(0x8000 + (tile_index * 16) + ty + 0);
-				uint8_t byte2 = m_Bus->ReadBus(0x8000 + (tile_index * 16) + ty + 1);
-
-				uint8_t high = (static_cast<bool>(byte1 & (1 << bit))) << 1;
-				uint8_t low = (static_cast<bool>(byte2 & (1 << bit))) << 0;
-
-				if ((high | low))
-				{
-					uint32_t colour = (oam.dmg_palette ? m_Display->context.sprite2_palette[high | low] : m_Display->context.sprite1_palette[high | low]);
-					m_Context.video_buffer[m_PixelX + (m_Display->context.ly * ScreenResolutionX)] = colour;
-				}
-			}
-		}
-	}
-
-	// Check if we are at end of the line
-	m_PixelX++;
-	if (m_PixelX > ScreenResolutionX)
-	{
-		m_PixelX = 0;
-		IncrementLY();
 		m_Display->SetLcdMode(LcdMode::HBlank);
-	}
-}
-
-void Ppu::HBlank()
-{
-	// Each line takes 456 ticks
-	if (m_Context.dot_ticks >= 456)
-	{
-		m_Context.dot_ticks = 0;
-
-		if (m_Display->context.ly < 144)
+		if (m_Display->IsStatInterruptHBlank())
 		{
-			m_Display->SetLcdMode(LcdMode::OAM);
-		}
-		else
-		{
-			m_Cpu->RequestInterrupt(InterruptFlag::VBlank);
-			m_Display->SetLcdMode(LcdMode::VBlank);
+			m_Cpu->RequestInterrupt(InterruptFlag::STAT);
 		}
 	}
 }
 
 void Ppu::VBlank()
 {
-	if (m_Context.dot_ticks >= 456)
+	if (m_Context.dot_ticks >= m_DotTicksPerLine)
 	{
 		m_Context.dot_ticks = 0;
 		IncrementLY();
 
-		// 154 total lines in a frame (144 on screen, 10 extra for VBlank mode) (4560 dot ticks)
-		if (m_Display->context.ly >= 154)
+		// Keep increasing LY register until we reach the lines per frame
+		if (m_Display->m_Context.ly >= m_LinesPerFrame)
 		{
-			m_Display->context.ly = 0;
-			m_WindowLineCounter = 0;
+			CheckFrameRate();
 
+			m_Display->SetLcdMode(LcdMode::OAM);
+			m_Display->m_Context.ly = 0;
+			m_Context.window_line_counter = 0;
+		}
+	}
+}
+
+void Ppu::HBlank()
+{
+	if (m_Context.dot_ticks >= m_DotTicksPerLine)
+	{
+		m_Context.dot_ticks = 0;
+		IncrementLY();
+
+		// Enter VBlank if all the scanlines have been drawn
+		if (m_Display->m_Context.ly >= ScreenResolutionY)
+		{
+			m_Display->SetLcdMode(LcdMode::VBlank);
+			m_Cpu->RequestInterrupt(InterruptFlag::VBlank);
+
+			if (m_Display->IsStatInterruptVBlank())
+			{
+				m_Cpu->RequestInterrupt(InterruptFlag::STAT);
+			}
+		}
+		else
+		{
 			m_Display->SetLcdMode(LcdMode::OAM);
 		}
 	}
 }
 
-bool Ppu::CanAccessVRam()
+void Ppu::PipelineProcess()
 {
-	LcdMode mode = m_Display->GetLcdMode();
-	return (mode != LcdMode::PixelTransfer);
+	if ((m_Context.dot_ticks & 1))
+	{
+		PixelFetcher();
+	}
+
+	PushPixelToVideoBuffer();
 }
 
-bool Ppu::CanAccessOAM()
+bool Ppu::IsWindowVisible()
 {
-	LcdMode mode = m_Display->GetLcdMode();
-	if (mode == LcdMode::OAM || mode == LcdMode::PixelTransfer)
+	return m_Display->IsWindowEnabled()
+		&& m_Display->m_Context.wx >= 0
+		&& m_Display->m_Context.wx <= 166
+		&& m_Display->m_Context.wy >= 0
+		&& m_Display->m_Context.wy < ScreenResolutionY;
+}
+
+void Ppu::IncrementLY()
+{
+	// Increment LY register every 
+	m_Display->m_Context.ly++;
+	if (m_Display->m_Context.ly == m_Display->m_Context.lyc)
+	{
+		m_Display->m_Context.stat |= 0b100;
+		if (m_Display->IsStatInterruptLYC())
+		{
+			m_Cpu->RequestInterrupt(InterruptFlag::STAT);
+		}
+	}
+	else
+	{
+		m_Display->m_Context.stat &= ~0b100;
+	}
+
+	// Internal window line is used for the window tiles Y offset and only incremented when the window is visible
+	if (IsWindowVisible() && (m_Display->m_Context.ly > m_Display->m_Context.wy) && (m_Display->m_Context.ly <= m_Display->m_Context.wy + ScreenResolutionY))
+	{
+		m_Context.window_line_counter++;
+	}
+}
+
+uint32_t Ppu::FetchSpritePixels(uint32_t color, bool background_pixel_transparent)
+{
+	for (int i = 0; i < m_Context.pipeline.fetched_entries.size(); i++)
+	{
+		// Background has priority and there is already a background pixel
+		bool priority = m_Context.pipeline.fetched_entries[i].oam->priority;
+		if (priority && !background_pixel_transparent)
+		{
+			continue;
+		}
+
+		// Past pixel point already
+		int sprite_x = (m_Context.pipeline.fetched_entries[i].oam->position_x - 8) + ((m_Display->m_Context.scx % 8));
+		if (sprite_x + 8 < m_Context.pipeline.fifo_x)
+		{
+			continue;
+		}
+
+		int offset = m_Context.pipeline.fifo_x - sprite_x;
+
+		uint8_t bit = (7 - offset);
+		if (m_Context.pipeline.fetched_entries[i].oam->flip_x)
+		{
+			bit = offset;
+		}
+
+		uint8_t high = (static_cast<bool>(m_Context.pipeline.fetched_entries[i].byte_low & (1 << bit))) << 0;
+		uint8_t low = (static_cast<bool>(m_Context.pipeline.fetched_entries[i].byte_high & (1 << bit))) << 1;
+		uint8_t palette_index = high | low;
+
+		// Transparent
+		if (palette_index == 0)
+		{
+			continue;
+		}
+
+		// Select pixel colour
+		return (m_Context.pipeline.fetched_entries[i].oam->dmg_palette) ? m_Display->m_Context.sprite2_palette[palette_index] : m_Display->m_Context.sprite1_palette[palette_index];
+	}
+
+	return color;
+}
+
+bool Ppu::PipelineAddPixel()
+{
+	// Check if the queue is full - max of 8 pixels
+	if (m_Context.pipeline.pixel_queue.size() > 8)
 	{
 		return false;
+	}
+
+	// Discard pixels that are not on the screen
+	int pixel_x = m_Context.pipeline.fetch_x - (8 - (m_Display->m_Context.scx % 8));
+	if (pixel_x < 0)
+	{
+		return false;
+	}
+
+	for (int bit = 7; bit >= 0; bit--)
+	{
+		// Decode and get pixel colour from palette
+		uint8_t data_high = (static_cast<bool>(m_Context.pipeline.background_window_byte_low & (1 << bit))) << 0;
+		uint8_t data_low = (static_cast<bool>(m_Context.pipeline.background_window_byte_high & (1 << bit))) << 1;
+		uint8_t palette_index = data_high | data_low;
+
+		uint32_t colour = m_Display->m_Context.background_palette[palette_index];
+
+		if (!m_Display->IsBackgroundEnabled())
+		{
+			colour = m_Display->m_Context.background_palette[0];
+		}
+
+		if (m_Display->IsObjectEnabled())
+		{
+			bool background_transparent = (palette_index == 0);
+			colour = FetchSpritePixels(colour, background_transparent);
+		}
+
+		m_Context.pipeline.pixel_queue.push(colour);
+		m_Context.pipeline.fifo_x++;
 	}
 
 	return true;
 }
 
-void Ppu::IncrementLY()
+void Ppu::LoadSpriteTile()
 {
-	m_Display->context.ly++;
+	for (auto& oam : m_Context.objects_per_line)
+	{
+		int sp_x = (oam.position_x - 8) + (m_Display->m_Context.scx % 8);
 
-	if (m_Display->context.ly == m_Display->context.lyc)
-	{
-		m_Display->context.stat |= 0b100;
-		m_Cpu->RequestInterrupt(InterruptFlag::STAT);
+		if ((sp_x >= m_Context.pipeline.fetch_x && sp_x < m_Context.pipeline.fetch_x + 8) || ((sp_x + 8) >= m_Context.pipeline.fetch_x && (sp_x + 8) < m_Context.pipeline.fetch_x + 8))
+		{
+			OamPipelineData data;
+			data.oam = &oam;
+
+			m_Context.pipeline.fetched_entries.push_back(data);
+		}
+
+		// Max checking 3 sprites on pixels
+		if (m_Context.pipeline.fetched_entries.size() >= 3)
+		{
+			break;
+		}
 	}
-	else
+}
+
+void Ppu::LoadSpriteData(FetchTileByte tile_byte)
+{
+	int current_ly = m_Display->m_Context.ly;
+	uint8_t sprite_height = m_Display->GetObjectHeight();
+
+	for (int i = 0; i < m_Context.pipeline.fetched_entries.size(); i++)
 	{
-		m_Display->context.stat &= ~0b100;
+		// Check Y orientation for which direction to load the pixels
+		uint8_t tile_y = ((current_ly + 16) - m_Context.pipeline.fetched_entries[i].oam->position_y) * 2;
+		if (m_Context.pipeline.fetched_entries[i].oam->flip_y)
+		{
+			tile_y = ((sprite_height * 2) - 2) - tile_y;
+		}
+
+		uint8_t tile_index = m_Context.pipeline.fetched_entries[i].oam->tile_id;
+		if (sprite_height == 16)
+		{
+			// Remove last bit
+			tile_index &= ~(1);
+		}
+
+		if (tile_byte == FetchTileByte::ByteLow)
+		{
+			m_Context.pipeline.fetched_entries[i].byte_low = m_Bus->ReadBus(0x8000 + (tile_index * 16) + tile_y + 0);
+		}
+		else if (tile_byte == FetchTileByte::ByteHigh)
+		{
+			m_Context.pipeline.fetched_entries[i].byte_high = m_Bus->ReadBus(0x8000 + (tile_index * 16) + tile_y + 1);
+		}
+	}
+}
+
+void Ppu::LoadWindowTile()
+{
+	if (IsWindowVisible())
+	{
+		if (IsWindowInView(m_Context.pipeline.fetch_x))
+		{
+			// Divide by 8
+			uint8_t position_x = (m_Context.pipeline.fetch_x - m_Display->m_Context.wx + 7) & 0xFF;
+			uint8_t position_y = m_Context.window_line_counter; // (m_Display->m_Context.ly - m_Display->m_Context.wy) & 0xFF;
+
+			// Fetch tile
+			uint16_t base_address = m_Display->GetWindowTileBaseAddress();
+			m_Context.pipeline.background_window_tile = m_Bus->ReadBus(base_address + (position_x >> 3) + ((position_y >> 3) * 32));
+
+			// Check if we are getting tiles from block 1
+			if (m_Display->GetBackgroundAndWindowTileData() == 0x8800)
+			{
+				m_Context.pipeline.background_window_tile += 128;
+			}
+		}
+	}
+}
+
+void Ppu::PixelFetcher()
+{
+	switch (m_Context.pipeline.pipeline_state)
+	{
+		case FetchState::Tile:
+		{
+			m_Context.pipeline.fetched_entries.clear();
+
+			// Load background/window tile
+			if (m_Display->IsBackgroundEnabled())
+			{
+				// Divide by 8
+				int position_y = (m_Display->m_Context.ly + m_Display->m_Context.scy) & 0xFF;
+				int position_x = (m_Context.pipeline.fetch_x + m_Display->m_Context.scx) & 0xFF;
+
+				// Fetch tile
+				uint16_t base_address = m_Display->GetBackgroundTileBaseAddress();
+				m_Context.pipeline.background_window_tile = m_Bus->ReadBus(base_address + (position_x >> 3) + (position_y >> 3) * 32);
+
+				if (m_Display->GetBackgroundAndWindowTileData() == 0x8800)
+				{
+					m_Context.pipeline.background_window_tile += 128;
+				}
+
+				// Load window tile
+				LoadWindowTile();
+			}
+
+			// Load sprite tile
+			if (m_Display->IsObjectEnabled())
+			{
+				LoadSpriteTile();
+			}
+
+			m_Context.pipeline.pipeline_state = FetchState::TileDataLow;
+			m_Context.pipeline.fetch_x += 8;
+			break;
+		}
+
+		case FetchState::TileDataLow:
+		{
+			FetchTileData(FetchTileByte::ByteLow);
+			LoadSpriteData(FetchTileByte::ByteLow);
+
+			m_Context.pipeline.pipeline_state = FetchState::TileDataHigh;
+			break;
+		}
+
+		case FetchState::TileDataHigh:
+		{
+			FetchTileData(FetchTileByte::ByteHigh);
+			LoadSpriteData(FetchTileByte::ByteHigh);
+
+			m_Context.pipeline.pipeline_state = FetchState::Idle;
+			break;
+		}
+
+		case FetchState::Idle:
+		{
+			m_Context.pipeline.pipeline_state = FetchState::Push;
+			break;
+		}
+
+		case FetchState::Push:
+		{
+			if (PipelineAddPixel())
+			{
+				m_Context.pipeline.pipeline_state = FetchState::Tile;
+			}
+
+			break;
+		}
+	}
+}
+
+void Ppu::PushPixelToVideoBuffer()
+{
+	if (m_Context.pipeline.pixel_queue.size() > 8)
+	{
+		uint32_t pixel_data = m_Context.pipeline.pixel_queue.front();
+		m_Context.pipeline.pixel_queue.pop();
+
+		if (m_Context.pipeline.line_x >= (m_Display->m_Context.scx % 8))
+		{
+			m_Context.video_buffer[m_Context.pipeline.pushed_x + (m_Display->m_Context.ly * ScreenResolutionX)] = pixel_data;
+			m_Context.pipeline.pushed_x++;
+		}
+
+		m_Context.pipeline.line_x++;
+	}
+}
+
+bool Ppu::IsWindowInView(int pixel_x)
+{
+	const int ScreenResolutionX = 160;
+	const int ScreenResolutionY = 144;
+
+	if (m_Display->m_Context.ly >= m_Display->m_Context.wy && m_Display->m_Context.ly < m_Display->m_Context.wy + ScreenResolutionY)
+	{
+		if ((pixel_x >= m_Display->m_Context.wx - 7) && (pixel_x < m_Display->m_Context.wx + ScreenResolutionX - 7))
+		{
+			return true;
+		}
 	}
 
-	// Internal window line counter
-	if (m_Display->IsWindowEnabled() && m_Display->IsWindowInView(m_PixelX))
+	return false;
+}
+
+void Ppu::FetchTileData(FetchTileByte tile_byte)
+{
+	// Calculate tile offset
+	uint16_t offset_x = (m_Context.pipeline.background_window_tile << 4);
+	uint16_t offset_y = ((m_Display->m_Context.ly + m_Display->m_Context.scy) % 8) * 2;
+
+	if (IsWindowVisible() && IsWindowInView(m_Context.pipeline.fetch_x))
 	{
-		m_WindowLineCounter++;
+		offset_y = ((m_Context.window_line_counter & 0x7) << 1);
 	}
+
+	// Fetch tile data
+	uint16_t base_address = m_Display->GetBackgroundAndWindowTileData();
+	if (tile_byte == FetchTileByte::ByteLow)
+	{
+		m_Context.pipeline.background_window_byte_low = m_Bus->ReadBus(base_address + offset_x + offset_y);
+	}
+	else if (tile_byte == FetchTileByte::ByteHigh)
+	{
+		m_Context.pipeline.background_window_byte_high = m_Bus->ReadBus(base_address + offset_x + offset_y + 1);
+	}
+}
+
+void Ppu::CheckFrameRate()
+{
+	m_EndFrame = std::chrono::high_resolution_clock::now();
+	float frame_time = std::chrono::duration<float, std::milli>(m_EndFrame - m_StartFrame).count();
+
+	if (frame_time < m_TargetFrameTime)
+	{
+		const std::chrono::duration<double, std::milli> elapsed(m_TargetFrameTime - frame_time);
+		std::this_thread::sleep_for(elapsed);
+	}
+
+	m_StartFrame = std::chrono::high_resolution_clock::now();
 }

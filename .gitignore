@@ -364,4 +364,6 @@ FodyWeavers.xsd
 
 # Ignore GB non-test ROMS
 *.gb
+*.gbc
 !testroms/*.gb
+!testroms/*.gbc

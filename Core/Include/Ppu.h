@@ -19,6 +19,12 @@ enum class FetchState
 	Push,
 };
 
+enum class FetchTileByte
+{
+	ByteLow,
+	ByteHigh
+};
+
 struct OamData
 {
 	uint8_t position_y;
@@ -33,14 +39,40 @@ struct OamData
 	bool priority : 1;
 };
 
+struct OamPipelineData
+{
+	OamData* oam = nullptr;
+	uint8_t byte_low;
+	uint8_t byte_high;
+};
+
+struct PipelineContext
+{
+	FetchState pipeline_state = FetchState::Tile;
+	uint8_t line_x = 0;
+	uint8_t pushed_x = 0;
+	uint8_t fetch_x = 0;
+
+	uint8_t background_window_tile = 0;
+	uint8_t background_window_byte_low = 0;
+	uint8_t background_window_byte_high = 0;
+
+	std::vector<OamPipelineData> fetched_entries;
+	std::queue<uint32_t> pixel_queue;
+	uint8_t fifo_x;
+};
+
 struct PpuContext
 {
-	uint32_t dot_ticks;
+	uint32_t dot_ticks = 0;
+	uint8_t window_line_counter = 0;
+
 	std::vector<uint32_t> video_buffer;
 	std::vector<uint8_t> video_ram;
-	std::vector<OamData> oam_ram;
+	std::array<OamData, 40> oam_ram;
+	std::vector<OamData> objects_per_line;
 
-	std::vector<OamData> objects;
+	PipelineContext pipeline;
 };
 
 class Ppu
@@ -65,25 +97,46 @@ public:
 	void WriteVideoRam(uint16_t address, uint8_t value);
 	uint8_t ReadVideoRam(uint16_t address);
 
+	inline PpuContext* GetContext() { return &m_Context; }
+
+	const uint16_t ScreenResolutionY = 144;
+	const uint16_t ScreenResolutionX = 160;
+
+private:
+	PpuContext m_Context = {};
+
+	const uint16_t m_LinesPerFrame = 154;
+	const uint16_t m_DotTicksPerLine = 456;
+
 	// Modes
 	void UpdateOam();
 	void PixelTransfer();
-	void HBlank();
 	void VBlank();
+	void HBlank();
 
-	// Dimensions
-	int ScreenResolutionX = 160;
-	int ScreenResolutionY = 144;
+	// Pipeline
+	void PipelineProcess();
+	bool PipelineAddPixel();
 
-	PpuContext m_Context;
+	void LoadSpriteTile();
+	void FetchTileData(FetchTileByte tile_byte);
 
-private:
-	int m_PixelX = 0;
-	int m_WindowLineCounter = 0;
+	uint32_t FetchSpritePixels(uint32_t color, bool background_pixel_transparent);
+	void LoadSpriteData(FetchTileByte tile_byte);
+	void LoadWindowTile();
 
-	// Accessible areas
-	bool CanAccessVRam();
-	bool CanAccessOAM();
+	void PixelFetcher();
+	void PushPixelToVideoBuffer();
 
+	bool IsWindowVisible();
+	bool IsWindowInView(int pixel_x);
 	void IncrementLY();
+
+	// Limit frame rate
+	void CheckFrameRate();
+	float m_TargetFrameTime = 1000.0f / 60.0f;
+
+	std::chrono::high_resolution_clock m_FpsClock;
+	std::chrono::high_resolution_clock::time_point m_StartFrame;
+	std::chrono::high_resolution_clock::time_point m_EndFrame;
 };

@@ -14,7 +14,7 @@ namespace CoreTests
 		NullBus() = default;
 
 		uint8_t ReadBus(uint16_t address) override { return 0; }
-		void WriteBus(uint16_t address, uint8_t value) override { }
+		void WriteBus(uint16_t address, uint8_t value) override {}
 	};
 
 	TEST_CLASS(PpuTests)
@@ -34,11 +34,11 @@ namespace CoreTests
 
 			// Assert
 			Assert::AreEqual(static_cast<int>(LcdMode::OAM), static_cast<int>(display.GetLcdMode()));
-			Assert::AreEqual(0, static_cast<int>(ppu.m_Context.dot_ticks));
+			Assert::AreEqual(0, static_cast<int>(ppu.GetContext()->dot_ticks));
 
-			Assert::AreEqual(0x8000, static_cast<int>(ppu.m_Context.video_ram.size()));
-			Assert::AreEqual(static_cast<int>(144 * 160 * sizeof(uint32_t)), static_cast<int>(ppu.m_Context.video_buffer.size()));
-			Assert::AreEqual(static_cast<int>(40), static_cast<int>(ppu.m_Context.oam_ram.size()));
+			Assert::AreEqual(0x2000, static_cast<int>(ppu.GetContext()->video_ram.size()));
+			Assert::AreEqual(static_cast<int>(144 * 160), static_cast<int>(ppu.GetContext()->video_buffer.size()));
+			Assert::AreEqual(static_cast<int>(40), static_cast<int>(ppu.GetContext()->oam_ram.size()));
 		}
 
 		TEST_METHOD(Tick_80Ticks_EnterPixelTransferMode)
@@ -59,7 +59,7 @@ namespace CoreTests
 
 			// Assert
 			Assert::AreEqual(static_cast<int>(LcdMode::PixelTransfer), static_cast<int>(display.GetLcdMode()));
-			Assert::AreEqual(80, static_cast<int>(ppu.m_Context.dot_ticks));
+			Assert::AreEqual(80, static_cast<int>(ppu.GetContext()->dot_ticks));
 		}
 
 		TEST_METHOD(Tick_456Ticks_EnterOamMode_DotTicksReset_IncreaseDisplayLyRegister)
@@ -80,7 +80,7 @@ namespace CoreTests
 
 			// Assert
 			Assert::AreEqual(static_cast<int>(LcdMode::OAM), static_cast<int>(display.GetLcdMode()));
-			Assert::AreEqual(0, static_cast<int>(ppu.m_Context.dot_ticks));
+			Assert::AreEqual(0, static_cast<int>(ppu.GetContext()->dot_ticks));
 			Assert::AreEqual(1, static_cast<int>(display.GetContext()->ly));
 		}
 
@@ -104,7 +104,7 @@ namespace CoreTests
 			Assert::AreEqual(static_cast<int>(LcdMode::VBlank), static_cast<int>(display.GetLcdMode()));
 			Assert::IsTrue(static_cast<bool>(cpu.GetInterruptFlags() & InterruptFlag::VBlank));
 
-			Assert::AreEqual(0, static_cast<int>(ppu.m_Context.dot_ticks));
+			Assert::AreEqual(0, static_cast<int>(ppu.GetContext()->dot_ticks));
 			Assert::AreEqual(144, static_cast<int>(display.GetContext()->ly));
 		}
 
@@ -129,7 +129,7 @@ namespace CoreTests
 
 			// Assert
 			Assert::AreEqual(static_cast<int>(LcdMode::OAM), static_cast<int>(display.GetLcdMode()));
-			Assert::AreEqual(0, static_cast<int>(ppu.m_Context.dot_ticks));
+			Assert::AreEqual(0, static_cast<int>(ppu.GetContext()->dot_ticks));
 			Assert::AreEqual(0, static_cast<int>(display.GetContext()->ly));
 		}
 
@@ -169,7 +169,7 @@ namespace CoreTests
 			Assert::AreEqual(data.position_x, ppu.ReadOam(0xFE01));
 			Assert::AreEqual(data.tile_id, ppu.ReadOam(0xFE02));
 
-			OamData result = ppu.m_Context.oam_ram[0];
+			OamData result = ppu.GetContext()->oam_ram[0];
 			Assert::AreEqual(data.position_y, result.position_y);
 			Assert::AreEqual(data.position_x, result.position_x);
 			Assert::AreEqual(data.tile_id, result.tile_id);
@@ -178,6 +178,80 @@ namespace CoreTests
 			Assert::IsTrue(result.flip_x);
 			Assert::IsTrue(result.flip_y);
 			Assert::IsFalse(result.priority);
+		}
+
+		TEST_METHOD(Tick_OamSort_OrderByPositionX)
+		{
+			// Arrange
+			Cpu cpu;
+			Display display;
+			NullBus bus;
+			Ppu ppu(&bus, &cpu, &display);
+			ppu.Init();
+			const_cast<DisplayContext*>(display.GetContext())->ly = 0;
+
+			OamData data1 = {};
+			data1.position_y = 16;
+			data1.position_x = 10;
+
+			OamData data2 = {};
+			data2.position_y = 16;
+			data2.position_x = 5;
+
+			OamData data3 = {};
+			data3.position_y = 16;
+			data3.position_x = 20;
+
+			WriteToOam(&ppu, 0xFE00 + (sizeof(OamData) * 0), data1);
+			WriteToOam(&ppu, 0xFE00 + (sizeof(OamData) * 1), data2);
+			WriteToOam(&ppu, 0xFE00 + (sizeof(OamData) * 2), data3);
+
+			// Act
+			ppu.Tick();
+
+			// Assert
+			Assert::AreEqual(3, static_cast<int>(ppu.GetContext()->objects_per_line.size()));
+
+			Assert::AreEqual(data2.position_x, ppu.GetContext()->objects_per_line[0].position_x);
+			Assert::AreEqual(data1.position_x, ppu.GetContext()->objects_per_line[1].position_x);
+			Assert::AreEqual(data3.position_x, ppu.GetContext()->objects_per_line[2].position_x);
+		}
+
+		TEST_METHOD(Tick_OamSort_LimitTo10PerRow)
+		{
+			// Arrange
+			Cpu cpu;
+			Display display;
+			NullBus bus;
+			Ppu ppu(&bus, &cpu, &display);
+			ppu.Init();
+			const_cast<DisplayContext*>(display.GetContext())->ly = 0;
+
+			for (int i = 0; i < 20; ++i)
+			{
+				OamData data1 = {};
+				data1.position_y = 16;
+				data1.position_x = i + 1;
+
+				WriteToOam(&ppu, static_cast<uint16_t>(0xFE00 + (sizeof(OamData) * i)), data1);
+			}
+
+			// Act
+			ppu.Tick();
+
+			// Assert
+			Assert::AreEqual(10, static_cast<int>(ppu.GetContext()->objects_per_line.size()));
+			Assert::AreEqual(10, static_cast<int>(ppu.GetContext()->objects_per_line[9].position_x));
+		}
+
+	private:
+		void WriteToOam(Ppu* ppu, uint16_t address, OamData data)
+		{
+			uint8_t* ptr = reinterpret_cast<uint8_t*>(&data);
+			ppu->WriteOam(address + 0, ptr[0]);
+			ppu->WriteOam(address + 1, ptr[1]);
+			ppu->WriteOam(address + 2, ptr[2]);
+			ppu->WriteOam(address + 3, ptr[3]);
 		}
 	};
 }
