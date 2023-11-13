@@ -119,64 +119,48 @@ void MainWindow::OpenDialog()
 
 bool MainWindow::OpenFileDialog(std::string* filepath)
 {
-	HRESULT hr = S_OK;
+	bool result = false;
 
-	// Initialize the COM library
-	hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-	if (FAILED(hr))
-	{
-		throw std::exception("CoInitializeEx failed");
-	}
-
-	// Create the FileOpenDialog object
-	IFileOpenDialog* file_open = NULL;
-	hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&file_open));
-	if (FAILED(hr))
-	{
-		CoUninitialize();
-		throw std::exception("CoCreateInstance failed");
-	}
-
-	// Show the Open dialog box
-	const COMDLG_FILTERSPEC filters[2] =
-	{
-		{ L"GameBoy ROM", L"*.gb" },
-		{ L"All Files",L"*.*" }
-	};
-
-	file_open->SetFileTypes(2, filters);
-	file_open->SetTitle(L"Open ROM");
-
-	hr = file_open->Show(this->GetHwnd());
-	if (FAILED(hr))
-	{
-		CoUninitialize();
-		return false;
-	}
-
-	// Get the file name from the dialog box
-	IShellItem* item = NULL;
-	hr = file_open->GetResult(&item);
+	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	if (SUCCEEDED(hr))
 	{
-		PWSTR path;
-		hr = item->GetDisplayName(SIGDN_FILESYSPATH, &path);
+		IFileOpenDialog* pFileOpen = NULL;
 
-		// Display the file name to the user
+		// Create the FileOpenDialog object
+		hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+
 		if (SUCCEEDED(hr))
 		{
-			*filepath = ConvertToString(path);
-			CoTaskMemFree(path);
+			// Show the Open dialog box
+			hr = pFileOpen->Show(NULL);
+
+			// Get the file name from the dialog box
+			if (SUCCEEDED(hr))
+			{
+				IShellItem* pItem;
+				hr = pFileOpen->GetResult(&pItem);
+				if (SUCCEEDED(hr))
+				{
+					PWSTR path;
+					hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &path);
+					if (SUCCEEDED(hr))
+					{
+						*filepath = ConvertToString(path);
+						CoTaskMemFree(path);
+						result = true;
+					}
+
+					pItem->Release();
+				}
+			}
+
+			pFileOpen->Release();
 		}
 
-		item->Release();
+		CoUninitialize();
 	}
 
-	// Cleanup
-	file_open->Release();
-	CoUninitialize();
-
-	return true;
+	return result;
 }
 
 void MainWindow::OnClose()
