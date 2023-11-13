@@ -170,6 +170,7 @@
     <ClCompile Include="DisplayTests.cpp" />
     <ClCompile Include="InstructionsTests.cpp" />
     <ClCompile Include="JoypadTests.cpp" />
+    <ClCompile Include="PpuTests.cpp" />
     <ClCompile Include="RamTests.cpp" />
     <ClCompile Include="TimerTests.cpp" />
   </ItemGroup>
