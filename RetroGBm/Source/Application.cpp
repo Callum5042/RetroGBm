@@ -84,7 +84,6 @@ void Application::StopEmulator()
 
 void Application::Run()
 {
-	
 	m_Emulator = std::make_unique<Emulator>();
 
 	// UI runs on main thread
@@ -106,7 +105,7 @@ void Application::Run()
 			if (m_Emulator->IsRunning())
 			{
 				// Update textures
-				m_MainRenderTexture->Update(m_Emulator->Instance->GetPpu()->context.video_buffer.data(), sizeof(uint32_t) * m_Emulator->Instance->GetPpu()->ScreenResolutionX);
+				m_MainRenderTexture->Update(m_Emulator->Instance->GetPpu()->GetContext()->video_buffer.data(), sizeof(uint32_t) * m_Emulator->Instance->GetPpu()->ScreenResolutionX);
 
 				// Apply shader
 				m_RenderShader->Use();
