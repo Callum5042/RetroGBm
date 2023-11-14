@@ -9,13 +9,13 @@ using namespace Op;
 
 void Op::Nop(EmulatorContext* context)
 {
-	context->cycles += 4;
+	context->cycles += 1;
 	context->cpu->ProgramCounter += 1;
 }
 
 void Op::Stop(EmulatorContext* context)
 {
-	context->cycles += 4;
+	context->cycles += 1;
 	context->cpu->ProgramCounter += 2;
 	// Emulator::Instance->Stop();
 
@@ -24,7 +24,7 @@ void Op::Stop(EmulatorContext* context)
 
 void Op::Halt(EmulatorContext* context)
 {
-	context->cycles += 4;
+	context->cycles += 1;
 	context->cpu->ProgramCounter++;
 
 	if (Emulator::Instance->GetCpu()->GetInterruptMasterFlag())
@@ -41,14 +41,14 @@ void Op::EnableInterrupts(EmulatorContext* context)
 {
 	context->cpu->EnableMasterInterrupts();
 
-	context->cycles += 4;
+	context->cycles += 1;
 	context->cpu->ProgramCounter += 1;
 }
 
 void Op::DisableInterrupts(EmulatorContext* context)
 {
 	context->cpu->DisableMasterInterrupts();
-	context->cycles += 4;
+	context->cycles += 1;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -59,7 +59,7 @@ void Op::JumpN16(EmulatorContext* context)
 	uint16_t data = low | (high << 8);
 
 	context->cpu->ProgramCounter = data;
-	context->cycles += 16;
+	context->cycles += 4;
 }
 
 void Op::JumpFlagN16(EmulatorContext* context, CpuFlag flag, bool condition)
@@ -71,12 +71,12 @@ void Op::JumpFlagN16(EmulatorContext* context, CpuFlag flag, bool condition)
 	bool enabled = context->cpu->GetFlag(flag);
 	if (enabled == condition)
 	{
-		context->cycles += 16;
+		context->cycles += 4;
 		context->cpu->ProgramCounter = data;
 	}
 	else
 	{
-		context->cycles += 12;
+		context->cycles += 3;
 		context->cpu->ProgramCounter += 3;
 	}
 }
@@ -86,7 +86,7 @@ void Op::JumpHL(EmulatorContext* context)
 	uint16_t address = context->cpu->GetRegister(RegisterType16::REG_HL);
 
 	context->cpu->ProgramCounter = address;
-	context->cycles += 4;
+	context->cycles += 1;
 }
 
 void Op::JumpRelativeN8(EmulatorContext* context)
@@ -95,24 +95,7 @@ void Op::JumpRelativeN8(EmulatorContext* context)
 	uint16_t address = static_cast<int16_t>(context->cpu->ProgramCounter + data + 2);
 
 	context->cpu->ProgramCounter = address;
-	context->cycles += 12;
-}
-
-void Op::JumpRelativeFlagN8(EmulatorContext* context, CpuFlag flag, bool condition)
-{
-	int8_t data = context->bus->ReadBus(context->cpu->ProgramCounter++);
-	uint16_t current_pc = context->cpu->ProgramCounter;
-
-	bool enabled = context->cpu->GetFlag(flag);
-	if (enabled == condition)
-	{
-		context->cpu->ProgramCounter = (context->cpu->ProgramCounter + data);
-		context->cycles += 12;
-	}
-	else
-	{
-		context->cycles += 8;
-	}
+	context->cycles += 3;
 }
 
 void Op::XorR8(EmulatorContext* context, RegisterType8 type)
@@ -127,7 +110,7 @@ void Op::XorR8(EmulatorContext* context, RegisterType8 type)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
-	context->cycles += 4;
+	context->cycles += 1;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -143,7 +126,7 @@ void Op::XorN8(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
-	context->cycles += 8;
+	context->cycles += 2;
 	context->cpu->ProgramCounter += 2;
 }
 
@@ -161,7 +144,7 @@ void Op::XorR16(EmulatorContext* context, RegisterType16 type)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
-	context->cycles += 8;
+	context->cycles += 2;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -170,7 +153,7 @@ void Op::LoadR8(EmulatorContext* context, RegisterType8 reg1, RegisterType8 reg2
 	uint8_t data = context->cpu->GetRegister(reg2);
 	context->cpu->SetRegister(reg1, data);
 
-	context->cycles += 4;
+	context->cycles += 1;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -179,7 +162,7 @@ void Op::LoadN8(EmulatorContext* context, RegisterType8 type)
 	uint8_t data = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
 	context->cpu->SetRegister(type, data);
 
-	context->cycles += 8;
+	context->cycles += 2;
 	context->cpu->ProgramCounter += 2;
 }
 
@@ -191,7 +174,7 @@ void Op::LoadN16(EmulatorContext* context, RegisterType16 type)
 	uint16_t result = (high << 8) | low;
 
 	context->cpu->SetRegister(type, result);
-	context->cycles += 12;
+	context->cycles += 3;
 	context->cpu->ProgramCounter += 3;
 }
 
@@ -209,7 +192,7 @@ void Op::LoadIndirectSP(EmulatorContext* context)
 	context->bus->WriteBus(address + 1, data_high);
 
 	context->cpu->ProgramCounter += 3;
-	context->cycles += 20;
+	context->cycles += 5;
 }
 
 void Op::LoadHLFromSP(EmulatorContext* context)
@@ -218,7 +201,7 @@ void Op::LoadHLFromSP(EmulatorContext* context)
 	context->cpu->SetRegister(RegisterType16::REG_SP, data);
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 8;
+	context->cycles += 2;
 }
 
 void Op::LoadHLFromSPRelative(EmulatorContext* context)
@@ -238,7 +221,7 @@ void Op::LoadHLFromSPRelative(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, (((reg_data & 0xff) + (data & 0xff)) & 0x100) != 0);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 12;
+	context->cycles += 3;
 }
 
 void Op::StoreIncrementHL(EmulatorContext* context)
@@ -249,7 +232,7 @@ void Op::StoreIncrementHL(EmulatorContext* context)
 
 	context->cpu->SetRegister(RegisterType16::REG_HL, address + 1);
 
-	context->cycles += 8;
+	context->cycles += 2;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -261,7 +244,7 @@ void Op::StoreDecrementHL(EmulatorContext* context)
 
 	context->cpu->SetRegister(RegisterType16::REG_HL, address - 1);
 
-	context->cycles += 8;
+	context->cycles += 2;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -273,7 +256,7 @@ void Op::LoadIncrementHL(EmulatorContext* context)
 	context->cpu->SetRegister(RegisterType8::REG_A, data);
 	context->cpu->SetRegister(RegisterType16::REG_HL, address + 1);
 
-	context->cycles += 8;
+	context->cycles += 2;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -285,7 +268,7 @@ void Op::LoadDecrementHL(EmulatorContext* context)
 	context->cpu->SetRegister(RegisterType8::REG_A, data);
 	context->cpu->SetRegister(RegisterType16::REG_HL, address - 1);
 
-	context->cycles += 8;
+	context->cycles += 2;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -298,7 +281,7 @@ void Op::StoreIndirectR8(EmulatorContext* context, RegisterType8 reg)
 	uint8_t data = context->cpu->GetRegister(reg);
 	context->bus->WriteBus(address, data);
 
-	context->cycles += 16;
+	context->cycles += 4;
 	context->cpu->ProgramCounter += 3;
 }
 
@@ -311,7 +294,7 @@ void Op::LoadIndirectR8(EmulatorContext* context, RegisterType8 reg)
 	uint8_t data = context->bus->ReadBus(address);
 	context->cpu->SetRegister(reg, data);
 
-	context->cycles += 16;
+	context->cycles += 4;
 	context->cpu->ProgramCounter += 3;
 }
 
@@ -322,7 +305,7 @@ void Op::StoreIO(EmulatorContext* context)
 
 	// 0xFF00 is the start of the hardware registers
 	context->bus->WriteBus(0xFF00 + data, reg_data);
-	context->cycles += 12;
+	context->cycles += 3;
 	context->cpu->ProgramCounter += 2;
 }
 
@@ -333,7 +316,7 @@ void Op::LoadIO(EmulatorContext* context)
 	uint8_t result = context->bus->ReadBus(0xFF00 + data);
 
 	context->cpu->SetRegister(RegisterType8::REG_A, result);
-	context->cycles += 12;
+	context->cycles += 3;
 	context->cpu->ProgramCounter += 2;
 }
 
@@ -343,7 +326,7 @@ void Op::StoreR8(EmulatorContext* context, RegisterType8 reg, RegisterType16 reg
 	uint16_t address = context->cpu->GetRegister(reg_pointer);
 	context->bus->WriteBus(address, data);
 
-	context->cycles += 8;
+	context->cycles += 2;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -353,7 +336,7 @@ void Op::StoreN8(EmulatorContext* context, RegisterType16 reg_pointer)
 	uint16_t address = context->cpu->GetRegister(reg_pointer);
 	context->bus->WriteBus(address, data);
 
-	context->cycles += 12;
+	context->cycles += 3;
 	context->cpu->ProgramCounter += 2;
 }
 
@@ -363,7 +346,7 @@ void Op::LoadIndirectR16(EmulatorContext* context, RegisterType8 reg, RegisterTy
 	uint8_t data = context->bus->ReadBus(address);
 	context->cpu->SetRegister(reg, data);
 
-	context->cycles += 8;
+	context->cycles += 2;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -373,7 +356,7 @@ void Op::StoreIndirectAC(EmulatorContext* context)
 	uint16_t address = context->cpu->GetRegister(RegisterType8::REG_C);
 	context->bus->WriteBus(0xFF00 + address, data);
 
-	context->cycles += 8;
+	context->cycles += 2;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -383,7 +366,7 @@ void Op::LoadIndirectAC(EmulatorContext* context)
 	uint8_t data = context->bus->ReadBus(0xFF00 + address);
 	context->cpu->SetRegister(RegisterType8::REG_A, data);
 
-	context->cycles += 8;
+	context->cycles += 2;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -401,7 +384,7 @@ void Op::AddR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result & 0xFF));
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 4;
+	context->cycles += 1;
 }
 
 void Op::AddN8(EmulatorContext* context)
@@ -418,7 +401,7 @@ void Op::AddN8(EmulatorContext* context)
 	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result & 0xFF));
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 8;
+	context->cycles += 2;
 }
 
 void Op::SubR8(EmulatorContext* context, RegisterType8 reg)
@@ -435,7 +418,7 @@ void Op::SubR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result & 0xFF));
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 4;
+	context->cycles += 1;
 }
 
 void Op::SubIndirectHL(EmulatorContext* context)
@@ -453,7 +436,7 @@ void Op::SubIndirectHL(EmulatorContext* context)
 	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result & 0xFF));
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 8;
+	context->cycles += 2;
 }
 
 void Op::SubN8(EmulatorContext* context)
@@ -470,7 +453,7 @@ void Op::SubN8(EmulatorContext* context)
 	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result & 0xFF));
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 8;
+	context->cycles += 2;
 }
 
 void Op::AddIndirectHL(EmulatorContext* context)
@@ -489,7 +472,7 @@ void Op::AddIndirectHL(EmulatorContext* context)
 	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result & 0xFF));
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 8;
+	context->cycles += 2;
 }
 
 void Op::AddSP(EmulatorContext* context)
@@ -506,7 +489,7 @@ void Op::AddSP(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, (((reg_sp & 0xff) + (data & 0xff)) & 0x100) != 0);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 16;
+	context->cycles += 4;
 }
 
 void Op::AddR16(EmulatorContext* context, RegisterType16 reg)
@@ -522,7 +505,7 @@ void Op::AddR16(EmulatorContext* context, RegisterType16 reg)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, (result_a & 0xFFF) + (result_b & 0xFFF) > 0xFFF);
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 8;
+	context->cycles += 2;
 }
 
 void Op::IncR8(EmulatorContext* context, RegisterType8 reg)
@@ -535,7 +518,7 @@ void Op::IncR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
 	context->cpu->SetFlag(CpuFlag::HalfCarry, ((data & 0xF) + 1) > 0xF);
 
-	context->cycles += 4;
+	context->cycles += 1;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -549,7 +532,7 @@ void Op::DecR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetFlag(CpuFlag::Zero, result == 0);
 	context->cpu->SetFlag(CpuFlag::HalfCarry, (data & 0xF) < 1);
 
-	context->cycles += 4;
+	context->cycles += 1;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -568,7 +551,7 @@ void Op::CallN16(EmulatorContext* context)
 	context->bus->WriteBus(context->cpu->StackPointer + 0, pc_low);
 	context->cpu->ProgramCounter = address;
 
-	context->cycles += 24;
+	context->cycles += 6;
 }
 
 void Op::CallN16FlagNotSet(EmulatorContext* context, CpuFlag flag)
@@ -589,11 +572,11 @@ void Op::CallN16FlagNotSet(EmulatorContext* context, CpuFlag flag)
 		context->bus->WriteBus(context->cpu->StackPointer + 0, pc_low);
 
 		context->cpu->ProgramCounter = address;
-		context->cycles += 24;
+		context->cycles += 6;
 	}
 	else
 	{
-		context->cycles += 12;
+		context->cycles += 3;
 		context->cpu->ProgramCounter += 3;
 	}
 }
@@ -616,11 +599,11 @@ void Op::CallN16FlagSet(EmulatorContext* context, CpuFlag flag)
 		context->bus->WriteBus(context->cpu->StackPointer + 0, pc_low);
 
 		context->cpu->ProgramCounter = address;
-		context->cycles += 24;
+		context->cycles += 6;
 	}
 	else
 	{
-		context->cycles += 12;
+		context->cycles += 3;
 		context->cpu->ProgramCounter += 3;
 	}
 }
@@ -634,7 +617,7 @@ void Op::Return(EmulatorContext* context)
 	uint16_t address = low | (high << 8);
 
 	context->cpu->ProgramCounter = address;
-	context->cycles += 16;
+	context->cycles += 4;
 }
 
 void Op::ReturnInterrupt(EmulatorContext* context)
@@ -648,7 +631,7 @@ void Op::ReturnInterrupt(EmulatorContext* context)
 	context->cpu->EnableMasterInterrupts();
 
 	context->cpu->ProgramCounter = address;
-	context->cycles += 16;
+	context->cycles += 4;
 }
 
 void Op::CompareR8(EmulatorContext* context, RegisterType8 reg)
@@ -663,7 +646,7 @@ void Op::CompareR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, (a & 0xF) < (value & 0xF));
 	context->cpu->SetFlag(CpuFlag::Carry, a < value);
 
-	context->cycles += 4;
+	context->cycles += 1;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -679,7 +662,7 @@ void Op::CompareN8(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, (data & 0xF) < (value & 0xF));
 	context->cpu->SetFlag(CpuFlag::Carry, data < value);
 
-	context->cycles += 8;
+	context->cycles += 2;
 	context->cpu->ProgramCounter += 2;
 }
 
@@ -697,7 +680,7 @@ void Op::CompareIndirectHL(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, (data & 0xF) < (value & 0xF));
 	context->cpu->SetFlag(CpuFlag::Carry, data < value);
 
-	context->cycles += 8;
+	context->cycles += 2;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -712,7 +695,7 @@ void Op::PushR16(EmulatorContext* context, RegisterType16 reg)
 	context->bus->WriteBus(context->cpu->StackPointer + 1, high);
 	context->bus->WriteBus(context->cpu->StackPointer + 0, low);
 
-	context->cycles += 16;
+	context->cycles += 4;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -726,7 +709,7 @@ void Op::PopR16(EmulatorContext* context, RegisterType16 reg)
 	uint16_t data = high << 8 | low;
 	context->cpu->SetRegister(reg, data);
 
-	context->cycles += 12;
+	context->cycles += 3;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -735,7 +718,7 @@ void Op::IncR16(EmulatorContext* context, RegisterType16 reg)
 	uint16_t data = context->cpu->GetRegister(reg);
 	context->cpu->SetRegister(reg, data + 1);
 
-	context->cycles += 8;
+	context->cycles += 2;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -744,7 +727,7 @@ void Op::DecR16(EmulatorContext* context, RegisterType16 reg)
 	uint16_t data = context->cpu->GetRegister(reg);
 	context->cpu->SetRegister(reg, data - 1);
 
-	context->cycles += 8;
+	context->cycles += 2;
 	context->cpu->ProgramCounter += 1;
 }
 
@@ -760,7 +743,7 @@ void Op::DecIndirectHL(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, (data & 0xF) < (1 & 0xF));
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 12;
+	context->cycles += 3;
 }
 
 void Op::IncIndirectHL(EmulatorContext* context)
@@ -775,7 +758,7 @@ void Op::IncIndirectHL(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, (data & 0xF) + (1 & 0xF) > 0xF);
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 12;
+	context->cycles += 3;
 }
 
 void Op::JumpRelativeFlagNotSet(EmulatorContext* context, CpuFlag flag)
@@ -786,12 +769,12 @@ void Op::JumpRelativeFlagNotSet(EmulatorContext* context, CpuFlag flag)
 
 	if (!flag_result)
 	{
-		context->cycles += 12;
+		context->cycles += 3;
 		context->cpu->ProgramCounter = address;
 	}
 	else
 	{
-		context->cycles += 8;
+		context->cycles += 2;
 		context->cpu->ProgramCounter += 2;
 	}
 }
@@ -804,12 +787,12 @@ void Op::JumpRelativeFlagSet(EmulatorContext* context, CpuFlag flag)
 
 	if (flag_result)
 	{
-		context->cycles += 12;
+		context->cycles += 3;
 		context->cpu->ProgramCounter = address;
 	}
 	else
 	{
-		context->cycles += 8;
+		context->cycles += 2;
 		context->cpu->ProgramCounter += 2;
 	}
 }
@@ -828,7 +811,7 @@ void Op::OrR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 4;
+	context->cycles += 1;
 }
 
 void Op::OrN8(EmulatorContext* context)
@@ -845,7 +828,7 @@ void Op::OrN8(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 8;
+	context->cycles += 2;
 }
 
 void Op::OrHL(EmulatorContext* context)
@@ -863,7 +846,7 @@ void Op::OrHL(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 8;
+	context->cycles += 2;
 }
 
 void Op::AndR8(EmulatorContext* context, RegisterType8 reg)
@@ -879,7 +862,7 @@ void Op::AndR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 4;
+	context->cycles += 1;
 }
 
 void Op::AndIndirectHL(EmulatorContext* context)
@@ -896,7 +879,7 @@ void Op::AndIndirectHL(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 8;
+	context->cycles += 2;
 }
 
 void Op::AndN8(EmulatorContext* context)
@@ -912,7 +895,7 @@ void Op::AndN8(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 8;
+	context->cycles += 2;
 }
 
 void Op::RotateRegisterRightA(EmulatorContext* context)
@@ -931,7 +914,7 @@ void Op::RotateRegisterRightA(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, bit0 == 1);
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 4;
+	context->cycles += 1;
 }
 
 void Op::RotateRegisterLeftA(EmulatorContext* context)
@@ -950,7 +933,7 @@ void Op::RotateRegisterLeftA(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, bit7 == 1);
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 4;
+	context->cycles += 1;
 }
 
 void Op::ExtendedPrefix(EmulatorContext* context)
@@ -1814,7 +1797,7 @@ void Op::AddCarryN8(EmulatorContext* context)
 	context->cpu->SetRegister(RegisterType8::REG_A, (result & 0xFF));
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 8;
+	context->cycles += 2;
 }
 
 void Op::SubCarryN8(EmulatorContext* context)
@@ -1835,7 +1818,7 @@ void Op::SubCarryN8(EmulatorContext* context)
 	context->cpu->SetRegister(RegisterType8::REG_A, (result & 0xFF));
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 8;
+	context->cycles += 2;
 }
 
 void Op::ReturnFlagNotSet(EmulatorContext* context, CpuFlag flag)
@@ -1851,12 +1834,12 @@ void Op::ReturnFlagNotSet(EmulatorContext* context, CpuFlag flag)
 		uint16_t address = high << 8 | low;
 
 		context->cpu->ProgramCounter = address;
-		context->cycles += 20;
+		context->cycles += 5;
 	}
 	else
 	{
 		context->cpu->ProgramCounter += 1;
-		context->cycles += 8;
+		context->cycles += 2;
 	}
 }
 
@@ -1873,12 +1856,12 @@ void Op::ReturnFlagSet(EmulatorContext* context, CpuFlag flag)
 		uint16_t address = high << 8 | low;
 
 		context->cpu->ProgramCounter = address;
-		context->cycles += 20;
+		context->cycles += 5;
 	}
 	else
 	{
 		context->cpu->ProgramCounter += 1;
-		context->cycles += 8;
+		context->cycles += 2;
 	}
 }
 
@@ -1923,7 +1906,7 @@ void Op::Daa(EmulatorContext* context)
 
 	context->cpu->SetRegister(RegisterType8::REG_A, value);
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 4;
+	context->cycles += 1;
 }
 
 void Op::ComplementA(EmulatorContext* context)
@@ -1937,7 +1920,7 @@ void Op::ComplementA(EmulatorContext* context)
 	context->cpu->SetRegister(RegisterType8::REG_A, value);
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 4;
+	context->cycles += 1;
 }
 
 void Op::SetCarryFlag(EmulatorContext* context)
@@ -1947,7 +1930,7 @@ void Op::SetCarryFlag(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, true);
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 4;
+	context->cycles += 1;
 }
 
 void Op::Rst(EmulatorContext* context, uint8_t offset)
@@ -1961,7 +1944,7 @@ void Op::Rst(EmulatorContext* context, uint8_t offset)
 	context->bus->WriteBus(context->cpu->StackPointer + 0, pc_low);
 
 	context->cpu->ProgramCounter = offset;
-	context->cycles += 16;
+	context->cycles += 4;
 }
 
 void Op::ComplementCarryFlag(EmulatorContext* context)
@@ -1974,7 +1957,7 @@ void Op::ComplementCarryFlag(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, !flag);
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 4;
+	context->cycles += 1;
 }
 
 void Op::AddCarryR8(EmulatorContext* context, RegisterType8 reg)
@@ -1993,7 +1976,7 @@ void Op::AddCarryR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result & 0xFF));
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 4;
+	context->cycles += 1;
 }
 
 void Op::AddCarryIndirectHL(EmulatorContext* context)
@@ -2014,7 +1997,7 @@ void Op::AddCarryIndirectHL(EmulatorContext* context)
 	context->cpu->SetRegister(RegisterType8::REG_A, static_cast<uint8_t>(result & 0xFF));
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 8;
+	context->cycles += 2;
 }
 
 void Op::SubCarryR8(EmulatorContext* context, RegisterType8 reg)
@@ -2035,7 +2018,7 @@ void Op::SubCarryR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetRegister(RegisterType8::REG_A, (result & 0xFF));
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 4;
+	context->cycles += 1;
 }
 
 void Op::SubCarryIndirectHL(EmulatorContext* context)
@@ -2057,7 +2040,7 @@ void Op::SubCarryIndirectHL(EmulatorContext* context)
 	context->cpu->SetRegister(RegisterType8::REG_A, (result & 0xFF));
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 8;
+	context->cycles += 2;
 }
 
 void Op::RotateRegisterLeftCarryA(EmulatorContext* context)
@@ -2076,7 +2059,7 @@ void Op::RotateRegisterLeftCarryA(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, bit7 == 1);
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 4;
+	context->cycles += 1;
 }
 
 void Op::RotateRegisterRightCarryA(EmulatorContext* context)
@@ -2095,5 +2078,5 @@ void Op::RotateRegisterRightCarryA(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, bit0 == 1);
 
 	context->cpu->ProgramCounter += 1;
-	context->cycles += 4;
+	context->cycles += 1;
 }

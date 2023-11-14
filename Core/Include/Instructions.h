@@ -22,8 +22,6 @@ namespace Op
 
 	void JumpRelativeN8(EmulatorContext* context);
 
-	void JumpRelativeFlagN8(EmulatorContext* context, CpuFlag flag, bool condition);
-
 	void JumpRelativeFlagNotSet(EmulatorContext* context, CpuFlag flag);
 
 	void JumpRelativeFlagSet(EmulatorContext* context, CpuFlag flag);
