@@ -136,18 +136,8 @@ void Emulator::Tick()
 	// Check flag
 	m_Cpu->HandleInterrupts();
 
-	// Tick timer
-	for (int i = 0; i < m_Context.cycles; ++i)
-	{
-		for (int n = 0; n < 4; ++n)
-		{
-			m_Timer->Tick();
-			m_Ppu->Tick();
-		}
-
-		m_Dma->Tick();
-	}
-
+	// Do deferred machine cycles
+	Cycle(m_Context.cycles);
 	m_Context.cycles = 0;
 
 	// Debug
@@ -166,6 +156,20 @@ void Emulator::Tick()
 	//		// std::cout << "\tDEBUG: " << m_DebugMessage << '\n';
 	//	}
 	//}
+}
+
+void Emulator::Cycle(int machine_cycles)
+{
+	for (int i = 0; i < m_Context.cycles; ++i)
+	{
+		for (int n = 0; n < 4; ++n)
+		{
+			m_Timer->Tick();
+			m_Ppu->Tick();
+		}
+
+		m_Dma->Tick();
+	}
 }
 
 uint8_t Emulator::GetOpCode() const

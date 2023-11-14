@@ -338,20 +338,25 @@ void Cpu::HandleInterrupts()
 {
 	if (m_InterruptMasterFlag)
 	{
-		if (InterruptCheck(0x40, InterruptFlag::VBlank))
+		if (InterruptCheck(InterruptFlag::VBlank))
 		{
+			InterruptHandle(InterruptFlag::VBlank, 0x40);
 		}
-		else if (InterruptCheck(0x48, InterruptFlag::STAT))
+		else if (InterruptCheck(InterruptFlag::STAT))
 		{
+			InterruptHandle(InterruptFlag::STAT, 0x48);
 		}
-		else if (InterruptCheck(0x50, InterruptFlag::Timer))
+		else if (InterruptCheck(InterruptFlag::Timer))
 		{
+			InterruptHandle(InterruptFlag::Timer, 0x50);
 		}
-		else if (InterruptCheck(0x58, InterruptFlag::Serial))
+		else if (InterruptCheck(InterruptFlag::Serial))
 		{
+			InterruptHandle(InterruptFlag::Serial, 0x58);
 		}
-		else if (InterruptCheck(0x60, InterruptFlag::Joypad))
+		else if (InterruptCheck(InterruptFlag::Joypad))
 		{
+			InterruptHandle(InterruptFlag::Joypad, 0x60);
 		}
 
 		m_EnablingInterrupts = false;
@@ -363,21 +368,29 @@ void Cpu::HandleInterrupts()
 	}
 }
 
-bool Cpu::InterruptCheck(uint16_t address, InterruptFlag flag)
+bool Cpu::InterruptCheck(InterruptFlag flag)
 {
 	if (m_InterruptFlags & static_cast<int>(flag) && m_InterruptEnable & static_cast<int>(flag))
 	{
-		Emulator::Instance->StackPush16(ProgramCounter);
-		ProgramCounter = address;
-
-		m_InterruptFlags &= ~static_cast<int>(flag);
-		Emulator::Instance->SetHalt(false);
-		m_InterruptMasterFlag = false;
-
 		return true;
 	}
 
 	return false;
+}
+
+void Cpu::InterruptHandle(InterruptFlag flag, uint16_t address)
+{
+	Emulator::Instance->Cycle(2);
+
+	Emulator::Instance->StackPush16(ProgramCounter);
+	Emulator::Instance->Cycle(2);
+
+	ProgramCounter = address;
+	Emulator::Instance->Cycle(1);
+
+	m_InterruptFlags &= ~static_cast<int>(flag);
+	Emulator::Instance->SetHalt(false);
+	m_InterruptMasterFlag = false;
 }
 
 uint8_t Cpu::GetInterruptFlags()

@@ -102,7 +102,8 @@ private:
 	uint8_t m_InterruptFlags;
 	uint8_t m_InterruptEnable;
 
-	bool InterruptCheck(uint16_t address, InterruptFlag flag);
+	bool InterruptCheck(InterruptFlag flag);
+	void InterruptHandle(InterruptFlag flag, uint16_t address);
 };
 
 std::string RegisterTypeString16(RegisterType16 type);
