@@ -26,7 +26,7 @@
     <ClInclude Include="Include\ExtendedInstructions.h" />
     <ClInclude Include="Include\Instructions.h" />
     <ClInclude Include="Include\Joypad.h" />
-    <ClInclude Include="Include\MrClock.h" />
+    <ClInclude Include="Include\HighTimer.h" />
     <ClInclude Include="Include\Pch.h" />
     <ClInclude Include="Include\Ppu.h" />
     <ClInclude Include="Include\Ram.h" />
@@ -42,7 +42,7 @@
     <ClCompile Include="Source\Cpu.cpp" />
     <ClCompile Include="Source\Emulator.cpp" />
     <ClCompile Include="Source\Instructions.cpp" />
-    <ClCompile Include="Source\MrClock.cpp" />
+    <ClCompile Include="Source\HighTimer.cpp" />
     <ClCompile Include="Source\Pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pch.h</PrecompiledHeaderFile>

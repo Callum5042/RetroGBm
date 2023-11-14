@@ -5,8 +5,7 @@
 #include <vector>
 #include <array>
 #include <queue>
-#include <chrono>
-#include "MrClock.h"
+#include "HighTimer.h"
 
 class IBus;
 class Cpu;
@@ -135,6 +134,11 @@ private:
 
 	// Limit frame rate
 	void LimitFrameRate();
+	HighTimer m_Timer;
 	float m_TargetFrameTime = 1.0f / 60.0f;
-	RoveTimer m_Timer;
+	int m_FramesPerSecond = 0;
+	int m_TotalFrames = 0;
+
+	int m_FrameCount = 0;
+	float m_TimeElapsed = 0.0f;
 };

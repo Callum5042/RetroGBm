@@ -1,12 +1,11 @@
 #pragma once
 
-
 // High resolution timer - https://docs.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps
-class RoveTimer
+class HighTimer
 {
 public:
-	RoveTimer();
-	virtual ~RoveTimer() = default;
+	HighTimer();
+	virtual ~HighTimer() = default;
 
 	// Starts the timer
 	void Start();

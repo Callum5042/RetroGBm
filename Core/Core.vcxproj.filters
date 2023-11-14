@@ -51,7 +51,7 @@
     <ClInclude Include="Include\Pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\MrClock.h">
+    <ClInclude Include="Include\HighTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -92,7 +92,7 @@
     <ClCompile Include="Source\Pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\MrClock.cpp">
+    <ClCompile Include="Source\HighTimer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

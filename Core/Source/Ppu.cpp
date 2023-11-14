@@ -30,7 +30,6 @@ void Ppu::Init()
 	m_Display->SetLcdMode(LcdMode::OAM);
 
 	m_Timer.Start();
-	m_Timer.Tick();
 }
 
 void Ppu::Tick()
@@ -522,28 +521,23 @@ void Ppu::FetchTileData(FetchTileByte tile_byte)
 void Ppu::LimitFrameRate()
 {
 	m_Timer.Tick();
-
-	static int frame_count = 0;
-	static float time_elapsed = 0.0f;
-	static int m_FramesPerSecond = 0;
-	static int m_TotalFrames = 0;
-
-	frame_count++;
+	m_FrameCount++;
 
 	// Compute averages over one second period
-	if ((m_Timer.TotalTime() - time_elapsed) >= 1.0f)
+	if ((m_Timer.TotalTime() - m_TimeElapsed) >= 1.0f)
 	{
-		m_FramesPerSecond = frame_count;
+		m_FramesPerSecond = m_FrameCount;
 		float mspf = 1000.0f / m_FramesPerSecond;
 
 		// Set total frame count
-		m_TotalFrames += frame_count;
+		m_TotalFrames += m_FrameCount;
 
 		// Reset for next average.
-		frame_count = 0;
-		time_elapsed += 1.0f;
+		m_FrameCount = 0;
+		m_TimeElapsed += 1.0f;
 	}
 
+	// Limit framerate to match target rate
 	if (m_Timer.DeltaTime() < m_TargetFrameTime)
 	{
 		const std::chrono::duration<double, std::milli> elapsed(m_TargetFrameTime - m_Timer.DeltaTime());

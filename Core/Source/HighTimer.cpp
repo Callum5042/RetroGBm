@@ -1,8 +1,8 @@
 #include "Pch.h"
-#include "MrClock.h"
+#include "HighTimer.h"
 #include <Windows.h>
 
-RoveTimer::RoveTimer()
+HighTimer::HighTimer()
 {
 	__int64 counts_per_second = 0;
 	QueryPerformanceFrequency((LARGE_INTEGER*)&counts_per_second);
@@ -11,7 +11,7 @@ RoveTimer::RoveTimer()
 	Reset();
 }
 
-void RoveTimer::Start()
+void HighTimer::Start()
 {
 	__int64 start_time = 0;
 	QueryPerformanceCounter((LARGE_INTEGER*)&start_time);
@@ -26,7 +26,7 @@ void RoveTimer::Start()
 	}
 }
 
-void RoveTimer::Stop()
+void HighTimer::Stop()
 {
 	if (!m_Stopped)
 	{
@@ -38,7 +38,7 @@ void RoveTimer::Stop()
 	}
 }
 
-void RoveTimer::Reset()
+void HighTimer::Reset()
 {
 	__int64 current_time = 0;
 	QueryPerformanceCounter((LARGE_INTEGER*)&current_time);
@@ -51,7 +51,7 @@ void RoveTimer::Reset()
 	Tick();
 }
 
-void RoveTimer::Tick()
+void HighTimer::Tick()
 {
 	if (m_Stopped)
 	{
@@ -76,12 +76,12 @@ void RoveTimer::Tick()
 	}
 }
 
-double RoveTimer::DeltaTime()
+double HighTimer::DeltaTime()
 {
 	return static_cast<double>(m_DeltaTime);
 }
 
-double RoveTimer::TotalTime()
+double HighTimer::TotalTime()
 {
 	if (m_Stopped)
 	{
