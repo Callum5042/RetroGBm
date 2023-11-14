@@ -46,6 +46,7 @@ public:
 	bool LoadRom(const std::string& path);
 
 	void Tick();
+	void Cycle(int machine_cycles);
 
 	void Stop();
 	void SetHalt(bool value);
