@@ -137,7 +137,10 @@ void Application::Run()
 	}
 
 	m_Emulator->Stop();
-	m_EmulatorThread.join();
+	if (m_EmulatorThread.joinable())
+	{
+		m_EmulatorThread.join();
+	}
 }
 
 void Application::Init()
