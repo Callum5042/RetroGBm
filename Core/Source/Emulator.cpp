@@ -137,7 +137,7 @@ void Emulator::Tick()
 	m_Cpu->HandleInterrupts();
 
 	// Tick timer
-	for (int i = 0; i < m_Context.cycles / 4; ++i)
+	for (int i = 0; i < m_Context.cycles; ++i)
 	{
 		for (int n = 0; n < 4; ++n)
 		{
