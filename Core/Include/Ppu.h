@@ -6,6 +6,7 @@
 #include <array>
 #include <queue>
 #include <chrono>
+#include "MrClock.h"
 
 class IBus;
 class Cpu;
@@ -133,10 +134,7 @@ private:
 	void IncrementLY();
 
 	// Limit frame rate
-	void CheckFrameRate();
-	float m_TargetFrameTime = 1000.0f / 60.0f;
-
-	std::chrono::high_resolution_clock m_FpsClock;
-	std::chrono::high_resolution_clock::time_point m_StartFrame;
-	std::chrono::high_resolution_clock::time_point m_EndFrame;
+	void LimitFrameRate();
+	float m_TargetFrameTime = 1.0f / 60.0f;
+	RoveTimer m_Timer;
 };
