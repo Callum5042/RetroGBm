@@ -5,7 +5,7 @@
 #include <vector>
 #include <array>
 #include <queue>
-#include <chrono>
+#include "HighTimer.h"
 
 class IBus;
 class Cpu;
@@ -133,10 +133,12 @@ private:
 	void IncrementLY();
 
 	// Limit frame rate
-	void CheckFrameRate();
-	float m_TargetFrameTime = 1000.0f / 60.0f;
+	void LimitFrameRate();
+	HighTimer m_Timer;
+	float m_TargetFrameTime = 1.0f / 60.0f;
+	int m_FramesPerSecond = 0;
+	int m_TotalFrames = 0;
 
-	std::chrono::high_resolution_clock m_FpsClock;
-	std::chrono::high_resolution_clock::time_point m_StartFrame;
-	std::chrono::high_resolution_clock::time_point m_EndFrame;
+	int m_FrameCount = 0;
+	float m_TimeElapsed = 0.0f;
 };

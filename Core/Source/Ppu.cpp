@@ -28,6 +28,8 @@ void Ppu::Init()
 
 	m_Display->Init();
 	m_Display->SetLcdMode(LcdMode::OAM);
+
+	m_Timer.Start();
 }
 
 void Ppu::Tick()
@@ -146,7 +148,7 @@ void Ppu::VBlank()
 		// Keep increasing LY register until we reach the lines per frame
 		if (m_Display->m_Context.ly >= m_LinesPerFrame)
 		{
-			CheckFrameRate();
+			LimitFrameRate();
 
 			m_Display->SetLcdMode(LcdMode::OAM);
 			m_Display->m_Context.ly = 0;
@@ -516,16 +518,29 @@ void Ppu::FetchTileData(FetchTileByte tile_byte)
 	}
 }
 
-void Ppu::CheckFrameRate()
+void Ppu::LimitFrameRate()
 {
-	m_EndFrame = std::chrono::high_resolution_clock::now();
-	float frame_time = std::chrono::duration<float, std::milli>(m_EndFrame - m_StartFrame).count();
+	m_Timer.Tick();
+	m_FrameCount++;
 
-	if (frame_time < m_TargetFrameTime)
+	// Compute averages over one second period
+	if ((m_Timer.TotalTime() - m_TimeElapsed) >= 1.0f)
 	{
-		const std::chrono::duration<double, std::milli> elapsed(m_TargetFrameTime - frame_time);
-		std::this_thread::sleep_for(elapsed);
+		m_FramesPerSecond = m_FrameCount;
+		float mspf = 1000.0f / m_FramesPerSecond;
+
+		// Set total frame count
+		m_TotalFrames += m_FrameCount;
+
+		// Reset for next average.
+		m_FrameCount = 0;
+		m_TimeElapsed += 1.0f;
 	}
 
-	m_StartFrame = std::chrono::high_resolution_clock::now();
+	// Limit framerate to match target rate
+	if (m_Timer.DeltaTime() < m_TargetFrameTime)
+	{
+		const std::chrono::duration<double, std::milli> elapsed(m_TargetFrameTime - m_Timer.DeltaTime());
+		std::this_thread::sleep_for(elapsed);
+	}
 }
