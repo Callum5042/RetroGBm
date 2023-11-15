@@ -15,6 +15,8 @@ public:
 protected:
 	virtual void OnClose() override;
 
+	virtual void OnKeyPressed(UINT virtual_key_code) override;
+
 private:
 
 	virtual void HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam) override;

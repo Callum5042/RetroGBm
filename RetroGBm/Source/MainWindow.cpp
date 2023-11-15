@@ -209,3 +209,29 @@ void MainWindow::OnClose()
 	Window::OnClose();
 	PostQuitMessage(0);
 }
+
+void MainWindow::OnKeyPressed(UINT virtual_key_code)
+{
+	const WORD PKey = 0x50;
+	const WORD CKey = 0x43;
+
+	if (virtual_key_code == PKey || virtual_key_code == CKey)
+	{
+		Emulator* emulator = m_Application->GetEmulator();
+		if (emulator->IsRunning())
+		{
+			bool paused = emulator->IsPaused();
+
+			if (paused)
+			{
+				emulator->Pause(false);
+				CheckMenuItem(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND | MF_UNCHECKED);
+			}
+			else
+			{
+				emulator->Pause(true);
+				CheckMenuItem(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND | MF_CHECKED);
+			}
+		}
+	}
+}

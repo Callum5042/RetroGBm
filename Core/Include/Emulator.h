@@ -53,6 +53,7 @@ public:
 	inline bool IsRunning() { return m_Running; }
 
 	void Pause(bool pause);
+	inline bool IsPaused() const { return m_Paused; }
 
 	uint8_t GetOpCode() const;
 	inline EmulatorContext* GetContext() { return &m_Context; }

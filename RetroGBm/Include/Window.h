@@ -41,6 +41,8 @@ protected:
 
 	virtual void OnClose();
 
+	virtual void OnKeyPressed(UINT virtual_key_code) {};
+
 private:
 	void HandleKeyboardEvent(UINT msg, WPARAM wParam, LPARAM lParam);
 	virtual void HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam);

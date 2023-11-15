@@ -175,7 +175,10 @@ void Window::HandleKeyboardEvent(UINT msg, WPARAM wParam, LPARAM lParam)
 
 	if (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN)
 	{
-		HandleKey(true, scan_code);
+		if (!repeat)
+		{
+			HandleKey(true, scan_code);
+		}
 	}
 	else if (msg == WM_KEYUP || msg == WM_SYSKEYUP)
 	{
@@ -198,6 +201,10 @@ void Window::HandleKey(bool state, WORD scancode)
 	const WORD XKey = 0x58;
 
 	UINT key = MapVirtualKeyW(scancode, MAPVK_VSC_TO_VK_EX);
+	if (state)
+	{
+		this->OnKeyPressed(key);
+	}
 
 	switch (key)
 	{
