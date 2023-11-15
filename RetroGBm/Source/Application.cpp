@@ -202,3 +202,13 @@ void Application::ReleaseCartridgeInfoWindow()
 {
 	m_CartridgeInfoWindow.release();
 }
+
+void Application::SaveState()
+{
+
+}
+
+void Application::LoadState()
+{
+
+}

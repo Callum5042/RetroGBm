@@ -39,6 +39,9 @@ public:
 
 	inline MainWindow* GetMainWindow() const { return m_MainWindow.get(); }
 
+	void SaveState();
+	void LoadState();
+
 private:
 	void Init();
 	void Run();

@@ -39,6 +39,9 @@ void MainWindow::Create(const std::string& title, int width, int height)
 
 	m_EmulationMenuItem = CreateMenu();
 	AppendMenuW(m_EmulationMenuItem, MF_UNCHECKED, m_MenuEmulationPausePlay, L"Pause");
+	AppendMenuW(m_EmulationMenuItem, MF_SEPARATOR, NULL, NULL);
+	AppendMenuW(m_EmulationMenuItem, MF_STRING, m_MenuEmulationSaveState, L"Save State");
+	AppendMenuW(m_EmulationMenuItem, MF_STRING, m_MenuEmulationLoadState, L"Load State");
 	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_EmulationMenuItem), L"Emulation");
 
 	m_DebugMenuItem = CreateMenu();
@@ -100,6 +103,12 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 		case m_MenuEmulationPausePlay:
 			ToggleEmulationPaused();
+			break;
+		case m_MenuEmulationSaveState:
+			m_Application->SaveState();
+			break;
+		case m_MenuEmulationLoadState:
+			m_Application->LoadState();
 			break;
 	}
 }

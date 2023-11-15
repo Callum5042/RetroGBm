@@ -33,6 +33,8 @@ private:
 
 	HMENU m_EmulationMenuItem = NULL;
 	static const UINT m_MenuEmulationPausePlay = 301;
+	static const UINT m_MenuEmulationSaveState = 302;
+	static const UINT m_MenuEmulationLoadState = 303;
 
 	void OpenDialog();
 	bool OpenFileDialog(std::string* filepath);
