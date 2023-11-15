@@ -32,6 +32,7 @@ void MainWindow::Create(const std::string& title, int width, int height)
 	HMENU filemenu = CreateMenu();
 	AppendMenuW(filemenu, MF_STRING, m_MenuFileOpenId, L"Open");
 	AppendMenuW(filemenu, MF_STRING, m_MenuFileCloseId, L"Close");
+	AppendMenuW(filemenu, MF_STRING, m_MenuFileRestartId, L"Restart");
 	AppendMenuW(filemenu, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(filemenu, MF_STRING, m_MenuFileExitId, L"Exit");
 	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(filemenu), L"&File");
@@ -60,6 +61,9 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		case m_MenuFileCloseId:
 			m_Application->StopEmulator();
 			EnableMenuItem(m_DebugMenuItem, m_MenuDebugCartridgeInfo, MF_DISABLED);
+			break;
+		case m_MenuFileRestartId:
+			RestartEmulation();
 			break;
 		case m_MenuFileExitId:
 			PostQuitMessage(0);
@@ -153,6 +157,7 @@ void MainWindow::OpenDialog()
 	std::string path;
 	if (OpenFileDialog(&path))
 	{
+		m_FilePath = path;
 		m_Application->LoadRom(path);
 		EnableMenuItem(m_DebugMenuItem, m_MenuDebugCartridgeInfo, MF_ENABLED);
 	}
@@ -212,9 +217,17 @@ void MainWindow::OnClose()
 
 void MainWindow::OnKeyPressed(UINT virtual_key_code)
 {
+	const WORD RKey = 0x52;
 	const WORD PKey = 0x50;
 	const WORD CKey = 0x43;
 
+	// Restart
+	if (virtual_key_code == RKey)
+	{
+		RestartEmulation();
+	}
+
+	// Pause
 	if (virtual_key_code == PKey || virtual_key_code == CKey)
 	{
 		Emulator* emulator = m_Application->GetEmulator();
@@ -233,5 +246,13 @@ void MainWindow::OnKeyPressed(UINT virtual_key_code)
 				CheckMenuItem(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND | MF_CHECKED);
 			}
 		}
+	}
+}
+
+void MainWindow::RestartEmulation()
+{
+	if (m_Application->GetEmulator()->IsRunning())
+	{
+		m_Application->LoadRom(m_FilePath);
 	}
 }
