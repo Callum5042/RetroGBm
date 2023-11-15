@@ -36,6 +36,10 @@ void MainWindow::Create(const std::string& title, int width, int height)
 	AppendMenuW(filemenu, MF_STRING, m_MenuFileExitId, L"Exit");
 	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(filemenu), L"&File");
 
+	m_EmulationMenuItem = CreateMenu();
+	AppendMenuW(m_EmulationMenuItem, MF_UNCHECKED, m_MenuEmulationPausePlay, L"Pause");
+	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_EmulationMenuItem), L"Emulation");
+
 	m_DebugMenuItem = CreateMenu();
 	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTilemap, L"Tilemap");
 	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTracelog, L"Tracelog");
@@ -90,6 +94,30 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 				}
 			}
 			break;
+		case m_MenuEmulationPausePlay:
+			ToggleEmulationPaused();
+			break;
+	}
+}
+
+void MainWindow::ToggleEmulationPaused()
+{
+	Emulator* emulator = m_Application->GetEmulator();
+	if (!emulator->IsRunning())
+	{
+		return;
+	}
+
+	UINT menu_state = GetMenuState(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND);
+	if (menu_state & MF_CHECKED)
+	{
+		CheckMenuItem(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND | MF_UNCHECKED);
+		emulator->Pause(false);
+	}
+	else
+	{
+		CheckMenuItem(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND | MF_CHECKED);
+		emulator->Pause(true);
 	}
 }
 
@@ -180,4 +208,30 @@ void MainWindow::OnClose()
 {
 	Window::OnClose();
 	PostQuitMessage(0);
+}
+
+void MainWindow::OnKeyPressed(UINT virtual_key_code)
+{
+	const WORD PKey = 0x50;
+	const WORD CKey = 0x43;
+
+	if (virtual_key_code == PKey || virtual_key_code == CKey)
+	{
+		Emulator* emulator = m_Application->GetEmulator();
+		if (emulator->IsRunning())
+		{
+			bool paused = emulator->IsPaused();
+
+			if (paused)
+			{
+				emulator->Pause(false);
+				CheckMenuItem(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND | MF_UNCHECKED);
+			}
+			else
+			{
+				emulator->Pause(true);
+				CheckMenuItem(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND | MF_CHECKED);
+			}
+		}
+	}
 }

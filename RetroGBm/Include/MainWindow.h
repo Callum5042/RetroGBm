@@ -15,6 +15,8 @@ public:
 protected:
 	virtual void OnClose() override;
 
+	virtual void OnKeyPressed(UINT virtual_key_code) override;
+
 private:
 
 	virtual void HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam) override;
@@ -27,7 +29,12 @@ private:
 	static const UINT m_MenuDebugTracelog = 202;
 	static const UINT m_MenuDebugCartridgeInfo = 203;
 
+	HMENU m_EmulationMenuItem = NULL;
+	static const UINT m_MenuEmulationPausePlay = 301;
+
 	void OpenDialog();
 	bool OpenFileDialog(std::string* filepath);
 	void ToggleTracelog();
+
+	void ToggleEmulationPaused();
 };
