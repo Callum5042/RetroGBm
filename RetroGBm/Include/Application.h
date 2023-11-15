@@ -8,6 +8,7 @@
 
 #include "MainWindow.h"
 #include "TileWindow.h"
+#include "CartridgeInfoWindow.h"
 
 #include "Render/RenderDevice.h"
 #include "Render/RenderShader.h"
@@ -33,6 +34,9 @@ public:
 	void CreateTileWindow();
 	void CloseTileWindow();
 
+	void CreateCartridgeInfoWindow();
+	void ReleaseCartridgeInfoWindow();
+
 	inline MainWindow* GetMainWindow() const { return m_MainWindow.get(); }
 
 private:
@@ -48,6 +52,9 @@ private:
 
 	// Tile window
 	std::unique_ptr<TileWindow> m_TileWindow = nullptr;
+
+	// Cartridge window
+	std::unique_ptr<CartridgeInfoWindow> m_CartridgeInfoWindow = nullptr;
 
 	// Emulator
 	std::unique_ptr<Emulator> m_Emulator;

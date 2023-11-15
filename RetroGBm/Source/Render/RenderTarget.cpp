@@ -22,8 +22,8 @@ Render::RenderTarget::RenderTarget(RenderDevice* device) : m_RenderDevice(device
 
 void Render::RenderTarget::Create(Window* window)
 {
-	m_Window = window;
-	m_Window->AttachRenderTarget(this);
+	m_Hwnd = window;
+	m_Hwnd->AttachRenderTarget(this);
 
 	// Query window size
 	int window_width = 0;
@@ -94,7 +94,7 @@ void Render::RenderTarget::EnableFullscreenAltEnter()
 	DX::Check(adapter->GetParent(__uuidof(IDXGIFactory), reinterpret_cast<void**>(dxgiFactory.GetAddressOf())));
 
 	// Enable ALT+ENTER
-	DX::Check(dxgiFactory->MakeWindowAssociation(m_Window->GetHwnd(), NULL));
+	DX::Check(dxgiFactory->MakeWindowAssociation(m_Hwnd->GetHwnd(), NULL));
 }
 
 void Render::RenderTarget::DisableFullscreenAltEnter()
@@ -110,13 +110,13 @@ void Render::RenderTarget::DisableFullscreenAltEnter()
 	DX::Check(adapter->GetParent(__uuidof(IDXGIFactory), reinterpret_cast<void**>(dxgiFactory.GetAddressOf())));
 
 	// Disable ALT+ENTER
-	DX::Check(dxgiFactory->MakeWindowAssociation(m_Window->GetHwnd(), DXGI_MWA_NO_ALT_ENTER));
+	DX::Check(dxgiFactory->MakeWindowAssociation(m_Hwnd->GetHwnd(), DXGI_MWA_NO_ALT_ENTER));
 }
 
 void Render::RenderTarget::CreateSwapChain(int width, int height)
 {
 	// Get the Win32 window handle
-	HWND hwnd = m_Window->GetHwnd();
+	HWND hwnd = m_Hwnd->GetHwnd();
 
 	// Query the device until we get the DXGIFactory
 	ComPtr<IDXGIDevice> dxgiDevice = nullptr;
