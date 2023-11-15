@@ -155,6 +155,9 @@ void Application::Init()
 	// Create windows
 	CreateMainWindow();
 	// CreateTilemapWindow();
+
+	m_CartridgeInfoWindow = std::make_unique<CartridgeInfoWindow>();
+	m_CartridgeInfoWindow->Create("Cartridge Info", 300, 200);
 }
 
 void Application::CreateMainWindow()

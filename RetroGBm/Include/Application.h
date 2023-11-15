@@ -8,6 +8,7 @@
 
 #include "MainWindow.h"
 #include "TileWindow.h"
+#include "CartridgeInfoWindow.h"
 
 #include "Render/RenderDevice.h"
 #include "Render/RenderShader.h"
@@ -56,4 +57,7 @@ private:
 	// Rendering
 	std::unique_ptr<Render::RenderDevice> m_RenderDevice = nullptr;
 	std::unique_ptr<Render::RenderShader> m_RenderShader = nullptr;
+
+
+	std::unique_ptr<CartridgeInfoWindow> m_CartridgeInfoWindow = nullptr;
 };

@@ -57,7 +57,7 @@ Window::Window(Application* application) : m_Application(application)
 
 Window::~Window()
 {
-	DestroyWindow(m_Window);
+	DestroyWindow(m_Hwnd);
 
 	HINSTANCE hInstance = GetModuleHandle(NULL);
 	UnregisterClassW(m_RegisterClassName.c_str(), hInstance);
@@ -84,15 +84,21 @@ void Window::Create(const std::string& title, int width, int height)
 		throw std::exception("RegisterClass Failed");
 	}
 
+	// Compute window rectangle dimensions based on requested client area dimensions.
+	RECT window_rect = { 0, 0, width, height };
+	AdjustWindowRect(&window_rect, WS_OVERLAPPEDWINDOW, false);
+	int window_width = window_rect.right - window_rect.left;
+	int window_height = window_rect.bottom - window_rect.top;
+
 	// Create window
-	m_Window = CreateWindow(wc.lpszClassName, window_title.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, width, height, NULL, NULL, hInstance, this);
-	if (m_Window == NULL)
+	m_Hwnd = CreateWindow(wc.lpszClassName, window_title.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, window_width, window_height, NULL, NULL, hInstance, this);
+	if (m_Hwnd == NULL)
 	{
 		throw std::exception("CreateWindow Failed");
 	}
 
 	// Show window
-	ShowWindow(m_Window, SW_SHOWNORMAL);
+	ShowWindow(m_Hwnd, SW_SHOWNORMAL);
 }
 
 LRESULT Window::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -117,7 +123,6 @@ LRESULT Window::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 		case WM_KEYDOWN:
 		case WM_KEYUP:
-			// std::wcout << "Key event from window: " << GetWindowTitle() << '\n';
 			HandleKeyboardEvent(msg, wParam, lParam);
 			return 0;
 
@@ -132,7 +137,7 @@ LRESULT Window::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 void Window::GetSize(int* width, int* height)
 {
 	RECT rect;
-	GetClientRect(m_Window, &rect);
+	GetClientRect(m_Hwnd, &rect);
 
 	*width = rect.right - rect.left;
 	*height = rect.bottom - rect.top;
@@ -140,11 +145,11 @@ void Window::GetSize(int* width, int* height)
 
 std::wstring Window::GetWindowTitle()
 {
-	int window_tile_length = GetWindowTextLength(m_Window) + 1;
+	int window_tile_length = GetWindowTextLength(m_Hwnd) + 1;
 
 	// std::wstring title;
 	std::vector<wchar_t> title(window_tile_length);
-	GetWindowText(m_Window, title.data(), window_tile_length);
+	GetWindowText(m_Hwnd, title.data(), window_tile_length);
 
 	return std::wstring(title.data(), title.size());
 }
@@ -242,5 +247,5 @@ void Window::OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 void Window::OnClose()
 {
-	DestroyWindow(m_Window);
+	DestroyWindow(m_Hwnd);
 }

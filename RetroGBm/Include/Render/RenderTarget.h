@@ -15,7 +15,7 @@ namespace Render
 	class RenderTarget
 	{
 		RenderDevice* m_RenderDevice = nullptr;
-		Window* m_Window = nullptr;
+		Window* m_Hwnd = nullptr;
 
 	public:
 		RenderTarget(RenderDevice* device);
