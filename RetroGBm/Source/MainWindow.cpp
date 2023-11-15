@@ -39,7 +39,7 @@ void MainWindow::Create(const std::string& title, int width, int height)
 	m_DebugMenuItem = CreateMenu();
 	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTilemap, L"Tilemap");
 	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTracelog, L"Tracelog");
-	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugCartridgeInfo, L"Cartridge Info");
+	AppendMenuW(m_DebugMenuItem, MF_STRING | MF_DISABLED, m_MenuDebugCartridgeInfo, L"Cartridge Info");
 	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_DebugMenuItem), L"Debug");
 
 	SetMenu(this->GetHwnd(), menubar);
@@ -55,6 +55,7 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 		case m_MenuFileCloseId:
 			m_Application->StopEmulator();
+			EnableMenuItem(m_DebugMenuItem, m_MenuDebugCartridgeInfo, MF_DISABLED);
 			break;
 		case m_MenuFileExitId:
 			PostQuitMessage(0);
@@ -82,7 +83,11 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		case m_MenuDebugCartridgeInfo:
 			if (m_Application->GetEmulator()->IsRunning())
 			{
-				m_Application->CreateCartridgeInfoWindow();
+				UINT menu_state = GetMenuState(m_DebugMenuItem, m_MenuDebugCartridgeInfo, MF_BYCOMMAND);
+				if (!(menu_state & MF_DISABLED))
+				{
+					m_Application->CreateCartridgeInfoWindow();
+				}
 			}
 			break;
 	}
@@ -121,6 +126,7 @@ void MainWindow::OpenDialog()
 	if (OpenFileDialog(&path))
 	{
 		m_Application->LoadRom(path);
+		EnableMenuItem(m_DebugMenuItem, m_MenuDebugCartridgeInfo, MF_ENABLED);
 	}
 }
 

@@ -1,24 +1,14 @@
 #include "CartridgeInfoWindow.h"
-#include <vector>
 #include "Application.h"
 #include <Emulator.h>
 #include <Cartridge.h>
-#include <string>
 
 // Set theme
 // https://docs.microsoft.com/en-gb/windows/win32/controls/cookbook-overview?redirectedfrom=MSDN
 #pragma comment(linker,"\"/manifestdependency:type='win32' name = 'Microsoft.Windows.Common-Controls' version = '6.0.0.0' processorArchitecture = '*' publicKeyToken = '6595b64144ccf1df' language = '*'\"")
 
-#define ID_BUTTON 450
-
 namespace
 {
-	struct InfoModel
-	{
-		std::wstring tag;
-		std::wstring text;
-	};
-
 	static CartridgeInfoWindow* GetWindow(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		CartridgeInfoWindow* window = nullptr;
@@ -69,43 +59,9 @@ CartridgeInfoWindow::~CartridgeInfoWindow()
 
 void CartridgeInfoWindow::Create(const std::string& title, int width, int height)
 {
-	CreateHwnd(title, width, height);
-
-
-
-	// Load font
-	HDC hdc = GetDC(NULL);
-	long lfHeight = -MulDiv(12, GetDeviceCaps(hdc, LOGPIXELSY), 72);
-	ReleaseDC(NULL, hdc);
-
-	m_Font = CreateFont(lfHeight, 0, 0, 0, 0, FALSE, 0, 0, 0, 0, 0, 0, 0, L"Arial");
-
-	// Group box
-	HWND groupbox = CreateWindowEx(WS_EX_WINDOWEDGE,
-								   L"BUTTON",  // Predefined class; Unicode assumed 
-								   L"Info",      // Button text 
-								   BS_GROUPBOX | WS_GROUP | WS_CHILD | BS_DEFPUSHBUTTON | WS_VISIBLE,  // Styles 
-								   10,         // x position 
-								   0,          // y position 
-								   width - 20,        // Button width
-								   height - 10,        // Button height
-								   m_Hwnd,     // Parent window
-								   NULL,
-								   (HINSTANCE)GetWindowLongPtr(m_Hwnd, GWLP_HINSTANCE),
-								   NULL);      // Pointer not needed.
-
-	SendMessage(groupbox, WM_SETFONT, (WPARAM)m_Font, TRUE);
-
-	// Draw text
-	PAINTSTRUCT ps;
-	hdc = BeginPaint(m_Hwnd, &ps);
-	FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
-	SelectObject(hdc, m_Font);
-
-	RECT rect;
-	GetClientRect(groupbox, &rect);
-	rect.left = 20;
-	rect.top = 26;
+	WindowCreate(title, width, height);
+	FontCreate();
+	CreateGroupBox(width, height);
 
 	const CartridgeInfo* info = m_Application->GetEmulator()->GetCartridge()->GetCartridgeInfo();
 
@@ -113,32 +69,10 @@ void CartridgeInfoWindow::Create(const std::string& title, int width, int height
 	content.push_back({ L"Title", ConvertToWString(info->title) });
 	content.push_back({ L"Cartridge", ConvertToWString(info->header.cartridge_type) });
 	content.push_back({ L"Manufacturer", ConvertToWString(info->header.manufacturer_code) });
-	content.push_back({ L"License", ConvertToWString(info->header.license) });
+	content.push_back({ L"Licensee", ConvertToWString(info->header.license) });
 	content.push_back({ L"ROM size", std::to_wstring(info->header.rom_size) });
 	content.push_back({ L"RAM size", std::to_wstring(info->header.ram_size) });
-
-	int y = 0;
-	for (auto& data : content)
-	{
-		rect.top = 26 + (y * 32);
-
-		DrawText(hdc, data.tag.c_str(), -1, &rect, DT_SINGLELINE | DT_NOCLIP);
-
-		// Textbox control
-		int edit_x = width / 3;
-		int edit_width = (width - edit_x) - rect.left;
-		std::wstring game_title = ConvertToWString(info->title);
-
-		HWND textbox = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", data.text.c_str(), WS_CHILD | WS_VISIBLE | WS_DISABLED, edit_x, rect.top, edit_width, 24, m_Hwnd, NULL, (HINSTANCE)GetWindowLongPtr(m_Hwnd, GWLP_HINSTANCE), NULL);
-		SendMessage(textbox, WM_SETFONT, (WPARAM)m_Font, TRUE);
-
-		++y;
-	}
-
-	EndPaint(m_Hwnd, &ps);
-
-	// Create things
-	m_BrushBackground = CreateSolidBrush(RGB(255, 255, 255));
+	CreateContentModel(content, width);
 }
 
 void CartridgeInfoWindow::Destroy()
@@ -147,6 +81,7 @@ void CartridgeInfoWindow::Destroy()
 	UnregisterClass(m_RegisterClassName.c_str(), hInstance);
 
 	DestroyWindow(m_Hwnd);
+	m_Application->ReleaseCartridgeInfoWindow();
 }
 
 LRESULT CartridgeInfoWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -154,7 +89,7 @@ LRESULT CartridgeInfoWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, L
 	switch (msg)
 	{
 		case WM_CLOSE:
-			DestroyWindow(m_Hwnd);
+			Destroy();
 			return 0;
 
 		case WM_CTLCOLORSTATIC:
@@ -169,7 +104,7 @@ LRESULT CartridgeInfoWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, L
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-void CartridgeInfoWindow::CreateHwnd(const std::string& title, int width, int height)
+void CartridgeInfoWindow::WindowCreate(const std::string& title, int width, int height)
 {
 	HINSTANCE hInstance = GetModuleHandle(NULL);
 
@@ -186,11 +121,7 @@ void CartridgeInfoWindow::CreateHwnd(const std::string& title, int width, int he
 	wc.hCursor = LoadCursor(0, IDC_ARROW);
 	wc.lpszClassName = m_RegisterClassName.c_str();
 	wc.lpszMenuName = NULL;
-
-	if (!RegisterClass(&wc))
-	{
-		throw std::exception("RegisterClass Failed");
-	}
+	RegisterClass(&wc);
 
 	// Compute window rectangle dimensions based on requested client area dimensions.
 	RECT window_rect = { 0, 0, width, height };
@@ -219,4 +150,65 @@ void CartridgeInfoWindow::CreateHwnd(const std::string& title, int width, int he
 
 	// Show window
 	ShowWindow(m_Hwnd, SW_SHOWNORMAL);
+}
+
+void CartridgeInfoWindow::FontCreate()
+{
+	HDC hdc = GetDC(NULL);
+	long lfHeight = -MulDiv(12, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+	ReleaseDC(NULL, hdc);
+
+	m_Font = CreateFont(lfHeight, 0, 0, 0, 0, FALSE, 0, 0, 0, 0, 0, 0, 0, L"Arial");
+}
+
+void CartridgeInfoWindow::CreateGroupBox(int width, int height)
+{
+	m_BrushBackground = CreateSolidBrush(RGB(255, 255, 255));
+
+	HWND groupbox = CreateWindowEx(WS_EX_WINDOWEDGE,
+								   L"BUTTON",  // Predefined class; Unicode assumed 
+								   L"Info",      // Button text 
+								   BS_GROUPBOX | WS_GROUP | WS_CHILD | BS_DEFPUSHBUTTON | WS_VISIBLE,  // Styles 
+								   10,         // x position 
+								   0,          // y position 
+								   width - 20,        // Button width
+								   height - 10,        // Button height
+								   m_Hwnd,     // Parent window
+								   NULL,
+								   (HINSTANCE)GetWindowLongPtr(m_Hwnd, GWLP_HINSTANCE),
+								   NULL);      // Pointer not needed.
+
+	SendMessage(groupbox, WM_SETFONT, (WPARAM)m_Font, TRUE);
+}
+
+void CartridgeInfoWindow::CreateContentModel(const std::vector<InfoModel>& content, int window_width)
+{
+	// Draw text
+	PAINTSTRUCT ps;
+	HDC hdc = BeginPaint(m_Hwnd, &ps);
+	FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
+	SelectObject(hdc, m_Font);
+
+	// Calculate position
+	RECT rect;
+	GetClientRect(m_GroupBox, &rect);
+	rect.left = 20;
+	rect.top = 26;
+
+	int y = 0;
+	for (auto& data : content)
+	{
+		rect.top = 26 + (y * 32);
+
+		DrawText(hdc, data.tag.c_str(), -1, &rect, DT_SINGLELINE | DT_NOCLIP);
+
+		// Textbox control
+		int edit_x = window_width / 3;
+		int edit_width = (window_width - edit_x) - rect.left;
+
+		HWND textbox = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", data.text.c_str(), WS_CHILD | WS_VISIBLE | WS_DISABLED, edit_x, rect.top, edit_width, 24, m_Hwnd, NULL, (HINSTANCE)GetWindowLongPtr(m_Hwnd, GWLP_HINSTANCE), NULL);
+		SendMessage(textbox, WM_SETFONT, (WPARAM)m_Font, TRUE);
+
+		++y;
+	}
 }

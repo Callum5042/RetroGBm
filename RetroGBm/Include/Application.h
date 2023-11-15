@@ -35,6 +35,7 @@ public:
 	void CloseTileWindow();
 
 	void CreateCartridgeInfoWindow();
+	void ReleaseCartridgeInfoWindow();
 
 	inline MainWindow* GetMainWindow() const { return m_MainWindow.get(); }
 

@@ -191,6 +191,14 @@ void Application::CloseTileWindow()
 
 void Application::CreateCartridgeInfoWindow()
 {
-	m_CartridgeInfoWindow = std::make_unique<CartridgeInfoWindow>(this);
-	m_CartridgeInfoWindow->Create("Cartridge Info", 400, 300);
+	if (m_CartridgeInfoWindow == nullptr)
+	{
+		m_CartridgeInfoWindow = std::make_unique<CartridgeInfoWindow>(this);
+		m_CartridgeInfoWindow->Create("Cartridge Info", 400, 300);
+	}
+}
+
+void Application::ReleaseCartridgeInfoWindow()
+{
+	m_CartridgeInfoWindow.release();
 }
