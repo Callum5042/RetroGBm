@@ -3,6 +3,7 @@
 #include "Application.h"
 #include <Emulator.h>
 #include <Cartridge.h>
+#include <string>
 
 // Set theme
 // https://docs.microsoft.com/en-gb/windows/win32/controls/cookbook-overview?redirectedfrom=MSDN
@@ -12,6 +13,12 @@
 
 namespace
 {
+	struct InfoModel
+	{
+		std::wstring tag;
+		std::wstring text;
+	};
+
 	static CartridgeInfoWindow* GetWindow(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		CartridgeInfoWindow* window = nullptr;
@@ -64,7 +71,7 @@ void CartridgeInfoWindow::Create(const std::string& title, int width, int height
 {
 	CreateHwnd(title, width, height);
 
-	
+
 
 	// Load font
 	HDC hdc = GetDC(NULL);
@@ -76,7 +83,7 @@ void CartridgeInfoWindow::Create(const std::string& title, int width, int height
 	// Group box
 	HWND groupbox = CreateWindowEx(WS_EX_WINDOWEDGE,
 								   L"BUTTON",  // Predefined class; Unicode assumed 
-								   L"Group",      // Button text 
+								   L"Info",      // Button text 
 								   BS_GROUPBOX | WS_GROUP | WS_CHILD | BS_DEFPUSHBUTTON | WS_VISIBLE,  // Styles 
 								   10,         // x position 
 								   0,          // y position 
@@ -98,17 +105,35 @@ void CartridgeInfoWindow::Create(const std::string& title, int width, int height
 	RECT rect;
 	GetClientRect(groupbox, &rect);
 	rect.left = 20;
-	rect.top = 20;
-
-	DrawText(hdc, L"Title", -1, &rect, DT_SINGLELINE | DT_NOCLIP);
+	rect.top = 26;
 
 	const CartridgeInfo* info = m_Application->GetEmulator()->GetCartridge()->GetCartridgeInfo();
 
-	// Textbox control
-	std::wstring game_title = ConvertToWString(info->title);
-	HWND textbox = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", game_title.c_str(), WS_CHILD | WS_VISIBLE, 80, 20, 300 - 20 - 80, 24, m_Hwnd, NULL, (HINSTANCE)GetWindowLongPtr(m_Hwnd, GWLP_HINSTANCE), NULL);
-	SendMessage(textbox, WM_SETFONT, (WPARAM)m_Font, TRUE);
+	std::vector<InfoModel> content;
+	content.push_back({ L"Title", ConvertToWString(info->title) });
+	content.push_back({ L"Cartridge", ConvertToWString(info->header.cartridge_type) });
+	content.push_back({ L"Manufacturer", ConvertToWString(info->header.manufacturer_code) });
+	content.push_back({ L"License", ConvertToWString(info->header.license) });
+	content.push_back({ L"ROM size", std::to_wstring(info->header.rom_size) });
+	content.push_back({ L"RAM size", std::to_wstring(info->header.ram_size) });
 
+	int y = 0;
+	for (auto& data : content)
+	{
+		rect.top = 26 + (y * 32);
+
+		DrawText(hdc, data.tag.c_str(), -1, &rect, DT_SINGLELINE | DT_NOCLIP);
+
+		// Textbox control
+		int edit_x = width / 3;
+		int edit_width = (width - edit_x) - rect.left;
+		std::wstring game_title = ConvertToWString(info->title);
+
+		HWND textbox = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", data.text.c_str(), WS_CHILD | WS_VISIBLE | WS_DISABLED, edit_x, rect.top, edit_width, 24, m_Hwnd, NULL, (HINSTANCE)GetWindowLongPtr(m_Hwnd, GWLP_HINSTANCE), NULL);
+		SendMessage(textbox, WM_SETFONT, (WPARAM)m_Font, TRUE);
+
+		++y;
+	}
 
 	EndPaint(m_Hwnd, &ps);
 
@@ -131,14 +156,14 @@ LRESULT CartridgeInfoWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, L
 		case WM_CLOSE:
 			DestroyWindow(m_Hwnd);
 			return 0;
-		
+
 		case WM_CTLCOLORSTATIC:
-			{
-				HDC hdc = (HDC)wParam;
-				SetBkMode(hdc, TRANSPARENT);
-				SetTextColor(hdc, RGB(255, 255, 255));
-				return (LONG_PTR)(m_BrushBackground);
-			}
+		{
+			HDC hdc = (HDC)wParam;
+			SetBkMode(hdc, TRANSPARENT);
+			SetTextColor(hdc, RGB(255, 255, 255));
+			return (LONG_PTR)(m_BrushBackground);
+		}
 	}
 
 	return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -147,7 +172,7 @@ LRESULT CartridgeInfoWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, L
 void CartridgeInfoWindow::CreateHwnd(const std::string& title, int width, int height)
 {
 	HINSTANCE hInstance = GetModuleHandle(NULL);
-	
+
 	// Convert to wstring
 	const std::wstring window_title = ConvertToWString(title);
 	m_RegisterClassName = window_title;
