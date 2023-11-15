@@ -5,6 +5,8 @@
 
 #include <iostream>
 #include <exception>
+#include <chrono>
+#include <thread>
 
 #include "Cpu.h"
 #include "Ppu.h"
@@ -14,6 +16,7 @@
 #include "Cartridge.h"
 #include "Joypad.h"
 #include "Display.h"
+using namespace std::chrono_literals;
 
 Emulator* Emulator::Instance = nullptr;
 
@@ -82,6 +85,11 @@ void Emulator::SetHalt(bool value)
 	m_Halted = value;
 }
 
+void Emulator::Pause(bool pause)
+{
+	m_Paused = pause;
+}
+
 void Emulator::ToggleTraceLog(bool enable)
 {
 	if (enable)
@@ -98,6 +106,12 @@ void Emulator::ToggleTraceLog(bool enable)
 
 void Emulator::Tick()
 {
+	if (m_Paused)
+	{
+		std::this_thread::sleep_for(100ms);
+		return;
+	}
+
 	// Fetch
 	uint16_t current_pc = m_Cpu->ProgramCounter;
 

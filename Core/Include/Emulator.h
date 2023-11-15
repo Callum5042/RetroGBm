@@ -52,6 +52,8 @@ public:
 	void SetHalt(bool value);
 	inline bool IsRunning() { return m_Running; }
 
+	void Pause(bool pause);
+
 	uint8_t GetOpCode() const;
 	inline EmulatorContext* GetContext() { return &m_Context; }
 
@@ -87,6 +89,8 @@ public:
 	inline bool IsTraceLogEnabled() const { return m_EnableTraceLog; }
 
 private:
+
+	bool m_Paused = false;
 
 	char m_SerialData[2] = { 0, 0 };
 
