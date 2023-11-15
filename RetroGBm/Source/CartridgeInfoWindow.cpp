@@ -1,6 +1,8 @@
 #include "CartridgeInfoWindow.h"
 #include <vector>
 #include "Application.h"
+#include <Emulator.h>
+#include <Cartridge.h>
 
 // Set theme
 // https://docs.microsoft.com/en-gb/windows/win32/controls/cookbook-overview?redirectedfrom=MSDN
@@ -91,14 +93,24 @@ void CartridgeInfoWindow::Create(const std::string& title, int width, int height
 	PAINTSTRUCT ps;
 	hdc = BeginPaint(m_Hwnd, &ps);
 	FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
+	SelectObject(hdc, m_Font);
 
 	RECT rect;
 	GetClientRect(groupbox, &rect);
-
 	rect.left = 20;
 	rect.top = 20;
 
-	DrawText(hdc, L"Testing", -1, &rect, DT_SINGLELINE | DT_NOCLIP);
+	DrawText(hdc, L"Title", -1, &rect, DT_SINGLELINE | DT_NOCLIP);
+
+	const CartridgeInfo* info = m_Application->GetEmulator()->GetCartridge()->GetCartridgeInfo();
+
+	// Textbox control
+	std::wstring game_title = ConvertToWString(info->title);
+	HWND textbox = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", game_title.c_str(), WS_CHILD | WS_VISIBLE, 80, 20, 300 - 20 - 80, 24, m_Hwnd, NULL, (HINSTANCE)GetWindowLongPtr(m_Hwnd, GWLP_HINSTANCE), NULL);
+	SendMessage(textbox, WM_SETFONT, (WPARAM)m_Font, TRUE);
+
+
+	EndPaint(m_Hwnd, &ps);
 
 	// Create things
 	m_BrushBackground = CreateSolidBrush(RGB(255, 255, 255));

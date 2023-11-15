@@ -34,6 +34,8 @@ public:
 	void CreateTileWindow();
 	void CloseTileWindow();
 
+	void CreateCartridgeInfoWindow();
+
 	inline MainWindow* GetMainWindow() const { return m_MainWindow.get(); }
 
 private:
@@ -50,6 +52,9 @@ private:
 	// Tile window
 	std::unique_ptr<TileWindow> m_TileWindow = nullptr;
 
+	// Cartridge window
+	std::unique_ptr<CartridgeInfoWindow> m_CartridgeInfoWindow = nullptr;
+
 	// Emulator
 	std::unique_ptr<Emulator> m_Emulator;
 	std::thread m_EmulatorThread;
@@ -57,7 +62,4 @@ private:
 	// Rendering
 	std::unique_ptr<Render::RenderDevice> m_RenderDevice = nullptr;
 	std::unique_ptr<Render::RenderShader> m_RenderShader = nullptr;
-
-
-	std::unique_ptr<CartridgeInfoWindow> m_CartridgeInfoWindow = nullptr;
 };

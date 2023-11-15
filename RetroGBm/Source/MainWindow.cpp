@@ -39,6 +39,7 @@ void MainWindow::Create(const std::string& title, int width, int height)
 	m_DebugMenuItem = CreateMenu();
 	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTilemap, L"Tilemap");
 	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTracelog, L"Tracelog");
+	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugCartridgeInfo, L"Cartridge Info");
 	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_DebugMenuItem), L"Debug");
 
 	SetMenu(this->GetHwnd(), menubar);
@@ -77,6 +78,12 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		}
 		case m_MenuDebugTracelog:
 			ToggleTracelog();
+			break;
+		case m_MenuDebugCartridgeInfo:
+			if (m_Application->GetEmulator()->IsRunning())
+			{
+				m_Application->CreateCartridgeInfoWindow();
+			}
 			break;
 	}
 }
