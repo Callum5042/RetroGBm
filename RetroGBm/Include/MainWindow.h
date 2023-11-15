@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Window.h"
+#include <string>
 
 class MainWindow : public Window
 {
@@ -22,6 +23,7 @@ private:
 	virtual void HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam) override;
 	static const UINT m_MenuFileOpenId = 101;
 	static const UINT m_MenuFileCloseId = 102;
+	static const UINT m_MenuFileRestartId = 104;
 	static const UINT m_MenuFileExitId = 103;
 
 	HMENU m_DebugMenuItem = NULL;
@@ -37,4 +39,7 @@ private:
 	void ToggleTracelog();
 
 	void ToggleEmulationPaused();
+
+	std::string m_FilePath;
+	void RestartEmulation();
 };
