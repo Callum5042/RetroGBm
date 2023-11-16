@@ -6,6 +6,7 @@
 #include <array>
 #include <string>
 #include <fstream>
+#include <mutex>
 
 class Cpu;
 class Ppu;
@@ -94,7 +95,7 @@ public:
 	void LoadState();
 
 private:
-
+	std::mutex m_EmulatorMutex;
 	bool m_Paused = false;
 
 	char m_SerialData[2] = { 0, 0 };

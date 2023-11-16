@@ -106,6 +106,8 @@ void Emulator::ToggleTraceLog(bool enable)
 
 void Emulator::Tick()
 {
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
+
 	if (m_Paused)
 	{
 		std::this_thread::sleep_for(100ms);
@@ -446,6 +448,8 @@ void Emulator::SaveState()
 
 void Emulator::LoadState()
 {
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
+
 	std::fstream file(std::format("{}.state", m_Cartridge->GetCartridgeInfo()->title), std::ios::binary | std::ios::in);
 
 	m_Cpu->LoadState(&file);
