@@ -57,18 +57,24 @@ void Application::LoadRom(const std::string& file)
 {
 	StopEmulator();
 
-	bool enable_tracelog = m_Emulator->IsTraceLogEnabled();
-
 	m_Emulator = std::make_unique<Emulator>();
-	m_Emulator->ToggleTraceLog(enable_tracelog);
+	m_Emulator->ToggleTraceLog(m_Emulator->IsTraceLogEnabled());
 	m_Emulator->LoadRom(file);
 
 	// Emulator runs on a background thread
 	m_EmulatorThread = std::thread([&]
 	{
-		while (m_Emulator->IsRunning())
+		try
 		{
-			m_Emulator->Tick();
+			while (m_Emulator->IsRunning())
+			{
+				m_Emulator->Tick();
+			}
+		}
+		catch (const std::exception& ex)
+		{
+			m_Emulator->Stop();
+			MessageBoxA(NULL, ex.what(), "Error", MB_OK | MB_ICONERROR);
 		}
 	});
 }
