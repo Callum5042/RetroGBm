@@ -260,19 +260,11 @@ void MainWindow::OnKeyPressed(UINT virtual_key_code)
 	// Save state
 	if (virtual_key_code == VK_F5)
 	{
-		Emulator* emulator = m_Application->GetEmulator();
-		if (emulator->IsRunning())
-		{
-			emulator->SaveState();
-		}
+		m_Application->SaveState();
 	}
 	else if (virtual_key_code == VK_F8)
 	{
-		Emulator* emulator = m_Application->GetEmulator();
-		if (emulator->IsRunning())
-		{
-			emulator->LoadState();
-		}
+		m_Application->LoadState();
 	}
 }
 
