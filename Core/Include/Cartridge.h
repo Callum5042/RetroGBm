@@ -37,6 +37,13 @@ enum class CartridgeType : uint8_t
 	HuC1_RAM_BATTERY = 0xFF,
 };
 
+enum class ColourMode : uint8_t
+{
+	DMG,
+	CGB,
+	CGB_SUPPORT,
+};
+
 struct CartridgeHeader
 {
 	std::string manufacturer_code;
@@ -49,6 +56,7 @@ struct CartridgeHeader
 	int license_code = 0;
 	std::string license;
 	std::vector<uint8_t> nintendo_logo;
+	ColourMode colour_mode = ColourMode::DMG;
 };
 
 struct CartridgeInfo
@@ -77,6 +85,8 @@ public:
 	void Write(uint16_t address, uint8_t value);
 
 	inline const CartridgeInfo* GetCartridgeInfo() { return &m_CartridgeInfo; }
+
+	std::string GetColourMode() const;
 
 	// Save state
 	void SaveState(std::fstream* file);

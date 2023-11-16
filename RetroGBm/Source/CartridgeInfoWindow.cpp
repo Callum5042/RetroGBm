@@ -63,7 +63,8 @@ void CartridgeInfoWindow::Create(const std::string& title, int width, int height
 	FontCreate();
 	CreateGroupBox(width, height);
 
-	const CartridgeInfo* info = m_Application->GetEmulator()->GetCartridge()->GetCartridgeInfo();
+	Cartridge* cartridge = m_Application->GetEmulator()->GetCartridge();
+	const CartridgeInfo* info = cartridge->GetCartridgeInfo();
 
 	std::vector<InfoModel> content;
 	content.push_back({ L"Title", ConvertToWString(info->title) });
@@ -72,6 +73,7 @@ void CartridgeInfoWindow::Create(const std::string& title, int width, int height
 	content.push_back({ L"Licensee", ConvertToWString(info->header.license) });
 	content.push_back({ L"ROM size", std::to_wstring(info->header.rom_size) });
 	content.push_back({ L"RAM size", std::to_wstring(info->header.ram_size) });
+	content.push_back({ L"Colour mode", ConvertToWString(cartridge->GetColourMode()) });
 	CreateContentModel(content, width);
 }
 

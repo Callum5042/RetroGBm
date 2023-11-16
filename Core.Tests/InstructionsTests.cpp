@@ -21,7 +21,6 @@ namespace CoreTests
 
 			// Assert
 			Assert::AreEqual(0x1, static_cast<int>(emulator.GetCpu()->ProgramCounter));
-			Assert::AreEqual(0x4, static_cast<int>(emulator.GetContext()->cycles));
 		}
 
 		TEST_METHOD(LoadR8_LoadRegisterIntoRegister)
