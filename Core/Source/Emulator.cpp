@@ -433,7 +433,7 @@ uint16_t Emulator::StackPop16()
 
 void Emulator::SaveState()
 {
-	std::fstream file(std::format("{}.bin", m_Cartridge->GetCartridgeInfo()->title), std::ios::binary | std::ios::out);
+	std::fstream file(std::format("{}.state", m_Cartridge->GetCartridgeInfo()->title), std::ios::binary | std::ios::out);
 
 	m_Cpu->SaveState(&file);
 	m_Timer->SaveState(&file);
@@ -450,7 +450,7 @@ void Emulator::SaveState()
 
 void Emulator::LoadState()
 {
-	std::fstream file(std::format("{}.bin", m_Cartridge->GetCartridgeInfo()->title), std::ios::binary | std::ios::in);
+	std::fstream file(std::format("{}.state", m_Cartridge->GetCartridgeInfo()->title), std::ios::binary | std::ios::in);
 
 	m_Cpu->LoadState(&file);
 	m_Timer->LoadState(&file);
