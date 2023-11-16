@@ -251,6 +251,10 @@ bool Cartridge::Load(const std::string& filepath)
 			break;
 	}
 
+	// Initialise possible rom banks (8kb each)
+	m_CartridgeInfo.external_ram.resize(m_CartridgeInfo.header.ram_size);
+	std::fill(m_CartridgeInfo.external_ram.begin(), m_CartridgeInfo.external_ram.end(), 0x0);
+
 	// Destination code
 	// TODO
 
@@ -272,10 +276,6 @@ bool Cartridge::Load(const std::string& filepath)
 	{
 		m_CartridgeInfo.header.colour_mode = ColourMode::CGB;
 	}
-
-	// Initialise 3 possible rom banks (32kb each)
-	m_CartridgeInfo.external_ram.resize(0x8000 * 3);
-	std::fill(m_CartridgeInfo.external_ram.begin(), m_CartridgeInfo.external_ram.end(), 0x0);
 
 	// Load RAM if battery is support
 	if (HasBattery())
@@ -325,7 +325,11 @@ uint8_t Cartridge::Read(uint16_t address)
 		if (m_CartridgeInfo.enabled_ram)
 		{
 			uint16_t index = m_CartridgeInfo.ram_bank_controller;
-			return m_CartridgeInfo.external_ram[(index * 0x8000) + address - 0xA000];
+			return m_CartridgeInfo.external_ram[(index * 0x2000) + address - 0xA000];
+		}
+		else
+		{
+			return 0xFF;
 		}
 	}
 
@@ -382,10 +386,10 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 		}
 		else if (IsMBC3())
 		{
-			uint8_t bank_number = value;
+			uint8_t bank_number = value & 0b0111'1111;
 			if (bank_number == 0x0)
 			{
-				bank_number++;
+				bank_number = 1;
 			}
 
 			m_CartridgeInfo.rom_bank_controller = bank_number;
@@ -423,17 +427,20 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 	if (address >= 0x4000 && address <= 0x5FFF)
 	{
 		m_CartridgeInfo.ram_bank_controller = value & 0b11;
+		return;
+	}
 
+	// Set clock
+	if (address >= 0x6000 && address <= 0x7FFF)
+	{
 		if (IsMBC3())
 		{
 			if (value >= 0x08 && value <= 0x0C)
 			{
-				std::cout << "Set RTC register\n";
 			}
 		}
 
-
-		// std::cout << "RAM bank selected: " << static_cast<int>(m_CartridgeInfo.ram_bank_controller) << '\n';
+		std::cout << "Set RTC register\n";
 		return;
 	}
 
@@ -443,7 +450,7 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 		if (m_CartridgeInfo.enabled_ram)
 		{
 			uint16_t index = m_CartridgeInfo.ram_bank_controller;
-			m_CartridgeInfo.external_ram[(index * 0x8000) + address - 0xA000] = value;
+			m_CartridgeInfo.external_ram[(index * 0x2000) + address - 0xA000] = value;
 		}
 
 		return;
@@ -472,6 +479,7 @@ bool Cartridge::IsMBC3()
 		case CartridgeType::MBC3:
 		case CartridgeType::MBC3_RAM:
 		case CartridgeType::MBC3_RAM_BATTERY:
+		case CartridgeType::MBC3_TIMER_RAM_BATTERY:
 			return true;
 		default:
 			return false;
@@ -485,6 +493,9 @@ bool Cartridge::IsMBC5()
 		case CartridgeType::MBC5:
 		case CartridgeType::MBC5_RAM:
 		case CartridgeType::MBC5_RAM_BATTERY:
+		case CartridgeType::MBC5_RUMBLE:
+		case CartridgeType::MBC5_RUMBLE_RAM:
+		case CartridgeType::MBC5_RUMBLE_RAM_BATTERY:
 			return true;
 		default:
 			return false;
