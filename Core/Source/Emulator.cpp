@@ -435,6 +435,7 @@ uint16_t Emulator::StackPop16()
 
 void Emulator::SaveState()
 {
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
 	std::fstream file(std::format("{}.state", m_Cartridge->GetCartridgeInfo()->title), std::ios::binary | std::ios::out);
 
 	m_Cpu->SaveState(&file);
@@ -449,7 +450,6 @@ void Emulator::SaveState()
 void Emulator::LoadState()
 {
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
-
 	std::fstream file(std::format("{}.state", m_Cartridge->GetCartridgeInfo()->title), std::ios::binary | std::ios::in);
 
 	m_Cpu->LoadState(&file);
