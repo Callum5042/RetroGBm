@@ -438,14 +438,10 @@ void Emulator::SaveState()
 	m_Cpu->SaveState(&file);
 	m_Timer->SaveState(&file);
 	m_Ram->SaveState(&file);
+	m_Cartridge->SaveState(&file);
 
 	m_Display->SaveState(&file);
 	m_Ppu->SaveState(&file);
-
-	//m_Cartridge->SaveState(&file);
-	//// m_Joypad->SaveState(&file);
-	//m_Display->SaveState(&file);
-	//m_Ppu->SaveState(&file);
 }
 
 void Emulator::LoadState()
@@ -455,14 +451,8 @@ void Emulator::LoadState()
 	m_Cpu->LoadState(&file);
 	m_Timer->LoadState(&file);
 	m_Ram->LoadState(&file);
+	m_Cartridge->LoadState(&file);
 
 	m_Display->LoadState(&file);
 	m_Ppu->LoadState(&file);
-
-	int tmp = 1;
-
-	//m_Cartridge->LoadState(&file);
-	//// m_Joypad->LoadState(&file);
-	//m_Display->LoadState(&file);
-	//m_Ppu->LoadState(&file);
 }

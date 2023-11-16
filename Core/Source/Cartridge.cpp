@@ -469,8 +469,9 @@ void Cartridge::SaveState(std::fstream* file)
 	file->write(reinterpret_cast<const char*>(&m_CartridgeInfo.rom_bank_controller), sizeof(uint8_t));
 	file->write(reinterpret_cast<const char*>(&m_CartridgeInfo.ram_bank_controller), sizeof(uint8_t));
 
-	file->write(reinterpret_cast<const char*>(m_CartridgeInfo.external_ram.size()), sizeof(size_t));
-	file->write(reinterpret_cast<const char*>(m_CartridgeInfo.external_ram.data()), m_CartridgeInfo.external_ram.size() * sizeof(uint8_t));
+	size_t externalram_size = m_CartridgeInfo.external_ram.size();
+	file->write(reinterpret_cast<const char*>(&externalram_size), sizeof(size_t));
+	file->write(reinterpret_cast<const char*>(m_CartridgeInfo.external_ram.data()), externalram_size * sizeof(uint8_t));
 }
 
 void Cartridge::LoadState(std::fstream* file)
