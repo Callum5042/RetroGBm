@@ -398,6 +398,48 @@ uint8_t Cpu::GetInterruptFlags()
 	return m_InterruptFlags;
 }
 
+void Cpu::SaveState(std::fstream* file)
+{
+	file->write(reinterpret_cast<const char*>(&ProgramCounter), sizeof(uint16_t));
+	file->write(reinterpret_cast<const char*>(&StackPointer), sizeof(uint16_t));
+
+	file->write(reinterpret_cast<const char*>(&m_Registers[RegisterType8::REG_A]), sizeof(uint8_t));
+	file->write(reinterpret_cast<const char*>(&m_Registers[RegisterType8::REG_F]), sizeof(uint8_t));
+	file->write(reinterpret_cast<const char*>(&m_Registers[RegisterType8::REG_B]), sizeof(uint8_t));
+	file->write(reinterpret_cast<const char*>(&m_Registers[RegisterType8::REG_C]), sizeof(uint8_t));
+	file->write(reinterpret_cast<const char*>(&m_Registers[RegisterType8::REG_D]), sizeof(uint8_t));
+	file->write(reinterpret_cast<const char*>(&m_Registers[RegisterType8::REG_E]), sizeof(uint8_t));
+	file->write(reinterpret_cast<const char*>(&m_Registers[RegisterType8::REG_H]), sizeof(uint8_t));
+	file->write(reinterpret_cast<const char*>(&m_Registers[RegisterType8::REG_L]), sizeof(uint8_t));
+
+	file->write(reinterpret_cast<const char*>(&m_InterruptFlags), sizeof(uint8_t));
+	file->write(reinterpret_cast<const char*>(&m_InterruptEnable), sizeof(uint8_t));
+
+	file->write(reinterpret_cast<const char*>(&m_EnablingInterrupts), sizeof(bool));
+	file->write(reinterpret_cast<const char*>(&m_InterruptMasterFlag), sizeof(bool));
+}
+
+void Cpu::LoadState(std::fstream* file)
+{
+	file->read(reinterpret_cast<char*>(&ProgramCounter), sizeof(uint16_t));
+	file->read(reinterpret_cast<char*>(&StackPointer), sizeof(uint16_t));
+
+	file->read(reinterpret_cast<char*>(&m_Registers[RegisterType8::REG_A]), sizeof(uint8_t));
+	file->read(reinterpret_cast<char*>(&m_Registers[RegisterType8::REG_F]), sizeof(uint8_t));
+	file->read(reinterpret_cast<char*>(&m_Registers[RegisterType8::REG_B]), sizeof(uint8_t));
+	file->read(reinterpret_cast<char*>(&m_Registers[RegisterType8::REG_C]), sizeof(uint8_t));
+	file->read(reinterpret_cast<char*>(&m_Registers[RegisterType8::REG_D]), sizeof(uint8_t));
+	file->read(reinterpret_cast<char*>(&m_Registers[RegisterType8::REG_E]), sizeof(uint8_t));
+	file->read(reinterpret_cast<char*>(&m_Registers[RegisterType8::REG_H]), sizeof(uint8_t));
+	file->read(reinterpret_cast<char*>(&m_Registers[RegisterType8::REG_L]), sizeof(uint8_t));
+
+	file->read(reinterpret_cast<char*>(&m_InterruptFlags), sizeof(uint8_t));
+	file->read(reinterpret_cast<char*>(&m_InterruptEnable), sizeof(uint8_t));
+
+	file->read(reinterpret_cast<char*>(&m_EnablingInterrupts), sizeof(bool));
+	file->read(reinterpret_cast<char*>(&m_InterruptMasterFlag), sizeof(bool));
+}
+
 void Cpu::Execute(EmulatorContext* context, const uint8_t opcode)
 {
 	switch (opcode)

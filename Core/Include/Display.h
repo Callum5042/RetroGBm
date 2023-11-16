@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <fstream>
 
 class Ppu;
 
@@ -65,6 +66,10 @@ public:
 	LcdMode GetLcdMode();
 
 	inline DisplayContext* GetContext() { return &m_Context; }
+
+	// Save state
+	void SaveState(std::fstream* file);
+	void LoadState(std::fstream* file);
 
 private:
 	DisplayContext m_Context = {};

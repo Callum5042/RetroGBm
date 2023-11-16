@@ -2,6 +2,7 @@
 
 #include <map>
 #include <string>
+#include <fstream>
 
 struct EmulatorContext;
 
@@ -92,6 +93,10 @@ public:
 
 	// Build debug string
 	std::string Details();
+
+	// Save state
+	void SaveState(std::fstream* file);
+	void LoadState(std::fstream* file);
 
 private:
 	std::map<RegisterType8, uint8_t> m_Registers;

@@ -102,6 +102,10 @@ public:
 	const uint16_t ScreenResolutionY = 144;
 	const uint16_t ScreenResolutionX = 160;
 
+	// Save state
+	void SaveState(std::fstream* file);
+	void LoadState(std::fstream* file);
+
 private:
 	PpuContext m_Context = {};
 

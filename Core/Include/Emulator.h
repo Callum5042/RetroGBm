@@ -89,6 +89,10 @@ public:
 	void ToggleTraceLog(bool enable);
 	inline bool IsTraceLogEnabled() const { return m_EnableTraceLog; }
 
+	// Save states
+	void SaveState();
+	void LoadState();
+
 private:
 
 	bool m_Paused = false;

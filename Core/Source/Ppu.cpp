@@ -544,3 +544,83 @@ void Ppu::LimitFrameRate()
 		std::this_thread::sleep_for(elapsed);
 	}
 }
+
+void Ppu::SaveState(std::fstream* file)
+{
+	size_t videoram_size = m_Context.video_ram.size();
+	file->write(reinterpret_cast<const char*>(&videoram_size), sizeof(size_t));
+	file->write(reinterpret_cast<const char*>(m_Context.video_ram.data()), videoram_size * sizeof(uint8_t));
+
+
+	//file->write(reinterpret_cast<const char*>(&m_Context.dot_ticks), sizeof(uint32_t));
+	//file->write(reinterpret_cast<const char*>(&m_Context.window_line_counter), sizeof(uint8_t));
+
+	//file->write(reinterpret_cast<const char*>(m_Context.video_buffer.size()), sizeof(size_t));
+	//file->write(reinterpret_cast<const char*>(m_Context.video_buffer.data()), m_Context.video_buffer.size() * sizeof(uint32_t));
+
+	//file->write(reinterpret_cast<const char*>(m_Context.oam_ram.size()), sizeof(size_t));
+	//file->write(reinterpret_cast<const char*>(m_Context.oam_ram.data()), m_Context.oam_ram.size() * sizeof(OamData));
+
+	//file->write(reinterpret_cast<const char*>(m_Context.objects_per_line.size()), sizeof(size_t));
+	//file->write(reinterpret_cast<const char*>(m_Context.objects_per_line.data()), m_Context.objects_per_line.size() * sizeof(OamData));
+
+	//// Pipeline
+	//file->write(reinterpret_cast<const char*>(&m_Context.pipeline.pipeline_state), sizeof(FetchState));
+	//file->write(reinterpret_cast<const char*>(&m_Context.pipeline.line_x), sizeof(uint8_t));
+	//file->write(reinterpret_cast<const char*>(&m_Context.pipeline.pushed_x), sizeof(uint8_t));
+	//file->write(reinterpret_cast<const char*>(&m_Context.pipeline.fetch_x), sizeof(uint8_t));
+
+	//file->write(reinterpret_cast<const char*>(&m_Context.pipeline.background_window_tile), sizeof(uint8_t));
+	//file->write(reinterpret_cast<const char*>(&m_Context.pipeline.background_window_byte_low), sizeof(uint8_t));
+	//file->write(reinterpret_cast<const char*>(&m_Context.pipeline.background_window_byte_high), sizeof(uint8_t));
+	//file->write(reinterpret_cast<const char*>(&m_Context.pipeline.fifo_x), sizeof(uint8_t));
+
+	//file->write(reinterpret_cast<const char*>(m_Context.pipeline.fetched_entries.size()), sizeof(size_t));
+	//file->write(reinterpret_cast<const char*>(m_Context.pipeline.fetched_entries.data()), m_Context.pipeline.fetched_entries.size() * sizeof(OamPipelineData));
+
+	//file->write(reinterpret_cast<const char*>(&m_Context.pipeline.pixel_queue), m_Context.pipeline.pixel_queue.size() * sizeof(uint32_t));
+}
+
+void Ppu::LoadState(std::fstream* file)
+{
+	size_t videoram_size = 0;
+	file->read(reinterpret_cast<char*>(&videoram_size), sizeof(size_t));
+
+	m_Context.video_ram.resize(videoram_size);
+	file->read(reinterpret_cast<char*>(m_Context.video_ram.data()), videoram_size * sizeof(uint8_t));
+
+	//file->read(reinterpret_cast<char*>(&m_Context.dot_ticks), sizeof(uint32_t));
+	//file->read(reinterpret_cast<char*>(&m_Context.window_line_counter), sizeof(uint8_t));
+
+	//size_t video_buffer_size = 0;
+	//file->read(reinterpret_cast<char*>(video_buffer_size), sizeof(size_t));
+	//m_Context.video_buffer.resize(video_buffer_size);
+	//file->read(reinterpret_cast<char*>(m_Context.video_buffer.data()), m_Context.video_buffer.size() * sizeof(uint32_t));
+
+	//size_t oam_ram_size = 0;
+	//file->read(reinterpret_cast<char*>(oam_ram_size), sizeof(size_t));
+	//file->read(reinterpret_cast<char*>(m_Context.oam_ram.data()), m_Context.oam_ram.size() * sizeof(OamData));
+
+	//size_t objects_per_line_size = 0;
+	//file->read(reinterpret_cast<char*>(m_Context.objects_per_line.size()), sizeof(size_t));
+	//m_Context.objects_per_line.resize(objects_per_line_size);
+	//file->read(reinterpret_cast<char*>(m_Context.objects_per_line.data()), m_Context.objects_per_line.size() * sizeof(OamData));
+
+	//// Pipeline
+	//file->read(reinterpret_cast<char*>(&m_Context.pipeline.pipeline_state), sizeof(FetchState));
+	//file->read(reinterpret_cast<char*>(&m_Context.pipeline.line_x), sizeof(uint8_t));
+	//file->read(reinterpret_cast<char*>(&m_Context.pipeline.pushed_x), sizeof(uint8_t));
+	//file->read(reinterpret_cast<char*>(&m_Context.pipeline.fetch_x), sizeof(uint8_t));
+
+	//file->read(reinterpret_cast<char*>(&m_Context.pipeline.background_window_tile), sizeof(uint8_t));
+	//file->read(reinterpret_cast<char*>(&m_Context.pipeline.background_window_byte_low), sizeof(uint8_t));
+	//file->read(reinterpret_cast<char*>(&m_Context.pipeline.background_window_byte_high), sizeof(uint8_t));
+	//file->read(reinterpret_cast<char*>(&m_Context.pipeline.fifo_x), sizeof(uint8_t));
+
+	//size_t fetched_entries_size = 0;
+	//file->read(reinterpret_cast<char*>(&fetched_entries_size), sizeof(size_t));
+	//m_Context.pipeline.fetched_entries.resize(fetched_entries_size);
+	//file->read(reinterpret_cast<char*>(m_Context.pipeline.fetched_entries.data()), m_Context.pipeline.fetched_entries.size() * sizeof(OamPipelineData));
+
+	//file->read(reinterpret_cast<char*>(&m_Context.pipeline.pixel_queue), m_Context.pipeline.pixel_queue.size() * sizeof(uint32_t));
+}

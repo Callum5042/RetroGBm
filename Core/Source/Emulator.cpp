@@ -430,3 +430,39 @@ uint16_t Emulator::StackPop16()
 
 	return (hi << 8) | lo;
 }
+
+void Emulator::SaveState()
+{
+	std::fstream file(std::format("{}.bin", m_Cartridge->GetCartridgeInfo()->title), std::ios::binary | std::ios::out);
+
+	m_Cpu->SaveState(&file);
+	m_Timer->SaveState(&file);
+	m_Ram->SaveState(&file);
+
+	m_Display->SaveState(&file);
+	m_Ppu->SaveState(&file);
+
+	//m_Cartridge->SaveState(&file);
+	//// m_Joypad->SaveState(&file);
+	//m_Display->SaveState(&file);
+	//m_Ppu->SaveState(&file);
+}
+
+void Emulator::LoadState()
+{
+	std::fstream file(std::format("{}.bin", m_Cartridge->GetCartridgeInfo()->title), std::ios::binary | std::ios::in);
+
+	m_Cpu->LoadState(&file);
+	m_Timer->LoadState(&file);
+	m_Ram->LoadState(&file);
+
+	m_Display->LoadState(&file);
+	m_Ppu->LoadState(&file);
+
+	int tmp = 1;
+
+	//m_Cartridge->LoadState(&file);
+	//// m_Joypad->LoadState(&file);
+	//m_Display->LoadState(&file);
+	//m_Ppu->LoadState(&file);
+}

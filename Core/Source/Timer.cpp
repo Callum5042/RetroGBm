@@ -127,3 +127,14 @@ void Timer::Write(uint16_t address, uint8_t value)
 			break;
 	}
 }
+
+void Timer::SaveState(std::fstream* file)
+{
+	file->write(reinterpret_cast<const char*>(&m_Context), sizeof(TimerContext));
+}
+
+void Timer::LoadState(std::fstream* file)
+{
+	std::ifstream of("timer.bin", std::ios::in | std::ios::binary);
+	file->read(reinterpret_cast<char*>(&m_Context), sizeof(TimerContext));
+}

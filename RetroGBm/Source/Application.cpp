@@ -205,10 +205,16 @@ void Application::ReleaseCartridgeInfoWindow()
 
 void Application::SaveState()
 {
-
+	if (m_Emulator->IsRunning())
+	{
+		m_Emulator->SaveState();
+	}
 }
 
 void Application::LoadState()
 {
-
+	if (m_Emulator->IsRunning())
+	{
+		m_Emulator->LoadState();
+	}
 }

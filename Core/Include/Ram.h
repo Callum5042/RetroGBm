@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <fstream>
 
 class Ram
 {
@@ -14,6 +15,10 @@ public:
 
 	uint8_t ReadHighRam(uint16_t address);
 	void WriteHighRam(uint16_t address, uint8_t value);
+
+	// Save state
+	void SaveState(std::fstream* file);
+	void LoadState(std::fstream* file);
 
 private:
 	std::vector<uint8_t> m_WorkRam;
