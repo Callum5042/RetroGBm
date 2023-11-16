@@ -66,9 +66,9 @@ struct CartridgeInfo
 	CartridgeHeader header;
 
 	bool enabled_ram = false;
-	uint8_t rom_bank_controller = 1;
+	uint16_t rom_bank_controller = 1;
 
-	uint8_t ram_bank_controller = 0;
+	uint16_t ram_bank_controller = 0;
 	std::vector<uint8_t> external_ram;
 };
 
@@ -97,6 +97,7 @@ private:
 
 	bool IsMBC1();
 	bool IsMBC3();
+	bool IsMBC5();
 
 	bool HasBattery();
 };
