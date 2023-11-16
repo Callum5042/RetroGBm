@@ -262,8 +262,16 @@ bool Cartridge::Load(const std::string& filepath)
 	// Version
 	m_CartridgeInfo.header.version = m_CartridgeInfo.data[0x014C];
 
-	// Print some info
-	std::cout << "Cartridge Type: " << m_CartridgeInfo.header.cartridge_type << '\n';
+	// Check for gameboy colour support
+	uint8_t cgb_flag = m_CartridgeInfo.data[0x0143];
+	if (cgb_flag == 0x80)
+	{
+		m_CartridgeInfo.header.colour_mode = ColourMode::CGB_SUPPORT;
+	}
+	else if (cgb_flag == 0xC0)
+	{
+		m_CartridgeInfo.header.colour_mode = ColourMode::CGB;
+	}
 
 	// Initialise 3 possible rom banks (32kb each)
 	m_CartridgeInfo.external_ram.resize(0x8000 * 3);
@@ -485,4 +493,19 @@ void Cartridge::LoadState(std::fstream* file)
 
 	m_CartridgeInfo.external_ram.resize(external_ram_size);
 	file->read(reinterpret_cast<char*>(m_CartridgeInfo.external_ram.data()), m_CartridgeInfo.external_ram.size() * sizeof(uint8_t));
+}
+
+std::string Cartridge::GetColourMode() const
+{
+	switch (m_CartridgeInfo.header.colour_mode)
+	{
+		case ColourMode::DMG:
+			return "DMG";
+		case ColourMode::CGB:
+			return "CGB Only";
+		case ColourMode::CGB_SUPPORT:
+			return "CGB Support";
+		default:
+			return "Unknown";
+	}
 }
