@@ -315,7 +315,7 @@ uint8_t Cartridge::Read(uint16_t address)
 	// Read from ROM bank for addresses in range 0x4000 to 0x7FFF
 	if (address >= 0x4000 && address <= 0x7FFF)
 	{
-		uint8_t bank_number = m_CartridgeInfo.rom_bank_controller;
+		uint16_t bank_number = m_CartridgeInfo.rom_bank_controller;
 		return m_CartridgeInfo.data[(address - 0x4000) + (0x4000 * bank_number)];
 	}
 
@@ -324,7 +324,7 @@ uint8_t Cartridge::Read(uint16_t address)
 	{
 		if (m_CartridgeInfo.enabled_ram)
 		{
-			uint8_t index = m_CartridgeInfo.ram_bank_controller;
+			uint16_t index = m_CartridgeInfo.ram_bank_controller;
 			return m_CartridgeInfo.external_ram[(index * 0x8000) + address - 0xA000];
 		}
 	}
@@ -390,6 +390,25 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 
 			m_CartridgeInfo.rom_bank_controller = bank_number;
 		}
+		else if (IsMBC5())
+		{
+			if (address >= 0x2000 && address <= 0x2FFF)
+			{
+				m_CartridgeInfo.rom_bank_controller &= ~0xFF;
+				m_CartridgeInfo.rom_bank_controller |= value;
+			}
+			else if (address >= 0x3000 && address <= 0x3FFF)
+			{
+				if (value == 0x1)
+				{
+					m_CartridgeInfo.rom_bank_controller |= 0x100;
+				}
+				else
+				{
+					m_CartridgeInfo.rom_bank_controller &= ~0x100;
+				}
+			}
+		}
 		else
 		{
 			// Only the lower 5 bits are used - discard the rest
@@ -413,6 +432,7 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 			}
 		}
 
+
 		// std::cout << "RAM bank selected: " << static_cast<int>(m_CartridgeInfo.ram_bank_controller) << '\n';
 		return;
 	}
@@ -422,7 +442,7 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 	{
 		if (m_CartridgeInfo.enabled_ram)
 		{
-			uint8_t index = m_CartridgeInfo.ram_bank_controller;
+			uint16_t index = m_CartridgeInfo.ram_bank_controller;
 			m_CartridgeInfo.external_ram[(index * 0x8000) + address - 0xA000] = value;
 		}
 
@@ -458,6 +478,19 @@ bool Cartridge::IsMBC3()
 	}
 }
 
+bool Cartridge::IsMBC5()
+{
+	switch (m_CartridgeInfo.header.cartridge_type_code)
+	{
+		case CartridgeType::MBC5:
+		case CartridgeType::MBC5_RAM:
+		case CartridgeType::MBC5_RAM_BATTERY:
+			return true;
+		default:
+			return false;
+	}
+}
+
 bool Cartridge::HasBattery()
 {
 	switch (m_CartridgeInfo.header.cartridge_type_code)
@@ -474,8 +507,8 @@ bool Cartridge::HasBattery()
 void Cartridge::SaveState(std::fstream* file)
 {
 	file->write(reinterpret_cast<const char*>(&m_CartridgeInfo.enabled_ram), sizeof(bool));
-	file->write(reinterpret_cast<const char*>(&m_CartridgeInfo.rom_bank_controller), sizeof(uint8_t));
-	file->write(reinterpret_cast<const char*>(&m_CartridgeInfo.ram_bank_controller), sizeof(uint8_t));
+	file->write(reinterpret_cast<const char*>(&m_CartridgeInfo.rom_bank_controller), sizeof(m_CartridgeInfo.rom_bank_controller));
+	file->write(reinterpret_cast<const char*>(&m_CartridgeInfo.ram_bank_controller), sizeof(m_CartridgeInfo.ram_bank_controller));
 
 	size_t externalram_size = m_CartridgeInfo.external_ram.size();
 	file->write(reinterpret_cast<const char*>(&externalram_size), sizeof(size_t));
@@ -485,8 +518,8 @@ void Cartridge::SaveState(std::fstream* file)
 void Cartridge::LoadState(std::fstream* file)
 {
 	file->read(reinterpret_cast<char*>(&m_CartridgeInfo.enabled_ram), sizeof(bool));
-	file->read(reinterpret_cast<char*>(&m_CartridgeInfo.rom_bank_controller), sizeof(uint8_t));
-	file->read(reinterpret_cast<char*>(&m_CartridgeInfo.ram_bank_controller), sizeof(uint8_t));
+	file->read(reinterpret_cast<char*>(&m_CartridgeInfo.rom_bank_controller), sizeof(m_CartridgeInfo.rom_bank_controller));
+	file->read(reinterpret_cast<char*>(&m_CartridgeInfo.ram_bank_controller), sizeof(m_CartridgeInfo.ram_bank_controller));
 
 	size_t external_ram_size = 0;
 	file->read(reinterpret_cast<char*>(&external_ram_size), sizeof(size_t));
