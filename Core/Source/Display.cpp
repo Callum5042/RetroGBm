@@ -284,3 +284,13 @@ bool Display::IsStatInterruptLYC()
 
 	return false;
 }
+
+void Display::SaveState(std::fstream* file)
+{
+	file->write(reinterpret_cast<const char*>(&m_Context), sizeof(DisplayContext));
+}
+
+void Display::LoadState(std::fstream* file)
+{
+	file->read(reinterpret_cast<char*>(&m_Context), sizeof(DisplayContext));
+}

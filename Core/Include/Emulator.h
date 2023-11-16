@@ -6,6 +6,7 @@
 #include <array>
 #include <string>
 #include <fstream>
+#include <mutex>
 
 class Cpu;
 class Ppu;
@@ -89,8 +90,12 @@ public:
 	void ToggleTraceLog(bool enable);
 	inline bool IsTraceLogEnabled() const { return m_EnableTraceLog; }
 
-private:
+	// Save states
+	void SaveState();
+	void LoadState();
 
+private:
+	std::mutex m_EmulatorMutex;
 	bool m_Paused = false;
 
 	char m_SerialData[2] = { 0, 0 };

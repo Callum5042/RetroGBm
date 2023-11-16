@@ -39,6 +39,9 @@ void MainWindow::Create(const std::string& title, int width, int height)
 
 	m_EmulationMenuItem = CreateMenu();
 	AppendMenuW(m_EmulationMenuItem, MF_UNCHECKED, m_MenuEmulationPausePlay, L"Pause");
+	AppendMenuW(m_EmulationMenuItem, MF_SEPARATOR, NULL, NULL);
+	AppendMenuW(m_EmulationMenuItem, MF_STRING, m_MenuEmulationSaveState, L"Save State");
+	AppendMenuW(m_EmulationMenuItem, MF_STRING, m_MenuEmulationLoadState, L"Load State");
 	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_EmulationMenuItem), L"Emulation");
 
 	m_DebugMenuItem = CreateMenu();
@@ -100,6 +103,12 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 		case m_MenuEmulationPausePlay:
 			ToggleEmulationPaused();
+			break;
+		case m_MenuEmulationSaveState:
+			m_Application->SaveState();
+			break;
+		case m_MenuEmulationLoadState:
+			m_Application->LoadState();
 			break;
 	}
 }
@@ -245,6 +254,24 @@ void MainWindow::OnKeyPressed(UINT virtual_key_code)
 				emulator->Pause(true);
 				CheckMenuItem(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND | MF_CHECKED);
 			}
+		}
+	}
+
+	// Save state
+	if (virtual_key_code == VK_F5)
+	{
+		Emulator* emulator = m_Application->GetEmulator();
+		if (emulator->IsRunning())
+		{
+			emulator->SaveState();
+		}
+	}
+	else if (virtual_key_code == VK_F8)
+	{
+		Emulator* emulator = m_Application->GetEmulator();
+		if (emulator->IsRunning())
+		{
+			emulator->LoadState();
 		}
 	}
 }

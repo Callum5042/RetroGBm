@@ -29,6 +29,10 @@ public:
 
 	inline const TimerContext* GetContext() { return &m_Context; }
 
+	// Save state
+	void SaveState(std::fstream* file);
+	void LoadState(std::fstream* file);
+
 private:
 	TimerContext m_Context = {};
 

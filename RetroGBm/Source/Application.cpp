@@ -202,3 +202,19 @@ void Application::ReleaseCartridgeInfoWindow()
 {
 	m_CartridgeInfoWindow.release();
 }
+
+void Application::SaveState()
+{
+	if (m_Emulator->IsRunning())
+	{
+		m_Emulator->SaveState();
+	}
+}
+
+void Application::LoadState()
+{
+	if (m_Emulator->IsRunning())
+	{
+		m_Emulator->LoadState();
+	}
+}

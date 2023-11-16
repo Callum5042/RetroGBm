@@ -2,6 +2,7 @@
 
 #include <string>
 #include <filesystem>
+#include <fstream>
 #include <vector>
 
 enum class CartridgeType : uint8_t
@@ -58,7 +59,6 @@ struct CartridgeInfo
 
 	bool enabled_ram = false;
 	uint8_t rom_bank_controller = 1;
-	uint8_t* rom_bank_memory = nullptr;
 
 	uint8_t ram_bank_controller = 0;
 	std::vector<uint8_t> external_ram;
@@ -77,6 +77,10 @@ public:
 	void Write(uint16_t address, uint8_t value);
 
 	inline const CartridgeInfo* GetCartridgeInfo() { return &m_CartridgeInfo; }
+
+	// Save state
+	void SaveState(std::fstream* file);
+	void LoadState(std::fstream* file);
 
 private:
 	CartridgeInfo m_CartridgeInfo;
