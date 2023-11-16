@@ -440,7 +440,6 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 			}
 		}
 
-		std::cout << "Set RTC register\n";
 		return;
 	}
 
@@ -508,7 +507,9 @@ bool Cartridge::HasBattery()
 	{
 		case CartridgeType::MBC1_RAM_BATTERY: 
 		case CartridgeType::MBC3_RAM_BATTERY:
+		case CartridgeType::MBC3_TIMER_RAM_BATTERY:
 		case CartridgeType::MBC5_RAM_BATTERY:
+		case CartridgeType::MBC5_RUMBLE_RAM_BATTERY:
 			return true;
 		default: 
 			return false;
