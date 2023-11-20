@@ -1,10 +1,13 @@
 #include "Pch.h"
 #include "Ram.h"
 #include <algorithm>
+#include <iostream>
+#include <format>
 
 Ram::Ram()
 {
-	m_WorkRam.resize(0x2000);
+	// 32KB RAM (8 banks of 4KB)
+	m_WorkRam.resize(32768);
 	m_HighRam.resize(0x80);
 
 	// Set both WRAM and HRAM to default of 0
@@ -14,14 +17,37 @@ Ram::Ram()
 
 uint8_t Ram::ReadWorkRam(uint16_t address)
 {
-	address -= m_BaseWorkRamAddress;
-	return m_WorkRam[address];
+	if (address >= 0xC000 && address <= 0xCFFF)
+	{
+		return m_WorkRam[address - 0xC000];
+	}
+	else if (address >= 0xD000 && address <= 0xDFFF)
+	{
+		// Use banking
+		return m_WorkRam[(address - 0xD000) + (m_Bank * 4096)];
+	}
+	else
+	{
+		std::cout << std::format("Unsupported ReadWorkRam: 0x{:x}", address) << '\n';
+		return 0xFF;
+	}
 }
 
 void Ram::WriteWorkRam(uint16_t address, uint8_t value)
 {
-	address -= m_BaseWorkRamAddress;
-	m_WorkRam[address] = value;
+	if (address >= 0xC000 && address <= 0xCFFF)
+	{
+		m_WorkRam[address - 0xC000] = value;
+	}
+	else if (address >= 0xD000 && address <= 0xDFFF)
+	{
+		// Use banking
+		m_WorkRam[(address - 0xD000) + (m_Bank * 4096)] = value;
+	}
+	else
+	{
+		std::cout << std::format("Unsupported ReadWorkRam: 0x{:x}", address) << '\n';
+	}
 }
 
 uint8_t Ram::ReadHighRam(uint16_t address)
@@ -34,6 +60,15 @@ void Ram::WriteHighRam(uint16_t address, uint8_t value)
 {
 	address -= m_BaseHighRamAddress;
 	m_HighRam[address] = value;
+}
+
+void Ram::SetWorkRamBank(uint8_t value)
+{
+	m_Bank = value & 0b111;
+	if (m_Bank == 0)
+	{
+		m_Bank = 1;
+	}
 }
 
 void Ram::SaveState(std::fstream* file)

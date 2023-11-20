@@ -231,6 +231,11 @@ uint8_t Emulator::ReadIO(uint16_t address)
 		return m_Display->Read(address);
 	}
 
+	if (address == 0xFF70)
+	{
+		return m_Ram->GetWorkRamBank();
+	}
+
 	std::cout << "Unsupported ReadIO 0x" << std::hex << address << '\n';
 	return 0xFF;
 }
@@ -276,6 +281,12 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	if (((address >= 0xFF40) && (address <= 0xFF4B)))
 	{
 		m_Display->Write(address, value);
+		return;
+	}
+
+	if (address == 0xFF70)
+	{
+		m_Ram->SetWorkRamBank(value);
 		return;
 	}
 
