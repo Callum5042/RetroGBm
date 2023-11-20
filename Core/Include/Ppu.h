@@ -97,6 +97,9 @@ public:
 	void WriteVideoRam(uint16_t address, uint8_t value);
 	uint8_t ReadVideoRam(uint16_t address);
 
+	void SetVideoRamBank(uint8_t value);
+	inline uint8_t GetVideoRamBank() const { return m_VramBank; }
+
 	inline PpuContext* GetContext() { return &m_Context; }
 
 	const uint16_t ScreenResolutionY = 144;
@@ -145,4 +148,7 @@ private:
 
 	int m_FrameCount = 0;
 	float m_TimeElapsed = 0.0f;
+
+	// Bank
+	uint8_t m_VramBank = 0;
 };
