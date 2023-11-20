@@ -42,8 +42,18 @@ struct OamData
 struct OamPipelineData
 {
 	OamData* oam = nullptr;
-	uint8_t byte_low;
-	uint8_t byte_high;
+	uint8_t byte_low = 0;
+	uint8_t byte_high = 0;
+};
+
+struct BackgroundWindowAttribute
+{
+	uint8_t colour_palette;
+	uint8_t bank;
+
+	bool flip_x;
+	bool flip_y;
+	bool priority;
 };
 
 struct PipelineContext
@@ -53,6 +63,7 @@ struct PipelineContext
 	uint8_t pushed_x = 0;
 	uint8_t fetch_x = 0;
 
+	BackgroundWindowAttribute background_window_attribute;
 	uint8_t background_window_tile = 0;
 	uint8_t background_window_byte_low = 0;
 	uint8_t background_window_byte_high = 0;
@@ -96,6 +107,7 @@ public:
 	// VRAM
 	void WriteVideoRam(uint16_t address, uint8_t value);
 	uint8_t ReadVideoRam(uint16_t address);
+	uint8_t ReadVideoRam(uint16_t address, uint8_t bank);
 
 	void SetVideoRamBank(uint8_t value);
 	inline uint8_t GetVideoRamBank() const { return m_VramBank; }
