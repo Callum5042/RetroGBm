@@ -50,7 +50,6 @@ struct BackgroundWindowAttribute
 {
 	uint8_t colour_palette;
 	uint8_t bank;
-
 	bool flip_x;
 	bool flip_y;
 	bool priority;

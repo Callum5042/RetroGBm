@@ -372,11 +372,11 @@ void Ppu::LoadSpriteData(FetchTileByte tile_byte)
 
 		if (tile_byte == FetchTileByte::ByteLow)
 		{
-			m_Context.pipeline.fetched_entries[i].byte_low = m_Bus->ReadBus(0x8000 + (tile_index * 16) + tile_y + 0);
+			m_Context.pipeline.fetched_entries[i].byte_low = this->ReadVideoRam(0x8000 + (tile_index * 16) + tile_y + 0, m_Context.pipeline.fetched_entries[i].oam->bank);
 		}
 		else if (tile_byte == FetchTileByte::ByteHigh)
 		{
-			m_Context.pipeline.fetched_entries[i].byte_high = m_Bus->ReadBus(0x8000 + (tile_index * 16) + tile_y + 1);
+			m_Context.pipeline.fetched_entries[i].byte_high = this->ReadVideoRam(0x8000 + (tile_index * 16) + tile_y + 1, m_Context.pipeline.fetched_entries[i].oam->bank);
 		}
 	}
 }
@@ -454,7 +454,7 @@ void Ppu::PixelFetcher()
 			// Load sprite tile
 			if (m_Display->IsObjectEnabled())
 			{
-				//LoadSpriteTile();
+				LoadSpriteTile();
 			}
 
 			m_Context.pipeline.pipeline_state = FetchState::TileDataLow;
