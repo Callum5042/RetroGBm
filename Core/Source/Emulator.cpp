@@ -236,6 +236,11 @@ uint8_t Emulator::ReadIO(uint16_t address)
 		return m_Ppu->GetVideoRamBank();
 	}
 
+	if (address == 0xFF6C)
+	{
+		return m_Display->GetObjectPriorityMode();
+	}
+
 	if (address == 0xFF70)
 	{
 		return m_Ram->GetWorkRamBank();
@@ -292,6 +297,12 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	if (address == 0xFF4F)
 	{
 		m_Ppu->SetVideoRamBank(value);
+		return;
+	}
+
+	if (address == 0xFF6C)
+	{
+		m_Display->SetObjectPriorityMode(value);
 		return;
 	}
 

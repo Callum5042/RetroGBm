@@ -24,6 +24,8 @@ struct DisplayContext
 	uint32_t background_palette[4];
 	uint32_t sprite1_palette[4];
 	uint32_t sprite2_palette[4];
+
+	uint8_t priority_mode;
 };
 
 enum class LcdMode
@@ -51,6 +53,7 @@ public:
 	bool IsWindowEnabled();
 	bool IsBackgroundEnabled();
 	bool IsObjectEnabled();
+	bool IsObjectPriorityModeSet();
 
 	uint8_t GetObjectHeight();
 	uint16_t GetBackgroundTileBaseAddress();
@@ -64,6 +67,9 @@ public:
 
 	void SetLcdMode(LcdMode mode);
 	LcdMode GetLcdMode();
+
+	void SetObjectPriorityMode(uint8_t value);
+	inline uint8_t GetObjectPriorityMode() const { return m_Context.priority_mode; }
 
 	inline DisplayContext* GetContext() { return &m_Context; }
 

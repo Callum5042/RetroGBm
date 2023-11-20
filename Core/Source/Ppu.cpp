@@ -120,10 +120,13 @@ void Ppu::UpdateOam()
 		}
 
 		// Sort by priority and X position
-		std::sort(m_Context.objects_per_line.begin(), m_Context.objects_per_line.end(), [](const OamData& lhs, const OamData& rhs)
+		if (m_Display->IsObjectPriorityModeSet())
 		{
-			return (lhs.position_x < rhs.position_x);
-		});
+			std::sort(m_Context.objects_per_line.begin(), m_Context.objects_per_line.end(), [](const OamData& lhs, const OamData& rhs)
+			{
+				return (lhs.position_x < rhs.position_x);
+			});
+		}
 
 		// Limit to 10 per row
 		if (m_Context.objects_per_line.size() > 10)
@@ -239,12 +242,23 @@ uint32_t Ppu::FetchSpritePixels(uint32_t color, bool background_pixel_transparen
 {
 	for (int i = 0; i < m_Context.pipeline.fetched_entries.size(); i++)
 	{
-		// Background has priority and there is already a background pixel
-		bool priority = m_Context.pipeline.fetched_entries[i].oam->priority;
-		if (priority && !background_pixel_transparent)
+		// Object always have priority if the background is transparent
+		if (!background_pixel_transparent)
 		{
+			if (!m_Display->IsBackgroundEnabled())
+			{
+				goto draw;
+			}
+
+			if (!m_Context.pipeline.fetched_entries[i].oam->priority && !m_Context.pipeline.background_window_attribute.priority)
+			{
+				goto draw;
+			}
+
 			continue;
 		}
+
+	draw:
 
 		// Past pixel point already
 		int sprite_x = (m_Context.pipeline.fetched_entries[i].oam->position_x - 8) + ((m_Display->m_Context.scx % 8));
@@ -308,11 +322,6 @@ bool Ppu::PipelineAddPixel()
 		uint8_t palette_index = data_high | data_low;
 
 		uint32_t colour = m_Display->m_Context.background_palette[palette_index];
-
-		if (!m_Display->IsBackgroundEnabled())
-		{
-			colour = m_Display->m_Context.background_palette[0];
-		}
 
 		if (m_Display->IsObjectEnabled())
 		{
@@ -422,7 +431,6 @@ void Ppu::PixelFetcher()
 			m_Context.pipeline.fetched_entries.clear();
 
 			// Load background/window tile
-			if (m_Display->IsBackgroundEnabled())
 			{
 				uint16_t base_address = m_Display->GetBackgroundTileBaseAddress();
 

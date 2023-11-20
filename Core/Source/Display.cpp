@@ -285,6 +285,17 @@ bool Display::IsStatInterruptLYC()
 	return false;
 }
 
+void Display::SetObjectPriorityMode(uint8_t value)
+{
+	m_Context.priority_mode = value & 0x1;
+}
+
+bool Display::IsObjectPriorityModeSet()
+{
+	// 0 = CGB-style priority, 1 = DMG-style priority
+	return (m_Context.priority_mode & 0x1);	
+}
+
 void Display::SaveState(std::fstream* file)
 {
 	file->write(reinterpret_cast<const char*>(&m_Context), sizeof(DisplayContext));
