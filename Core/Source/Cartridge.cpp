@@ -7,6 +7,7 @@
 #include <iostream>
 #include <format>
 #include <string>
+#include <numeric>
 #undef max
 
 namespace
@@ -215,6 +216,10 @@ bool Cartridge::Load(const std::string& filepath)
 	m_CartridgeInfo.title.resize(16);
 	std::copy(m_CartridgeInfo.data.data() + 0x0134, m_CartridgeInfo.data.data() + 0x0144, m_CartridgeInfo.title.data());
 
+	// Compute title checksum
+	m_TitleChecksum = std::accumulate(m_CartridgeInfo.title.begin(), m_CartridgeInfo.title.end(), 0);
+
+	// Trim null-terminated char
 	if (m_CartridgeInfo.title.find('\0') != std::string::npos)
 	{
 		m_CartridgeInfo.title.erase(m_CartridgeInfo.title.find('\0'));
@@ -259,9 +264,14 @@ bool Cartridge::Load(const std::string& filepath)
 	// TODO
 
 	// Old licensee code
-	uint8_t license_code = m_CartridgeInfo.data[0x014B];
-	m_CartridgeInfo.header.license_code = license_code;
-	m_CartridgeInfo.header.license = ::license_codes[license_code];
+	uint8_t old_licensee_code = m_CartridgeInfo.data[0x014B];
+	m_CartridgeInfo.header.old_licensee_code = old_licensee_code;
+	m_CartridgeInfo.header.old_licensee = ::license_codes[old_licensee_code];
+
+	// New licensee code
+	uint8_t new_licensee_code = m_CartridgeInfo.data[0x0144];
+	m_CartridgeInfo.header.new_licensee_code = new_licensee_code;
+	m_CartridgeInfo.header.new_licensee = ::license_codes[new_licensee_code];
 
 	// Version
 	m_CartridgeInfo.header.version = m_CartridgeInfo.data[0x014C];

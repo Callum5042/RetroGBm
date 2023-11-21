@@ -24,10 +24,10 @@ Emulator::Emulator()
 {
 	Instance = this;
 
-	m_Cpu = std::make_unique<Cpu>();
+	m_Cartridge = std::make_unique<Cartridge>();
+	m_Cpu = std::make_unique<Cpu>(m_Cartridge.get());
 	m_Timer = std::make_unique<Timer>();
 	m_Ram = std::make_unique<Ram>();
-	m_Cartridge = std::make_unique<Cartridge>();
 	m_Display = std::make_unique<Display>();
 	m_Ppu = std::make_unique<Ppu>();
 	m_Dma = std::make_unique<Dma>();
@@ -50,24 +50,7 @@ bool Emulator::LoadRom(const std::string& path)
 		return false;
 	}
 
-	uint8_t checksum_result = 0;
-	bool checksum = m_Cartridge->Checksum(&checksum_result);
-
-	// Set program counter to 0x100 to skip boot rom
-	m_Cpu->ProgramCounter = 0x100;
-
-	// Default flags based on the cartridge info
-	if (checksum_result == 0x0)
-	{
-		m_Cpu->SetFlag(CpuFlag::Carry, false);
-		m_Cpu->SetFlag(CpuFlag::HalfCarry, false);
-	}
-	else
-	{
-		m_Cpu->SetFlag(CpuFlag::Carry, true);
-		m_Cpu->SetFlag(CpuFlag::HalfCarry, true);
-	}
-
+	m_Cpu->Init();
 	m_Timer->Init();
 	m_Ppu->Init();
 
