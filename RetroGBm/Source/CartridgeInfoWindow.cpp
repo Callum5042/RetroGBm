@@ -70,7 +70,7 @@ void CartridgeInfoWindow::Create(const std::string& title, int width, int height
 	content.push_back({ L"Title", ConvertToWString(info->title) });
 	content.push_back({ L"Cartridge", ConvertToWString(info->header.cartridge_type) });
 	content.push_back({ L"Manufacturer", ConvertToWString(info->header.manufacturer_code) });
-	content.push_back({ L"Licensee", ConvertToWString(info->header.license) });
+	content.push_back({ L"Old Licensee", ConvertToWString(info->header.old_licensee) });
 	content.push_back({ L"ROM size", std::to_wstring(info->header.rom_size) });
 	content.push_back({ L"RAM size", std::to_wstring(info->header.ram_size) });
 	content.push_back({ L"Colour mode", ConvertToWString(cartridge->GetColourMode()) });

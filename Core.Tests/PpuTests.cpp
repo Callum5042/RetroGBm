@@ -3,6 +3,7 @@
 #include <Ppu.h>
 #include <Cpu.h>
 #include <Emulator.h>
+#include <Cartridge.h>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -26,8 +27,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
+			Cartridge cartridge;
 
-			Ppu ppu(&bus, &cpu, &display);
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 
 			// Act
 			ppu.Init();
@@ -36,7 +38,7 @@ namespace CoreTests
 			Assert::AreEqual(static_cast<int>(LcdMode::OAM), static_cast<int>(display.GetLcdMode()));
 			Assert::AreEqual(0, static_cast<int>(ppu.GetContext()->dot_ticks));
 
-			Assert::AreEqual(0x2000, static_cast<int>(ppu.GetContext()->video_ram.size()));
+			Assert::AreEqual(0x4000, static_cast<int>(ppu.GetContext()->video_ram.size()));
 			Assert::AreEqual(static_cast<int>(144 * 160), static_cast<int>(ppu.GetContext()->video_buffer.size()));
 			Assert::AreEqual(static_cast<int>(40), static_cast<int>(ppu.GetContext()->oam_ram.size()));
 		}
@@ -47,8 +49,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
+			Cartridge cartridge;
 
-			Ppu ppu(&bus, &cpu, &display);
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
 
 			// Act
@@ -68,8 +71,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
+			Cartridge cartridge;
 
-			Ppu ppu(&bus, &cpu, &display);
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
 
 			// Act
@@ -90,8 +94,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
+			Cartridge cartridge;
 
-			Ppu ppu(&bus, &cpu, &display);
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
 
 			// Act
@@ -114,8 +119,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
+			Cartridge cartridge;
 
-			Ppu ppu(&bus, &cpu, &display);
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
 
 			const_cast<DisplayContext*>(display.GetContext())->ly = 144;
@@ -139,8 +145,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
+			Cartridge cartridge;
 
-			Ppu ppu(&bus, &cpu, &display);
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
 
 			const_cast<DisplayContext*>(display.GetContext())->ly = 144;
@@ -186,7 +193,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
-			Ppu ppu(&bus, &cpu, &display);
+			Cartridge cartridge;
+
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
 			const_cast<DisplayContext*>(display.GetContext())->ly = 0;
 
@@ -223,7 +232,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
-			Ppu ppu(&bus, &cpu, &display);
+			Cartridge cartridge;
+
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
 			const_cast<DisplayContext*>(display.GetContext())->ly = 0;
 
@@ -242,6 +253,66 @@ namespace CoreTests
 			// Assert
 			Assert::AreEqual(10, static_cast<int>(ppu.GetContext()->objects_per_line.size()));
 			Assert::AreEqual(10, static_cast<int>(ppu.GetContext()->objects_per_line[9].position_x));
+		}
+
+		TEST_METHOD(SetVideoRamBank_IgnoreAllBitsButBitZero)
+		{
+			// Arrange
+			Cpu cpu;
+			Display display;
+			NullBus bus;
+			Cartridge cartridge;
+
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
+
+			// Act
+			ppu.SetVideoRamBank(3);
+
+			// Assert
+			Assert::AreEqual(1, static_cast<int>(ppu.GetVideoRamBank()));
+		}
+
+		TEST_METHOD(WriteVideoRam_VRamBank0Selected_WriteDataToFirstBank)
+		{
+			// Arrange
+			Cpu cpu;
+			Display display;
+			NullBus bus;
+			Cartridge cartridge;
+
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
+			ppu.Init();
+			ppu.SetVideoRamBank(0);
+
+			// Act
+			ppu.WriteVideoRam(0x8000, 0xAA);
+
+			// Assert
+			uint8_t result = ppu.ReadVideoRam(0x8000);
+			Assert::AreEqual(0xAA, static_cast<int>(result));
+			Assert::AreEqual(0xAA, static_cast<int>(ppu.GetContext()->video_ram[0]));
+		}
+
+		TEST_METHOD(WriteVideoRam_VRamBank1Selected_WriteDataToFirstBank)
+		{
+			// Arrange
+			Cpu cpu;
+			Display display;
+			NullBus bus;
+			Cartridge cartridge;
+
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
+			ppu.Init();
+			ppu.SetVideoRamBank(1);
+
+			// Act
+			ppu.WriteVideoRam(0x8000, 0xAA);
+
+			// Assert
+			uint8_t result = ppu.ReadVideoRam(0x8000);
+			Assert::AreEqual(0xAA, static_cast<int>(result));
+			Assert::AreEqual(0x0, static_cast<int>(ppu.GetContext()->video_ram[0]));
+			Assert::AreEqual(0xAA, static_cast<int>(ppu.GetContext()->video_ram[8192]));
 		}
 
 	private:

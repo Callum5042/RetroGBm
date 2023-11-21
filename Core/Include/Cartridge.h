@@ -53,8 +53,14 @@ struct CartridgeHeader
 	int rom_banks = 0;
 	int ram_size = 0;
 	int version = 0;
-	int license_code = 0;
-	std::string license;
+
+	int old_licensee_code = 0;
+	std::string old_licensee;
+
+	int new_licensee_code = 0;
+	std::string new_licensee;
+
+
 	std::vector<uint8_t> nintendo_logo;
 	ColourMode colour_mode = ColourMode::DMG;
 };
@@ -87,6 +93,9 @@ public:
 	inline const CartridgeInfo* GetCartridgeInfo() { return &m_CartridgeInfo; }
 
 	std::string GetColourMode() const;
+	inline bool IsColourModeDMG() const { return m_CartridgeInfo.header.colour_mode == ColourMode::DMG; }
+
+	inline uint8_t GetTitleChecksum() const { return m_TitleChecksum; }
 
 	// Save state
 	void SaveState(std::fstream* file);
@@ -100,4 +109,6 @@ private:
 	bool IsMBC5();
 
 	bool HasBattery();
+
+	uint8_t m_TitleChecksum = 0;
 };

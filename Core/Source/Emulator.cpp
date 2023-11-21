@@ -24,10 +24,10 @@ Emulator::Emulator()
 {
 	Instance = this;
 
-	m_Cpu = std::make_unique<Cpu>();
+	m_Cartridge = std::make_unique<Cartridge>();
+	m_Cpu = std::make_unique<Cpu>(m_Cartridge.get());
 	m_Timer = std::make_unique<Timer>();
 	m_Ram = std::make_unique<Ram>();
-	m_Cartridge = std::make_unique<Cartridge>();
 	m_Display = std::make_unique<Display>();
 	m_Ppu = std::make_unique<Ppu>();
 	m_Dma = std::make_unique<Dma>();
@@ -50,24 +50,7 @@ bool Emulator::LoadRom(const std::string& path)
 		return false;
 	}
 
-	uint8_t checksum_result = 0;
-	bool checksum = m_Cartridge->Checksum(&checksum_result);
-
-	// Set program counter to 0x100 to skip boot rom
-	m_Cpu->ProgramCounter = 0x100;
-
-	// Default flags based on the cartridge info
-	if (checksum_result == 0x0)
-	{
-		m_Cpu->SetFlag(CpuFlag::Carry, false);
-		m_Cpu->SetFlag(CpuFlag::HalfCarry, false);
-	}
-	else
-	{
-		m_Cpu->SetFlag(CpuFlag::Carry, true);
-		m_Cpu->SetFlag(CpuFlag::HalfCarry, true);
-	}
-
+	m_Cpu->Init();
 	m_Timer->Init();
 	m_Ppu->Init();
 
@@ -231,7 +214,27 @@ uint8_t Emulator::ReadIO(uint16_t address)
 		return m_Display->Read(address);
 	}
 
-	std::cout << "Unsupported ReadBus 0x" << std::hex << address << '\n';
+	if (address == 0xFF4F)
+	{
+		return m_Ppu->GetVideoRamBank();
+	}
+
+	if (address == 0xFF55)
+	{
+		return m_Dma->GetLengthModeStart();
+	}
+
+	if (address == 0xFF6C)
+	{
+		return m_Display->GetObjectPriorityMode();
+	}
+
+	if (address == 0xFF70)
+	{
+		return m_Ram->GetWorkRamBank();
+	}
+
+	std::cout << "Unsupported ReadIO 0x" << std::hex << address << '\n';
 	return 0xFF;
 }
 
@@ -279,37 +282,77 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 		return;
 	}
 
-	std::cout << "Unsupported WriteBus 0x" << std::hex << address << '\n';
+	if (address == 0xFF4F)
+	{
+		m_Ppu->SetVideoRamBank(value);
+		return;
+	}
+
+	if (address == 0xFF51 || address == 0xFF52)
+	{
+		m_Dma->SetSource(address, value);
+		return;
+	}
+	else if (address == 0xFF53 || address == 0xFF54)
+	{
+		m_Dma->SetDestination(address, value);
+		return;
+	}
+	else if (address == 0xFF55)
+	{
+		m_Dma->StartCGB(value);
+		return;
+	}
+
+	if (address >= 0xFF68 && address <= 0xFF6B)
+	{
+		m_Display->Write(address, value);
+		return;
+	}
+
+	if (address == 0xFF6C)
+	{
+		m_Display->SetObjectPriorityMode(value);
+		return;
+	}
+
+	if (address == 0xFF70)
+	{
+		m_Ram->SetWorkRamBank(value);
+		return;
+	}
+
+	std::cout << "Unsupported WriteIO 0x" << std::hex << address << '\n';
 }
 
 uint8_t Emulator::ReadBus(uint16_t address)
 {
-	if (address < 0x8000)
+	if (address >= 0x0000 && address <= 0x7FFF)
 	{
 		// ROM Data
 		return m_Cartridge->Read(address);
 	}
-	else if (address < 0xA000)
+	else if (address >= 0x8000 && address <= 0x9FFF)
 	{
-		// Char/Map Data
+		// VRAM (Video RAM)
 		return m_Ppu->ReadVideoRam(address);
 	}
-	else if (address < 0xC000)
+	else if (address >= 0xA000 && address <= 0xBFFF)
 	{
 		// Cartridge RAM
 		return m_Cartridge->Read(address);
 	}
-	else if (address < 0xE000)
+	else if (address >= 0xC000 && address <= 0xDFFF)
 	{
-		// WRAM (Working RAM)
+		// WRAM (Work RAM)
 		return m_Ram->ReadWorkRam(address);
 	}
-	else if (address < 0xFE00)
+	else if (address >= 0xE000 && address <= 0xFDFF)
 	{
-		// Reserved echo ram
+		// Reserved echo RAM
 		return 0;
 	}
-	else if (address < 0xFEA0)
+	else if (address >= 0xFE00 && address <= 0xFE9F)
 	{
 		// OAM
 		if (m_Dma->IsTransferring())
@@ -319,15 +362,20 @@ uint8_t Emulator::ReadBus(uint16_t address)
 
 		return m_Ppu->ReadOam(address);
 	}
-	else if (address < 0xFF00)
+	else if (address >= 0xFEA0 && address <= 0xFEFF)
 	{
 		// Reserved unusable
 		return 0;
 	}
-	else if (address < 0xFF80)
+	else if (address >= 0xFF00 && address <= 0xFF7F)
 	{
 		// IO Registers
 		return this->ReadIO(address);
+	}
+	else if (address >= 0xFF80 && address <= 0xFFFE)
+	{
+		// HRAM (High RAM)
+		return m_Ram->ReadHighRam(address);
 	}
 	else if (address == 0xFFFF)
 	{
@@ -335,36 +383,41 @@ uint8_t Emulator::ReadBus(uint16_t address)
 		return m_Cpu->GetInterruptEnable();
 	}
 
-	return m_Ram->ReadHighRam(address);
+	std::cout << std::format("Unsupported ReadBus: 0x{:x}", address) << '\n';
+	return 0xFF;
 }
 
 void Emulator::WriteBus(uint16_t address, uint8_t value)
 {
-	if (address < 0x8000)
+	if (address >= 0x0000 && address <= 0x7FFF)
 	{
 		// ROM Data
 		m_Cartridge->Write(address, value);
+		return;
 	}
-	else if (address < 0xA000)
+	else if (address >= 0x8000 && address <= 0x9FFF)
 	{
-		// Char/Map Data
+		// VRAM (Video RAM)
 		m_Ppu->WriteVideoRam(address, value);
+		return;
 	}
-	else if (address < 0xC000)
+	else if (address >= 0xA000 && address <= 0xBFFF)
 	{
-		// EXT-RAM
+		// Cartridge RAM
 		m_Cartridge->Write(address, value);
+		return;
 	}
-	else if (address < 0xE000)
+	else if (address >= 0xC000 && address <= 0xDFFF)
 	{
-		// WRAM
+		// WRAM (Work RAM)
 		m_Ram->WriteWorkRam(address, value);
+		return;
 	}
-	else if (address < 0xFE00)
+	else if (address >= 0xE000 && address <= 0xFDFF)
 	{
 		// Reserved echo ram
 	}
-	else if (address < 0xFEA0)
+	else if (address >= 0xFE00 && address <= 0xFE9F)
 	{
 		// OAM
 		if (m_Dma->IsTransferring())
@@ -373,25 +426,32 @@ void Emulator::WriteBus(uint16_t address, uint8_t value)
 		}
 
 		m_Ppu->WriteOam(address, value);
+		return;
 	}
-	else if (address < 0xFF00)
+	else if (address >= 0xFEA0 && address <= 0xFEFF)
 	{
 		// Unusable reserved
+		return;
 	}
-	else if (address < 0xFF80)
+	else if (address >= 0xFF00 && address <= 0xFF7F)
 	{
 		// IO Registers
-		return this->WriteIO(address, value);
+		this->WriteIO(address, value);
+		return;
+	}
+	else if (address >= 0xFF80 && address <= 0xFFFE)
+	{
+		m_Ram->WriteHighRam(address, value);
+		return;
 	}
 	else if (address == 0xFFFF)
 	{
 		// CPU interrupts
 		m_Cpu->SetInterruptEnable(value);
+		return;
 	}
-	else
-	{
-		m_Ram->WriteHighRam(address, value);
-	}
+
+	std::cout << std::format("Unsupported WriteBus: 0x{:x}", address) << '\n';
 }
 
 uint16_t Emulator::ReadBus16(uint16_t address)
@@ -445,6 +505,7 @@ void Emulator::SaveState()
 
 	m_Display->SaveState(&file);
 	m_Ppu->SaveState(&file);
+	m_Dma->SaveState(&file);
 }
 
 void Emulator::LoadState()
@@ -459,4 +520,5 @@ void Emulator::LoadState()
 
 	m_Display->LoadState(&file);
 	m_Ppu->LoadState(&file);
+	m_Dma->LoadState(&file);
 }

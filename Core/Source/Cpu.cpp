@@ -2,22 +2,60 @@
 #include "Cpu.h"
 #include "Emulator.h"
 #include "Instructions.h"
+#include "Cartridge.h"
 #include <exception>
 #include <sstream>
 #include <format>
 
 Cpu::Cpu()
 {
-	SetRegister(RegisterType8::REG_A, 0x1);
-	SetRegister(RegisterType8::REG_F, 0x0);
-	SetRegister(RegisterType8::REG_B, 0x0);
-	SetRegister(RegisterType8::REG_C, 0x13);
-	SetRegister(RegisterType8::REG_D, 0x0);
-	SetRegister(RegisterType8::REG_E, 0xD8);
-	SetRegister(RegisterType8::REG_H, 0x1);
-	SetRegister(RegisterType8::REG_L, 0x4D);
+	m_Cartridge = Emulator::Instance->GetCartridge();
+}
 
+Cpu::Cpu(Cartridge* cartridge) : m_Cartridge(cartridge)
+{
+}
+
+void Cpu::Init()
+{
+	ProgramCounter = 0x100;
 	SetRegister(RegisterType16::REG_SP, 0xFFFE);
+
+	if (m_Cartridge->IsColourModeDMG())
+	{
+		SetRegister(RegisterType8::REG_A, 0x11);
+		SetRegister(RegisterType8::REG_F, 0x0);
+		SetRegister(RegisterType8::REG_B, 0x0);
+		SetRegister(RegisterType8::REG_C, 0x0);
+		SetRegister(RegisterType8::REG_D, 0x0);
+		SetRegister(RegisterType8::REG_E, 0x08);
+		SetRegister(RegisterType8::REG_H, 0x0);
+		SetRegister(RegisterType8::REG_L, 0x7C);
+
+		const CartridgeInfo* info = m_Cartridge->GetCartridgeInfo();
+		if (info->header.old_licensee_code == 0x01 || (info->header.old_licensee_code == 0x33 && info->header.new_licensee_code == 0x01))
+		{
+			uint8_t checksum = m_Cartridge->GetTitleChecksum();
+			SetRegister(RegisterType8::REG_B, checksum);
+
+			if (checksum == 0x43 || checksum == 0x58)
+			{
+				SetRegister(RegisterType8::REG_H, 0x99);
+				SetRegister(RegisterType8::REG_L, 0x1A);
+			}
+		}
+	}
+	else
+	{
+		SetRegister(RegisterType8::REG_A, 0x11);
+		SetRegister(RegisterType8::REG_F, 0x0);
+		SetRegister(RegisterType8::REG_B, 0x0);
+		SetRegister(RegisterType8::REG_C, 0x0);
+		SetRegister(RegisterType8::REG_D, 0xFF);
+		SetRegister(RegisterType8::REG_E, 0x56);
+		SetRegister(RegisterType8::REG_H, 0x0);
+		SetRegister(RegisterType8::REG_L, 0x0D);
+	}
 
 	SetFlag(CpuFlag::Zero, true);
 	SetFlag(CpuFlag::Subtraction, false);

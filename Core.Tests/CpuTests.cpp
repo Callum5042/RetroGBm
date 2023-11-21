@@ -1,5 +1,6 @@
 #include "CppUnitTest.h"
 #include <Cpu.h>
+#include <Cartridge.h>
 #include <vector>
 #include <tuple>
 
@@ -10,31 +11,11 @@ namespace CoreTests
 	TEST_CLASS(CpuTests)
 	{
 	public:
-
-		TEST_METHOD(CpuConstructor_SetDefaultValues)
-		{
-			// Act
-			Cpu _cpu;
-
-			// Assert
-			Assert::AreEqual(0x1, static_cast<int>(_cpu.GetRegister(RegisterType8::REG_A)));
-			Assert::AreEqual(0x0, static_cast<int>(_cpu.GetRegister(RegisterType8::REG_B)));
-			Assert::AreEqual(0x13, static_cast<int>(_cpu.GetRegister(RegisterType8::REG_C)));
-			Assert::AreEqual(0x0, static_cast<int>(_cpu.GetRegister(RegisterType8::REG_D)));
-			Assert::AreEqual(0xD8, static_cast<int>(_cpu.GetRegister(RegisterType8::REG_E)));
-			Assert::AreEqual(0x1, static_cast<int>(_cpu.GetRegister(RegisterType8::REG_H)));
-			Assert::AreEqual(0x4D, static_cast<int>(_cpu.GetRegister(RegisterType8::REG_L)));
-
-			Assert::AreEqual(0xFFFE, static_cast<int>(_cpu.GetRegister(RegisterType16::REG_SP)));
-
-			Assert::IsTrue(_cpu.GetFlag(CpuFlag::Zero));
-			Assert::IsFalse(_cpu.GetFlag(CpuFlag::Subtraction));
-		}
-
 		TEST_METHOD(SetRegister_RegA_ValueIs100)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 
 			// Act
 			_cpu.SetRegister(RegisterType8::REG_A, 100);
@@ -47,7 +28,8 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegF_ValueIs100_LowerNibbleOfByteNotSet)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 
 			// Act
 			_cpu.SetRegister(RegisterType8::REG_F, 100);
@@ -60,7 +42,8 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegB_ValueIs100)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 
 			// Act
 			_cpu.SetRegister(RegisterType8::REG_B, 100);
@@ -73,7 +56,8 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegC_ValueIs100)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 
 			// Act
 			_cpu.SetRegister(RegisterType8::REG_C, 100);
@@ -86,7 +70,8 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegD_ValueIs100)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 
 			// Act
 			_cpu.SetRegister(RegisterType8::REG_D, 100);
@@ -99,7 +84,8 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegE_ValueIs100)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 
 			// Act
 			_cpu.SetRegister(RegisterType8::REG_E, 100);
@@ -112,7 +98,8 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegH_ValueIs100)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 
 			// Act
 			_cpu.SetRegister(RegisterType8::REG_H, 100);
@@ -125,7 +112,8 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegL_ValueIs100)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 
 			// Act
 			_cpu.SetRegister(RegisterType8::REG_L, 100);
@@ -138,7 +126,8 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegBC_SetRegisterB_SRegisterC)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 
 			uint16_t data = 12000;
 			uint8_t high_data = data >> 8;
@@ -161,7 +150,8 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegDE_SetRegisterD_SRegisterE)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 
 			uint16_t data = 12000;
 			uint8_t high_data = data >> 8;
@@ -184,7 +174,8 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegHL_SetRegisterH_SRegisterL)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 
 			uint16_t data = 12000;
 			uint8_t high_data = data >> 8;
@@ -207,7 +198,8 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagZero_FlagIsTrue)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 
 			// Act
 			_cpu.SetFlag(CpuFlag::Zero, true);
@@ -223,7 +215,8 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagZero_FlagIsFalse)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 
 			// Act
 			_cpu.SetFlag(CpuFlag::Zero, false);
@@ -239,7 +232,8 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagZero_RegisterFHasData_FlagIsTrue)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 			_cpu.SetRegister(RegisterType8::REG_F, 255);
 
 			// Act
@@ -253,7 +247,8 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagSubtraction_FlagIsTrue)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 
 			// Act
 			_cpu.SetFlag(CpuFlag::Subtraction, true);
@@ -269,7 +264,8 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagSubtraction_FlagIsFalse)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 			_cpu.SetRegister(RegisterType8::REG_F, 0x0);
 
 			// Act
@@ -286,7 +282,8 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagSubtraction_RegisterFHasData_FlagIsTrue)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 			_cpu.SetRegister(RegisterType8::REG_F, 255);
 
 			// Act
@@ -300,7 +297,8 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagHalfCarry_FlagIsTrue)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 
 			// Act
 			_cpu.SetFlag(CpuFlag::HalfCarry, true);
@@ -316,7 +314,8 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagHalfCarry_FlagIsFalse)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 			_cpu.SetRegister(RegisterType8::REG_F, 0x0);
 
 			// Act
@@ -333,7 +332,8 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagHalfCarry_RegisterFHasData_FlagIsTrue)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 			_cpu.SetRegister(RegisterType8::REG_F, 255);
 
 			// Act
@@ -344,11 +344,11 @@ namespace CoreTests
 			Assert::IsTrue(flag);
 		}
 
-		// TODO
 		TEST_METHOD(SetFlag_FlagCarry_FlagIsTrue)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 
 			// Act
 			_cpu.SetFlag(CpuFlag::Carry, true);
@@ -364,7 +364,8 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagCarry_FlagIsFalse)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 			_cpu.SetRegister(RegisterType8::REG_F, 0x0);
 
 			// Act
@@ -381,7 +382,8 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagIsSet_SetToFalse)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 			_cpu.SetRegister(RegisterType8::REG_F, 0x0);
 			_cpu.SetFlag(CpuFlag::Carry, true);
 
@@ -399,7 +401,8 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagCarry_RegisterFHasData_FlagIsTrue)
 		{
 			// Arrange
-			Cpu _cpu;
+			Cartridge cartridge;
+			Cpu _cpu(&cartridge);
 			_cpu.SetRegister(RegisterType8::REG_F, 255);
 
 			// Act

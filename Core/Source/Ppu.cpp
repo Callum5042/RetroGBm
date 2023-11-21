@@ -3,6 +3,7 @@
 #include "Cpu.h"
 #include "Display.h"
 #include "Emulator.h"
+#include "Cartridge.h"
 #include <algorithm>
 #include <chrono>
 #include <thread>
@@ -12,9 +13,10 @@ Ppu::Ppu()
 	m_Bus = Emulator::Instance;
 	m_Cpu = Emulator::Instance->GetCpu();
 	m_Display = Emulator::Instance->GetDisplay();
+	m_Cartridge = Emulator::Instance->GetCartridge();
 }
 
-Ppu::Ppu(IBus* bus, Cpu* cpu, Display* display) : m_Bus(bus), m_Cpu(cpu), m_Display(display)
+Ppu::Ppu(IBus* bus, Cpu* cpu, Display* display, Cartridge* cartridge) : m_Bus(bus), m_Cpu(cpu), m_Display(display), m_Cartridge(cartridge)
 {
 }
 
@@ -23,7 +25,7 @@ void Ppu::Init()
 	m_Context.video_buffer.resize(ScreenResolutionY * ScreenResolutionX);
 	std::fill(m_Context.video_buffer.begin(), m_Context.video_buffer.end(), 0x0);
 
-	m_Context.video_ram.resize(0x2000);
+	m_Context.video_ram.resize(16384);
 	std::fill(m_Context.video_ram.begin(), m_Context.video_ram.end(), 0x0);
 
 	m_Display->Init();
@@ -77,12 +79,22 @@ uint8_t Ppu::ReadOam(uint16_t address)
 
 void Ppu::WriteVideoRam(uint16_t address, uint8_t value)
 {
-	m_Context.video_ram[address - 0x8000] = value;
+	m_Context.video_ram[(address - 0x8000) + (m_VramBank * 8192)] = value;
 }
 
 uint8_t Ppu::ReadVideoRam(uint16_t address)
 {
-	return m_Context.video_ram[address - 0x8000];
+	return m_Context.video_ram[(address - 0x8000) + (m_VramBank * 8192)];
+}
+
+uint8_t Ppu::ReadVideoRam(uint16_t address, uint8_t bank)
+{
+	return m_Context.video_ram[(address - 0x8000) + (bank * 8192)];
+}
+
+void Ppu::SetVideoRamBank(uint8_t value)
+{
+	m_VramBank = value & 0b1;
 }
 
 void Ppu::UpdateOam()
@@ -110,10 +122,13 @@ void Ppu::UpdateOam()
 		}
 
 		// Sort by priority and X position
-		std::sort(m_Context.objects_per_line.begin(), m_Context.objects_per_line.end(), [](const OamData& lhs, const OamData& rhs)
+		if (m_Cartridge->IsColourModeDMG() || m_Display->IsObjectPriorityModeSet())
 		{
-			return (lhs.position_x < rhs.position_x);
-		});
+			std::sort(m_Context.objects_per_line.begin(), m_Context.objects_per_line.end(), [](const OamData& lhs, const OamData& rhs)
+			{
+				return (lhs.position_x < rhs.position_x);
+			});
+		}
 
 		// Limit to 10 per row
 		if (m_Context.objects_per_line.size() > 10)
@@ -229,12 +244,23 @@ uint32_t Ppu::FetchSpritePixels(uint32_t color, bool background_pixel_transparen
 {
 	for (int i = 0; i < m_Context.pipeline.fetched_entries.size(); i++)
 	{
-		// Background has priority and there is already a background pixel
-		bool priority = m_Context.pipeline.fetched_entries[i].oam->priority;
-		if (priority && !background_pixel_transparent)
+		// Object always have priority if the background is transparent
+		if (!background_pixel_transparent)
 		{
+			if (!m_Display->IsBackgroundEnabled())
+			{
+				goto draw;
+			}
+
+			if (!m_Context.pipeline.fetched_entries[i].oam->priority && !m_Context.pipeline.background_window_attribute.priority)
+			{
+				goto draw;
+			}
+
 			continue;
 		}
+
+	draw:
 
 		// Past pixel point already
 		int sprite_x = (m_Context.pipeline.fetched_entries[i].oam->position_x - 8) + ((m_Display->m_Context.scx % 8));
@@ -262,7 +288,10 @@ uint32_t Ppu::FetchSpritePixels(uint32_t color, bool background_pixel_transparen
 		}
 
 		// Select pixel colour
-		return (m_Context.pipeline.fetched_entries[i].oam->dmg_palette) ? m_Display->m_Context.sprite2_palette[palette_index] : m_Display->m_Context.sprite1_palette[palette_index];
+		uint8_t palette = m_Context.pipeline.fetched_entries[i].oam->gcb_palette;
+		return m_Display->GetColourFromObjectPalette(palette, palette_index);
+
+		// return (m_Context.pipeline.fetched_entries[i].oam->dmg_palette) ? m_Display->m_Context.sprite2_palette[palette_index] : m_Display->m_Context.sprite1_palette[palette_index];
 	}
 
 	return color;
@@ -285,18 +314,22 @@ bool Ppu::PipelineAddPixel()
 
 	for (int bit = 7; bit >= 0; bit--)
 	{
-		// Decode and get pixel colour from palette
-		uint8_t data_high = (static_cast<bool>(m_Context.pipeline.background_window_byte_low & (1 << bit))) << 0;
-		uint8_t data_low = (static_cast<bool>(m_Context.pipeline.background_window_byte_high & (1 << bit))) << 1;
-		uint8_t palette_index = data_high | data_low;
-
-		uint32_t colour = m_Display->m_Context.background_palette[palette_index];
-
-		if (!m_Display->IsBackgroundEnabled())
+		// Check for flip X
+		uint8_t offset = bit;
+		if (m_Context.pipeline.background_window_attribute.flip_x)
 		{
-			colour = m_Display->m_Context.background_palette[0];
+			offset = 7 - bit;
 		}
 
+		// Decode and get pixel colour from palette
+		uint8_t data_high = (static_cast<bool>(m_Context.pipeline.background_window_byte_low & (1 << (offset)))) << 0;
+		uint8_t data_low = (static_cast<bool>(m_Context.pipeline.background_window_byte_high & (1 << (offset)))) << 1;
+		uint8_t palette_index = data_high | data_low;
+
+		// uint32_t colour = m_Display->m_Context.background_palette[palette_index];
+		uint8_t palette = m_Context.pipeline.background_window_attribute.colour_palette;
+		uint32_t colour = m_Display->GetColourFromBackgroundPalette(palette, palette_index);
+		
 		if (m_Display->IsObjectEnabled())
 		{
 			bool background_transparent = (palette_index == 0);
@@ -355,11 +388,11 @@ void Ppu::LoadSpriteData(FetchTileByte tile_byte)
 
 		if (tile_byte == FetchTileByte::ByteLow)
 		{
-			m_Context.pipeline.fetched_entries[i].byte_low = m_Bus->ReadBus(0x8000 + (tile_index * 16) + tile_y + 0);
+			m_Context.pipeline.fetched_entries[i].byte_low = this->ReadVideoRam(0x8000 + (tile_index * 16) + tile_y + 0, m_Context.pipeline.fetched_entries[i].oam->bank);
 		}
 		else if (tile_byte == FetchTileByte::ByteHigh)
 		{
-			m_Context.pipeline.fetched_entries[i].byte_high = m_Bus->ReadBus(0x8000 + (tile_index * 16) + tile_y + 1);
+			m_Context.pipeline.fetched_entries[i].byte_high = this->ReadVideoRam(0x8000 + (tile_index * 16) + tile_y + 1, m_Context.pipeline.fetched_entries[i].oam->bank);
 		}
 	}
 }
@@ -376,13 +409,22 @@ void Ppu::LoadWindowTile()
 
 			// Fetch tile
 			uint16_t base_address = m_Display->GetWindowTileBaseAddress();
-			m_Context.pipeline.background_window_tile = m_Bus->ReadBus(base_address + (position_x >> 3) + ((position_y >> 3) * 32));
+			m_Context.pipeline.background_window_tile = this->ReadVideoRam(base_address + (position_x >> 3) + ((position_y >> 3) * 32));
 
 			// Check if we are getting tiles from block 1
 			if (m_Display->GetBackgroundAndWindowTileData() == 0x8800)
 			{
 				m_Context.pipeline.background_window_tile += 128;
 			}
+
+			// Fetch attributes
+			uint8_t attribute = this->ReadVideoRam(base_address + (position_x >> 3) + ((position_y >> 3) * 32), 1);
+
+			m_Context.pipeline.background_window_attribute.colour_palette = static_cast<uint8_t>(attribute & 0b111);
+			m_Context.pipeline.background_window_attribute.bank = static_cast<uint8_t>((attribute >> 3) & 0x1);
+			m_Context.pipeline.background_window_attribute.flip_x = static_cast<bool>((attribute >> 5) & 0x1);
+			m_Context.pipeline.background_window_attribute.flip_y = static_cast<bool>((attribute >> 6) & 0x1);
+			m_Context.pipeline.background_window_attribute.priority = static_cast<bool>((attribute >> 7) & 0x1);
 		}
 	}
 }
@@ -396,15 +438,25 @@ void Ppu::PixelFetcher()
 			m_Context.pipeline.fetched_entries.clear();
 
 			// Load background/window tile
-			if (m_Display->IsBackgroundEnabled())
+			if ((m_Cartridge->IsColourModeDMG() && m_Display->IsBackgroundEnabled()) || !m_Cartridge->IsColourModeDMG())
 			{
+				uint16_t base_address = m_Display->GetBackgroundTileBaseAddress();
+
 				// Divide by 8
 				int position_y = (m_Display->m_Context.ly + m_Display->m_Context.scy) & 0xFF;
 				int position_x = (m_Context.pipeline.fetch_x + m_Display->m_Context.scx) & 0xFF;
 
+				// Fetch attributes
+				uint8_t attribute = this->ReadVideoRam(base_address + (position_x >> 3) + (position_y >> 3) * 32, 1);
+
+				m_Context.pipeline.background_window_attribute.colour_palette = static_cast<uint8_t>(attribute & 0b111);
+				m_Context.pipeline.background_window_attribute.bank = static_cast<uint8_t>((attribute >> 3) & 0x1);
+				m_Context.pipeline.background_window_attribute.flip_x = static_cast<bool>((attribute >> 5) & 0x1);
+				m_Context.pipeline.background_window_attribute.flip_y = static_cast<bool>((attribute >> 6) & 0x1);
+				m_Context.pipeline.background_window_attribute.priority = static_cast<bool>((attribute >> 7) & 0x1);
+
 				// Fetch tile
-				uint16_t base_address = m_Display->GetBackgroundTileBaseAddress();
-				m_Context.pipeline.background_window_tile = m_Bus->ReadBus(base_address + (position_x >> 3) + (position_y >> 3) * 32);
+				m_Context.pipeline.background_window_tile = this->ReadVideoRam(base_address + (position_x >> 3) + (position_y >> 3) * 32, 0);
 
 				if (m_Display->GetBackgroundAndWindowTileData() == 0x8800)
 				{
@@ -506,15 +558,21 @@ void Ppu::FetchTileData(FetchTileByte tile_byte)
 		offset_y = ((m_Context.window_line_counter & 0x7) << 1);
 	}
 
+	// Flip y
+	if (m_Context.pipeline.background_window_attribute.flip_y)
+	{
+		offset_y = 16 - offset_y - 2;
+	}
+
 	// Fetch tile data
 	uint16_t base_address = m_Display->GetBackgroundAndWindowTileData();
 	if (tile_byte == FetchTileByte::ByteLow)
 	{
-		m_Context.pipeline.background_window_byte_low = m_Bus->ReadBus(base_address + offset_x + offset_y);
+		m_Context.pipeline.background_window_byte_low = this->ReadVideoRam(base_address + offset_x + offset_y, m_Context.pipeline.background_window_attribute.bank);
 	}
 	else if (tile_byte == FetchTileByte::ByteHigh)
 	{
-		m_Context.pipeline.background_window_byte_high = m_Bus->ReadBus(base_address + offset_x + offset_y + 1);
+		m_Context.pipeline.background_window_byte_high = this->ReadVideoRam(base_address + offset_x + offset_y + 1, m_Context.pipeline.background_window_attribute.bank);
 	}
 }
 
@@ -551,34 +609,7 @@ void Ppu::SaveState(std::fstream* file)
 	file->write(reinterpret_cast<const char*>(&videoram_size), sizeof(size_t));
 	file->write(reinterpret_cast<const char*>(m_Context.video_ram.data()), videoram_size * sizeof(uint8_t));
 
-
-	//file->write(reinterpret_cast<const char*>(&m_Context.dot_ticks), sizeof(uint32_t));
-	//file->write(reinterpret_cast<const char*>(&m_Context.window_line_counter), sizeof(uint8_t));
-
-	//file->write(reinterpret_cast<const char*>(m_Context.video_buffer.size()), sizeof(size_t));
-	//file->write(reinterpret_cast<const char*>(m_Context.video_buffer.data()), m_Context.video_buffer.size() * sizeof(uint32_t));
-
-	//file->write(reinterpret_cast<const char*>(m_Context.oam_ram.size()), sizeof(size_t));
-	//file->write(reinterpret_cast<const char*>(m_Context.oam_ram.data()), m_Context.oam_ram.size() * sizeof(OamData));
-
-	//file->write(reinterpret_cast<const char*>(m_Context.objects_per_line.size()), sizeof(size_t));
-	//file->write(reinterpret_cast<const char*>(m_Context.objects_per_line.data()), m_Context.objects_per_line.size() * sizeof(OamData));
-
-	//// Pipeline
-	//file->write(reinterpret_cast<const char*>(&m_Context.pipeline.pipeline_state), sizeof(FetchState));
-	//file->write(reinterpret_cast<const char*>(&m_Context.pipeline.line_x), sizeof(uint8_t));
-	//file->write(reinterpret_cast<const char*>(&m_Context.pipeline.pushed_x), sizeof(uint8_t));
-	//file->write(reinterpret_cast<const char*>(&m_Context.pipeline.fetch_x), sizeof(uint8_t));
-
-	//file->write(reinterpret_cast<const char*>(&m_Context.pipeline.background_window_tile), sizeof(uint8_t));
-	//file->write(reinterpret_cast<const char*>(&m_Context.pipeline.background_window_byte_low), sizeof(uint8_t));
-	//file->write(reinterpret_cast<const char*>(&m_Context.pipeline.background_window_byte_high), sizeof(uint8_t));
-	//file->write(reinterpret_cast<const char*>(&m_Context.pipeline.fifo_x), sizeof(uint8_t));
-
-	//file->write(reinterpret_cast<const char*>(m_Context.pipeline.fetched_entries.size()), sizeof(size_t));
-	//file->write(reinterpret_cast<const char*>(m_Context.pipeline.fetched_entries.data()), m_Context.pipeline.fetched_entries.size() * sizeof(OamPipelineData));
-
-	//file->write(reinterpret_cast<const char*>(&m_Context.pipeline.pixel_queue), m_Context.pipeline.pixel_queue.size() * sizeof(uint32_t));
+	file->write(reinterpret_cast<const char*>(&m_VramBank), sizeof(m_VramBank));
 }
 
 void Ppu::LoadState(std::fstream* file)
@@ -589,38 +620,5 @@ void Ppu::LoadState(std::fstream* file)
 	m_Context.video_ram.resize(videoram_size);
 	file->read(reinterpret_cast<char*>(m_Context.video_ram.data()), videoram_size * sizeof(uint8_t));
 
-	//file->read(reinterpret_cast<char*>(&m_Context.dot_ticks), sizeof(uint32_t));
-	//file->read(reinterpret_cast<char*>(&m_Context.window_line_counter), sizeof(uint8_t));
-
-	//size_t video_buffer_size = 0;
-	//file->read(reinterpret_cast<char*>(video_buffer_size), sizeof(size_t));
-	//m_Context.video_buffer.resize(video_buffer_size);
-	//file->read(reinterpret_cast<char*>(m_Context.video_buffer.data()), m_Context.video_buffer.size() * sizeof(uint32_t));
-
-	//size_t oam_ram_size = 0;
-	//file->read(reinterpret_cast<char*>(oam_ram_size), sizeof(size_t));
-	//file->read(reinterpret_cast<char*>(m_Context.oam_ram.data()), m_Context.oam_ram.size() * sizeof(OamData));
-
-	//size_t objects_per_line_size = 0;
-	//file->read(reinterpret_cast<char*>(m_Context.objects_per_line.size()), sizeof(size_t));
-	//m_Context.objects_per_line.resize(objects_per_line_size);
-	//file->read(reinterpret_cast<char*>(m_Context.objects_per_line.data()), m_Context.objects_per_line.size() * sizeof(OamData));
-
-	//// Pipeline
-	//file->read(reinterpret_cast<char*>(&m_Context.pipeline.pipeline_state), sizeof(FetchState));
-	//file->read(reinterpret_cast<char*>(&m_Context.pipeline.line_x), sizeof(uint8_t));
-	//file->read(reinterpret_cast<char*>(&m_Context.pipeline.pushed_x), sizeof(uint8_t));
-	//file->read(reinterpret_cast<char*>(&m_Context.pipeline.fetch_x), sizeof(uint8_t));
-
-	//file->read(reinterpret_cast<char*>(&m_Context.pipeline.background_window_tile), sizeof(uint8_t));
-	//file->read(reinterpret_cast<char*>(&m_Context.pipeline.background_window_byte_low), sizeof(uint8_t));
-	//file->read(reinterpret_cast<char*>(&m_Context.pipeline.background_window_byte_high), sizeof(uint8_t));
-	//file->read(reinterpret_cast<char*>(&m_Context.pipeline.fifo_x), sizeof(uint8_t));
-
-	//size_t fetched_entries_size = 0;
-	//file->read(reinterpret_cast<char*>(&fetched_entries_size), sizeof(size_t));
-	//m_Context.pipeline.fetched_entries.resize(fetched_entries_size);
-	//file->read(reinterpret_cast<char*>(m_Context.pipeline.fetched_entries.data()), m_Context.pipeline.fetched_entries.size() * sizeof(OamPipelineData));
-
-	//file->read(reinterpret_cast<char*>(&m_Context.pipeline.pixel_queue), m_Context.pipeline.pixel_queue.size() * sizeof(uint32_t));
+	file->read(reinterpret_cast<char*>(&m_VramBank), sizeof(m_VramBank));
 }

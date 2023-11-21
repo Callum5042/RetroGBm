@@ -9,6 +9,7 @@
 
 class IBus;
 class Cpu;
+class Cartridge;
 
 enum class FetchState
 {
@@ -42,8 +43,17 @@ struct OamData
 struct OamPipelineData
 {
 	OamData* oam = nullptr;
-	uint8_t byte_low;
-	uint8_t byte_high;
+	uint8_t byte_low = 0;
+	uint8_t byte_high = 0;
+};
+
+struct BackgroundWindowAttribute
+{
+	uint8_t colour_palette;
+	uint8_t bank;
+	bool flip_x;
+	bool flip_y;
+	bool priority;
 };
 
 struct PipelineContext
@@ -53,6 +63,7 @@ struct PipelineContext
 	uint8_t pushed_x = 0;
 	uint8_t fetch_x = 0;
 
+	BackgroundWindowAttribute background_window_attribute;
 	uint8_t background_window_tile = 0;
 	uint8_t background_window_byte_low = 0;
 	uint8_t background_window_byte_high = 0;
@@ -80,10 +91,11 @@ class Ppu
 	IBus* m_Bus = nullptr;
 	Cpu* m_Cpu = nullptr;
 	Display* m_Display = nullptr;
+	Cartridge* m_Cartridge = nullptr;
 
 public:
 	Ppu();
-	Ppu(IBus* bus, Cpu* cpu, Display* display);
+	Ppu(IBus* bus, Cpu* cpu, Display* display, Cartridge* cartridge);
 	virtual ~Ppu() = default;
 
 	void Init();
@@ -96,6 +108,10 @@ public:
 	// VRAM
 	void WriteVideoRam(uint16_t address, uint8_t value);
 	uint8_t ReadVideoRam(uint16_t address);
+	uint8_t ReadVideoRam(uint16_t address, uint8_t bank);
+
+	void SetVideoRamBank(uint8_t value);
+	inline uint8_t GetVideoRamBank() const { return m_VramBank; }
 
 	inline PpuContext* GetContext() { return &m_Context; }
 
@@ -145,4 +161,7 @@ private:
 
 	int m_FrameCount = 0;
 	float m_TimeElapsed = 0.0f;
+
+	// Bank
+	uint8_t m_VramBank = 0;
 };
