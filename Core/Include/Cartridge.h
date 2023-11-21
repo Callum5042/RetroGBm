@@ -87,6 +87,7 @@ public:
 	inline const CartridgeInfo* GetCartridgeInfo() { return &m_CartridgeInfo; }
 
 	std::string GetColourMode() const;
+	inline bool IsColourModeDMG() const { return m_CartridgeInfo.header.colour_mode == ColourMode::DMG; }
 
 	// Save state
 	void SaveState(std::fstream* file);

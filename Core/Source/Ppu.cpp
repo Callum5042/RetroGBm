@@ -3,6 +3,7 @@
 #include "Cpu.h"
 #include "Display.h"
 #include "Emulator.h"
+#include "Cartridge.h"
 #include <algorithm>
 #include <chrono>
 #include <thread>
@@ -12,9 +13,10 @@ Ppu::Ppu()
 	m_Bus = Emulator::Instance;
 	m_Cpu = Emulator::Instance->GetCpu();
 	m_Display = Emulator::Instance->GetDisplay();
+	m_Cartridge = Emulator::Instance->GetCartridge();
 }
 
-Ppu::Ppu(IBus* bus, Cpu* cpu, Display* display) : m_Bus(bus), m_Cpu(cpu), m_Display(display)
+Ppu::Ppu(IBus* bus, Cpu* cpu, Display* display, Cartridge* cartridge) : m_Bus(bus), m_Cpu(cpu), m_Display(display), m_Cartridge(cartridge)
 {
 }
 
@@ -120,7 +122,7 @@ void Ppu::UpdateOam()
 		}
 
 		// Sort by priority and X position
-		if (m_Display->IsObjectPriorityModeSet())
+		if (m_Cartridge->IsColourModeDMG() || m_Display->IsObjectPriorityModeSet())
 		{
 			std::sort(m_Context.objects_per_line.begin(), m_Context.objects_per_line.end(), [](const OamData& lhs, const OamData& rhs)
 			{
@@ -436,6 +438,7 @@ void Ppu::PixelFetcher()
 			m_Context.pipeline.fetched_entries.clear();
 
 			// Load background/window tile
+			if ((m_Cartridge->IsColourModeDMG() && m_Display->IsBackgroundEnabled()) || !m_Cartridge->IsColourModeDMG())
 			{
 				uint16_t base_address = m_Display->GetBackgroundTileBaseAddress();
 

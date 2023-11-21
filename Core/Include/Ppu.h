@@ -9,6 +9,7 @@
 
 class IBus;
 class Cpu;
+class Cartridge;
 
 enum class FetchState
 {
@@ -90,10 +91,11 @@ class Ppu
 	IBus* m_Bus = nullptr;
 	Cpu* m_Cpu = nullptr;
 	Display* m_Display = nullptr;
+	Cartridge* m_Cartridge = nullptr;
 
 public:
 	Ppu();
-	Ppu(IBus* bus, Cpu* cpu, Display* display);
+	Ppu(IBus* bus, Cpu* cpu, Display* display, Cartridge* cartridge);
 	virtual ~Ppu() = default;
 
 	void Init();

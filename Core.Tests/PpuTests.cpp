@@ -3,6 +3,7 @@
 #include <Ppu.h>
 #include <Cpu.h>
 #include <Emulator.h>
+#include <Cartridge.h>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -26,8 +27,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
+			Cartridge cartridge;
 
-			Ppu ppu(&bus, &cpu, &display);
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 
 			// Act
 			ppu.Init();
@@ -47,8 +49,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
+			Cartridge cartridge;
 
-			Ppu ppu(&bus, &cpu, &display);
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
 
 			// Act
@@ -68,8 +71,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
+			Cartridge cartridge;
 
-			Ppu ppu(&bus, &cpu, &display);
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
 
 			// Act
@@ -90,8 +94,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
+			Cartridge cartridge;
 
-			Ppu ppu(&bus, &cpu, &display);
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
 
 			// Act
@@ -114,8 +119,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
+			Cartridge cartridge;
 
-			Ppu ppu(&bus, &cpu, &display);
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
 
 			const_cast<DisplayContext*>(display.GetContext())->ly = 144;
@@ -139,8 +145,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
+			Cartridge cartridge;
 
-			Ppu ppu(&bus, &cpu, &display);
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
 
 			const_cast<DisplayContext*>(display.GetContext())->ly = 144;
@@ -186,7 +193,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
-			Ppu ppu(&bus, &cpu, &display);
+			Cartridge cartridge;
+
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
 			const_cast<DisplayContext*>(display.GetContext())->ly = 0;
 
@@ -223,7 +232,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
-			Ppu ppu(&bus, &cpu, &display);
+			Cartridge cartridge;
+
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
 			const_cast<DisplayContext*>(display.GetContext())->ly = 0;
 
@@ -250,8 +261,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
+			Cartridge cartridge;
 
-			Ppu ppu(&bus, &cpu, &display);
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 
 			// Act
 			ppu.SetVideoRamBank(3);
@@ -266,8 +278,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
+			Cartridge cartridge;
 
-			Ppu ppu(&bus, &cpu, &display);
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
 			ppu.SetVideoRamBank(0);
 
@@ -286,8 +299,9 @@ namespace CoreTests
 			Cpu cpu;
 			Display display;
 			NullBus bus;
+			Cartridge cartridge;
 
-			Ppu ppu(&bus, &cpu, &display);
+			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
 			ppu.SetVideoRamBank(1);
 
