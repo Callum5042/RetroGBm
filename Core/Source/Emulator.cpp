@@ -300,6 +300,12 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 		return;
 	}
 
+	if (address >= 0xFF68 && address <= 0xFF6B)
+	{
+		m_Display->Write(address, value);
+		return;
+	}
+
 	if (address == 0xFF6C)
 	{
 		m_Display->SetObjectPriorityMode(value);

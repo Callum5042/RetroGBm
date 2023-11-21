@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <fstream>
+#include <vector>
 
 class Ppu;
 
@@ -26,6 +27,14 @@ struct DisplayContext
 	uint32_t sprite2_palette[4];
 
 	uint8_t priority_mode;
+};
+
+struct PaletteData
+{
+	uint8_t red = 0;
+	uint8_t green = 0;
+	uint8_t blue = 0;
+	uint8_t alpha = 0;
 };
 
 enum class LcdMode
@@ -73,11 +82,25 @@ public:
 
 	inline DisplayContext* GetContext() { return &m_Context; }
 
+	uint32_t GetColourFromBackgroundPalette(uint8_t palette, uint8_t index);
+	uint32_t GetColourFromObjectPalette(uint8_t palette, uint8_t index);
+
 	// Save state
 	void SaveState(std::fstream* file);
 	void LoadState(std::fstream* file);
 
+
+	std::vector<uint8_t> m_BackgroundColourPalettes;
+
 private:
 	DisplayContext m_Context = {};
 	const unsigned long m_DefaultColours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
+
+	// CGB Palettes
+	bool m_AutoIncrementBackgroundAddress = false;
+	uint8_t m_BackgroundPaletteAddress = 0;
+
+	bool m_AutoIncrementObjectAddress = false;
+	uint8_t m_ObjectPaletteAddress = 0;
+	std::vector<uint8_t> m_ObjectColourPalettes;
 };

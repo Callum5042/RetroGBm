@@ -286,7 +286,10 @@ uint32_t Ppu::FetchSpritePixels(uint32_t color, bool background_pixel_transparen
 		}
 
 		// Select pixel colour
-		return (m_Context.pipeline.fetched_entries[i].oam->dmg_palette) ? m_Display->m_Context.sprite2_palette[palette_index] : m_Display->m_Context.sprite1_palette[palette_index];
+		uint8_t palette = m_Context.pipeline.fetched_entries[i].oam->gcb_palette;
+		return m_Display->GetColourFromObjectPalette(palette, palette_index);
+
+		// return (m_Context.pipeline.fetched_entries[i].oam->dmg_palette) ? m_Display->m_Context.sprite2_palette[palette_index] : m_Display->m_Context.sprite1_palette[palette_index];
 	}
 
 	return color;
@@ -321,8 +324,10 @@ bool Ppu::PipelineAddPixel()
 		uint8_t data_low = (static_cast<bool>(m_Context.pipeline.background_window_byte_high & (1 << (offset)))) << 1;
 		uint8_t palette_index = data_high | data_low;
 
-		uint32_t colour = m_Display->m_Context.background_palette[palette_index];
-
+		// uint32_t colour = m_Display->m_Context.background_palette[palette_index];
+		uint8_t palette = m_Context.pipeline.background_window_attribute.colour_palette;
+		uint32_t colour = m_Display->GetColourFromBackgroundPalette(palette, palette_index);
+		
 		if (m_Display->IsObjectEnabled())
 		{
 			bool background_transparent = (palette_index == 0);

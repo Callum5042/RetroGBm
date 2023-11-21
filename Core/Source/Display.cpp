@@ -3,6 +3,8 @@
 #include "Cpu.h"
 #include "Emulator.h"
 #include "Dma.h"
+#include <iostream>
+#include <format>
 
 void Display::Init()
 {
@@ -27,6 +29,13 @@ void Display::Init()
 		m_Context.sprite1_palette[i] = m_DefaultColours[i];
 		m_Context.sprite2_palette[i] = m_DefaultColours[i];
 	}
+
+	// CGB palettes
+	m_BackgroundColourPalettes.resize(64);
+	std::fill(m_BackgroundColourPalettes.begin(), m_BackgroundColourPalettes.end(), 0);
+
+	m_ObjectColourPalettes.resize(64);
+	std::fill(m_ObjectColourPalettes.begin(), m_ObjectColourPalettes.end(), 0);
 }
 
 uint8_t Display::Read(uint16_t address)
@@ -68,41 +77,41 @@ void Display::Write(uint16_t address, uint8_t value)
 	{
 		case 0xFF40:
 			m_Context.lcdc = value;
-			break;
+			return;
 		case 0xFF41:
 			m_Context.stat = value;
-			break;
+			return;
 		case 0xFF42:
 			m_Context.scy = value;
-			break;
+			return;
 		case 0xFF43:
 			m_Context.scx = value;
-			break;
+			return;
 		case 0xFF44:
 			m_Context.ly = value;
-			break;
+			return;
 		case 0xFF45:
 			m_Context.lyc = value;
-			break;
+			return;
 		case 0xFF46:
 			m_Context.dma = value;
 			Emulator::Instance->GetDma()->Start(value);
-			break;
+			return;
 		case 0xFF47:
 			m_Context.bgp = value;
-			break;
+			return;
 		case 0xFF48:
 			m_Context.obp[0] = value;
-			break;
+			return;
 		case 0xFF49:
 			m_Context.obp[1] = value;
-			break;
+			return;
 		case 0xFF4A:
 			m_Context.wy = value;
-			break;
+			return;
 		case 0xFF4B:
 			m_Context.wx = value;
-			break;
+			return;
 	}
 
 	// Update palette colours
@@ -112,6 +121,7 @@ void Display::Write(uint16_t address, uint8_t value)
 		m_Context.background_palette[1] = m_DefaultColours[(value >> 2) & 0b11];
 		m_Context.background_palette[2] = m_DefaultColours[(value >> 4) & 0b11];
 		m_Context.background_palette[3] = m_DefaultColours[(value >> 6) & 0b11];
+		return;
 	}
 	else if (address == 0xFF48)
 	{
@@ -122,6 +132,7 @@ void Display::Write(uint16_t address, uint8_t value)
 		m_Context.sprite1_palette[1] = m_DefaultColours[(value >> 2) & 0b11];
 		m_Context.sprite1_palette[2] = m_DefaultColours[(value >> 4) & 0b11];
 		m_Context.sprite1_palette[3] = m_DefaultColours[(value >> 6) & 0b11];
+		return;
 	}
 	else if (address == 0xFF49)
 	{
@@ -132,7 +143,45 @@ void Display::Write(uint16_t address, uint8_t value)
 		m_Context.sprite2_palette[1] = m_DefaultColours[(value >> 2) & 0b11];
 		m_Context.sprite2_palette[2] = m_DefaultColours[(value >> 4) & 0b11];
 		m_Context.sprite2_palette[3] = m_DefaultColours[(value >> 6) & 0b11];
+		return;
 	}
+
+	// CGB Palettes
+	if (address == 0xFF68)
+	{
+		m_AutoIncrementBackgroundAddress = (value >> 7) & 0x1;
+		m_BackgroundPaletteAddress = value & 0x3F;
+		return;
+	}
+	else if (address == 0xFF69)
+	{
+		m_BackgroundColourPalettes[m_BackgroundPaletteAddress] = value;
+		if (m_AutoIncrementBackgroundAddress)
+		{
+			m_BackgroundPaletteAddress = (m_BackgroundPaletteAddress + 1) & 0x3F;
+		}
+
+		return;
+	}
+
+	if (address == 0xFF6A)
+	{
+		m_AutoIncrementObjectAddress = (value >> 7) & 0x1;
+		m_ObjectPaletteAddress = value & 0x3F;
+		return;
+	}
+	else if (address == 0xFF6B)
+	{
+		m_ObjectColourPalettes[m_ObjectPaletteAddress] = value;
+		if (m_AutoIncrementObjectAddress)
+		{
+			m_ObjectPaletteAddress++;
+		}
+
+		return;
+	}
+
+	std::cout << std::format("Unsupport DisplayWrite: 0x{:x}", address) << '\n';
 }
 
 bool Display::IsLcdEnabled()
@@ -305,3 +354,43 @@ void Display::LoadState(std::fstream* file)
 {
 	file->read(reinterpret_cast<char*>(&m_Context), sizeof(DisplayContext));
 }
+
+uint32_t Display::GetColourFromBackgroundPalette(uint8_t palette, uint8_t index)
+{
+	uint8_t byte0 = m_BackgroundColourPalettes[(palette * 8) + (index * 2) + 0];
+	uint8_t byte1 = m_BackgroundColourPalettes[(palette * 8) + (index * 2) + 1];
+	uint16_t rgb555 = byte0 | (byte1 << 8);
+
+	// Get components
+	uint8_t r = (rgb555 >> 10) & 0x1F; // Red component (5 bits)
+	uint8_t g = (rgb555 >> 5) & 0x1F;  // Green component (5 bits)
+	uint8_t b = rgb555 & 0x1F;         // Blue component (5 bits)
+
+	// Transform from RGB555 to RGB888
+	r = (r << 3) | (r >> 2); // (r * 255) / 31;
+	g = (g << 3) | (g >> 2); // (g * 255) / 31;
+	b = (b << 3) | (b >> 2); // (b * 255) / 31;
+
+	uint32_t colour = (r << 16) | (g << 8) | b;
+	return colour;
+} 
+
+uint32_t Display::GetColourFromObjectPalette(uint8_t palette, uint8_t index)
+{
+	uint8_t byte0 = m_ObjectColourPalettes[(palette * 8) + (index * 2) + 0];
+	uint8_t byte1 = m_ObjectColourPalettes[(palette * 8) + (index * 2) + 1];
+	uint16_t rgb555 = byte0 | (byte1 << 8);
+
+	// Get components
+	uint8_t r = (rgb555 >> 10) & 0x1F; // Red component (5 bits)
+	uint8_t g = (rgb555 >> 5) & 0x1F;  // Green component (5 bits)
+	uint8_t b = rgb555 & 0x1F;         // Blue component (5 bits)
+
+	// Transform from RGB555 to RGB888
+	r = (r << 3) | (r >> 2); // (r * 255) / 31;
+	g = (g << 3) | (g >> 2); // (g * 255) / 31;
+	b = (b << 3) | (b >> 2); // (b * 255) / 31;
+
+	uint32_t colour = (r << 16) | (g << 8) | b;
+	return colour;
+} 
