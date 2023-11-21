@@ -3,6 +3,9 @@ Gameboy Colour emulator written in C++
 
 ![Pokemon Yellow](images/pokemon_yellow.png)
 
+## Missing Features
+Currently Windows only and has no plans for sound support.
+
 ## Compatibility
 
 | Rating		| Description |
