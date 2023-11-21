@@ -608,6 +608,8 @@ void Ppu::SaveState(std::fstream* file)
 	size_t videoram_size = m_Context.video_ram.size();
 	file->write(reinterpret_cast<const char*>(&videoram_size), sizeof(size_t));
 	file->write(reinterpret_cast<const char*>(m_Context.video_ram.data()), videoram_size * sizeof(uint8_t));
+
+	file->write(reinterpret_cast<const char*>(&m_VramBank), sizeof(m_VramBank));
 }
 
 void Ppu::LoadState(std::fstream* file)
@@ -617,4 +619,6 @@ void Ppu::LoadState(std::fstream* file)
 
 	m_Context.video_ram.resize(videoram_size);
 	file->read(reinterpret_cast<char*>(m_Context.video_ram.data()), videoram_size * sizeof(uint8_t));
+
+	file->read(reinterpret_cast<char*>(&m_VramBank), sizeof(m_VramBank));
 }

@@ -505,6 +505,7 @@ void Emulator::SaveState()
 
 	m_Display->SaveState(&file);
 	m_Ppu->SaveState(&file);
+	m_Dma->SaveState(&file);
 }
 
 void Emulator::LoadState()
@@ -519,4 +520,5 @@ void Emulator::LoadState()
 
 	m_Display->LoadState(&file);
 	m_Ppu->LoadState(&file);
+	m_Dma->LoadState(&file);
 }

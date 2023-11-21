@@ -80,6 +80,8 @@ void Ram::SaveState(std::fstream* file)
 	size_t highram_size = m_HighRam.size();
 	file->write(reinterpret_cast<const char*>(&highram_size), sizeof(size_t));
 	file->write(reinterpret_cast<const char*>(m_HighRam.data()), highram_size * sizeof(uint8_t));
+
+	file->write(reinterpret_cast<const char*>(&m_Bank), sizeof(m_Bank));
 }
 
 void Ram::LoadState(std::fstream* file)
@@ -95,4 +97,6 @@ void Ram::LoadState(std::fstream* file)
 
 	m_HighRam.resize(highram_size);
 	file->read(reinterpret_cast<char*>(m_HighRam.data()), m_HighRam.size() * sizeof(uint8_t));
+
+	file->read(reinterpret_cast<char*>(&m_Bank), sizeof(m_Bank));
 }

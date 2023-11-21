@@ -376,11 +376,47 @@ bool Display::IsObjectPriorityModeSet()
 void Display::SaveState(std::fstream* file)
 {
 	file->write(reinterpret_cast<const char*>(&m_Context), sizeof(DisplayContext));
+
+	// Background palette data
+	file->write(reinterpret_cast<const char*>(&m_AutoIncrementBackgroundAddress), sizeof(m_AutoIncrementBackgroundAddress));
+	file->write(reinterpret_cast<const char*>(&m_BackgroundPaletteAddress), sizeof(m_BackgroundPaletteAddress));
+
+	size_t backgroundColourPalettesSize = m_BackgroundColourPalettes.size();
+	file->write(reinterpret_cast<const char*>(&backgroundColourPalettesSize), sizeof(backgroundColourPalettesSize));
+	file->write(reinterpret_cast<const char*>(m_BackgroundColourPalettes.data()), sizeof(uint8_t) * backgroundColourPalettesSize);
+
+	// Object palette data
+	file->write(reinterpret_cast<const char*>(&m_AutoIncrementObjectAddress), sizeof(m_AutoIncrementObjectAddress));
+	file->write(reinterpret_cast<const char*>(&m_ObjectPaletteAddress), sizeof(m_ObjectPaletteAddress));
+
+	size_t objectColourPalettes = m_ObjectColourPalettes.size();
+	file->write(reinterpret_cast<const char*>(&objectColourPalettes), sizeof(objectColourPalettes));
+	file->write(reinterpret_cast<const char*>(m_ObjectColourPalettes.data()), sizeof(uint8_t) * objectColourPalettes);
 }
 
 void Display::LoadState(std::fstream* file)
 {
 	file->read(reinterpret_cast<char*>(&m_Context), sizeof(DisplayContext));
+
+	// Background palette data
+	file->read(reinterpret_cast<char*>(&m_AutoIncrementBackgroundAddress), sizeof(m_AutoIncrementBackgroundAddress));
+	file->read(reinterpret_cast<char*>(&m_BackgroundPaletteAddress), sizeof(m_BackgroundPaletteAddress));
+
+	size_t backgroundColourPalettesSize = 0;
+	file->read(reinterpret_cast<char*>(&backgroundColourPalettesSize), sizeof(backgroundColourPalettesSize));
+
+	m_BackgroundColourPalettes.resize(backgroundColourPalettesSize);
+	file->read(reinterpret_cast<char*>(m_BackgroundColourPalettes.data()), sizeof(uint8_t) * backgroundColourPalettesSize);
+
+	// Object palette data
+	file->read(reinterpret_cast<char*>(&m_AutoIncrementObjectAddress), sizeof(m_AutoIncrementObjectAddress));
+	file->read(reinterpret_cast<char*>(&m_ObjectPaletteAddress), sizeof(m_ObjectPaletteAddress));
+
+	size_t objectColourPalettes = 0;
+	file->read(reinterpret_cast<char*>(&objectColourPalettes), sizeof(objectColourPalettes));
+
+	m_ObjectColourPalettes.resize(objectColourPalettes);
+	file->read(reinterpret_cast<char*>(m_ObjectColourPalettes.data()), sizeof(uint8_t) * objectColourPalettes);
 }
 
 uint32_t Display::GetColourFromBackgroundPalette(uint8_t palette, uint8_t index)

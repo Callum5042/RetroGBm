@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <fstream>
 
 class IBus;
 class Ppu;
@@ -32,6 +33,10 @@ public:
 	void StartCGB(uint8_t value);
 	void SetSource(uint16_t address, uint8_t value);
 	void SetDestination(uint16_t address, uint8_t value);
+
+	// Save state
+	void SaveState(std::fstream* file);
+	void LoadState(std::fstream* file);
 
 private:
 	DmaContext context = {};

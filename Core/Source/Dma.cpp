@@ -93,3 +93,25 @@ void Dma::SetDestination(uint16_t address, uint8_t value)
 		m_Destination |= value;
 	}
 }
+
+void Dma::SaveState(std::fstream* file)
+{
+	file->write(reinterpret_cast<const char*>(&m_ColourDMA), sizeof(m_ColourDMA));
+	file->write(reinterpret_cast<const char*>(&m_Source), sizeof(m_Source));
+	file->write(reinterpret_cast<const char*>(&m_Destination), sizeof(m_Destination));
+
+	file->write(reinterpret_cast<const char*>(&m_GeneralPurposeDMA), sizeof(m_GeneralPurposeDMA));
+	file->write(reinterpret_cast<const char*>(&m_TransferLength), sizeof(m_TransferLength));
+	file->write(reinterpret_cast<const char*>(&m_LengthModeStart), sizeof(m_LengthModeStart));
+}
+
+void Dma::LoadState(std::fstream* file)
+{
+	file->read(reinterpret_cast<char*>(&m_ColourDMA), sizeof(m_ColourDMA));
+	file->read(reinterpret_cast<char*>(&m_Source), sizeof(m_Source));
+	file->read(reinterpret_cast<char*>(&m_Destination), sizeof(m_Destination));
+
+	file->read(reinterpret_cast<char*>(&m_GeneralPurposeDMA), sizeof(m_GeneralPurposeDMA));
+	file->read(reinterpret_cast<char*>(&m_TransferLength), sizeof(m_TransferLength));
+	file->read(reinterpret_cast<char*>(&m_LengthModeStart), sizeof(m_LengthModeStart));
+}
