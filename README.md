@@ -1,7 +1,7 @@
 ﻿# RetroGBm
 Gameboy Colour emulator written in C++
 
-![Pokemon Yellow](images/pokemon_yellow.png)
+![Pokemon Yellow](/images/pokemon_yellow.png)
 
 ## Missing Features
 Currently Windows only and has no plans for sound support.
@@ -32,6 +32,6 @@ Currently Windows only and has no plans for sound support.
 - [x] dmg-acid2
 - [x] cgb-acid2
 
-![Blargg cpu_instrs](images/blargg_cpu_instrs.png)
-![dmg-acid2](images/dmg_acid2.png)
-![cgb-acid2](images/cgb_acid2.png)
+![Blargg cpu_instrs](/images/blargg_cpu_instrs.png)
+![dmg-acid2](/images/dmg_acid2.png)
+![cgb-acid2](/images/cgb_acid2.png)
