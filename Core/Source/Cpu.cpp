@@ -8,7 +8,7 @@
 
 Cpu::Cpu()
 {
-	SetRegister(RegisterType8::REG_A, 0x1);
+	SetRegister(RegisterType8::REG_A, 0x11);
 	SetRegister(RegisterType8::REG_F, 0x0);
 	SetRegister(RegisterType8::REG_B, 0x0);
 	SetRegister(RegisterType8::REG_C, 0x13);

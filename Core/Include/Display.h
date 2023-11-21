@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <fstream>
 #include <vector>
+#include <unordered_map>
+#include <array>
 
 class Ppu;
 
@@ -43,6 +45,24 @@ enum class LcdMode
 	VBlank = 1,
 	OAM = 2,
 	PixelTransfer = 3,
+};
+
+struct FixedPalette
+{
+	uint32_t bg_colour0;
+	uint32_t bg_colour1;
+	uint32_t bg_colour2;
+	uint32_t bg_colour3;
+
+	uint32_t obj0_colour0;
+	uint32_t obj0_colour1;
+	uint32_t obj0_colour2;
+	uint32_t obj0_colour3;
+
+	uint32_t obj1_colour0;
+	uint32_t obj1_colour1;
+	uint32_t obj1_colour2;
+	uint32_t obj1_colour3;
 };
 
 class Display
@@ -94,7 +114,7 @@ public:
 
 private:
 	DisplayContext m_Context = {};
-	const unsigned long m_DefaultColours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
+	unsigned long m_DefaultColours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
 
 	// CGB Palettes
 	bool m_AutoIncrementBackgroundAddress = false;
@@ -103,4 +123,10 @@ private:
 	bool m_AutoIncrementObjectAddress = false;
 	uint8_t m_ObjectPaletteAddress = 0;
 	std::vector<uint8_t> m_ObjectColourPalettes;
+
+	// Default palettes
+	std::array<FixedPalette, 45> m_FixedPalettes;
+	// std::unordered_map<uint8_t, FixedPalette> m_FixedPalettes;
+	void InitFixedPalettes();
+	void SetFixedPalette(uint8_t hash);
 };
