@@ -26,7 +26,23 @@ public:
 	void Tick();
 
 	bool IsTransferring();
+	inline uint8_t GetLengthModeStart() { return m_LengthModeStart; }
+
+	// Gameboy colour
+	void StartCGB(uint8_t value);
+	void SetSource(uint16_t address, uint8_t value);
+	void SetDestination(uint16_t address, uint8_t value);
 
 private:
 	DmaContext context = {};
+
+	// Gameboy colour
+	bool m_ColourDMA = false;
+	uint16_t m_Source = 0;
+	uint16_t m_Destination = 0;
+
+	bool m_GeneralPurposeDMA = false;
+	uint8_t m_TransferLength = 0;
+
+	uint8_t m_LengthModeStart = 0;
 };

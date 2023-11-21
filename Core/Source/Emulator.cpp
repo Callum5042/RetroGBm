@@ -219,6 +219,11 @@ uint8_t Emulator::ReadIO(uint16_t address)
 		return m_Ppu->GetVideoRamBank();
 	}
 
+	if (address == 0xFF55)
+	{
+		return m_Dma->GetLengthModeStart();
+	}
+
 	if (address == 0xFF6C)
 	{
 		return m_Display->GetObjectPriorityMode();
@@ -280,6 +285,22 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	if (address == 0xFF4F)
 	{
 		m_Ppu->SetVideoRamBank(value);
+		return;
+	}
+
+	if (address == 0xFF51 || address == 0xFF52)
+	{
+		m_Dma->SetSource(address, value);
+		return;
+	}
+	else if (address == 0xFF53 || address == 0xFF54)
+	{
+		m_Dma->SetDestination(address, value);
+		return;
+	}
+	else if (address == 0xFF55)
+	{
+		m_Dma->StartCGB(value);
 		return;
 	}
 
