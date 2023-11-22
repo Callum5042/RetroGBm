@@ -25,6 +25,10 @@ public:
 
 	void ToggleTileWindowMenuItem(bool checked);
 
+	void SetStatusBarTitle(const std::string& text);
+	void SetStatusBarStats(const std::string& text);
+	void SetStatusBarState(const std::string& text);
+
 protected:
 	void OnClose();
 	void OnKeyPressed(UINT virtual_key_code);
@@ -64,6 +68,7 @@ private:
 
 	// Status bar
 	void CreateStatusBar();
+	void ComputeStatusBarSections();
 	HWND m_HwndStatusbar = NULL;
 	HMENU m_StatusBar = NULL;
 

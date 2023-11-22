@@ -5,6 +5,7 @@
 
 #include <Emulator.h>
 #include <Joypad.h>
+#include <Cartridge.h>
 
 #include <string>
 #include <vector>
@@ -137,6 +138,7 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		case m_MenuFileCloseId:
 			m_Application->StopEmulator();
 			EnableMenuItem(m_DebugMenuItem, m_MenuDebugCartridgeInfo, MF_DISABLED);
+			this->SetStatusBarTitle("");
 			break;
 		case m_MenuFileRestartId:
 			RestartEmulation();
@@ -157,8 +159,6 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 				CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND | MF_CHECKED);
 				m_Application->CreateTileWindow();
 			}
-
-			// CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYPOSITION | MF_CHECKED);
 			break;
 		}
 		case m_MenuDebugTracelog:
@@ -194,16 +194,18 @@ void MainWindow::ToggleEmulationPaused()
 		return;
 	}
 
-	UINT menu_state = GetMenuState(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND);
-	if (menu_state & MF_CHECKED)
+	bool paused = emulator->IsPaused();
+	if (paused)
 	{
 		CheckMenuItem(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND | MF_UNCHECKED);
 		emulator->Pause(false);
+		this->SetStatusBarState("Playing");
 	}
 	else
 	{
 		CheckMenuItem(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND | MF_CHECKED);
 		emulator->Pause(true);
+		this->SetStatusBarState("Paused");
 	}
 }
 
@@ -242,6 +244,9 @@ void MainWindow::OpenDialog()
 		m_FilePath = path;
 		m_Application->LoadRom(path);
 		EnableMenuItem(m_DebugMenuItem, m_MenuDebugCartridgeInfo, MF_ENABLED);
+
+		this->SetStatusBarTitle(m_Application->GetEmulator()->GetCartridge()->GetCartridgeInfo()->title);
+		this->SetStatusBarState("Playing");
 	}
 }
 
@@ -327,22 +332,7 @@ void MainWindow::OnKeyPressed(UINT virtual_key_code)
 	// Pause
 	if (virtual_key_code == PKey || virtual_key_code == CKey)
 	{
-		Emulator* emulator = m_Application->GetEmulator();
-		if (emulator->IsRunning())
-		{
-			bool paused = emulator->IsPaused();
-
-			if (paused)
-			{
-				emulator->Pause(false);
-				CheckMenuItem(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND | MF_UNCHECKED);
-			}
-			else
-			{
-				emulator->Pause(true);
-				CheckMenuItem(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND | MF_CHECKED);
-			}
-		}
+		ToggleEmulationPaused();
 	}
 
 	// Save state
@@ -443,6 +433,7 @@ void MainWindow::OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	// Resize statusbar
 	SendMessage(m_HwndStatusbar, WM_SIZE, wParam, lParam);
+	ComputeStatusBarSections();
 
 	// Resize render window
 	int render_width, render_height;
@@ -450,18 +441,12 @@ void MainWindow::OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	SetWindowPos(m_RenderHwnd, NULL, 0, 0, render_width, render_height, SWP_FRAMECHANGED | SWP_NOMOVE);
 
 	// Don't resize on minimized
-	//if (wParam == SIZE_MINIMIZED)
-	//	return;
+	if (wParam == SIZE_MINIMIZED)
+		return;
 
-	//// Get window size
-	//int width, height;
-	//this->GetSize(&width, &height);
-
-	//// Resize target
-	//if (m_RenderTarget != nullptr)
-	//{
-	//	m_RenderTarget->Resize(width, height);
-	//}
+	// Resize target
+	if (m_MainRenderTarget != nullptr)
+		m_MainRenderTarget->Resize(render_width, render_height);
 }
 
 void MainWindow::CreateMainWindow(const std::string& title, int width, int height)
@@ -536,43 +521,26 @@ void MainWindow::CreateMenuBar()
 
 void MainWindow::CreateStatusBar()
 {
-	RECT rcClient;
-	HLOCAL hloc;
-	PINT paParts;
-	int i, nWidth;
-
-	int cParts = 4;
-
-	// Ensure that the common control DLL is loaded.
+	// Ensure that the common control DLL is loaded
 	InitCommonControls();
 
-	HINSTANCE hInstance = GetModuleHandle(NULL);
-
 	// Create the status bar
+	HINSTANCE hInstance = GetModuleHandle(NULL);
 	m_HwndStatusbar = CreateWindow(STATUSCLASSNAME, NULL, SBARS_SIZEGRIP | WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, m_Hwnd, m_StatusBar, hInstance, NULL);
+	ComputeStatusBarSections();
+}
 
-	// Get the coordinates of the parent window's client area
-	GetClientRect(m_Hwnd, &rcClient);
+void MainWindow::ComputeStatusBarSections()
+{
+	// Calculate status bar
+	RECT status_rect;
+	GetClientRect(m_HwndStatusbar, &status_rect);
 
-	// Allocate an array for holding the right edge coordinates
-	hloc = LocalAlloc(LHND, sizeof(int) * cParts);
-	paParts = (PINT)LocalLock(hloc);
+	int section_width = status_rect.right / 3;
 
-	// Calculate the right edge coordinate for each part, and copy the coordinates to the array
-	nWidth = rcClient.right / cParts;
-	int rightEdge = nWidth;
-	for (i = 0; i < cParts; i++)
-	{
-		paParts[i] = rightEdge;
-		rightEdge += nWidth;
-	}
-
-	// Tell the status bar to create the window parts.
-	SendMessage(m_HwndStatusbar, SB_SETPARTS, (WPARAM)cParts, (LPARAM)paParts);
-
-	// Free the array, and return.
-	LocalUnlock(hloc);
-	LocalFree(hloc);
+	// Create sections
+	std::vector<int> edges = { section_width * 1, section_width * 2, section_width * 3 };
+	SendMessage(m_HwndStatusbar, SB_SETPARTS, (WPARAM)edges.size(), (LPARAM)edges.data());
 }
 
 void MainWindow::CreateRenderWindow()
@@ -615,4 +583,25 @@ void MainWindow::ComputeRenderWindowSize(int* width, int* height)
 	// Compute size
 	*width = (window_rect.right);
 	*height = (window_rect.bottom - status_rect.bottom);
+}
+
+void MainWindow::SetStatusBarTitle(const std::string& text)
+{
+	int section = 0;
+	std::wstring str = Utilities::ConvertToWString(text);
+	SendMessage(m_HwndStatusbar, SB_SETTEXT, section | SBT_POPOUT, reinterpret_cast<LPARAM>(str.data()));
+}
+
+void MainWindow::SetStatusBarStats(const std::string& text)
+{
+	int section = 1;
+	std::wstring str = Utilities::ConvertToWString(text);
+	SendMessage(m_HwndStatusbar, SB_SETTEXT, section | SBT_POPOUT, reinterpret_cast<LPARAM>(str.data()));
+}
+
+void MainWindow::SetStatusBarState(const std::string& text)
+{
+	int section = 2;
+	std::wstring str = Utilities::ConvertToWString(text);
+	SendMessage(m_HwndStatusbar, SB_SETTEXT, section | SBT_POPOUT, reinterpret_cast<LPARAM>(str.data()));
 }
