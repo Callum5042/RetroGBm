@@ -23,7 +23,7 @@ Currently Windows only and has no plans for sound support.
 | Pokemon Yellow    | ★★★★★ |  |
 | Pokemon Red    | ★★★★★ |  |
 | Super Mario Land  | ★★★★☆ | Pause screen is incorrectly displayed |
-| Pokemon Gold		| ★★★★☆ | Randomly hangs when entering/exit a building |
+| Pokemon Gold		| ★★★★☆ | Text boxes have some graphical issues while in a battle |
 | Pokemon Crystal	| ★★☆☆☆ | Doesn't display the New Game window correctly |
 
 ## Test roms
