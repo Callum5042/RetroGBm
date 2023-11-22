@@ -39,6 +39,11 @@ void Ppu::Init()
 
 void Ppu::Tick()
 {
+	if (!m_Display->IsLcdEnabled())
+	{
+		return;
+	}
+
 	m_Context.dot_ticks++;
 
 	switch (m_Display->GetLcdMode())
