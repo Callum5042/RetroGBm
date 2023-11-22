@@ -38,6 +38,12 @@ void Render::RenderTarget::Create(Window* window)
 
 void Render::RenderTarget::Resize(int width, int height)
 {
+	if (width <= 0 || height <= 0)
+	{
+		// Don't try to resize if the window is too small
+		return;
+	}
+
 	// Releases the current render target and depth stencil view
 	m_DepthStencilView.ReleaseAndGetAddressOf();
 	m_RenderTargetView.ReleaseAndGetAddressOf();

@@ -18,6 +18,8 @@ protected:
 
 	virtual void OnKeyPressed(UINT virtual_key_code) override;
 
+	virtual LRESULT HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) override;
+
 private:
 
 	virtual void HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam) override;
