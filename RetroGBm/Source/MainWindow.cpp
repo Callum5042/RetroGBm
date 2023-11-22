@@ -1,14 +1,14 @@
 #include "MainWindow.h"
-#include <shobjidl.h>
-#include <string>
-#include <vector>
 #include "Application.h"
-#include <Emulator.h>
+#include "Utilities/Utilities.h"
 #include "../resource.h"
+
+#include <Emulator.h>
 #include <Joypad.h>
 
-// TODO: This really should not be a macro
-#define IDM_MYMENURESOURCE 3
+#include <string>
+#include <vector>
+#include <shobjidl.h>
 
 namespace
 {
@@ -39,29 +39,14 @@ namespace
 
 		return window->HandleMessage(hwnd, msg, wParam, lParam);
 	}
-
-	std::string ConvertToString(const std::wstring& str)
-	{
-		size_t size = WideCharToMultiByte(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), NULL, 0, NULL, NULL);
-
-		std::vector<char> buffer(size);
-		int chars_converted = WideCharToMultiByte(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), buffer.data(), static_cast<int>(buffer.size()), NULL, NULL);
-
-		return std::string(buffer.data(), chars_converted);
-	}
-
-	std::wstring ConvertToWString(const std::string& str)
-	{
-		size_t size = MultiByteToWideChar(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), NULL, 0);
-
-		std::vector<wchar_t> buffer(size);
-		int chars_converted = MultiByteToWideChar(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), buffer.data(), static_cast<int>(buffer.size()));
-
-		return std::wstring(buffer.data(), chars_converted);
-	}
 }
 
-MainWindow::MainWindow(Application* application) : m_Application(application)
+MainWindow::MainWindow()
+{
+	m_Application = Application::Instance;
+}
+
+MainWindow::~MainWindow()
 {
 	if (m_Hwnd != NULL)
 	{
@@ -74,141 +59,22 @@ MainWindow::MainWindow(Application* application) : m_Application(application)
 
 void MainWindow::Create(const std::string& title, int width, int height)
 {
-	HINSTANCE hInstance = GetModuleHandle(NULL);
-	const std::wstring window_title = ConvertToWString(title);
-	m_RegisterClassName = window_title;
+	CreateMainWindow(title, width, height);
+	CreateMenuBar();
+	CreateStatusBar();
+	CreateRenderWindow();
 
-	// Setup window class
-	WNDCLASS wc = {};
-	wc.style = CS_VREDRAW | CS_HREDRAW;
-	wc.lpfnWndProc = MainWndProc;
-	wc.hInstance = hInstance;
-	wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
-	wc.hCursor = LoadCursor(0, IDC_ARROW);
-	wc.lpszClassName = m_RegisterClassName.c_str();
-	wc.lpszMenuName = MAKEINTRESOURCE(IDM_MYMENURESOURCE);
-
-	if (!RegisterClass(&wc))
-	{
-		throw std::exception("RegisterClass Failed");
-	}
-
-	// Compute window rectangle dimensions based on requested client area dimensions.
-	RECT window_rect = { 0, 0, width, height };
-	AdjustWindowRect(&window_rect, WS_OVERLAPPEDWINDOW, false);
-	int window_width = window_rect.right - window_rect.left;
-	int window_height = window_rect.bottom - window_rect.top;
-
-	// Create window
-	m_Hwnd = CreateWindow(wc.lpszClassName, window_title.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, window_width, window_height, NULL, NULL, hInstance, this);
-	if (m_Hwnd == NULL)
-	{
-		throw std::exception("CreateWindow Failed");
-	}
-
-	// Show window
-	ShowWindow(m_Hwnd, SW_SHOWNORMAL);
-
-	// Menu
-	HMENU menubar = CreateMenu();
-
-	HMENU filemenu = CreateMenu();
-	AppendMenuW(filemenu, MF_STRING, m_MenuFileOpenId, L"Open");
-	AppendMenuW(filemenu, MF_STRING, m_MenuFileCloseId, L"Close");
-	AppendMenuW(filemenu, MF_STRING, m_MenuFileRestartId, L"Restart");
-	AppendMenuW(filemenu, MF_SEPARATOR, NULL, NULL);
-	AppendMenuW(filemenu, MF_STRING, m_MenuFileExitId, L"Exit");
-	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(filemenu), L"&File");
-
-	m_EmulationMenuItem = CreateMenu();
-	AppendMenuW(m_EmulationMenuItem, MF_UNCHECKED, m_MenuEmulationPausePlay, L"Pause");
-	AppendMenuW(m_EmulationMenuItem, MF_SEPARATOR, NULL, NULL);
-	AppendMenuW(m_EmulationMenuItem, MF_STRING, m_MenuEmulationSaveState, L"Save State");
-	AppendMenuW(m_EmulationMenuItem, MF_STRING, m_MenuEmulationLoadState, L"Load State");
-	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_EmulationMenuItem), L"Emulation");
-
-	m_DebugMenuItem = CreateMenu();
-	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTilemap, L"Tilemap");
-	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTracelog, L"Tracelog");
-	AppendMenuW(m_DebugMenuItem, MF_STRING | MF_DISABLED, m_MenuDebugCartridgeInfo, L"Cartridge Info");
-	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_DebugMenuItem), L"Debug");
-
-	SetMenu(m_Hwnd, menubar);
-
-	// Status
-	SomethingInit();
-
-	// Actual window - big pile of pickles indee
-
-	//m_RenderHwnd = CreateWindow(GetWindowRegisterClassName().c_str(), L"EmulatorWindow", WS_POPUP | WS_VISIBLE | WS_SYSMENU, 0, 0, width, height - 200, NULL, NULL, hInstance, NULL);
-	m_RenderHwnd = CreateWindow(m_RegisterClassName.c_str(), L"EmulatorWindow", WS_POPUP | WS_VISIBLE | WS_SYSMENU, 0, 0, width, height - 50, NULL, NULL, hInstance, NULL);
-	if (m_RenderHwnd == NULL)
-	{
-		throw std::exception("CreateWindow Failed");
-	}
-
-	SetParent(m_RenderHwnd, m_Hwnd);
-	ShowWindow(m_RenderHwnd, SW_SHOW);
-
-	// Statusbar on top
+	// Statusbar on draw on top of render
 	SetWindowPos(m_HwndStatusbar, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 }
 
-void MainWindow::SomethingInit()
+void MainWindow::Update()
 {
-	RECT rcClient;
-	HLOCAL hloc;
-	PINT paParts;
-	int i, nWidth;
+	m_MainRenderTexture->Update(m_Application->GetEmulator()->GetVideoBuffer(), m_Application->GetEmulator()->GetVideoPitch());
 
-	int cParts = 4;
-
-	// Ensure that the common control DLL is loaded.
-	// InitCommonControls();
-
-	HINSTANCE hInstance = GetModuleHandle(NULL);
-
-	// Create the status bar.
-	m_HwndStatusbar = CreateWindowEx(
-		0,                       // no extended styles
-		STATUSCLASSNAME,         // name of status bar class
-		(PCTSTR)NULL,           // no text when first created
-		SBARS_SIZEGRIP |         // includes a sizing grip
-		WS_CHILD | WS_VISIBLE,   // creates a visible child window
-		0, 0, 0, 0,              // ignores size and position
-		m_Hwnd,              // handle to parent window
-		(HMENU)m_StatusBar,       // child window identifier
-		hInstance,                   // handle to application instance
-		NULL);                   // no window creation data
-
-	// Get the coordinates of the parent window's client area.
-	GetClientRect(m_Hwnd, &rcClient);
-
-	// Allocate an array for holding the right edge coordinates.
-	hloc = LocalAlloc(LHND, sizeof(int) * cParts);
-	paParts = (PINT)LocalLock(hloc);
-
-	// Calculate the right edge coordinate for each part, and
-	// copy the coordinates to the array.
-	nWidth = rcClient.right / cParts;
-	int rightEdge = nWidth;
-	for (i = 0; i < cParts; i++)
-	{
-		paParts[i] = rightEdge;
-		rightEdge += nWidth;
-	}
-
-	// Tell the status bar to create the window parts.
-	SendMessage(m_HwndStatusbar, SB_SETPARTS, (WPARAM)cParts, (LPARAM) paParts);
-
-	// Free the array, and return.
-	LocalUnlock(hloc);
-	LocalFree(hloc);
-
-	// Get the height of the status bar
-	RECT rcStatus;
-	GetClientRect(m_HwndStatusbar, &rcStatus);
-	m_StatusBarHeight = rcStatus.bottom - rcStatus.top;
+	m_MainRenderTarget->Clear();
+	m_MainRenderTexture->Render();
+	m_MainRenderTarget->Present();
 }
 
 LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -242,6 +108,18 @@ LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 			info->ptMinTrackSize.x = 160 * 2;
 			info->ptMinTrackSize.y = 144 * 2;
 			break;
+		}
+
+		case WM_PAINT:
+		{
+			PAINTSTRUCT ps;
+			HDC hdc = BeginPaint(hwnd, &ps);
+
+			// Fill screen with colour to avoid horrible effect
+			FillRect(hdc, &ps.rcPaint, reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1));
+			EndPaint(hwnd, &ps);
+
+			return 0;
 		}
 	}
 
@@ -388,7 +266,7 @@ bool MainWindow::OpenFileDialog(std::string* filepath)
 	}
 
 	// Show the Open dialog box
-	const COMDLG_FILTERSPEC filters[3] =
+	const COMDLG_FILTERSPEC filters[] =
 	{
 		{ L"Gameboy ROM", L"*.gb;*.gbc" },
 		{ L"All Files",L"*.*" }
@@ -415,7 +293,7 @@ bool MainWindow::OpenFileDialog(std::string* filepath)
 		// Display the file name to the user
 		if (SUCCEEDED(hr))
 		{
-			*filepath = ConvertToString(path);
+			*filepath = Utilities::ConvertToString(path);
 			CoTaskMemFree(path);
 		}
 
@@ -560,6 +438,17 @@ void MainWindow::HandleKey(bool state, WORD scancode)
 
 void MainWindow::OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	UINT width = LOWORD(lParam);
+	UINT height = HIWORD(lParam);
+
+	// Resize statusbar
+	SendMessage(m_HwndStatusbar, WM_SIZE, wParam, lParam);
+
+	// Resize render window
+	int render_width, render_height;
+	ComputeRenderWindowSize(&render_width, &render_height);
+	SetWindowPos(m_RenderHwnd, NULL, 0, 0, render_width, render_height, SWP_FRAMECHANGED | SWP_NOMOVE);
+
 	// Don't resize on minimized
 	//if (wParam == SIZE_MINIMIZED)
 	//	return;
@@ -573,4 +462,157 @@ void MainWindow::OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	//{
 	//	m_RenderTarget->Resize(width, height);
 	//}
+}
+
+void MainWindow::CreateMainWindow(const std::string& title, int width, int height)
+{
+	HINSTANCE hInstance = GetModuleHandle(NULL);
+	const std::wstring window_title = Utilities::ConvertToWString(title);
+	m_RegisterClassName = window_title;
+
+	// Setup window class
+	WNDCLASS wc = {};
+	wc.style = CS_VREDRAW | CS_HREDRAW;
+	wc.lpfnWndProc = MainWndProc;
+	wc.hInstance = hInstance;
+	wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
+	wc.hCursor = LoadCursor(0, IDC_ARROW);
+	wc.lpszClassName = m_RegisterClassName.c_str();
+	wc.lpszMenuName = NULL;
+
+	if (!RegisterClass(&wc))
+	{
+		throw std::exception("RegisterClass Failed");
+	}
+
+	// Compute window rectangle dimensions based on requested client area dimensions.
+	RECT window_rect = { 0, 0, width, height };
+	AdjustWindowRect(&window_rect, WS_OVERLAPPEDWINDOW, false);
+	int window_width = window_rect.right - window_rect.left;
+	int window_height = window_rect.bottom - window_rect.top;
+
+	// Create window
+	m_Hwnd = CreateWindow(wc.lpszClassName, window_title.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, window_width, window_height, NULL, NULL, hInstance, this);
+	if (m_Hwnd == NULL)
+	{
+		throw std::exception("CreateWindow Failed");
+	}
+
+	// Show window
+	ShowWindow(m_Hwnd, SW_SHOWNORMAL);
+}
+
+void MainWindow::CreateMenuBar()
+{
+	m_MenuBar = CreateMenu();
+
+	// File menu
+	m_FileMenuItem = CreateMenu();
+	AppendMenuW(m_FileMenuItem, MF_STRING, m_MenuFileOpenId, L"Open");
+	AppendMenuW(m_FileMenuItem, MF_STRING, m_MenuFileCloseId, L"Close");
+	AppendMenuW(m_FileMenuItem, MF_STRING, m_MenuFileRestartId, L"Restart");
+	AppendMenuW(m_FileMenuItem, MF_SEPARATOR, NULL, NULL);
+	AppendMenuW(m_FileMenuItem, MF_STRING, m_MenuFileExitId, L"Exit");
+	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_FileMenuItem), L"&File");
+
+	// Emulation menu
+	m_EmulationMenuItem = CreateMenu();
+	AppendMenuW(m_EmulationMenuItem, MF_UNCHECKED, m_MenuEmulationPausePlay, L"Pause");
+	AppendMenuW(m_EmulationMenuItem, MF_SEPARATOR, NULL, NULL);
+	AppendMenuW(m_EmulationMenuItem, MF_STRING, m_MenuEmulationSaveState, L"Save State");
+	AppendMenuW(m_EmulationMenuItem, MF_STRING, m_MenuEmulationLoadState, L"Load State");
+	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_EmulationMenuItem), L"Emulation");
+
+	// Debug menu
+	m_DebugMenuItem = CreateMenu();
+	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTilemap, L"Tilemap");
+	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTracelog, L"Tracelog");
+	AppendMenuW(m_DebugMenuItem, MF_STRING | MF_DISABLED, m_MenuDebugCartridgeInfo, L"Cartridge Info");
+	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_DebugMenuItem), L"Debug");
+
+	// Assign menubar to window
+	SetMenu(m_Hwnd, m_MenuBar);
+}
+
+void MainWindow::CreateStatusBar()
+{
+	RECT rcClient;
+	HLOCAL hloc;
+	PINT paParts;
+	int i, nWidth;
+
+	int cParts = 4;
+
+	// Ensure that the common control DLL is loaded.
+	InitCommonControls();
+
+	HINSTANCE hInstance = GetModuleHandle(NULL);
+
+	// Create the status bar
+	m_HwndStatusbar = CreateWindow(STATUSCLASSNAME, NULL, SBARS_SIZEGRIP | WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, m_Hwnd, m_StatusBar, hInstance, NULL);
+
+	// Get the coordinates of the parent window's client area
+	GetClientRect(m_Hwnd, &rcClient);
+
+	// Allocate an array for holding the right edge coordinates
+	hloc = LocalAlloc(LHND, sizeof(int) * cParts);
+	paParts = (PINT)LocalLock(hloc);
+
+	// Calculate the right edge coordinate for each part, and copy the coordinates to the array
+	nWidth = rcClient.right / cParts;
+	int rightEdge = nWidth;
+	for (i = 0; i < cParts; i++)
+	{
+		paParts[i] = rightEdge;
+		rightEdge += nWidth;
+	}
+
+	// Tell the status bar to create the window parts.
+	SendMessage(m_HwndStatusbar, SB_SETPARTS, (WPARAM)cParts, (LPARAM)paParts);
+
+	// Free the array, and return.
+	LocalUnlock(hloc);
+	LocalFree(hloc);
+}
+
+void MainWindow::CreateRenderWindow()
+{
+	HINSTANCE hInstance = GetModuleHandle(NULL);
+
+	int width, height;
+	ComputeRenderWindowSize(&width, &height);
+
+	// Create render window as a child of the main window
+	m_RenderHwnd = CreateWindow(m_RegisterClassName.c_str(), L"EmulatorWindow", WS_POPUP | WS_VISIBLE | WS_SYSMENU, 0, 0, width, height, NULL, NULL, hInstance, this);
+	if (m_RenderHwnd == NULL)
+	{
+		throw std::exception("CreateWindow Failed");
+	}
+
+	SetParent(m_RenderHwnd, m_Hwnd);
+	ShowWindow(m_RenderHwnd, SW_SHOW);
+
+	// Target
+	m_MainRenderTarget = m_Application->GetRenderDevice()->CreateRenderTarget();
+	m_MainRenderTarget->Create(m_RenderHwnd);
+	m_MainRenderTarget->DisableFullscreenAltEnter();
+
+	// Texture
+	m_MainRenderTexture = m_Application->GetRenderDevice()->CreateTexture();
+	m_MainRenderTexture->Create(160, 144);
+}
+
+void MainWindow::ComputeRenderWindowSize(int* width, int* height)
+{
+	// Calculate main window rectangle
+	RECT window_rect;
+	GetClientRect(m_Hwnd, &window_rect);
+
+	// Calculate status bar
+	RECT status_rect;
+	GetClientRect(m_HwndStatusbar, &status_rect);
+
+	// Compute size
+	*width = (window_rect.right);
+	*height = (window_rect.bottom - status_rect.bottom);
 }

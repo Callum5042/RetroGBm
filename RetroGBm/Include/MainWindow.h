@@ -2,6 +2,10 @@
 
 #include <string>
 #include <Windows.h>
+#include <memory>
+
+#include "Render/RenderTarget.h"
+#include "Render/RenderTexture.h"
 
 class Application;
 
@@ -10,29 +14,39 @@ class MainWindow
 	Application* m_Application = nullptr;
 
 public:
-	MainWindow(Application* application);
-	virtual ~MainWindow() = default;
+	MainWindow();
+	virtual ~MainWindow();
 
 	void Create(const std::string& title, int width, int height);
-
-	void ToggleTileWindowMenuItem(bool checked);
-
-	inline HWND GetHwnd() { return m_Hwnd; }
+	void Update();
 
 	LRESULT HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	inline HWND GetHwnd() { return m_RenderHwnd; }
+
+	void ToggleTileWindowMenuItem(bool checked);
 
 protected:
 	void OnClose();
 	void OnKeyPressed(UINT virtual_key_code);
 
 private:
+	void CreateMainWindow(const std::string& title, int width, int height);
 	HWND m_Hwnd = NULL;
+	std::wstring m_RegisterClassName;
+
+	// Render window
+	void CreateRenderWindow();
+	void ComputeRenderWindowSize(int* width, int* height);
 	HWND m_RenderHwnd = NULL;
-	HWND m_HwndStatusbar = NULL;
+	std::unique_ptr<Render::RenderTarget> m_MainRenderTarget = nullptr;
+	std::unique_ptr<Render::RenderTexture> m_MainRenderTexture = nullptr;
 
-	int m_StatusBarHeight = 0;
-
+	// Menu bar
+	void CreateMenuBar();
 	void HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam);
+	HMENU m_MenuBar = NULL;
+
+	HMENU m_FileMenuItem = NULL;
 	static const UINT m_MenuFileOpenId = 101;
 	static const UINT m_MenuFileCloseId = 102;
 	static const UINT m_MenuFileRestartId = 104;
@@ -48,6 +62,13 @@ private:
 	static const UINT m_MenuEmulationSaveState = 302;
 	static const UINT m_MenuEmulationLoadState = 303;
 
+	// Status bar
+	void CreateStatusBar();
+	HWND m_HwndStatusbar = NULL;
+	HMENU m_StatusBar = NULL;
+
+	// Other unknown atm
+
 	void OpenDialog();
 	bool OpenFileDialog(std::string* filepath);
 	void ToggleTracelog();
@@ -56,11 +77,6 @@ private:
 
 	std::string m_FilePath;
 	void RestartEmulation();
-
-	void SomethingInit();
-	HMENU m_StatusBar = NULL;
-
-	std::wstring m_RegisterClassName;
 
 	void HandleKeyboardEvent(UINT msg, WPARAM wParam, LPARAM lParam);
 	void HandleKey(bool state, WORD scancode);

@@ -23,6 +23,8 @@ public:
 	Application();
 	virtual ~Application();
 
+	static Application* Instance;
+
 	int Start();
 
 	inline Emulator* GetEmulator() { return m_Emulator.get(); }
@@ -49,8 +51,6 @@ private:
 
 	// Main window
 	std::unique_ptr<MainWindow> m_MainWindow = nullptr;
-	std::unique_ptr<Render::RenderTarget> m_MainRenderTarget = nullptr;
-	std::unique_ptr<Render::RenderTexture> m_MainRenderTexture = nullptr;
 	void CreateMainWindow();
 
 	// Tile window

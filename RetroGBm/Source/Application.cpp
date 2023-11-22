@@ -14,8 +14,16 @@
 #include <Ppu.h>
 #include <Joypad.h>
 
+Application* Application::Instance = nullptr;
+
 Application::Application()
 {
+	if (Instance != nullptr)
+	{
+		throw std::exception("There can only be 1 instance created");
+	}
+
+	Instance = this;
 }
 
 Application::~Application()
@@ -111,16 +119,11 @@ void Application::Run()
 		{
 			if (m_Emulator->IsRunning())
 			{
-				// Update textures
-				m_MainRenderTexture->Update(m_Emulator->Instance->GetVideoBuffer(), m_Emulator->Instance->GetVideoPitch());
-
 				// Apply shader
 				m_RenderShader->Use();
 
-				// Render main window
-				m_MainRenderTarget->Clear();
-				m_MainRenderTexture->Render();
-				m_MainRenderTarget->Present();
+				// Update main window
+				m_MainWindow->Update();
 
 				// Render debug window
 				if (m_TileWindow != nullptr)
@@ -131,14 +134,14 @@ void Application::Run()
 			else
 			{
 				// Render main window
-				m_MainRenderTarget->Clear();
-				m_MainRenderTarget->Present();
+				//m_MainRenderTarget->Clear();
+				//m_MainRenderTarget->Present();
 
-				// Render debug window
-				if (m_TileWindow != nullptr)
-				{
-					m_TileWindow->Update();
-				}
+				//// Render debug window
+				//if (m_TileWindow != nullptr)
+				//{
+				//	m_TileWindow->Update();
+				//}
 			}
 		}
 	}
@@ -161,23 +164,13 @@ void Application::Init()
 
 	// Create windows
 	CreateMainWindow();
-	// CreateTilemapWindow();
 }
 
 void Application::CreateMainWindow()
 {
 	// Window
-	m_MainWindow = std::make_unique<MainWindow>(this);
+	m_MainWindow = std::make_unique<MainWindow>();
 	m_MainWindow->Create("RetroGBm", 800, 600);
-
-	// Target
-	m_MainRenderTarget = m_RenderDevice->CreateRenderTarget();
-	m_MainRenderTarget->Create(m_MainWindow->GetHwnd());
-	m_MainRenderTarget->DisableFullscreenAltEnter();
-
-	// Texture
-	m_MainRenderTexture = m_RenderDevice->CreateTexture();
-	m_MainRenderTexture->Create(160, 144);
 }
 
 void Application::CreateTileWindow()
