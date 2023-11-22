@@ -4,10 +4,43 @@
 #include <vector>
 #include "Application.h"
 #include <Emulator.h>
+#include "../resource.h"
+#include <Joypad.h>
+
+// TODO: This really should not be a macro
+#define IDM_MYMENURESOURCE 3
 
 namespace
 {
-	static std::string ConvertToString(const std::wstring& str)
+	MainWindow* GetWindow(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+	{
+		MainWindow* window = nullptr;
+		if (uMsg == WM_NCCREATE)
+		{
+			CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
+			window = reinterpret_cast<MainWindow*>(pCreate->lpCreateParams);
+			SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
+		}
+		else
+		{
+			window = reinterpret_cast<MainWindow*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+		}
+
+		return window;
+	}
+
+	LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+	{
+		MainWindow* window = GetWindow(hwnd, msg, wParam, lParam);
+		if (window == nullptr)
+		{
+			return DefWindowProc(hwnd, msg, wParam, lParam);
+		}
+
+		return window->HandleMessage(hwnd, msg, wParam, lParam);
+	}
+
+	std::string ConvertToString(const std::wstring& str)
 	{
 		size_t size = WideCharToMultiByte(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), NULL, 0, NULL, NULL);
 
@@ -16,15 +49,65 @@ namespace
 
 		return std::string(buffer.data(), chars_converted);
 	}
+
+	std::wstring ConvertToWString(const std::string& str)
+	{
+		size_t size = MultiByteToWideChar(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), NULL, 0);
+
+		std::vector<wchar_t> buffer(size);
+		int chars_converted = MultiByteToWideChar(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), buffer.data(), static_cast<int>(buffer.size()));
+
+		return std::wstring(buffer.data(), chars_converted);
+	}
 }
 
-MainWindow::MainWindow(Application* application) : Window(application)
+MainWindow::MainWindow(Application* application) : m_Application(application)
 {
+	if (m_Hwnd != NULL)
+	{
+		DestroyWindow(m_Hwnd);
+	}
+
+	HINSTANCE hInstance = GetModuleHandle(NULL);
+	UnregisterClassW(m_RegisterClassName.c_str(), hInstance);
 }
 
 void MainWindow::Create(const std::string& title, int width, int height)
 {
-	Window::Create(title, width, height);
+	HINSTANCE hInstance = GetModuleHandle(NULL);
+	const std::wstring window_title = ConvertToWString(title);
+	m_RegisterClassName = window_title;
+
+	// Setup window class
+	WNDCLASS wc = {};
+	wc.style = CS_VREDRAW | CS_HREDRAW;
+	wc.lpfnWndProc = MainWndProc;
+	wc.hInstance = hInstance;
+	wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
+	wc.hCursor = LoadCursor(0, IDC_ARROW);
+	wc.lpszClassName = m_RegisterClassName.c_str();
+	wc.lpszMenuName = MAKEINTRESOURCE(IDM_MYMENURESOURCE);
+
+	if (!RegisterClass(&wc))
+	{
+		throw std::exception("RegisterClass Failed");
+	}
+
+	// Compute window rectangle dimensions based on requested client area dimensions.
+	RECT window_rect = { 0, 0, width, height };
+	AdjustWindowRect(&window_rect, WS_OVERLAPPEDWINDOW, false);
+	int window_width = window_rect.right - window_rect.left;
+	int window_height = window_rect.bottom - window_rect.top;
+
+	// Create window
+	m_Hwnd = CreateWindow(wc.lpszClassName, window_title.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, window_width, window_height, NULL, NULL, hInstance, this);
+	if (m_Hwnd == NULL)
+	{
+		throw std::exception("CreateWindow Failed");
+	}
+
+	// Show window
+	ShowWindow(m_Hwnd, SW_SHOWNORMAL);
 
 	// Menu
 	HMENU menubar = CreateMenu();
@@ -50,13 +133,109 @@ void MainWindow::Create(const std::string& title, int width, int height)
 	AppendMenuW(m_DebugMenuItem, MF_STRING | MF_DISABLED, m_MenuDebugCartridgeInfo, L"Cartridge Info");
 	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_DebugMenuItem), L"Debug");
 
-	SetMenu(this->GetHwnd(), menubar);
+	SetMenu(m_Hwnd, menubar);
+
+	// Status
+	SomethingInit();
+
+	// Actual window - big pile of pickles indee
+
+	//m_RenderHwnd = CreateWindow(GetWindowRegisterClassName().c_str(), L"EmulatorWindow", WS_POPUP | WS_VISIBLE | WS_SYSMENU, 0, 0, width, height - 200, NULL, NULL, hInstance, NULL);
+	m_RenderHwnd = CreateWindow(m_RegisterClassName.c_str(), L"EmulatorWindow", WS_POPUP | WS_VISIBLE | WS_SYSMENU, 0, 0, width, height - 50, NULL, NULL, hInstance, NULL);
+	if (m_RenderHwnd == NULL)
+	{
+		throw std::exception("CreateWindow Failed");
+	}
+
+	SetParent(m_RenderHwnd, m_Hwnd);
+	ShowWindow(m_RenderHwnd, SW_SHOW);
+
+	// Statusbar on top
+	SetWindowPos(m_HwndStatusbar, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+}
+
+void MainWindow::SomethingInit()
+{
+	RECT rcClient;
+	HLOCAL hloc;
+	PINT paParts;
+	int i, nWidth;
+
+	int cParts = 4;
+
+	// Ensure that the common control DLL is loaded.
+	// InitCommonControls();
+
+	HINSTANCE hInstance = GetModuleHandle(NULL);
+
+	// Create the status bar.
+	m_HwndStatusbar = CreateWindowEx(
+		0,                       // no extended styles
+		STATUSCLASSNAME,         // name of status bar class
+		(PCTSTR)NULL,           // no text when first created
+		SBARS_SIZEGRIP |         // includes a sizing grip
+		WS_CHILD | WS_VISIBLE,   // creates a visible child window
+		0, 0, 0, 0,              // ignores size and position
+		m_Hwnd,              // handle to parent window
+		(HMENU)m_StatusBar,       // child window identifier
+		hInstance,                   // handle to application instance
+		NULL);                   // no window creation data
+
+	// Get the coordinates of the parent window's client area.
+	GetClientRect(m_Hwnd, &rcClient);
+
+	// Allocate an array for holding the right edge coordinates.
+	hloc = LocalAlloc(LHND, sizeof(int) * cParts);
+	paParts = (PINT)LocalLock(hloc);
+
+	// Calculate the right edge coordinate for each part, and
+	// copy the coordinates to the array.
+	nWidth = rcClient.right / cParts;
+	int rightEdge = nWidth;
+	for (i = 0; i < cParts; i++)
+	{
+		paParts[i] = rightEdge;
+		rightEdge += nWidth;
+	}
+
+	// Tell the status bar to create the window parts.
+	SendMessage(m_HwndStatusbar, SB_SETPARTS, (WPARAM)cParts, (LPARAM) paParts);
+
+	// Free the array, and return.
+	LocalUnlock(hloc);
+	LocalFree(hloc);
+
+	// Get the height of the status bar
+	RECT rcStatus;
+	GetClientRect(m_HwndStatusbar, &rcStatus);
+	m_StatusBarHeight = rcStatus.bottom - rcStatus.top;
 }
 
 LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
 	{
+		case WM_CLOSE:
+			OnClose();
+			return 0;
+
+		case WM_SYSCHAR:
+			// Disable beeping when we ALT key combo is pressed
+			return 1;
+
+		case WM_SIZE:
+			OnResized(hwnd, msg, wParam, lParam);
+			return 0;
+
+		case WM_KEYDOWN:
+		case WM_KEYUP:
+			HandleKeyboardEvent(msg, wParam, lParam);
+			return 0;
+
+		case WM_COMMAND:
+			HandleMenu(msg, wParam, lParam);
+			break;
+
 		case WM_GETMINMAXINFO:
 		{
 			LPMINMAXINFO info = reinterpret_cast<LPMINMAXINFO>(lParam);
@@ -66,7 +245,7 @@ LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 		}
 	}
 
-	return Window::HandleMessage(hwnd, msg, wParam, lParam);
+	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
 void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
@@ -218,7 +397,7 @@ bool MainWindow::OpenFileDialog(std::string* filepath)
 	file_open->SetFileTypes(2, filters);
 	file_open->SetTitle(L"Open ROM");
 
-	hr = file_open->Show(this->GetHwnd());
+	hr = file_open->Show(m_Hwnd);
 	if (FAILED(hr))
 	{
 		CoUninitialize();
@@ -252,7 +431,6 @@ bool MainWindow::OpenFileDialog(std::string* filepath)
 
 void MainWindow::OnClose()
 {
-	Window::OnClose();
 	PostQuitMessage(0);
 }
 
@@ -306,4 +484,93 @@ void MainWindow::RestartEmulation()
 	{
 		m_Application->LoadRom(m_FilePath);
 	}
+}
+
+void MainWindow::HandleKeyboardEvent(UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	// Decode win32 message
+	WORD key_flags = HIWORD(lParam);
+	bool repeat = (key_flags & KF_REPEAT) == KF_REPEAT;
+	bool alt_down = (key_flags & KF_ALTDOWN) == KF_ALTDOWN;
+	WORD scan_code = LOBYTE(key_flags);
+	BOOL extended_key = (key_flags & KF_EXTENDED) == KF_EXTENDED;
+
+	if (extended_key)
+	{
+		scan_code = MAKEWORD(scan_code, 0xE0);
+	}
+
+	if (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN)
+	{
+		if (!repeat)
+		{
+			HandleKey(true, scan_code);
+		}
+	}
+	else if (msg == WM_KEYUP || msg == WM_SYSKEYUP)
+	{
+		HandleKey(false, scan_code);
+	}
+}
+
+void MainWindow::HandleKey(bool state, WORD scancode)
+{
+	if (m_Application == nullptr)
+	{
+		return;
+	}
+
+	const WORD ZKey = 0x5A;
+	const WORD XKey = 0x58;
+
+	UINT key = MapVirtualKeyW(scancode, MAPVK_VSC_TO_VK_EX);
+	if (state)
+	{
+		this->OnKeyPressed(key);
+	}
+
+	switch (key)
+	{
+		case ZKey:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::B, state);
+			break;
+		case XKey:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::A, state);
+			break;
+		case VK_RETURN:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Start, state);
+			break;
+		case VK_TAB:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Select, state);
+			break;
+		case VK_UP:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Up, state);
+			break;
+		case VK_DOWN:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Down, state);
+			break;
+		case VK_LEFT:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Left, state);
+			break;
+		case VK_RIGHT:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Right, state);
+			break;
+	}
+}
+
+void MainWindow::OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	// Don't resize on minimized
+	//if (wParam == SIZE_MINIMIZED)
+	//	return;
+
+	//// Get window size
+	//int width, height;
+	//this->GetSize(&width, &height);
+
+	//// Resize target
+	//if (m_RenderTarget != nullptr)
+	//{
+	//	m_RenderTarget->Resize(width, height);
+	//}
 }

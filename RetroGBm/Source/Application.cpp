@@ -172,7 +172,7 @@ void Application::CreateMainWindow()
 
 	// Target
 	m_MainRenderTarget = m_RenderDevice->CreateRenderTarget();
-	m_MainRenderTarget->Create(m_MainWindow.get());
+	m_MainRenderTarget->Create(m_MainWindow->GetHwnd());
 	m_MainRenderTarget->DisableFullscreenAltEnter();
 
 	// Texture
