@@ -112,7 +112,7 @@ void Application::Run()
 			if (m_Emulator->IsRunning())
 			{
 				// Update textures
-				m_MainRenderTexture->Update(m_Emulator->Instance->GetPpu()->GetContext()->video_buffer.data(), sizeof(uint32_t) * m_Emulator->Instance->GetPpu()->ScreenResolutionX);
+				m_MainRenderTexture->Update(m_Emulator->Instance->GetVideoBuffer(), m_Emulator->Instance->GetVideoPitch());
 
 				// Apply shader
 				m_RenderShader->Use();
