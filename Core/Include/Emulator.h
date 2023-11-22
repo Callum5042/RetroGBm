@@ -52,6 +52,7 @@ public:
 	void Stop();
 	void SetHalt(bool value);
 	inline bool IsRunning() { return m_Running; }
+	int GetFPS();
 
 	void Pause(bool pause);
 	inline bool IsPaused() const { return m_Paused; }

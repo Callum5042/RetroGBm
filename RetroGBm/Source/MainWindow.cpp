@@ -6,6 +6,7 @@
 #include <Emulator.h>
 #include <Joypad.h>
 #include <Cartridge.h>
+#include <Ppu.h>
 
 #include <string>
 #include <vector>
@@ -45,6 +46,8 @@ namespace
 MainWindow::MainWindow()
 {
 	m_Application = Application::Instance;
+
+	m_Timer.Start();
 }
 
 MainWindow::~MainWindow()
@@ -71,10 +74,34 @@ void MainWindow::Create(const std::string& title, int width, int height)
 
 void MainWindow::Update()
 {
-	m_MainRenderTexture->Update(m_Application->GetEmulator()->GetVideoBuffer(), m_Application->GetEmulator()->GetVideoPitch());
+	// Calculate FPS
+	m_Timer.Tick();
+	m_FrameCount++;
 
+	if ((m_Timer.TotalTime() - m_TimeElapsed) >= 1.0f)
+	{
+		m_FramesPerSecond = m_FrameCount;
+
+		// Reset for next average
+		m_FrameCount = 0;
+		m_TimeElapsed += 1.0f;
+
+		// Update stats FPS
+		Emulator* emulator = m_Application->GetEmulator();
+		if (emulator->IsRunning())
+		{
+			this->SetStatusBarStats(std::format("FPS: {} - VPS: {}", m_FramesPerSecond, emulator->GetFPS()));
+		}
+	}
+
+	// Update texture
 	m_MainRenderTarget->Clear();
-	m_MainRenderTexture->Render();
+	if (m_Application->GetEmulator()->IsRunning())
+	{
+		m_MainRenderTexture->Update(m_Application->GetEmulator()->GetVideoBuffer(), m_Application->GetEmulator()->GetVideoPitch());
+		m_MainRenderTexture->Render();
+	}
+
 	m_MainRenderTarget->Present();
 }
 
@@ -139,6 +166,8 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			m_Application->StopEmulator();
 			EnableMenuItem(m_DebugMenuItem, m_MenuDebugCartridgeInfo, MF_DISABLED);
 			this->SetStatusBarTitle("");
+			this->SetStatusBarStats("");
+			this->SetStatusBarState("");
 			break;
 		case m_MenuFileRestartId:
 			RestartEmulation();

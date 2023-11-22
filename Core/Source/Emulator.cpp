@@ -68,6 +68,11 @@ void Emulator::SetHalt(bool value)
 	m_Halted = value;
 }
 
+int Emulator::GetFPS()
+{
+	return m_Ppu->GetFPS();
+}
+
 void Emulator::Pause(bool pause)
 {
 	m_Paused = pause;

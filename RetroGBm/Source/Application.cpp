@@ -117,11 +117,11 @@ void Application::Run()
 		}
 		else
 		{
+			// Apply shader
+			m_RenderShader->Use();
+
 			if (m_Emulator->IsRunning())
 			{
-				// Apply shader
-				m_RenderShader->Use();
-
 				// Update main window
 				m_MainWindow->Update();
 
@@ -133,15 +133,7 @@ void Application::Run()
 			}
 			else
 			{
-				// Render main window
-				//m_MainRenderTarget->Clear();
-				//m_MainRenderTarget->Present();
-
-				//// Render debug window
-				//if (m_TileWindow != nullptr)
-				//{
-				//	m_TileWindow->Update();
-				//}
+				m_MainWindow->Update();
 			}
 		}
 	}

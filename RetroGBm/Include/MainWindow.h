@@ -3,6 +3,7 @@
 #include <string>
 #include <Windows.h>
 #include <memory>
+#include <HighTimer.h>
 
 #include "Render/RenderTarget.h"
 #include "Render/RenderTexture.h"
@@ -37,6 +38,11 @@ private:
 	void CreateMainWindow(const std::string& title, int width, int height);
 	HWND m_Hwnd = NULL;
 	std::wstring m_RegisterClassName;
+
+	HighTimer m_Timer;
+	float m_TimeElapsed = 0;
+	int m_FrameCount = 0;
+	int m_FramesPerSecond = 0;
 
 	// Render window
 	void CreateRenderWindow();
