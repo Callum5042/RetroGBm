@@ -53,6 +53,22 @@ void MainWindow::Create(const std::string& title, int width, int height)
 	SetMenu(this->GetHwnd(), menubar);
 }
 
+LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg)
+	{
+		case WM_GETMINMAXINFO:
+		{
+			LPMINMAXINFO info = reinterpret_cast<LPMINMAXINFO>(lParam);
+			info->ptMinTrackSize.x = 160 * 2;
+			info->ptMinTrackSize.y = 144 * 2;
+			break;
+		}
+	}
+
+	return Window::HandleMessage(hwnd, msg, wParam, lParam);
+}
+
 void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	const UINT menu_id = LOWORD(wParam);
