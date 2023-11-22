@@ -25,6 +25,9 @@ void Ppu::Init()
 	m_Context.video_buffer.resize(ScreenResolutionY * ScreenResolutionX);
 	std::fill(m_Context.video_buffer.begin(), m_Context.video_buffer.end(), 0x0);
 
+	m_Context.blank_video_buffer.resize(ScreenResolutionY * ScreenResolutionX);
+	std::fill(m_Context.blank_video_buffer.begin(), m_Context.blank_video_buffer.end(), 0xFFFFFFFF);
+
 	m_Context.video_ram.resize(16384);
 	std::fill(m_Context.video_ram.begin(), m_Context.video_ram.end(), 0x0);
 
@@ -52,6 +55,18 @@ void Ppu::Tick()
 		case LcdMode::VBlank:
 			VBlank();
 			break;
+	}
+}
+
+void* Ppu::GetVideoBuffer()
+{
+	if (m_Display->IsLcdEnabled())
+	{
+		return m_Context.video_buffer.data();
+	}
+	else
+	{
+		return m_Context.blank_video_buffer.data();
 	}
 }
 

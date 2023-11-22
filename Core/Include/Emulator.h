@@ -86,6 +86,9 @@ public:
 	inline Joypad* GetJoypad() { return m_Joypad.get(); }
 	inline Cartridge* GetCartridge() { return m_Cartridge.get(); }
 
+	void* GetVideoBuffer();
+	int GetVideoPitch();
+
 	// Trace log
 	void ToggleTraceLog(bool enable);
 	inline bool IsTraceLogEnabled() const { return m_EnableTraceLog; }

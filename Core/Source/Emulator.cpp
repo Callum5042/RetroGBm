@@ -522,3 +522,13 @@ void Emulator::LoadState()
 	m_Ppu->LoadState(&file);
 	m_Dma->LoadState(&file);
 }
+
+void* Emulator::GetVideoBuffer()
+{
+	return m_Ppu->GetVideoBuffer();
+}
+
+int Emulator::GetVideoPitch()
+{
+	return sizeof(uint32_t) * m_Ppu->ScreenResolutionX;
+}

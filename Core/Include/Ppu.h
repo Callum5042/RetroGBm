@@ -79,6 +79,7 @@ struct PpuContext
 	uint8_t window_line_counter = 0;
 
 	std::vector<uint32_t> video_buffer;
+	std::vector<uint32_t> blank_video_buffer;
 	std::vector<uint8_t> video_ram;
 	std::array<OamData, 40> oam_ram;
 	std::vector<OamData> objects_per_line;
@@ -100,6 +101,8 @@ public:
 
 	void Init();
 	void Tick();
+
+	void* GetVideoBuffer();
 
 	// OAM
 	void WriteOam(uint16_t address, uint8_t value);
