@@ -149,6 +149,17 @@ LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 
 			return 0;
 		}
+
+		case WM_NCHITTEST:
+		{
+			// This allows for clicking the child render window to pass the events through to the main window
+			if (hwnd == m_RenderHwnd)
+			{
+				return HTTRANSPARENT;
+			}
+
+			break;
+		}
 	}
 
 	return DefWindowProc(hwnd, msg, wParam, lParam);
