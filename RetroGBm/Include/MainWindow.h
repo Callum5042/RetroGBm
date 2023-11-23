@@ -3,6 +3,7 @@
 #include <string>
 #include <Windows.h>
 #include <memory>
+#include <thread>
 #include <HighTimer.h>
 
 #include "Render/RenderTarget.h"
@@ -43,6 +44,9 @@ private:
 	float m_TimeElapsed = 0;
 	int m_FrameCount = 0;
 	int m_FramesPerSecond = 0;
+
+
+	static const UINT m_RenderTimer = 555;
 
 	// Render window
 	void CreateRenderWindow();
