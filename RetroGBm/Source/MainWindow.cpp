@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <shobjidl.h>
+#include <iostream>
 
 namespace
 {
@@ -159,6 +160,24 @@ LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 			}
 
 			break;
+		}
+
+		case WM_ENTERSIZEMOVE:
+			SetTimer(m_Hwnd, m_RenderTimer, 1, NULL);
+			break;
+
+		case WM_EXITSIZEMOVE:
+			KillTimer(m_Hwnd, m_RenderTimer);
+			break;
+
+		case WM_TIMER:
+		{
+			switch (wParam)
+			{
+				case m_RenderTimer:
+					this->Update();
+					break;
+			}
 		}
 	}
 
