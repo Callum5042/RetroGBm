@@ -332,7 +332,8 @@ uint8_t Cartridge::Read(uint16_t address)
 	if (address >= 0x4000 && address <= 0x7FFF)
 	{
 		uint16_t bank_number = m_CartridgeInfo.rom_bank_controller;
-		return m_CartridgeInfo.data[(address - 0x4000) + (0x4000 * bank_number)];
+		int offset = ((address - 0x4000) + (0x4000 * bank_number)) % m_CartridgeInfo.data.size();
+		return m_CartridgeInfo.data[offset];
 	}
 
 	// Read from RAM
@@ -341,7 +342,8 @@ uint8_t Cartridge::Read(uint16_t address)
 		if (m_CartridgeInfo.enabled_ram)
 		{
 			uint16_t index = m_CartridgeInfo.ram_bank_controller;
-			return m_CartridgeInfo.external_ram[(index * 0x2000) + address - 0xA000];
+			int offset = ((index * 0x2000) + address - 0xA000) % m_CartridgeInfo.external_ram.size();
+			return m_CartridgeInfo.external_ram[offset];
 		}
 		else
 		{
@@ -465,7 +467,8 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 		if (m_CartridgeInfo.enabled_ram)
 		{
 			uint16_t index = m_CartridgeInfo.ram_bank_controller;
-			m_CartridgeInfo.external_ram[(index * 0x2000) + address - 0xA000] = value;
+			int offset = ((index * 0x2000) + address - 0xA000) % m_CartridgeInfo.external_ram.size();
+			m_CartridgeInfo.external_ram[offset] = value;
 		}
 
 		return;
