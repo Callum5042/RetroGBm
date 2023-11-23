@@ -219,12 +219,6 @@ bool Cartridge::Load(const std::string& filepath)
 	// Compute title checksum
 	m_TitleChecksum = std::accumulate(m_CartridgeInfo.title.begin(), m_CartridgeInfo.title.end(), 0);
 
-	// Trim null-terminated char
-	if (m_CartridgeInfo.title.find('\0') != std::string::npos)
-	{
-		m_CartridgeInfo.title.erase(m_CartridgeInfo.title.find('\0'));
-	}
-
 	// Manufacturer code
 	m_CartridgeInfo.header.manufacturer_code.resize(4);
 	std::copy(m_CartridgeInfo.data.data() + 0x013F, m_CartridgeInfo.data.data() + 0x0143, m_CartridgeInfo.header.manufacturer_code.data());
@@ -282,16 +276,22 @@ bool Cartridge::Load(const std::string& filepath)
 	if (cgb_flag == 0x80)
 	{
 		m_CartridgeInfo.header.colour_mode = ColourMode::CGB_SUPPORT;
-		title_trim = 5;
+		title_trim = 1;
 	}
 	else if (cgb_flag == 0xC0)
 	{
 		m_CartridgeInfo.header.colour_mode = ColourMode::CGB;
-		title_trim = 5;
+		title_trim = 1;
 	}
 
 	// Trim title according to which cartridge
-	m_CartridgeInfo.title.erase(m_CartridgeInfo.title.length() - title_trim);
+	m_CartridgeInfo.title.erase(m_CartridgeInfo.title.length() - 1);
+
+	// Trim null-terminated char
+	if (m_CartridgeInfo.title.find('\0') != std::string::npos)
+	{
+		m_CartridgeInfo.title.erase(m_CartridgeInfo.title.find('\0'));
+	}
 
 	// Load RAM if battery is support
 	if (HasBattery())
