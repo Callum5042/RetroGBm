@@ -31,10 +31,12 @@ public:
 	void GetSize(int* width, int* height);
 
 	// Get Win32 handle
-	inline HWND GetHwnd() { return m_Hwnd; }
+	inline virtual HWND GetHwnd() { return m_Hwnd; }
 
 	// Attach render target
 	void AttachRenderTarget(Render::RenderTarget* renderTarget);
+
+	std::wstring GetWindowRegisterClassName() { return m_RegisterClassName; }
 
 protected:
 	HWND m_Hwnd = nullptr;

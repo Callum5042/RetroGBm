@@ -68,6 +68,11 @@ void Emulator::SetHalt(bool value)
 	m_Halted = value;
 }
 
+int Emulator::GetFPS()
+{
+	return m_Ppu->GetFPS();
+}
+
 void Emulator::Pause(bool pause)
 {
 	m_Paused = pause;
@@ -182,54 +187,44 @@ uint8_t Emulator::ReadIO(uint16_t address)
 	{
 		return m_Joypad->GamepadGetOutput();
 	}
-
-	if (address == 0xFF01)
+	else if (address == 0xFF01)
 	{
 		return m_SerialData[0];
 	}
-
-	if (address == 0xFF02)
+	else if (address == 0xFF02)
 	{
 		return m_SerialData[1];
 	}
-
-	if (((address >= 0xFF04) && (address <= 0xFF07)))
+	else if (((address >= 0xFF04) && (address <= 0xFF07)))
 	{
 		return m_Timer->Read(address);
 	}
-
-	if (address == 0xFF0F)
+	else if (address == 0xFF0F)
 	{
 		return m_Cpu->GetInterruptFlags();
 	}
-
-	if (((address >= 0xFF10) && (address <= 0xFF3F)))
+	else if (((address >= 0xFF10) && (address <= 0xFF3F)))
 	{
 		//ignore sound
 		return 0;
 	}
-
-	if (((address >= 0xFF40) && (address <= 0xFF4B)))
+	else if (((address >= 0xFF40) && (address <= 0xFF4B)))
 	{
 		return m_Display->Read(address);
 	}
-
-	if (address == 0xFF4F)
+	else if (address == 0xFF4F)
 	{
 		return m_Ppu->GetVideoRamBank();
 	}
-
-	if (address == 0xFF55)
+	else if (address == 0xFF55)
 	{
 		return m_Dma->GetLengthModeStart();
 	}
-
-	if (address == 0xFF6C)
+	else if (address == 0xFF6C)
 	{
 		return m_Display->GetObjectPriorityMode();
 	}
-
-	if (address == 0xFF70)
+	else if (address == 0xFF70)
 	{
 		return m_Ram->GetWorkRamBank();
 	}
@@ -245,50 +240,42 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 		m_Joypad->Write(value);
 		return;
 	}
-
-	if (address == 0xFF01)
+	else if (address == 0xFF01)
 	{
 		m_SerialData[0] = value;
 		return;
 	}
-
-	if (address == 0xFF02)
+	else if (address == 0xFF02)
 	{
 		m_SerialData[1] = value;
 		return;
 	}
-
-	if (((address >= 0xFF04) && (address <= 0xFF07)))
+	else if (((address >= 0xFF04) && (address <= 0xFF07)))
 	{
 		m_Timer->Write(address, value);
 		return;
 	}
-
-	if (address == 0xFF0F)
+	else if (address == 0xFF0F)
 	{
 		m_Cpu->SetInterrupt(value);
 		return;
 	}
-
-	if (((address >= 0xFF10) && (address <= 0xFF3F)))
+	else if (((address >= 0xFF10) && (address <= 0xFF3F)))
 	{
 		// Ignore sound
 		return;
 	}
-
-	if (((address >= 0xFF40) && (address <= 0xFF4B)))
+	else if (((address >= 0xFF40) && (address <= 0xFF4B)))
 	{
 		m_Display->Write(address, value);
 		return;
 	}
-
-	if (address == 0xFF4F)
+	else if (address == 0xFF4F)
 	{
 		m_Ppu->SetVideoRamBank(value);
 		return;
 	}
-
-	if (address == 0xFF51 || address == 0xFF52)
+	else if (address == 0xFF51 || address == 0xFF52)
 	{
 		m_Dma->SetSource(address, value);
 		return;
@@ -303,20 +290,17 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 		m_Dma->StartCGB(value);
 		return;
 	}
-
-	if (address >= 0xFF68 && address <= 0xFF6B)
+	else if (address >= 0xFF68 && address <= 0xFF6B)
 	{
 		m_Display->Write(address, value);
 		return;
 	}
-
-	if (address == 0xFF6C)
+	else if (address == 0xFF6C)
 	{
 		m_Display->SetObjectPriorityMode(value);
 		return;
 	}
-
-	if (address == 0xFF70)
+	else if (address == 0xFF70)
 	{
 		m_Ram->SetWorkRamBank(value);
 		return;

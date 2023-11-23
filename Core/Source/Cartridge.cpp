@@ -12,7 +12,7 @@
 
 namespace
 {
-	static std::map<uint8_t, std::string> license_codes =
+	std::map<uint8_t, std::string> license_codes =
 	{
 		{ 0x00, "None" },
 		{ 0x01, "Nintendo" },
@@ -163,7 +163,7 @@ namespace
 		{ 0xFF, "LJN" }
 	};
 
-	static std::map<CartridgeType, std::string> cartridge_codes =
+	std::map<CartridgeType, std::string> cartridge_codes =
 	{
 		{ CartridgeType::ROM_ONLY, "ROM ONLY" },
 		{ CartridgeType::MBC1, "MBC1" },
@@ -219,12 +219,6 @@ bool Cartridge::Load(const std::string& filepath)
 	// Compute title checksum
 	m_TitleChecksum = std::accumulate(m_CartridgeInfo.title.begin(), m_CartridgeInfo.title.end(), 0);
 
-	// Trim null-terminated char
-	if (m_CartridgeInfo.title.find('\0') != std::string::npos)
-	{
-		m_CartridgeInfo.title.erase(m_CartridgeInfo.title.find('\0'));
-	}
-
 	// Manufacturer code
 	m_CartridgeInfo.header.manufacturer_code.resize(4);
 	std::copy(m_CartridgeInfo.data.data() + 0x013F, m_CartridgeInfo.data.data() + 0x0143, m_CartridgeInfo.header.manufacturer_code.data());
@@ -277,14 +271,26 @@ bool Cartridge::Load(const std::string& filepath)
 	m_CartridgeInfo.header.version = m_CartridgeInfo.data[0x014C];
 
 	// Check for gameboy colour support
+	int title_trim = 0;
 	uint8_t cgb_flag = m_CartridgeInfo.data[0x0143];
 	if (cgb_flag == 0x80)
 	{
 		m_CartridgeInfo.header.colour_mode = ColourMode::CGB_SUPPORT;
+		title_trim = 1;
 	}
 	else if (cgb_flag == 0xC0)
 	{
 		m_CartridgeInfo.header.colour_mode = ColourMode::CGB;
+		title_trim = 1;
+	}
+
+	// Trim title according to which cartridge
+	m_CartridgeInfo.title.erase(m_CartridgeInfo.title.length() - 1);
+
+	// Trim null-terminated char
+	if (m_CartridgeInfo.title.find('\0') != std::string::npos)
+	{
+		m_CartridgeInfo.title.erase(m_CartridgeInfo.title.find('\0'));
 	}
 
 	// Load RAM if battery is support

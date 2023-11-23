@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Windows.h>
 #include <d3d11_1.h>
 
 // This include is requires for using DirectX smart pointers (ComPtr)
@@ -15,13 +16,13 @@ namespace Render
 	class RenderTarget
 	{
 		RenderDevice* m_RenderDevice = nullptr;
-		Window* m_Hwnd = nullptr;
+		HWND m_Hwnd = nullptr;
 
 	public:
 		RenderTarget(RenderDevice* device);
 		virtual ~RenderTarget() = default;
 
-		void Create(Window* window);
+		void Create(HWND hwnd);
 		void Resize(int width, int height);
 
 		void Clear();

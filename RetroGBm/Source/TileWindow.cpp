@@ -14,7 +14,7 @@ void TileWindow::CreateTilemapWindow()
 {
 	// Target
 	m_TileRenderTarget = m_Application->GetRenderDevice()->CreateRenderTarget();
-	m_TileRenderTarget->Create(this);
+	m_TileRenderTarget->Create(m_Hwnd);
 	m_TileRenderTarget->DisableFullscreenAltEnter();
 
 	// Texture

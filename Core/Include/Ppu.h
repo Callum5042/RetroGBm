@@ -121,6 +121,8 @@ public:
 	const uint16_t ScreenResolutionY = 144;
 	const uint16_t ScreenResolutionX = 160;
 
+	inline int GetFPS() { return m_FramesPerSecond; }
+
 	// Save state
 	void SaveState(std::fstream* file);
 	void LoadState(std::fstream* file);

@@ -1,62 +1,135 @@
 #include "MainWindow.h"
-#include <shobjidl.h>
+#include "Application.h"
+#include "Utilities/Utilities.h"
+#include "../resource.h"
+
+#include <Emulator.h>
+#include <Joypad.h>
+#include <Cartridge.h>
+#include <Ppu.h>
+
 #include <string>
 #include <vector>
-#include "Application.h"
-#include <Emulator.h>
+#include <shobjidl.h>
 
 namespace
 {
-	static std::string ConvertToString(const std::wstring& str)
+	MainWindow* GetWindow(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
-		size_t size = WideCharToMultiByte(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), NULL, 0, NULL, NULL);
+		MainWindow* window = nullptr;
+		if (uMsg == WM_NCCREATE)
+		{
+			CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
+			window = reinterpret_cast<MainWindow*>(pCreate->lpCreateParams);
+			SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
+		}
+		else
+		{
+			window = reinterpret_cast<MainWindow*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+		}
 
-		std::vector<char> buffer(size);
-		int chars_converted = WideCharToMultiByte(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), buffer.data(), static_cast<int>(buffer.size()), NULL, NULL);
+		return window;
+	}
 
-		return std::string(buffer.data(), chars_converted);
+	LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+	{
+		MainWindow* window = GetWindow(hwnd, msg, wParam, lParam);
+		if (window == nullptr)
+		{
+			return DefWindowProc(hwnd, msg, wParam, lParam);
+		}
+
+		return window->HandleMessage(hwnd, msg, wParam, lParam);
 	}
 }
 
-MainWindow::MainWindow(Application* application) : Window(application)
+MainWindow::MainWindow()
 {
+	m_Application = Application::Instance;
+
+	m_Timer.Start();
+}
+
+MainWindow::~MainWindow()
+{
+	if (m_Hwnd != NULL)
+	{
+		DestroyWindow(m_Hwnd);
+	}
+
+	HINSTANCE hInstance = GetModuleHandle(NULL);
+	UnregisterClassW(m_RegisterClassName.c_str(), hInstance);
 }
 
 void MainWindow::Create(const std::string& title, int width, int height)
 {
-	Window::Create(title, width, height);
+	CreateMainWindow(title, width, height);
+	CreateMenuBar();
+	CreateStatusBar();
+	CreateRenderWindow();
 
-	// Menu
-	HMENU menubar = CreateMenu();
+	// Statusbar on draw on top of render
+	SetWindowPos(m_HwndStatusbar, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+}
 
-	HMENU filemenu = CreateMenu();
-	AppendMenuW(filemenu, MF_STRING, m_MenuFileOpenId, L"Open");
-	AppendMenuW(filemenu, MF_STRING, m_MenuFileCloseId, L"Close");
-	AppendMenuW(filemenu, MF_STRING, m_MenuFileRestartId, L"Restart");
-	AppendMenuW(filemenu, MF_SEPARATOR, NULL, NULL);
-	AppendMenuW(filemenu, MF_STRING, m_MenuFileExitId, L"Exit");
-	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(filemenu), L"&File");
+void MainWindow::Update()
+{
+	// Calculate FPS
+	m_Timer.Tick();
+	m_FrameCount++;
 
-	m_EmulationMenuItem = CreateMenu();
-	AppendMenuW(m_EmulationMenuItem, MF_UNCHECKED, m_MenuEmulationPausePlay, L"Pause");
-	AppendMenuW(m_EmulationMenuItem, MF_SEPARATOR, NULL, NULL);
-	AppendMenuW(m_EmulationMenuItem, MF_STRING, m_MenuEmulationSaveState, L"Save State");
-	AppendMenuW(m_EmulationMenuItem, MF_STRING, m_MenuEmulationLoadState, L"Load State");
-	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_EmulationMenuItem), L"Emulation");
+	if ((m_Timer.TotalTime() - m_TimeElapsed) >= 1.0f)
+	{
+		m_FramesPerSecond = m_FrameCount;
 
-	m_DebugMenuItem = CreateMenu();
-	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTilemap, L"Tilemap");
-	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTracelog, L"Tracelog");
-	AppendMenuW(m_DebugMenuItem, MF_STRING | MF_DISABLED, m_MenuDebugCartridgeInfo, L"Cartridge Info");
-	AppendMenuW(menubar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_DebugMenuItem), L"Debug");
+		// Reset for next average
+		m_FrameCount = 0;
+		m_TimeElapsed += 1.0f;
 
-	SetMenu(this->GetHwnd(), menubar);
+		// Update stats FPS
+		Emulator* emulator = m_Application->GetEmulator();
+		if (emulator->IsRunning())
+		{
+			this->SetStatusBarStats(std::format("FPS: {} - VPS: {}", m_FramesPerSecond, emulator->GetFPS()));
+		}
+	}
+
+	// Update texture
+	m_MainRenderTarget->Clear();
+	if (m_Application->GetEmulator()->IsRunning())
+	{
+		m_MainRenderTexture->Update(m_Application->GetEmulator()->GetVideoBuffer(), m_Application->GetEmulator()->GetVideoPitch());
+		m_MainRenderTexture->Render();
+	}
+
+	m_MainRenderTarget->Present();
 }
 
 LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
 	{
+		case WM_CLOSE:
+			OnClose();
+			return 0;
+
+		case WM_SYSCHAR:
+			// Disable beeping when we ALT key combo is pressed
+			return 1;
+
+		case WM_SIZE:
+			OnResized(hwnd, msg, wParam, lParam);
+			return 0;
+
+		case WM_KEYDOWN:
+		case WM_KEYUP:
+			HandleKeyboardEvent(msg, wParam, lParam);
+			return 0;
+
+		case WM_COMMAND:
+			HandleMenu(msg, wParam, lParam);
+			break;
+
 		case WM_GETMINMAXINFO:
 		{
 			LPMINMAXINFO info = reinterpret_cast<LPMINMAXINFO>(lParam);
@@ -64,9 +137,32 @@ LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 			info->ptMinTrackSize.y = 144 * 2;
 			break;
 		}
+
+		case WM_PAINT:
+		{
+			PAINTSTRUCT ps;
+			HDC hdc = BeginPaint(hwnd, &ps);
+
+			// Fill screen with colour to avoid horrible effect
+			FillRect(hdc, &ps.rcPaint, reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1));
+			EndPaint(hwnd, &ps);
+
+			return 0;
+		}
+
+		case WM_NCHITTEST:
+		{
+			// This allows for clicking the child render window to pass the events through to the main window
+			if (hwnd == m_RenderHwnd)
+			{
+				return HTTRANSPARENT;
+			}
+
+			break;
+		}
 	}
 
-	return Window::HandleMessage(hwnd, msg, wParam, lParam);
+	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
 void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
@@ -80,6 +176,9 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		case m_MenuFileCloseId:
 			m_Application->StopEmulator();
 			EnableMenuItem(m_DebugMenuItem, m_MenuDebugCartridgeInfo, MF_DISABLED);
+			this->SetStatusBarTitle("");
+			this->SetStatusBarStats("");
+			this->SetStatusBarState("");
 			break;
 		case m_MenuFileRestartId:
 			RestartEmulation();
@@ -100,8 +199,6 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 				CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND | MF_CHECKED);
 				m_Application->CreateTileWindow();
 			}
-
-			// CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYPOSITION | MF_CHECKED);
 			break;
 		}
 		case m_MenuDebugTracelog:
@@ -137,16 +234,18 @@ void MainWindow::ToggleEmulationPaused()
 		return;
 	}
 
-	UINT menu_state = GetMenuState(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND);
-	if (menu_state & MF_CHECKED)
+	bool paused = emulator->IsPaused();
+	if (paused)
 	{
 		CheckMenuItem(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND | MF_UNCHECKED);
 		emulator->Pause(false);
+		this->SetStatusBarState("Playing");
 	}
 	else
 	{
 		CheckMenuItem(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND | MF_CHECKED);
 		emulator->Pause(true);
+		this->SetStatusBarState("Paused");
 	}
 }
 
@@ -185,6 +284,9 @@ void MainWindow::OpenDialog()
 		m_FilePath = path;
 		m_Application->LoadRom(path);
 		EnableMenuItem(m_DebugMenuItem, m_MenuDebugCartridgeInfo, MF_ENABLED);
+
+		this->SetStatusBarTitle(m_Application->GetEmulator()->GetCartridge()->GetCartridgeInfo()->title);
+		this->SetStatusBarState("Playing");
 	}
 }
 
@@ -209,7 +311,7 @@ bool MainWindow::OpenFileDialog(std::string* filepath)
 	}
 
 	// Show the Open dialog box
-	const COMDLG_FILTERSPEC filters[3] =
+	const COMDLG_FILTERSPEC filters[] =
 	{
 		{ L"Gameboy ROM", L"*.gb;*.gbc" },
 		{ L"All Files",L"*.*" }
@@ -218,7 +320,7 @@ bool MainWindow::OpenFileDialog(std::string* filepath)
 	file_open->SetFileTypes(2, filters);
 	file_open->SetTitle(L"Open ROM");
 
-	hr = file_open->Show(this->GetHwnd());
+	hr = file_open->Show(m_Hwnd);
 	if (FAILED(hr))
 	{
 		CoUninitialize();
@@ -236,7 +338,7 @@ bool MainWindow::OpenFileDialog(std::string* filepath)
 		// Display the file name to the user
 		if (SUCCEEDED(hr))
 		{
-			*filepath = ConvertToString(path);
+			*filepath = Utilities::ConvertToString(path);
 			CoTaskMemFree(path);
 		}
 
@@ -252,7 +354,6 @@ bool MainWindow::OpenFileDialog(std::string* filepath)
 
 void MainWindow::OnClose()
 {
-	Window::OnClose();
 	PostQuitMessage(0);
 }
 
@@ -271,22 +372,7 @@ void MainWindow::OnKeyPressed(UINT virtual_key_code)
 	// Pause
 	if (virtual_key_code == PKey || virtual_key_code == CKey)
 	{
-		Emulator* emulator = m_Application->GetEmulator();
-		if (emulator->IsRunning())
-		{
-			bool paused = emulator->IsPaused();
-
-			if (paused)
-			{
-				emulator->Pause(false);
-				CheckMenuItem(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND | MF_UNCHECKED);
-			}
-			else
-			{
-				emulator->Pause(true);
-				CheckMenuItem(m_EmulationMenuItem, m_MenuEmulationPausePlay, MF_BYCOMMAND | MF_CHECKED);
-			}
-		}
+		ToggleEmulationPaused();
 	}
 
 	// Save state
@@ -306,4 +392,256 @@ void MainWindow::RestartEmulation()
 	{
 		m_Application->LoadRom(m_FilePath);
 	}
+}
+
+void MainWindow::HandleKeyboardEvent(UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	// Decode win32 message
+	WORD key_flags = HIWORD(lParam);
+	bool repeat = (key_flags & KF_REPEAT) == KF_REPEAT;
+	bool alt_down = (key_flags & KF_ALTDOWN) == KF_ALTDOWN;
+	WORD scan_code = LOBYTE(key_flags);
+	BOOL extended_key = (key_flags & KF_EXTENDED) == KF_EXTENDED;
+
+	if (extended_key)
+	{
+		scan_code = MAKEWORD(scan_code, 0xE0);
+	}
+
+	if (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN)
+	{
+		if (!repeat)
+		{
+			HandleKey(true, scan_code);
+		}
+	}
+	else if (msg == WM_KEYUP || msg == WM_SYSKEYUP)
+	{
+		HandleKey(false, scan_code);
+	}
+}
+
+void MainWindow::HandleKey(bool state, WORD scancode)
+{
+	if (m_Application == nullptr)
+	{
+		return;
+	}
+
+	const WORD ZKey = 0x5A;
+	const WORD XKey = 0x58;
+
+	UINT key = MapVirtualKeyW(scancode, MAPVK_VSC_TO_VK_EX);
+	if (state)
+	{
+		this->OnKeyPressed(key);
+	}
+
+	switch (key)
+	{
+		case ZKey:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::B, state);
+			break;
+		case XKey:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::A, state);
+			break;
+		case VK_RETURN:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Start, state);
+			break;
+		case VK_TAB:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Select, state);
+			break;
+		case VK_UP:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Up, state);
+			break;
+		case VK_DOWN:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Down, state);
+			break;
+		case VK_LEFT:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Left, state);
+			break;
+		case VK_RIGHT:
+			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Right, state);
+			break;
+	}
+}
+
+void MainWindow::OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	UINT width = LOWORD(lParam);
+	UINT height = HIWORD(lParam);
+
+	// Resize statusbar
+	SendMessage(m_HwndStatusbar, WM_SIZE, wParam, lParam);
+	ComputeStatusBarSections();
+
+	// Resize render window
+	int render_width, render_height;
+	ComputeRenderWindowSize(&render_width, &render_height);
+	SetWindowPos(m_RenderHwnd, NULL, 0, 0, render_width, render_height, SWP_FRAMECHANGED | SWP_NOMOVE);
+
+	// Don't resize on minimized
+	if (wParam == SIZE_MINIMIZED)
+		return;
+
+	// Resize target
+	if (m_MainRenderTarget != nullptr)
+		m_MainRenderTarget->Resize(render_width, render_height);
+}
+
+void MainWindow::CreateMainWindow(const std::string& title, int width, int height)
+{
+	HINSTANCE hInstance = GetModuleHandle(NULL);
+	const std::wstring window_title = Utilities::ConvertToWString(title);
+	m_RegisterClassName = window_title;
+
+	// Setup window class
+	WNDCLASS wc = {};
+	wc.style = CS_VREDRAW | CS_HREDRAW;
+	wc.lpfnWndProc = MainWndProc;
+	wc.hInstance = hInstance;
+	wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
+	wc.hCursor = LoadCursor(0, IDC_ARROW);
+	wc.lpszClassName = m_RegisterClassName.c_str();
+	wc.lpszMenuName = NULL;
+
+	if (!RegisterClass(&wc))
+	{
+		throw std::exception("RegisterClass Failed");
+	}
+
+	// Compute window rectangle dimensions based on requested client area dimensions.
+	RECT window_rect = { 0, 0, width, height };
+	AdjustWindowRect(&window_rect, WS_OVERLAPPEDWINDOW, false);
+	int window_width = window_rect.right - window_rect.left;
+	int window_height = window_rect.bottom - window_rect.top;
+
+	// Create window
+	m_Hwnd = CreateWindow(wc.lpszClassName, window_title.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, window_width, window_height, NULL, NULL, hInstance, this);
+	if (m_Hwnd == NULL)
+	{
+		throw std::exception("CreateWindow Failed");
+	}
+
+	// Show window
+	ShowWindow(m_Hwnd, SW_SHOWNORMAL);
+}
+
+void MainWindow::CreateMenuBar()
+{
+	m_MenuBar = CreateMenu();
+
+	// File menu
+	m_FileMenuItem = CreateMenu();
+	AppendMenuW(m_FileMenuItem, MF_STRING, m_MenuFileOpenId, L"Open");
+	AppendMenuW(m_FileMenuItem, MF_STRING, m_MenuFileCloseId, L"Close");
+	AppendMenuW(m_FileMenuItem, MF_STRING, m_MenuFileRestartId, L"Restart");
+	AppendMenuW(m_FileMenuItem, MF_SEPARATOR, NULL, NULL);
+	AppendMenuW(m_FileMenuItem, MF_STRING, m_MenuFileExitId, L"Exit");
+	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_FileMenuItem), L"&File");
+
+	// Emulation menu
+	m_EmulationMenuItem = CreateMenu();
+	AppendMenuW(m_EmulationMenuItem, MF_UNCHECKED, m_MenuEmulationPausePlay, L"Pause");
+	AppendMenuW(m_EmulationMenuItem, MF_SEPARATOR, NULL, NULL);
+	AppendMenuW(m_EmulationMenuItem, MF_STRING, m_MenuEmulationSaveState, L"Save State");
+	AppendMenuW(m_EmulationMenuItem, MF_STRING, m_MenuEmulationLoadState, L"Load State");
+	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_EmulationMenuItem), L"Emulation");
+
+	// Debug menu
+	m_DebugMenuItem = CreateMenu();
+	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTilemap, L"Tilemap");
+	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTracelog, L"Tracelog");
+	AppendMenuW(m_DebugMenuItem, MF_STRING | MF_DISABLED, m_MenuDebugCartridgeInfo, L"Cartridge Info");
+	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_DebugMenuItem), L"Debug");
+
+	// Assign menubar to window
+	SetMenu(m_Hwnd, m_MenuBar);
+}
+
+void MainWindow::CreateStatusBar()
+{
+	// Ensure that the common control DLL is loaded
+	InitCommonControls();
+
+	// Create the status bar
+	HINSTANCE hInstance = GetModuleHandle(NULL);
+	m_HwndStatusbar = CreateWindow(STATUSCLASSNAME, NULL, SBARS_SIZEGRIP | WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, m_Hwnd, m_StatusBar, hInstance, NULL);
+	ComputeStatusBarSections();
+}
+
+void MainWindow::ComputeStatusBarSections()
+{
+	// Calculate status bar
+	RECT status_rect;
+	GetClientRect(m_HwndStatusbar, &status_rect);
+
+	int section_width = status_rect.right / 3;
+
+	// Create sections
+	std::vector<int> edges = { section_width * 1, section_width * 2, section_width * 3 };
+	SendMessage(m_HwndStatusbar, SB_SETPARTS, (WPARAM)edges.size(), (LPARAM)edges.data());
+}
+
+void MainWindow::CreateRenderWindow()
+{
+	HINSTANCE hInstance = GetModuleHandle(NULL);
+
+	int width, height;
+	ComputeRenderWindowSize(&width, &height);
+
+	// Create render window as a child of the main window
+	m_RenderHwnd = CreateWindow(m_RegisterClassName.c_str(), L"EmulatorWindow", WS_POPUP | WS_VISIBLE | WS_SYSMENU, 0, 0, width, height, NULL, NULL, hInstance, this);
+	if (m_RenderHwnd == NULL)
+	{
+		throw std::exception("CreateWindow Failed");
+	}
+
+	SetParent(m_RenderHwnd, m_Hwnd);
+	ShowWindow(m_RenderHwnd, SW_SHOW);
+
+	// Target
+	m_MainRenderTarget = m_Application->GetRenderDevice()->CreateRenderTarget();
+	m_MainRenderTarget->Create(m_RenderHwnd);
+	m_MainRenderTarget->DisableFullscreenAltEnter();
+
+	// Texture
+	m_MainRenderTexture = m_Application->GetRenderDevice()->CreateTexture();
+	m_MainRenderTexture->Create(160, 144);
+}
+
+void MainWindow::ComputeRenderWindowSize(int* width, int* height)
+{
+	// Calculate main window rectangle
+	RECT window_rect;
+	GetClientRect(m_Hwnd, &window_rect);
+
+	// Calculate status bar
+	RECT status_rect;
+	GetClientRect(m_HwndStatusbar, &status_rect);
+
+	// Compute size
+	*width = (window_rect.right);
+	*height = (window_rect.bottom - status_rect.bottom);
+}
+
+void MainWindow::SetStatusBarTitle(const std::string& text)
+{
+	int section = 0;
+	std::wstring str = Utilities::ConvertToWString(text);
+	SendMessage(m_HwndStatusbar, SB_SETTEXT, section | SBT_POPOUT, reinterpret_cast<LPARAM>(str.data()));
+}
+
+void MainWindow::SetStatusBarStats(const std::string& text)
+{
+	int section = 1;
+	std::wstring str = Utilities::ConvertToWString(text);
+	SendMessage(m_HwndStatusbar, SB_SETTEXT, section | SBT_POPOUT, reinterpret_cast<LPARAM>(str.data()));
+}
+
+void MainWindow::SetStatusBarState(const std::string& text)
+{
+	int section = 2;
+	std::wstring str = Utilities::ConvertToWString(text);
+	SendMessage(m_HwndStatusbar, SB_SETTEXT, section | SBT_POPOUT, reinterpret_cast<LPARAM>(str.data()));
 }

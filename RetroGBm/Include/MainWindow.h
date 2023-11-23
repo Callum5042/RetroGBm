@@ -1,28 +1,62 @@
 #pragma once
 
-#include "Window.h"
 #include <string>
+#include <Windows.h>
+#include <memory>
+#include <HighTimer.h>
 
-class MainWindow : public Window
+#include "Render/RenderTarget.h"
+#include "Render/RenderTexture.h"
+
+class Application;
+
+class MainWindow
 {
-public:
-	MainWindow(Application* application);
-	virtual ~MainWindow() = default;
+	Application* m_Application = nullptr;
 
-	virtual void Create(const std::string& title, int width, int height) override;
+public:
+	MainWindow();
+	virtual ~MainWindow();
+
+	void Create(const std::string& title, int width, int height);
+	void Update();
+
+	LRESULT HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	inline HWND GetHwnd() { return m_RenderHwnd; }
 
 	void ToggleTileWindowMenuItem(bool checked);
 
+	void SetStatusBarTitle(const std::string& text);
+	void SetStatusBarStats(const std::string& text);
+	void SetStatusBarState(const std::string& text);
+
 protected:
-	virtual void OnClose() override;
-
-	virtual void OnKeyPressed(UINT virtual_key_code) override;
-
-	virtual LRESULT HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) override;
+	void OnClose();
+	void OnKeyPressed(UINT virtual_key_code);
 
 private:
+	void CreateMainWindow(const std::string& title, int width, int height);
+	HWND m_Hwnd = NULL;
+	std::wstring m_RegisterClassName;
 
-	virtual void HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam) override;
+	HighTimer m_Timer;
+	float m_TimeElapsed = 0;
+	int m_FrameCount = 0;
+	int m_FramesPerSecond = 0;
+
+	// Render window
+	void CreateRenderWindow();
+	void ComputeRenderWindowSize(int* width, int* height);
+	HWND m_RenderHwnd = NULL;
+	std::unique_ptr<Render::RenderTarget> m_MainRenderTarget = nullptr;
+	std::unique_ptr<Render::RenderTexture> m_MainRenderTexture = nullptr;
+
+	// Menu bar
+	void CreateMenuBar();
+	void HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam);
+	HMENU m_MenuBar = NULL;
+
+	HMENU m_FileMenuItem = NULL;
 	static const UINT m_MenuFileOpenId = 101;
 	static const UINT m_MenuFileCloseId = 102;
 	static const UINT m_MenuFileRestartId = 104;
@@ -38,6 +72,14 @@ private:
 	static const UINT m_MenuEmulationSaveState = 302;
 	static const UINT m_MenuEmulationLoadState = 303;
 
+	// Status bar
+	void CreateStatusBar();
+	void ComputeStatusBarSections();
+	HWND m_HwndStatusbar = NULL;
+	HMENU m_StatusBar = NULL;
+
+	// Other unknown atm
+
 	void OpenDialog();
 	bool OpenFileDialog(std::string* filepath);
 	void ToggleTracelog();
@@ -46,4 +88,8 @@ private:
 
 	std::string m_FilePath;
 	void RestartEmulation();
+
+	void HandleKeyboardEvent(UINT msg, WPARAM wParam, LPARAM lParam);
+	void HandleKey(bool state, WORD scancode);
+	void OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 };
