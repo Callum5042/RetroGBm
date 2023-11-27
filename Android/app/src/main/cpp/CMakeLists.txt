@@ -11,6 +11,11 @@ cmake_minimum_required(VERSION 3.22.1)
 # build script scope).
 project("retrogbm")
 
+set(EmulatorCoreIncDir "D:/Sources/RetroGBm/Core/Include")
+set(EmulatorCoreSrcDir "D:/Sources/RetroGBm/Core/Source")
+
+include_directories(${EmulatorCoreIncDir})
+
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
@@ -26,7 +31,19 @@ project("retrogbm")
 # used in the AndroidManifest.xml file.
 add_library(${CMAKE_PROJECT_NAME} SHARED
         # List C/C++ source files with relative paths to this CMakeLists.txt.
-        native-lib.cpp)
+        native-lib.cpp
+        ${EmulatorCoreSrcDir}/Cartridge.cpp
+        ${EmulatorCoreSrcDir}/Cpu.cpp
+        ${EmulatorCoreSrcDir}/Display.cpp
+        ${EmulatorCoreSrcDir}/Dma.cpp
+        ${EmulatorCoreSrcDir}/Emulator.cpp
+        ${EmulatorCoreSrcDir}/ExtendedInstructions.cpp
+        ${EmulatorCoreSrcDir}/Instructions.cpp
+        ${EmulatorCoreSrcDir}/Joypad.cpp
+        ${EmulatorCoreSrcDir}/Ppu.cpp
+        ${EmulatorCoreSrcDir}/Ram.cpp
+        ${EmulatorCoreSrcDir}/Timer.cpp
+)
 
 # Specifies libraries CMake should link to your target library. You
 # can link libraries from various origins, such as libraries defined in this

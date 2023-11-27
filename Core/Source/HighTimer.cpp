@@ -1,11 +1,17 @@
 #include "Pch.h"
 #include "HighTimer.h"
+#include <ctime>
+
+#ifdef _WIN32
 #include <Windows.h>
+#endif
 
 HighTimer::HighTimer()
 {
 	__int64 counts_per_second = 0;
 	QueryPerformanceFrequency((LARGE_INTEGER*)&counts_per_second);
+
+
 	m_SecondsPerCount = 1.0 / static_cast<double>(counts_per_second);
 
 	Reset();

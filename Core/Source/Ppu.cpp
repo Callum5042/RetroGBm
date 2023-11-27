@@ -34,7 +34,9 @@ void Ppu::Init()
 	m_Display->Init();
 	m_Display->SetLcdMode(LcdMode::OAM);
 
+#ifdef _WIN32
 	m_Timer.Start();
+#endif
 }
 
 void Ppu::Tick()
@@ -598,6 +600,7 @@ void Ppu::FetchTileData(FetchTileByte tile_byte)
 
 void Ppu::LimitFrameRate()
 {
+#ifdef _WIN32
 	m_Timer.Tick();
 	m_FrameCount++;
 
@@ -621,6 +624,7 @@ void Ppu::LimitFrameRate()
 		const std::chrono::duration<double, std::milli> elapsed(m_TargetFrameTime - m_Timer.DeltaTime());
 		std::this_thread::sleep_for(elapsed);
 	}
+#endif
 }
 
 void Ppu::SaveState(std::fstream* file)

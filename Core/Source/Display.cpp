@@ -4,7 +4,6 @@
 #include "Emulator.h"
 #include "Dma.h"
 #include <iostream>
-#include <format>
 
 namespace
 {
@@ -209,7 +208,7 @@ void Display::Write(uint16_t address, uint8_t value)
 		return;
 	}
 
-	std::cout << std::format("Unsupport DisplayWrite: 0x{:x}", address) << '\n';
+	std::cout << "Unsupport DisplayWrite: 0x{:x}" << address << '\n';
 }
 
 bool Display::IsLcdEnabled()

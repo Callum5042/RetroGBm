@@ -5,7 +5,10 @@
 #include <vector>
 #include <array>
 #include <queue>
+
+#ifdef _WIN32
 #include "HighTimer.h"
+#endif
 
 class IBus;
 class Cpu;
@@ -159,10 +162,13 @@ private:
 
 	// Limit frame rate
 	void LimitFrameRate();
-	HighTimer m_Timer;
 	float m_TargetFrameTime = 1.0f / 60.0f;
 	int m_FramesPerSecond = 0;
 	int m_TotalFrames = 0;
+
+#ifdef _WIN32
+	HighTimer m_Timer;
+#endif
 
 	int m_FrameCount = 0;
 	float m_TimeElapsed = 0.0f;

@@ -2,8 +2,10 @@ package com.retrogbm
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Environment
 import android.widget.TextView
 import com.retrogbm.databinding.ActivityMainBinding
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -16,7 +18,15 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // Example of a call to a native method
-        binding.sampleText.text = stringFromJNI()
+        val documentPath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
+        val path = "$documentPath/cgb-acid2.gbc"
+
+        // Load cartridge test
+        val cartridgePtr: Long = createAndLoadCartridge(path)
+        val title: String = cartridgeGetTitle(cartridgePtr)
+
+
+        binding.sampleText.text = title //stringFromFile(path)
     }
 
     /**
@@ -24,6 +34,12 @@ class MainActivity : AppCompatActivity() {
      * which is packaged with this application.
      */
     external fun stringFromJNI(): String
+
+    private external fun stringFromFile(path: String): String
+
+    // Cartridge life
+    private external fun createAndLoadCartridge(path: String): Long
+    private external fun cartridgeGetTitle(cartridgePtr: Long): String
 
     companion object {
         // Used to load the 'retrogbm' library on application startup.

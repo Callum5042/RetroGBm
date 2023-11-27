@@ -5,7 +5,6 @@
 #include <map>
 #include <cstdint>
 #include <iostream>
-#include <format>
 #include <string>
 #include <numeric>
 #undef max
@@ -85,12 +84,12 @@ namespace
 		{ 0x8B, "Bullet-Proof Software" },
 		{ 0x8C, "Vic Tokai" },
 		{ 0x8E, "Ape" },
-		{ 0x8F, "I’Max" },
+		{ 0x8F, "Iï¿½Max" },
 		{ 0x91, "Chunsoft Co." },
 		{ 0x92, "Video System" },
 		{ 0x93, "Tsubaraya Productions Co." },
 		{ 0x95, "Varie Corporation" },
-		{ 0x96, "Yonezawa/S’Pal" },
+		{ 0x96, "Yonezawa/Sï¿½Pal" },
 		{ 0x97, "Kaneko" },
 		{ 0x99, "Arc" },
 		{ 0x9A, "Nihon Bussan" },
@@ -296,7 +295,7 @@ bool Cartridge::Load(const std::string& filepath)
 	// Load RAM if battery is support
 	if (HasBattery())
 	{
-		std::string filename = std::format("{}.save", m_CartridgeInfo.title);
+		std::string filename = m_CartridgeInfo.title + ".save";
 
 		std::ifstream battery(filename, std::ios::in | std::ios::binary);
 		battery.read(reinterpret_cast<char*>(&m_CartridgeInfo.ram_bank_controller), 1);
@@ -377,7 +376,7 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 		// Save to file each time we disable the ram
 		if (HasBattery() && !m_CartridgeInfo.enabled_ram)
 		{
-			std::string filename = std::format("{}.save", m_CartridgeInfo.title);
+			std::string filename = m_CartridgeInfo.title + ".save";
 
 			std::ofstream battery(filename, std::ios::out | std::ios::binary);
 			battery.write(reinterpret_cast<char*>(&m_CartridgeInfo.ram_bank_controller), 1);

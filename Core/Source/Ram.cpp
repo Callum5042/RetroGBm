@@ -2,7 +2,6 @@
 #include "Ram.h"
 #include <algorithm>
 #include <iostream>
-#include <format>
 
 Ram::Ram()
 {
@@ -28,7 +27,7 @@ uint8_t Ram::ReadWorkRam(uint16_t address)
 	}
 	else
 	{
-		std::cout << std::format("Unsupported ReadWorkRam: 0x{:x}", address) << '\n';
+		std::cout << "Unsupported ReadWorkRam: 0x" << address << '\n';
 		return 0xFF;
 	}
 }
@@ -46,7 +45,7 @@ void Ram::WriteWorkRam(uint16_t address, uint8_t value)
 	}
 	else
 	{
-		std::cout << std::format("Unsupported ReadWorkRam: 0x{:x}", address) << '\n';
+		std::cout << "Unsupported ReadWorkRam: 0x" << address << '\n';
 	}
 }
 
