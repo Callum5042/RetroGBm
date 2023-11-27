@@ -5,6 +5,7 @@
 #include <Emulator.h>
 #include <Cartridge.h>
 #include <Ppu.h>
+#include <Joypad.h>
 
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_retrogbm_MainActivity_stringFromJNI(
@@ -110,4 +111,11 @@ Java_com_retrogbm_MainActivity_getVideoBuffer(JNIEnv *env, jobject thiz, jlong e
     jintArray result = env->NewIntArray(size);
     env->SetIntArrayRegion(result, 0, size, (jint*)emulator->GetPpu()->GetContext()->video_buffer.data());
     return result;
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_retrogbm_MainActivity_pressButton(JNIEnv *env, jobject thiz, jlong emulator_ptr, jint button, jboolean state) {
+    Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+    emulator->GetJoypad()->SetJoypad(static_cast<JoypadButton>(button), state);
 }

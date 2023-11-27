@@ -5,6 +5,9 @@ import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
+import android.view.MotionEvent
+import android.view.View
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import com.retrogbm.databinding.ActivityMainBinding
@@ -34,8 +37,8 @@ class MainActivity : AppCompatActivity() {
         // val path = "$documentPath/Dr. Mario (World).gb"
         // val path = "$documentPath/Pokemon Red.gb"
         // val path = "$documentPath/PokemonGold.gbc"
-        val path = "$documentPath/Pokemon - Yellow Version.gbc"
-
+        // val path = "$documentPath/Pokemon - Yellow Version.gbc"
+        val path = "$documentPath/Super Mario Land.gb"
 
         // Load cartridge test
 //        val cartridgePtr: Long = createAndLoadCartridge(path)
@@ -63,12 +66,57 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-
-
         val title = cartridgeGetTitle(emulatorPtr)
-
         binding.sampleText.text = title //stringFromFile(path)
+
+        // Buttons
+        val buttonLeft = findViewById<Button>(R.id.btnLeft)
+        val buttonRight = findViewById<Button>(R.id.btnRight)
+        val buttonUp = findViewById<Button>(R.id.btnUp)
+        val buttonDown = findViewById<Button>(R.id.btnDown)
+
+        val buttonA = findViewById<Button>(R.id.btnA)
+        val buttonB = findViewById<Button>(R.id.btnB)
+        val buttonStart = findViewById<Button>(R.id.btnStart)
+        val buttonSelect = findViewById<Button>(R.id.btnSelect)
+
+        setButtonTouchListener(buttonLeft, emulatorPtr, 6)
+        setButtonTouchListener(buttonRight, emulatorPtr, 7)
+        setButtonTouchListener(buttonUp, emulatorPtr, 4)
+        setButtonTouchListener(buttonDown, emulatorPtr, 5)
+
+        setButtonTouchListener(buttonA, emulatorPtr, 0)
+        setButtonTouchListener(buttonB, emulatorPtr, 1)
+        setButtonTouchListener(buttonStart, emulatorPtr, 2)
+        setButtonTouchListener(buttonSelect, emulatorPtr, 3)
     }
+
+    private fun setButtonTouchListener(button: View, emulatorPtr: Long, btn: Int) {
+        button.setOnTouchListener(object : View.OnTouchListener {
+            override fun onTouch(view: View?, event: MotionEvent?): Boolean {
+                when (event?.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        // Handle touch down event
+                        // This is triggered when the user first touches the screen
+                        pressButton(emulatorPtr, btn, true)
+                        return true
+                    }
+                    MotionEvent.ACTION_UP -> {
+                        // Handle touch up event
+                        // This is triggered when the user releases the touch
+                        pressButton(emulatorPtr, btn, false)
+                        return true
+                    }
+                    // You can handle other MotionEvent actions as needed
+                    // For example: MotionEvent.ACTION_MOVE for movement events
+
+                    else -> return false
+                }
+            }
+        })
+    }
+
+
 
     private fun setColours(pixels: List<Int>) {
         val pixelsBuffer = IntBuffer.wrap(pixels.toIntArray())
@@ -102,6 +150,8 @@ class MainActivity : AppCompatActivity() {
     private external fun getVideoBuffer(emulatorPtr: Long): IntArray
 
     private external fun getPixels(colour: Int): IntArray
+
+    private external fun pressButton(emulatorPtr: Long, button: Int, state: Boolean)
 
     companion object {
         // Used to load the 'retrogbm' library on application startup.
