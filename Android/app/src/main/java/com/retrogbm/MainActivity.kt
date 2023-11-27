@@ -76,7 +76,7 @@ class MainActivity : AppCompatActivity() {
         val bitmap: Bitmap = Bitmap.createBitmap(160, 144, Bitmap.Config.ARGB_8888)
         bitmap.copyPixelsFromBuffer(pixelsBuffer)
 
-        val scaledBitmap: Bitmap = Bitmap.createScaledBitmap(bitmap, 160, 144, false)
+        val scaledBitmap: Bitmap = Bitmap.createScaledBitmap(bitmap, 160 * 2, 144 * 2, true)
 
         val image: ImageView = findViewById(R.id.ivEmulator)
         image.setImageBitmap(scaledBitmap)
