@@ -185,7 +185,7 @@ void Ppu::VBlank()
 		// Keep increasing LY register until we reach the lines per frame
 		if (m_Display->m_Context.ly >= m_LinesPerFrame)
 		{
-			LimitFrameRate();
+			// LimitFrameRate();
 
 			m_Display->SetLcdMode(LcdMode::OAM);
 			m_Display->m_Context.ly = 0;
@@ -540,7 +540,14 @@ void Ppu::PushPixelToVideoBuffer()
 {
 	if (m_Context.pipeline.pixel_queue.size() > 8)
 	{
-		uint32_t pixel_data = m_Context.pipeline.pixel_queue.front();
+		uint32_t pixel_data = (m_Context.pipeline.pixel_queue.front());
+
+		// Need this for android
+#ifndef _WIN32
+		pixel_data = 0xFF000000 | pixel_data;
+#endif // !_WIN32
+
+
 		m_Context.pipeline.pixel_queue.pop();
 
 		if (m_Context.pipeline.line_x >= (m_Display->m_Context.scx % 8))

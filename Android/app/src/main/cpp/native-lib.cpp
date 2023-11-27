@@ -2,7 +2,9 @@
 #include <string>
 #include <fstream>
 
+#include <Emulator.h>
 #include <Cartridge.h>
+#include <Ppu.h>
 
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_retrogbm_MainActivity_stringFromJNI(
@@ -45,8 +47,67 @@ Java_com_retrogbm_MainActivity_createAndLoadCartridge(JNIEnv *env, jobject thiz,
 
 extern "C"
 JNIEXPORT jstring JNICALL
-Java_com_retrogbm_MainActivity_cartridgeGetTitle(JNIEnv *env, jobject thiz, jlong cartridge_ptr) {
+Java_com_retrogbm_MainActivity_cartridgeGetTitle(JNIEnv *env, jobject thiz, jlong emulator_ptr) {
 
-    Cartridge* cartridge = reinterpret_cast<Cartridge*>(cartridge_ptr);
-    return env->NewStringUTF(cartridge->GetCartridgeInfo()->title.c_str());
+//    Cartridge* cartridge = reinterpret_cast<Cartridge*>(cartridge_ptr);
+//    return env->NewStringUTF(cartridge->GetCartridgeInfo()->title.c_str());
+
+    Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+    std::string title = emulator->GetCartridge()->GetCartridgeInfo()->title;
+    return env->NewStringUTF(title.c_str());
+}
+
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_com_retrogbm_MainActivity_createEmulator(JNIEnv *env, jobject thiz) {
+    return reinterpret_cast<jlong>(new Emulator());
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_retrogbm_MainActivity_loadRom(JNIEnv *env, jobject thiz, jlong emulator_ptr,
+                                       jstring path) {
+    Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+    emulator->LoadRom(env->GetStringUTFChars(path, nullptr));
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_retrogbm_MainActivity_tick(JNIEnv *env, jobject thiz, jlong emulator_ptr) {
+    Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+    emulator->Tick();
+}
+
+extern "C"
+JNIEXPORT jintArray JNICALL
+Java_com_retrogbm_MainActivity_getPixels(JNIEnv *env, jobject thiz, jint colour) {
+    int alpha = (colour >> 24) & 0xFF;
+    int red = (colour >> 16) & 0xFF;
+    int green = (colour >> 8) & 0xFF;
+    int blue = (colour >> 0) & 0xFF;
+
+    int swapped = (alpha << 24) | (blue << 16) | (green << 8) | (red);
+
+    // Fill with red
+    std::vector<uint32_t> pixels(160*144);
+    std::fill(pixels.begin(), pixels.end(), static_cast<int>(swapped));
+
+    // Copy the C++ array to the JVM array
+    jintArray result = env->NewIntArray(pixels.size());
+    env->SetIntArrayRegion(result, 0, pixels.size(), (jint*)pixels.data());
+    return result;
+}
+
+extern "C"
+JNIEXPORT jintArray JNICALL
+Java_com_retrogbm_MainActivity_getVideoBuffer(JNIEnv *env, jobject thiz, jlong emulator_ptr) {
+    Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+
+    size_t size = emulator->GetPpu()->GetContext()->video_buffer.size();
+    // data = emulator->GetPpu()->GetContext()->video_buffer.data();
+
+    // Copy the C++ array to the JVM array
+    jintArray result = env->NewIntArray(size);
+    env->SetIntArrayRegion(result, 0, size, (jint*)emulator->GetPpu()->GetContext()->video_buffer.data());
+    return result;
 }
