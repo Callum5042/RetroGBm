@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.retrogbm.android"
+    namespace = "com.retrogbm"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.retrogbm.android"
+        applicationId = "com.retrogbm"
         minSdk = 29
         targetSdk = 34
         versionCode = 1
@@ -17,7 +17,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
-                cppFlags += ""
+                cppFlags += "-std=c++17"
             }
         }
     }
@@ -43,6 +43,9 @@ android {
             path = file("src/main/cpp/CMakeLists.txt")
             version = "3.22.1"
         }
+    }
+    buildFeatures {
+        viewBinding = true
     }
 }
 
