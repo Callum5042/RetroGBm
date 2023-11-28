@@ -3,8 +3,8 @@
 #include "ExtendedInstructions.h"
 #include "Emulator.h"
 #include "Cpu.h"
+#include <exception>
 #include <iostream>
-#include <format>
 using namespace Op;
 
 void Op::Nop(EmulatorContext* context)
@@ -1775,7 +1775,7 @@ void Op::ExtendedPrefix(EmulatorContext* context)
 			break;
 
 		default:
-			throw std::exception(std::format("Extended instruction not implement: 0x{:x}", extended_op).c_str());
+			throw std::runtime_error(("Extended instruction not implement: 0x" + std::to_string(extended_op)).c_str());
 	}
 }
 

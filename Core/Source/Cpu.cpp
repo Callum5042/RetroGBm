@@ -5,7 +5,6 @@
 #include "Cartridge.h"
 #include <exception>
 #include <sstream>
-#include <format>
 
 Cpu::Cpu()
 {
@@ -118,7 +117,7 @@ uint8_t Cpu::GetRegister(RegisterType8 type) const
 	auto it = m_Registers.find(type);
 	if (it == m_Registers.end())
 	{
-		throw std::exception("GetRegister failed unable to find register type");
+		throw std::runtime_error("GetRegister failed unable to find register type");
 	}
 
 	return it->second;
@@ -155,7 +154,7 @@ uint16_t Cpu::GetRegister(RegisterType16 type) const
 			return StackPointer;
 
 		default:
-			throw std::exception("GetRegister flag not supported");
+			throw std::runtime_error("GetRegister flag not supported");
 	}
 
 	uint16_t data = data_low | (data_high << 8);
@@ -185,7 +184,7 @@ void Cpu::SetFlag(CpuFlag flag, bool data)
 				break;
 
 			default:
-				throw std::exception("Tried to set to unsupported flag");
+				throw std::runtime_error("Tried to set to unsupported flag");
 		}
 	}
 	else
@@ -209,7 +208,7 @@ void Cpu::SetFlag(CpuFlag flag, bool data)
 				break;
 
 			default:
-				throw std::exception("Tried to set to unsupported flag");
+				throw std::runtime_error("Tried to set to unsupported flag");
 		}
 	}
 }
@@ -233,7 +232,7 @@ bool Cpu::GetFlag(CpuFlag flag) const
 			return ((flag_register >> 4) & 1) != 0;
 	}
 
-	throw std::exception("unsupported CpuFlag in function GetFlag");
+	throw std::runtime_error("unsupported CpuFlag in function GetFlag");
 }
 
 std::string Cpu::Details()
@@ -282,7 +281,7 @@ std::string RegisterTypeString16(RegisterType16 type)
 			return "SP";
 	}
 
-	throw std::exception("unsupported RegisterType16 in function RegisterTypeString16");
+	throw std::runtime_error("unsupported RegisterType16 in function RegisterTypeString16");
 }
 
 std::string RegisterTypeString8(RegisterType8 type)
@@ -314,7 +313,7 @@ std::string RegisterTypeString8(RegisterType8 type)
 			return "L";
 	}
 
-	throw std::exception("unsupported RegisterType16 in function RegisterTypeString8");
+	throw std::runtime_error("unsupported RegisterType16 in function RegisterTypeString8");
 }
 
 std::string FlagString(CpuFlag flag)
@@ -334,7 +333,7 @@ std::string FlagString(CpuFlag flag)
 			return "H";
 	}
 
-	throw std::exception("unsupported CpuFlag in function FlagString");
+	throw std::runtime_error("unsupported CpuFlag in function FlagString");
 }
 
 void Cpu::EnableMasterInterrupts()
@@ -1218,6 +1217,6 @@ void Cpu::Execute(EmulatorContext* context, const uint8_t opcode)
 			Op::Rst(context, 0x38);
 			break;
 		default:
-			throw std::exception(std::format("Instruction not implemented: 0x{:x}", opcode).c_str());
+			throw std::runtime_error(("Instruction not implement: 0x" + std::to_string(opcode)).c_str());
 	}
 }

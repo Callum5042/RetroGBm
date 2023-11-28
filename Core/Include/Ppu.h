@@ -1,10 +1,11 @@
 #pragma once
 
 #include <cstdint>
-#include "Display.h"
 #include <vector>
 #include <array>
 #include <queue>
+
+#include "Display.h"
 #include "HighTimer.h"
 
 class IBus;
@@ -104,6 +105,7 @@ public:
 
 	void* GetVideoBuffer();
 
+
 	// OAM
 	void WriteOam(uint16_t address, uint8_t value);
 	uint8_t ReadOam(uint16_t address);
@@ -159,10 +161,11 @@ private:
 
 	// Limit frame rate
 	void LimitFrameRate();
-	HighTimer m_Timer;
-	float m_TargetFrameTime = 1.0f / 60.0f;
+	double m_TargetFrameTime = 1.0f / 60.0f;
 	int m_FramesPerSecond = 0;
 	int m_TotalFrames = 0;
+
+	HighTimer m_Timer;
 
 	int m_FrameCount = 0;
 	float m_TimeElapsed = 0.0f;

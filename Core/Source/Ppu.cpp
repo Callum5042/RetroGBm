@@ -4,6 +4,7 @@
 #include "Display.h"
 #include "Emulator.h"
 #include "Cartridge.h"
+#include "HighTimer.h"
 #include <algorithm>
 #include <chrono>
 #include <thread>
@@ -538,7 +539,14 @@ void Ppu::PushPixelToVideoBuffer()
 {
 	if (m_Context.pipeline.pixel_queue.size() > 8)
 	{
-		uint32_t pixel_data = m_Context.pipeline.pixel_queue.front();
+		uint32_t pixel_data = (m_Context.pipeline.pixel_queue.front());
+
+		// Need this for android
+#ifndef _WIN32
+		pixel_data = 0xFF000000 | pixel_data;
+#endif // !_WIN32
+
+
 		m_Context.pipeline.pixel_queue.pop();
 
 		if (m_Context.pipeline.line_x >= (m_Display->m_Context.scx % 8))
@@ -618,8 +626,15 @@ void Ppu::LimitFrameRate()
 	// Limit framerate to match target rate
 	if (m_Timer.DeltaTime() < m_TargetFrameTime)
 	{
+#ifdef _WIN32
+		m_Timer.Stop();
 		const std::chrono::duration<double, std::milli> elapsed(m_TargetFrameTime - m_Timer.DeltaTime());
 		std::this_thread::sleep_for(elapsed);
+		m_Timer.Start();
+#else
+		using namespace std::chrono_literals;
+		std::this_thread::sleep_for(16ms);
+#endif
 	}
 }
 

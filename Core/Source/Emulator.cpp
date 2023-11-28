@@ -113,7 +113,7 @@ void Emulator::Tick()
 	{
 		if (IsTraceLogEnabled())
 		{
-			std::string debug_format = std::format("OP:{:X},PC:{:X},AF:{:X},BC:{:X},DE:{:X},HL:{:X},SP:{:X}",
+			/*std::string debug_format = std::format("OP:{:X},PC:{:X},AF:{:X},BC:{:X},DE:{:X},HL:{:X},SP:{:X}",
 												   opcode,
 												   m_Context.cpu->ProgramCounter,
 												   m_Context.cpu->GetRegister(RegisterType16::REG_AF),
@@ -122,7 +122,7 @@ void Emulator::Tick()
 												   m_Context.cpu->GetRegister(RegisterType16::REG_HL),
 												   m_Context.cpu->StackPointer);
 
-			m_TraceLog << debug_format << std::endl;
+			m_TraceLog << debug_format << std::endl;*/
 		}
 
 		m_Cpu->Execute(&m_Context, opcode);
@@ -367,7 +367,7 @@ uint8_t Emulator::ReadBus(uint16_t address)
 		return m_Cpu->GetInterruptEnable();
 	}
 
-	std::cout << std::format("Unsupported ReadBus: 0x{:x}", address) << '\n';
+	std::cout << "Unsupported ReadBus: 0x{:x}" << address << '\n';
 	return 0xFF;
 }
 
@@ -435,7 +435,7 @@ void Emulator::WriteBus(uint16_t address, uint8_t value)
 		return;
 	}
 
-	std::cout << std::format("Unsupported WriteBus: 0x{:x}", address) << '\n';
+	std::cout << "Unsupported WriteBus: 0x" << address << '\n';
 }
 
 uint16_t Emulator::ReadBus16(uint16_t address)
@@ -480,7 +480,7 @@ uint16_t Emulator::StackPop16()
 void Emulator::SaveState()
 {
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
-	std::fstream file(std::format("{}.state", m_Cartridge->GetCartridgeInfo()->title), std::ios::binary | std::ios::out);
+	std::fstream file(m_Cartridge->GetCartridgeInfo()->title + ".state", std::ios::binary | std::ios::out);
 
 	m_Cpu->SaveState(&file);
 	m_Timer->SaveState(&file);
@@ -495,7 +495,7 @@ void Emulator::SaveState()
 void Emulator::LoadState()
 {
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
-	std::fstream file(std::format("{}.state", m_Cartridge->GetCartridgeInfo()->title), std::ios::binary | std::ios::in);
+	std::fstream file(m_Cartridge->GetCartridgeInfo()->title + ".state", std::ios::binary | std::ios::in);
 
 	m_Cpu->LoadState(&file);
 	m_Timer->LoadState(&file);
