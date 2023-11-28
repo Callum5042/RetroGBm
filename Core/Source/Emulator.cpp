@@ -78,11 +78,6 @@ void Emulator::Pause(bool pause)
 	m_Paused = pause;
 }
 
-int Emulator::GetFrameCount()
-{
-	return m_Ppu->GetFrameCount();
-}
-
 void Emulator::ToggleTraceLog(bool enable)
 {
 	if (enable)

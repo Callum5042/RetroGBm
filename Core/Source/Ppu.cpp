@@ -607,8 +607,6 @@ void Ppu::FetchTileData(FetchTileByte tile_byte)
 
 void Ppu::LimitFrameRate()
 {
-	m_FrameTotalCount++;
-
 #ifdef _WIN32
 	m_Timer.Tick();
 

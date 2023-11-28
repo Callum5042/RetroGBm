@@ -20,11 +20,17 @@ import java.nio.IntBuffer
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityMainBinding
-    private val coroutineScope = CoroutineScope(Dispatchers.Main)
-    private val coroutineScope2 = CoroutineScope(Dispatchers.Main)
+    // Coroutines
+    private val emulatorCoroutineScope = CoroutineScope(Dispatchers.Main)
+    private val updateTexturecoroutineScope = CoroutineScope(Dispatchers.Main)
 
-    private var frameCount: Int = 0
+    // UI components
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var image: ImageView
+
+    // Emulator components
+    private var emulator: EmulatorWrapper = EmulatorWrapper()
+    private val bitmap: Bitmap = Bitmap.createBitmap(160, 144, Bitmap.Config.ARGB_8888)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,7 +40,7 @@ class MainActivity : AppCompatActivity() {
 
         image = findViewById(R.id.ivEmulator)
 
-        // Example of a call to a native method
+        // Load emulator and rom
         val documentPath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
         // val path = "$documentPath/cgb-acid2.gbc"
         // val path = "$documentPath/Tetris.gb"
@@ -43,42 +49,33 @@ class MainActivity : AppCompatActivity() {
         // val path = "$documentPath/PokemonGold.gbc"
         // val path = "$documentPath/Pokemon - Yellow Version.gbc"
         val path = "$documentPath/Super Mario Land.gb"
+        emulator.loadRom(path)
 
-        // Load cartridge test
-//        val cartridgePtr: Long = createAndLoadCartridge(path)
-//        val title: String = cartridgeGetTitle(cartridgePtr)
-
-
-
-        // Emulator life
-        val emulatorPtr = createEmulator()
-        loadRom(emulatorPtr, path)
-
-        coroutineScope.launch(Dispatchers.Default) {
+        // Emulator background thread
+        emulatorCoroutineScope.launch(Dispatchers.Default) {
             while (true) {
-                tick(emulatorPtr)
+                emulator.tick()
             }
         }
 
-        coroutineScope2.launch(Dispatchers.Default) {
+        // Emulator update thread
+        updateTexturecoroutineScope.launch(Dispatchers.Default) {
             while (true) {
-
-                val frame = getFrameCount(emulatorPtr)
-                if (frame != frameCount) {
-                    // frameCount = frame
-                    withContext(Dispatchers.Main) {
-                        val pixels = getVideoBuffer(emulatorPtr)
-                        // val pixels = getPixels(Color.GREEN)
-                        setColours(pixels.toList())
-                    }
+                withContext(Dispatchers.Main) {
+                    val pixels = emulator.getVideoBuffer()
+                    setColours(pixels.toList())
                 }
             }
         }
 
-        val title = cartridgeGetTitle(emulatorPtr)
-        binding.sampleText.text = title //stringFromFile(path)
+        val title = emulator.getCartridgeTitle()
+        binding.sampleText.text = title
 
         // Buttons
+        registerButtons()
+    }
+
+    private fun registerButtons() {
         val buttonLeft = findViewById<Button>(R.id.btnLeft)
         val buttonRight = findViewById<Button>(R.id.btnRight)
         val buttonUp = findViewById<Button>(R.id.btnUp)
@@ -89,31 +86,31 @@ class MainActivity : AppCompatActivity() {
         val buttonStart = findViewById<Button>(R.id.btnStart)
         val buttonSelect = findViewById<Button>(R.id.btnSelect)
 
-        setButtonTouchListener(buttonLeft, emulatorPtr, 6)
-        setButtonTouchListener(buttonRight, emulatorPtr, 7)
-        setButtonTouchListener(buttonUp, emulatorPtr, 4)
-        setButtonTouchListener(buttonDown, emulatorPtr, 5)
+        setButtonTouchListener(buttonLeft, 6)
+        setButtonTouchListener(buttonRight, 7)
+        setButtonTouchListener(buttonUp, 4)
+        setButtonTouchListener(buttonDown, 5)
 
-        setButtonTouchListener(buttonA, emulatorPtr, 0)
-        setButtonTouchListener(buttonB, emulatorPtr, 1)
-        setButtonTouchListener(buttonStart, emulatorPtr, 2)
-        setButtonTouchListener(buttonSelect, emulatorPtr, 3)
+        setButtonTouchListener(buttonA, 0)
+        setButtonTouchListener(buttonB, 1)
+        setButtonTouchListener(buttonStart, 2)
+        setButtonTouchListener(buttonSelect, 3)
     }
 
-    private fun setButtonTouchListener(button: View, emulatorPtr: Long, btn: Int) {
+    private fun setButtonTouchListener(button: View, btn: Int) {
         button.setOnTouchListener(object : View.OnTouchListener {
             override fun onTouch(view: View?, event: MotionEvent?): Boolean {
                 when (event?.action) {
                     MotionEvent.ACTION_DOWN -> {
                         // Handle touch down event
                         // This is triggered when the user first touches the screen
-                        pressButton(emulatorPtr, btn, true)
+                        emulator.pressButton(btn, true)
                         return true
                     }
                     MotionEvent.ACTION_UP -> {
                         // Handle touch up event
                         // This is triggered when the user releases the touch
-                        pressButton(emulatorPtr, btn, false)
+                        emulator.pressButton(btn, false)
                         return true
                     }
                     // You can handle other MotionEvent actions as needed
@@ -125,38 +122,11 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    private lateinit var image: ImageView
-    private val bitmap: Bitmap = Bitmap.createBitmap(160, 144, Bitmap.Config.ARGB_8888)
-
     private fun setColours(pixels: List<Int>) {
         val pixelsBuffer = IntBuffer.wrap(pixels.toIntArray())
         bitmap.copyPixelsFromBuffer(pixelsBuffer)
         image.setImageBitmap(bitmap)
     }
-
-    /**
-     * A native method that is implemented by the 'retrogbm' native library,
-     * which is packaged with this application.
-     */
-    external fun stringFromJNI(): String
-
-    private external fun stringFromFile(path: String): String
-
-    // Cartridge life
-    private external fun createAndLoadCartridge(path: String): Long
-    private external fun cartridgeGetTitle(emulatorPtr: Long): String
-
-    // Emulator life
-    private external fun createEmulator(): Long
-    private external fun loadRom(emulatorPtr: Long, path: String)
-    private external fun tick(emulatorPtr: Long)
-
-    private external fun getVideoBuffer(emulatorPtr: Long): IntArray
-    private external fun getFrameCount(emulatorPtr: Long): Int
-
-    private external fun getPixels(colour: Int): IntArray
-
-    private external fun pressButton(emulatorPtr: Long, button: Int, state: Boolean)
 
     companion object {
         // Used to load the 'retrogbm' library on application startup.
