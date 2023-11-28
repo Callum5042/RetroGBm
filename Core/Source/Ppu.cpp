@@ -185,7 +185,7 @@ void Ppu::VBlank()
 		// Keep increasing LY register until we reach the lines per frame
 		if (m_Display->m_Context.ly >= m_LinesPerFrame)
 		{
-			// LimitFrameRate();
+			LimitFrameRate();
 
 			m_Display->SetLcdMode(LcdMode::OAM);
 			m_Display->m_Context.ly = 0;
@@ -607,9 +607,10 @@ void Ppu::FetchTileData(FetchTileByte tile_byte)
 
 void Ppu::LimitFrameRate()
 {
+	m_FrameTotalCount++;
+
 #ifdef _WIN32
 	m_Timer.Tick();
-	m_FrameCount++;
 
 	// Compute averages over one second period
 	if ((m_Timer.TotalTime() - m_TimeElapsed) >= 1.0f)

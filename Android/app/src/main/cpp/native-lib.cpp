@@ -119,3 +119,10 @@ Java_com_retrogbm_MainActivity_pressButton(JNIEnv *env, jobject thiz, jlong emul
     Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
     emulator->GetJoypad()->SetJoypad(static_cast<JoypadButton>(button), state);
 }
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_retrogbm_MainActivity_getFrameCount(JNIEnv *env, jobject thiz, jlong emulator_ptr) {
+    Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+    return emulator->GetFrameCount();
+}

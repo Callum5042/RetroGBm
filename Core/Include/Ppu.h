@@ -107,6 +107,7 @@ public:
 
 	void* GetVideoBuffer();
 
+
 	// OAM
 	void WriteOam(uint16_t address, uint8_t value);
 	uint8_t ReadOam(uint16_t address);
@@ -125,6 +126,7 @@ public:
 	const uint16_t ScreenResolutionX = 160;
 
 	inline int GetFPS() { return m_FramesPerSecond; }
+	inline int GetFrameCount() const { return m_FrameTotalCount; }
 
 	// Save state
 	void SaveState(std::fstream* file);
@@ -171,6 +173,7 @@ private:
 #endif
 
 	int m_FrameCount = 0;
+	int m_FrameTotalCount = 1;
 	float m_TimeElapsed = 0.0f;
 
 	// Bank

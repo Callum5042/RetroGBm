@@ -24,11 +24,15 @@ class MainActivity : AppCompatActivity() {
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
     private val coroutineScope2 = CoroutineScope(Dispatchers.Main)
 
+    private var frameCount: Int = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        image = findViewById(R.id.ivEmulator)
 
         // Example of a call to a native method
         val documentPath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
@@ -58,10 +62,15 @@ class MainActivity : AppCompatActivity() {
 
         coroutineScope2.launch(Dispatchers.Default) {
             while (true) {
-                withContext(Dispatchers.Main) {
-                    val pixels = getVideoBuffer(emulatorPtr)
-                    // val pixels = getPixels(Color.GREEN)
-                    setColours(pixels.toList())
+
+                val frame = getFrameCount(emulatorPtr)
+                if (frame != frameCount) {
+                    // frameCount = frame
+                    withContext(Dispatchers.Main) {
+                        val pixels = getVideoBuffer(emulatorPtr)
+                        // val pixels = getPixels(Color.GREEN)
+                        setColours(pixels.toList())
+                    }
                 }
             }
         }
@@ -116,18 +125,13 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-
+    private lateinit var image: ImageView
+    private val bitmap: Bitmap = Bitmap.createBitmap(160, 144, Bitmap.Config.ARGB_8888)
 
     private fun setColours(pixels: List<Int>) {
         val pixelsBuffer = IntBuffer.wrap(pixels.toIntArray())
-
-        val bitmap: Bitmap = Bitmap.createBitmap(160, 144, Bitmap.Config.ARGB_8888)
         bitmap.copyPixelsFromBuffer(pixelsBuffer)
-
-        val scaledBitmap: Bitmap = Bitmap.createScaledBitmap(bitmap, 160 * 2, 144 * 2, true)
-
-        val image: ImageView = findViewById(R.id.ivEmulator)
-        image.setImageBitmap(scaledBitmap)
+        image.setImageBitmap(bitmap)
     }
 
     /**
@@ -148,6 +152,7 @@ class MainActivity : AppCompatActivity() {
     private external fun tick(emulatorPtr: Long)
 
     private external fun getVideoBuffer(emulatorPtr: Long): IntArray
+    private external fun getFrameCount(emulatorPtr: Long): Int
 
     private external fun getPixels(colour: Int): IntArray
 
