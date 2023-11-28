@@ -43,6 +43,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         ${EmulatorCoreSrcDir}/Ppu.cpp
         ${EmulatorCoreSrcDir}/Ram.cpp
         ${EmulatorCoreSrcDir}/Timer.cpp
+        ${EmulatorCoreSrcDir}/HighTimer.cpp
 )
 
 # Specifies libraries CMake should link to your target library. You

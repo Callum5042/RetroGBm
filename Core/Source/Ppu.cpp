@@ -4,6 +4,7 @@
 #include "Display.h"
 #include "Emulator.h"
 #include "Cartridge.h"
+#include "HighTimer.h"
 #include <algorithm>
 #include <chrono>
 #include <thread>
@@ -34,9 +35,7 @@ void Ppu::Init()
 	m_Display->Init();
 	m_Display->SetLcdMode(LcdMode::OAM);
 
-#ifdef _WIN32
 	m_Timer.Start();
-#endif
 }
 
 void Ppu::Tick()
@@ -607,8 +606,8 @@ void Ppu::FetchTileData(FetchTileByte tile_byte)
 
 void Ppu::LimitFrameRate()
 {
-#ifdef _WIN32
 	m_Timer.Tick();
+	m_FrameCount++;
 
 	// Compute averages over one second period
 	if ((m_Timer.TotalTime() - m_TimeElapsed) >= 1.0f)
@@ -627,10 +626,16 @@ void Ppu::LimitFrameRate()
 	// Limit framerate to match target rate
 	if (m_Timer.DeltaTime() < m_TargetFrameTime)
 	{
+#ifdef _WIN32
+		m_Timer.Stop();
 		const std::chrono::duration<double, std::milli> elapsed(m_TargetFrameTime - m_Timer.DeltaTime());
 		std::this_thread::sleep_for(elapsed);
-	}
+		m_Timer.Start();
+#else
+		using namespace std::chrono_literals;
+		std::this_thread::sleep_for(16ms);
 #endif
+	}
 }
 
 void Ppu::SaveState(std::fstream* file)
