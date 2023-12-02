@@ -4,13 +4,15 @@ class EmulatorWrapper {
 
     private var emulatorPtr: Long = 0
 
-    fun loadRom(path: String) {
+    fun loadRom(path: String, batteryPath: String) {
         emulatorPtr = createEmulator()
+        setBatteryPath(emulatorPtr, batteryPath)
         loadRom(emulatorPtr, path)
     }
 
-    fun loadRom(data: ByteArray){
+    fun loadRom(data: ByteArray, path: String) {
         emulatorPtr = createEmulator()
+        setBatteryPath(emulatorPtr, path)
         loadRomFromByteArray(emulatorPtr, data)
     }
 
@@ -60,4 +62,6 @@ class EmulatorWrapper {
 
     private external fun saveState(emulatorPtr: Long, path: String)
     private external fun loadState(emulatorPtr: Long, path: String)
+
+    private external fun setBatteryPath(emulatorPtr: Long, path: String)
 }

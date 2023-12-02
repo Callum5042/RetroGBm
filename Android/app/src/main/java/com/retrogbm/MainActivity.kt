@@ -64,7 +64,7 @@ class MainActivity : AppCompatActivity() {
         // val path = "$documentPath/PokemonGold.gbc"
         // val path = "$documentPath/Pokemon - Yellow Version.gbc"
         val path = "$documentPath/Super Mario Land.gb"
-        emulator.loadRom(path)
+        emulator.loadRom(path, documentPath!!)
         startEmulation()
 
         // Buttons
@@ -122,7 +122,7 @@ class MainActivity : AppCompatActivity() {
             emulatorThread.cancel()
             updateTextureThread.cancel()
 
-            emulator.loadRom(bytes)
+            emulator.loadRom(bytes, getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!!)
             startEmulation()
         }
     }

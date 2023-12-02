@@ -139,4 +139,14 @@ extern "C"
             emulator->LoadState(env->GetStringUTFChars(path, nullptr));
         }
     }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_EmulatorWrapper_setBatteryPath(JNIEnv *env, jobject thiz, jlong emulator_ptr, jstring path)
+    {
+        Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+        if (emulator != nullptr)
+        {
+            emulator->GetCartridge()->SetBatteryPath(env->GetStringUTFChars(path, nullptr));
+        }
+    }
 }

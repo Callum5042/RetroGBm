@@ -98,6 +98,8 @@ public:
 
 	inline uint8_t GetTitleChecksum() const { return m_TitleChecksum; }
 
+	void SetBatteryPath(const std::string& path);
+
 	// Save state
 	void SaveState(std::fstream* file);
 	void LoadState(std::fstream* file);
@@ -112,4 +114,6 @@ private:
 	bool HasBattery();
 
 	uint8_t m_TitleChecksum = 0;
+
+	std::string m_BatteryPath = "";
 };
