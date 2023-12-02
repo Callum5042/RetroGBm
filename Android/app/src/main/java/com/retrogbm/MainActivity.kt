@@ -5,11 +5,15 @@ import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import com.retrogbm.databinding.ActivityMainBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -73,6 +77,34 @@ class MainActivity : AppCompatActivity() {
 
         // Buttons
         registerButtons()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        val inflater: MenuInflater = menuInflater
+        inflater.inflate(R.menu.game_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.load_rom -> {
+                Toast.makeText(this, "Load ROM", Toast.LENGTH_SHORT).show()
+                true
+            }
+            R.id.save_state -> {
+                Toast.makeText(this, "Save State", Toast.LENGTH_SHORT).show()
+                true
+            }
+            R.id.load_state -> {
+                Toast.makeText(this, "Load State", Toast.LENGTH_SHORT).show()
+                true
+            }
+            R.id.help -> {
+                Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     private fun registerButtons() {
