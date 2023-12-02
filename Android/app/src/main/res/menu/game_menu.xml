@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/load_rom"
+        android:icon="@drawable/ic_launcher_background"
+        android:title="Load ROM"
+        app:showAsAction="never" />
+    <item android:id="@+id/save_state"
+        android:icon="@drawable/ic_launcher_background"
+        android:title="Save State"
+        app:showAsAction="never" />
+    <item android:id="@+id/load_state"
+        android:icon="@drawable/ic_launcher_background"
+        android:title="Load State"
+        app:showAsAction="never" />
+    <item android:id="@+id/help"
+        android:icon="@drawable/ic_launcher_background"
+        android:title="Settings"
+        app:showAsAction="never" />
+</menu>

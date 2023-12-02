@@ -1,11 +1,9 @@
 #include "Pch.h"
 #include "Emulator.h"
 #include "Cpu.h"
-#include "Instructions.h"
 
 #include <iostream>
-#include <exception>
-#include <chrono>
+#include <vector>
 #include <thread>
 
 #include "Cpu.h"
@@ -50,6 +48,17 @@ bool Emulator::LoadRom(const std::string& path)
 		return false;
 	}
 
+	m_Cpu->Init();
+	m_Timer->Init();
+	m_Ppu->Init();
+
+	m_Running = true;
+	return true;
+}
+
+bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
+{
+	m_Cartridge->Load(filedata);
 	m_Cpu->Init();
 	m_Timer->Init();
 	m_Ppu->Init();
@@ -477,10 +486,10 @@ uint16_t Emulator::StackPop16()
 	return (hi << 8) | lo;
 }
 
-void Emulator::SaveState()
+void Emulator::SaveState(const std::string& filepath)
 {
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
-	std::fstream file(m_Cartridge->GetCartridgeInfo()->title + ".state", std::ios::binary | std::ios::out);
+	std::fstream file(filepath + m_Cartridge->GetCartridgeInfo()->title + ".state", std::ios::binary | std::ios::out);
 
 	m_Cpu->SaveState(&file);
 	m_Timer->SaveState(&file);
@@ -492,10 +501,10 @@ void Emulator::SaveState()
 	m_Dma->SaveState(&file);
 }
 
-void Emulator::LoadState()
+void Emulator::LoadState(const std::string& filepath)
 {
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
-	std::fstream file(m_Cartridge->GetCartridgeInfo()->title + ".state", std::ios::binary | std::ios::in);
+	std::fstream file(filepath + m_Cartridge->GetCartridgeInfo()->title + ".state", std::ios::binary | std::ios::in);
 
 	m_Cpu->LoadState(&file);
 	m_Timer->LoadState(&file);

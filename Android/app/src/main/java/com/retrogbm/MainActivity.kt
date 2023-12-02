@@ -1,20 +1,32 @@
 package com.retrogbm
 
+import android.app.Activity
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
+import android.provider.DocumentsContract
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import com.retrogbm.databinding.ActivityMainBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.IntBuffer
 
@@ -23,6 +35,9 @@ class MainActivity : AppCompatActivity() {
     // Coroutines
     private val emulatorCoroutineScope = CoroutineScope(Dispatchers.Main)
     private val updateTexturecoroutineScope = CoroutineScope(Dispatchers.Main)
+
+    private lateinit var emulatorThread: Job
+    private lateinit var updateTextureThread: Job
 
     // UI components
     private lateinit var binding: ActivityMainBinding
@@ -49,18 +64,92 @@ class MainActivity : AppCompatActivity() {
         // val path = "$documentPath/PokemonGold.gbc"
         // val path = "$documentPath/Pokemon - Yellow Version.gbc"
         val path = "$documentPath/Super Mario Land.gb"
-        emulator.loadRom(path)
+        emulator.loadRom(path, documentPath!!)
+        startEmulation()
 
+        // Buttons
+        registerButtons()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        val inflater: MenuInflater = menuInflater
+        inflater.inflate(R.menu.game_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.load_rom -> {
+                loadRom()
+                true
+            }
+            R.id.save_state -> {
+                // Toast.makeText(this, "Save State", Toast.LENGTH_SHORT).show()
+                emulator.saveState(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!!)
+                true
+            }
+            R.id.load_state -> {
+                // Toast.makeText(this, "Load State", Toast.LENGTH_SHORT).show()
+                emulator.loadState(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!!)
+                true
+            }
+            R.id.help -> {
+                stopEmulator()
+                Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private val openDocumentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val uri: Uri? = result.data?.data
+            val inputStream = contentResolver.openInputStream(uri!!)
+            val outputStream = ByteArrayOutputStream()
+            inputStream?.use { stream ->
+                val buffer = ByteArray(1024)
+                var length: Int
+
+                while (stream.read(buffer).also { length = it } != -1) {
+                    outputStream.write(buffer, 0, length)
+                }
+            }
+
+            val bytes = outputStream.toByteArray()
+
+            emulator.stop()
+            emulatorThread.cancel()
+            updateTextureThread.cancel()
+
+            emulator.loadRom(bytes, getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!!)
+            startEmulation()
+        }
+    }
+
+    private fun loadRom() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+        intent.type = "*/*"
+        openDocumentLauncher.launch(intent)
+    }
+
+    private fun stopEmulator() {
+        emulator.stop()
+        emulatorThread.cancel()
+        updateTextureThread.cancel()
+    }
+
+    private fun startEmulation() {
         // Emulator background thread
-        emulatorCoroutineScope.launch(Dispatchers.Default) {
-            while (true) {
+        emulatorThread = emulatorCoroutineScope.launch(Dispatchers.Default) {
+            while (emulator.isRunning()) {
                 emulator.tick()
             }
         }
 
         // Emulator update thread
-        updateTexturecoroutineScope.launch(Dispatchers.Default) {
-            while (true) {
+        updateTextureThread = updateTexturecoroutineScope.launch(Dispatchers.Default) {
+            while (emulator.isRunning()) {
                 withContext(Dispatchers.Main) {
                     val pixels = emulator.getVideoBuffer()
                     setColours(pixels.toList())
@@ -68,11 +157,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Show cartridge details
         val title = emulator.getCartridgeTitle()
         binding.sampleText.text = title
-
-        // Buttons
-        registerButtons()
     }
 
     private fun registerButtons() {

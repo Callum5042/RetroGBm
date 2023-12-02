@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 #include <numeric>
+#include <vector>
 #undef max
 
 namespace
@@ -195,6 +196,11 @@ namespace
 	};
 }
 
+void Cartridge::SetBatteryPath(const std::string& path)
+{
+	m_BatteryPath = path;
+}
+
 bool Cartridge::Load(const std::string& filepath)
 {
 	if (!std::filesystem::exists(filepath))
@@ -204,8 +210,17 @@ bool Cartridge::Load(const std::string& filepath)
 
 	std::ifstream file(filepath, std::ios::binary);
 
+	std::vector<uint8_t> data;
+	data.clear();
+	data.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+
+	return Load(data);
+}
+
+bool Cartridge::Load(const std::vector<uint8_t>& filedata)
+{
 	m_CartridgeInfo.data.clear();
-	m_CartridgeInfo.data.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+	m_CartridgeInfo.data = filedata;
 
 	// Nintendo logo
 	m_CartridgeInfo.header.nintendo_logo.resize(48);
@@ -295,7 +310,7 @@ bool Cartridge::Load(const std::string& filepath)
 	// Load RAM if battery is support
 	if (HasBattery())
 	{
-		std::string filename = m_CartridgeInfo.title + ".save";
+		std::string filename = m_BatteryPath + m_CartridgeInfo.title + ".save";
 
 		std::ifstream battery(filename, std::ios::in | std::ios::binary);
 		battery.read(reinterpret_cast<char*>(&m_CartridgeInfo.ram_bank_controller), 1);
@@ -376,7 +391,7 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 		// Save to file each time we disable the ram
 		if (HasBattery() && !m_CartridgeInfo.enabled_ram)
 		{
-			std::string filename = m_CartridgeInfo.title + ".save";
+			std::string filename = m_BatteryPath + m_CartridgeInfo.title + ".save";
 
 			std::ofstream battery(filename, std::ios::out | std::ios::binary);
 			battery.write(reinterpret_cast<char*>(&m_CartridgeInfo.ram_bank_controller), 1);

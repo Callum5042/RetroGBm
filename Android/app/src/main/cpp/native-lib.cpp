@@ -81,4 +81,72 @@ extern "C"
         std::string title = emulator->GetCartridge()->GetCartridgeInfo()->title;
         return env->NewStringUTF(title.c_str());
     }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_EmulatorWrapper_stop(JNIEnv *env, jobject thiz, jlong emulator_ptr)
+    {
+        Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+        if (emulator != nullptr)
+        {
+            emulator->Stop();
+        }
+    }
+
+    JNIEXPORT jboolean JNICALL
+    Java_com_retrogbm_EmulatorWrapper_isRunning(JNIEnv *env, jobject thiz, jlong emulator_ptr)
+    {
+        Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+        if (emulator != nullptr)
+        {
+            return emulator->IsRunning();
+        }
+
+        return false;
+    }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_EmulatorWrapper_loadRomFromByteArray(JNIEnv *env, jobject thiz, jlong emulator_ptr, jbyteArray data)
+    {
+        Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+        if (emulator != nullptr)
+        {
+            jsize length = env->GetArrayLength(data);
+            jbyte* byteArrayElements = env->GetByteArrayElements(data, nullptr);
+
+            std::vector<uint8_t> result(byteArrayElements, byteArrayElements + length);
+            env->ReleaseByteArrayElements(data, byteArrayElements, JNI_ABORT);
+
+            emulator->LoadRom(result);
+        }
+    }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_EmulatorWrapper_saveState(JNIEnv *env, jobject thiz, jlong emulator_ptr, jstring path)
+    {
+        Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+        if (emulator != nullptr)
+        {
+            emulator->SaveState(env->GetStringUTFChars(path, nullptr));
+        }
+    }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_EmulatorWrapper_loadState(JNIEnv *env, jobject thiz, jlong emulator_ptr, jstring path)
+    {
+        Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+        if (emulator != nullptr)
+        {
+            emulator->LoadState(env->GetStringUTFChars(path, nullptr));
+        }
+    }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_EmulatorWrapper_setBatteryPath(JNIEnv *env, jobject thiz, jlong emulator_ptr, jstring path)
+    {
+        Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+        if (emulator != nullptr)
+        {
+            emulator->GetCartridge()->SetBatteryPath(env->GetStringUTFChars(path, nullptr));
+        }
+    }
 }

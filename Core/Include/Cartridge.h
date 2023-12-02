@@ -85,6 +85,7 @@ public:
 	virtual ~Cartridge() = default;
 
 	bool Load(const std::string& filepath);
+	bool Load(const std::vector<uint8_t>& filedata);
 	bool Checksum(uint8_t* result);
 
 	uint8_t Read(uint16_t address);
@@ -96,6 +97,8 @@ public:
 	inline bool IsColourModeDMG() const { return m_CartridgeInfo.header.colour_mode == ColourMode::DMG; }
 
 	inline uint8_t GetTitleChecksum() const { return m_TitleChecksum; }
+
+	void SetBatteryPath(const std::string& path);
 
 	// Save state
 	void SaveState(std::fstream* file);
@@ -111,4 +114,6 @@ private:
 	bool HasBattery();
 
 	uint8_t m_TitleChecksum = 0;
+
+	std::string m_BatteryPath = "";
 };

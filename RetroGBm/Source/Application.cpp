@@ -199,7 +199,7 @@ void Application::SaveState()
 {
 	if (m_Emulator->IsRunning())
 	{
-		m_Emulator->SaveState();
+		m_Emulator->SaveState("");
 	}
 }
 
@@ -207,6 +207,6 @@ void Application::LoadState()
 {
 	if (m_Emulator->IsRunning())
 	{
-		m_Emulator->LoadState();
+		m_Emulator->LoadState("");
 	}
 }

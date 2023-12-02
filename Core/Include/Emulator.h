@@ -45,6 +45,7 @@ public:
 
 	static Emulator* Instance;
 	bool LoadRom(const std::string& path);
+	bool LoadRom(const std::vector<uint8_t>& filedata);
 
 	void Tick();
 	void Cycle(int machine_cycles);
@@ -95,8 +96,8 @@ public:
 	inline bool IsTraceLogEnabled() const { return m_EnableTraceLog; }
 
 	// Save states
-	void SaveState();
-	void LoadState();
+	void SaveState(const std::string& filepath);
+	void LoadState(const std::string& filepath);
 
 private:
 	std::mutex m_EmulatorMutex;
