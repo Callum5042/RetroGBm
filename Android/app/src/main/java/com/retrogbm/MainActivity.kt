@@ -64,7 +64,8 @@ class MainActivity : AppCompatActivity() {
         // val path = "$documentPath/PokemonGold.gbc"
         // val path = "$documentPath/Pokemon - Yellow Version.gbc"
         val path = "$documentPath/Super Mario Land.gb"
-        loadRom(path)
+        emulator.loadRom(path)
+        startEmulation()
 
         // Buttons
         registerButtons()
@@ -79,7 +80,6 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.load_rom -> {
-                Toast.makeText(this, "Load ROM", Toast.LENGTH_SHORT).show()
                 loadRom()
                 true
             }
@@ -121,27 +121,7 @@ class MainActivity : AppCompatActivity() {
             updateTextureThread.cancel()
 
             emulator.loadRom(bytes)
-
-            // Emulator background thread
-            emulatorThread = emulatorCoroutineScope.launch(Dispatchers.Default) {
-                while (emulator.isRunning()) {
-                    emulator.tick()
-                }
-            }
-
-            // Emulator update thread
-            updateTextureThread = updateTexturecoroutineScope.launch(Dispatchers.Default) {
-                while (emulator.isRunning()) {
-                    withContext(Dispatchers.Main) {
-                        val pixels = emulator.getVideoBuffer()
-                        setColours(pixels.toList())
-                    }
-                }
-            }
-
-            // Show cartridge details
-            val title = emulator.getCartridgeTitle()
-            binding.sampleText.text = title
+            startEmulation()
         }
     }
 
@@ -155,16 +135,9 @@ class MainActivity : AppCompatActivity() {
         emulator.stop()
         emulatorThread.cancel()
         updateTextureThread.cancel()
-
-        // Load again
-        val documentPath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
-        val path = "$documentPath/PokemonGold.gbc"
-        loadRom(path)
     }
 
-    private fun loadRom(path: String) {
-        emulator.loadRom(path)
-
+    private fun startEmulation() {
         // Emulator background thread
         emulatorThread = emulatorCoroutineScope.launch(Dispatchers.Default) {
             while (emulator.isRunning()) {
