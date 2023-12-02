@@ -119,4 +119,24 @@ extern "C"
             emulator->LoadRom(result);
         }
     }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_EmulatorWrapper_saveState(JNIEnv *env, jobject thiz, jlong emulator_ptr, jstring path)
+    {
+        Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+        if (emulator != nullptr)
+        {
+            emulator->SaveState(env->GetStringUTFChars(path, nullptr));
+        }
+    }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_EmulatorWrapper_loadState(JNIEnv *env, jobject thiz, jlong emulator_ptr, jstring path)
+    {
+        Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+        if (emulator != nullptr)
+        {
+            emulator->LoadState(env->GetStringUTFChars(path, nullptr));
+        }
+    }
 }

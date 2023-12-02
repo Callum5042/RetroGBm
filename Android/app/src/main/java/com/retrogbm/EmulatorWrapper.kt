@@ -38,6 +38,14 @@ class EmulatorWrapper {
         return isRunning(emulatorPtr)
     }
 
+    fun saveState(path: String) {
+        saveState(emulatorPtr, path)
+    }
+
+    fun loadState(path: String) {
+        loadState(emulatorPtr, path)
+    }
+
     private external fun createEmulator(): Long
     private external fun loadRom(emulatorPtr: Long, path: String)
     private external fun loadRomFromByteArray(emulatorPtr: Long, data: ByteArray)
@@ -49,4 +57,7 @@ class EmulatorWrapper {
     private external fun pressButton(emulatorPtr: Long, button: Int, state: Boolean)
 
     private external fun cartridgeGetTitle(emulatorPtr: Long): String
+
+    private external fun saveState(emulatorPtr: Long, path: String)
+    private external fun loadState(emulatorPtr: Long, path: String)
 }

@@ -84,11 +84,13 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.save_state -> {
-                Toast.makeText(this, "Save State", Toast.LENGTH_SHORT).show()
+                // Toast.makeText(this, "Save State", Toast.LENGTH_SHORT).show()
+                emulator.saveState(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!!)
                 true
             }
             R.id.load_state -> {
-                Toast.makeText(this, "Load State", Toast.LENGTH_SHORT).show()
+                // Toast.makeText(this, "Load State", Toast.LENGTH_SHORT).show()
+                emulator.loadState(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!!)
                 true
             }
             R.id.help -> {
