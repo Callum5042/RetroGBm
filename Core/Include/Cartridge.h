@@ -85,6 +85,7 @@ public:
 	virtual ~Cartridge() = default;
 
 	bool Load(const std::string& filepath);
+	bool Load(const std::vector<uint8_t>& filedata);
 	bool Checksum(uint8_t* result);
 
 	uint8_t Read(uint16_t address);

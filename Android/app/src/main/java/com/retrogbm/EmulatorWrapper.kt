@@ -9,6 +9,11 @@ class EmulatorWrapper {
         loadRom(emulatorPtr, path)
     }
 
+    fun loadRom(data: ByteArray){
+        emulatorPtr = createEmulator()
+        loadRomFromByteArray(emulatorPtr, data)
+    }
+
     fun tick() {
         tick(emulatorPtr)
     }
@@ -35,6 +40,7 @@ class EmulatorWrapper {
 
     private external fun createEmulator(): Long
     private external fun loadRom(emulatorPtr: Long, path: String)
+    private external fun loadRomFromByteArray(emulatorPtr: Long, data: ByteArray)
     private external fun tick(emulatorPtr: Long)
     private external fun stop(emulatorPtr: Long)
     private external fun isRunning(emulatorPtr: Long): Boolean

@@ -1,11 +1,9 @@
 #include "Pch.h"
 #include "Emulator.h"
 #include "Cpu.h"
-#include "Instructions.h"
 
 #include <iostream>
-#include <exception>
-#include <chrono>
+#include <vector>
 #include <thread>
 
 #include "Cpu.h"
@@ -50,6 +48,17 @@ bool Emulator::LoadRom(const std::string& path)
 		return false;
 	}
 
+	m_Cpu->Init();
+	m_Timer->Init();
+	m_Ppu->Init();
+
+	m_Running = true;
+	return true;
+}
+
+bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
+{
+	m_Cartridge->Load(filedata);
 	m_Cpu->Init();
 	m_Timer->Init();
 	m_Ppu->Init();

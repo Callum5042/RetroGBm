@@ -45,6 +45,7 @@ public:
 
 	static Emulator* Instance;
 	bool LoadRom(const std::string& path);
+	bool LoadRom(const std::vector<uint8_t>& filedata);
 
 	void Tick();
 	void Cycle(int machine_cycles);

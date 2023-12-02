@@ -103,4 +103,20 @@ extern "C"
 
         return false;
     }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_EmulatorWrapper_loadRomFromByteArray(JNIEnv *env, jobject thiz, jlong emulator_ptr, jbyteArray data)
+    {
+        Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+        if (emulator != nullptr)
+        {
+            jsize length = env->GetArrayLength(data);
+            jbyte* byteArrayElements = env->GetByteArrayElements(data, nullptr);
+
+            std::vector<uint8_t> result(byteArrayElements, byteArrayElements + length);
+            env->ReleaseByteArrayElements(data, byteArrayElements, JNI_ABORT);
+
+            emulator->LoadRom(result);
+        }
+    }
 }

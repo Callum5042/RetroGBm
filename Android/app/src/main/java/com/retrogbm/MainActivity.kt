@@ -1,10 +1,14 @@
 package com.retrogbm
 
+import android.app.Activity
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
+import android.provider.DocumentsContract
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
@@ -14,6 +18,7 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import com.retrogbm.databinding.ActivityMainBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +26,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.IntBuffer
 
@@ -94,16 +100,55 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadRom() {
-        emulator.stop()
-        emulatorThread.cancel()
-        updateTextureThread.cancel()
+    private val openDocumentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val uri: Uri? = result.data?.data
+            val inputStream = contentResolver.openInputStream(uri!!)
+            val outputStream = ByteArrayOutputStream()
+            inputStream?.use { stream ->
+                val buffer = ByteArray(1024)
+                var length: Int
 
-        // Load again
-        val documentPath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
-        val path = "$documentPath/Pokemon - Yellow Version.gbc"
-        // val path = "$documentPath/Super Mario Land.gb"
-        loadRom(path)
+                while (stream.read(buffer).also { length = it } != -1) {
+                    outputStream.write(buffer, 0, length)
+                }
+            }
+
+            val bytes = outputStream.toByteArray()
+
+            emulator.stop()
+            emulatorThread.cancel()
+            updateTextureThread.cancel()
+
+            emulator.loadRom(bytes)
+
+            // Emulator background thread
+            emulatorThread = emulatorCoroutineScope.launch(Dispatchers.Default) {
+                while (emulator.isRunning()) {
+                    emulator.tick()
+                }
+            }
+
+            // Emulator update thread
+            updateTextureThread = updateTexturecoroutineScope.launch(Dispatchers.Default) {
+                while (emulator.isRunning()) {
+                    withContext(Dispatchers.Main) {
+                        val pixels = emulator.getVideoBuffer()
+                        setColours(pixels.toList())
+                    }
+                }
+            }
+
+            // Show cartridge details
+            val title = emulator.getCartridgeTitle()
+            binding.sampleText.text = title
+        }
+    }
+
+    private fun loadRom() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+        intent.type = "*/*"
+        openDocumentLauncher.launch(intent)
     }
 
     private fun stopEmulator() {

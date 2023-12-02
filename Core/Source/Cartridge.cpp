@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 #include <numeric>
+#include <vector>
 #undef max
 
 namespace
@@ -204,8 +205,17 @@ bool Cartridge::Load(const std::string& filepath)
 
 	std::ifstream file(filepath, std::ios::binary);
 
+	std::vector<uint8_t> data;
+	data.clear();
+	data.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+
+	return Load(data);
+}
+
+bool Cartridge::Load(const std::vector<uint8_t>& filedata)
+{
 	m_CartridgeInfo.data.clear();
-	m_CartridgeInfo.data.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+	m_CartridgeInfo.data = filedata;
 
 	// Nintendo logo
 	m_CartridgeInfo.header.nintendo_logo.resize(48);
