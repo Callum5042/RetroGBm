@@ -81,4 +81,26 @@ extern "C"
         std::string title = emulator->GetCartridge()->GetCartridgeInfo()->title;
         return env->NewStringUTF(title.c_str());
     }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_EmulatorWrapper_stop(JNIEnv *env, jobject thiz, jlong emulator_ptr)
+    {
+        Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+        if (emulator != nullptr)
+        {
+            emulator->Stop();
+        }
+    }
+
+    JNIEXPORT jboolean JNICALL
+    Java_com_retrogbm_EmulatorWrapper_isRunning(JNIEnv *env, jobject thiz, jlong emulator_ptr)
+    {
+        Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+        if (emulator != nullptr)
+        {
+            return emulator->IsRunning();
+        }
+
+        return false;
+    }
 }

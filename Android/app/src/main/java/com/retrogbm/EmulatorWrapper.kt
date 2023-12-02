@@ -25,11 +25,19 @@ class EmulatorWrapper {
         return cartridgeGetTitle(emulatorPtr)
     }
 
+    fun stop() {
+        stop(emulatorPtr)
+    }
 
+    fun isRunning(): Boolean {
+        return isRunning(emulatorPtr)
+    }
 
     private external fun createEmulator(): Long
     private external fun loadRom(emulatorPtr: Long, path: String)
     private external fun tick(emulatorPtr: Long)
+    private external fun stop(emulatorPtr: Long)
+    private external fun isRunning(emulatorPtr: Long): Boolean
 
     private external fun getVideoBuffer(emulatorPtr: Long): IntArray
     private external fun pressButton(emulatorPtr: Long, button: Int, state: Boolean)

@@ -17,7 +17,9 @@ import android.widget.Toast
 import com.retrogbm.databinding.ActivityMainBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.nio.IntBuffer
@@ -27,6 +29,9 @@ class MainActivity : AppCompatActivity() {
     // Coroutines
     private val emulatorCoroutineScope = CoroutineScope(Dispatchers.Main)
     private val updateTexturecoroutineScope = CoroutineScope(Dispatchers.Main)
+
+    private lateinit var emulatorThread: Job
+    private lateinit var updateTextureThread: Job
 
     // UI components
     private lateinit var binding: ActivityMainBinding
@@ -53,27 +58,7 @@ class MainActivity : AppCompatActivity() {
         // val path = "$documentPath/PokemonGold.gbc"
         // val path = "$documentPath/Pokemon - Yellow Version.gbc"
         val path = "$documentPath/Super Mario Land.gb"
-        emulator.loadRom(path)
-
-        // Emulator background thread
-        emulatorCoroutineScope.launch(Dispatchers.Default) {
-            while (true) {
-                emulator.tick()
-            }
-        }
-
-        // Emulator update thread
-        updateTexturecoroutineScope.launch(Dispatchers.Default) {
-            while (true) {
-                withContext(Dispatchers.Main) {
-                    val pixels = emulator.getVideoBuffer()
-                    setColours(pixels.toList())
-                }
-            }
-        }
-
-        val title = emulator.getCartridgeTitle()
-        binding.sampleText.text = title
+        loadRom(path)
 
         // Buttons
         registerButtons()
@@ -89,6 +74,7 @@ class MainActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.load_rom -> {
                 Toast.makeText(this, "Load ROM", Toast.LENGTH_SHORT).show()
+                loadRom()
                 true
             }
             R.id.save_state -> {
@@ -100,11 +86,60 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.help -> {
+                stopEmulator()
                 Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show()
                 true
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    private fun loadRom() {
+        emulator.stop()
+        emulatorThread.cancel()
+        updateTextureThread.cancel()
+
+        // Load again
+        val documentPath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
+        val path = "$documentPath/Pokemon - Yellow Version.gbc"
+        // val path = "$documentPath/Super Mario Land.gb"
+        loadRom(path)
+    }
+
+    private fun stopEmulator() {
+        emulator.stop()
+        emulatorThread.cancel()
+        updateTextureThread.cancel()
+
+        // Load again
+        val documentPath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
+        val path = "$documentPath/PokemonGold.gbc"
+        loadRom(path)
+    }
+
+    private fun loadRom(path: String) {
+        emulator.loadRom(path)
+
+        // Emulator background thread
+        emulatorThread = emulatorCoroutineScope.launch(Dispatchers.Default) {
+            while (emulator.isRunning()) {
+                emulator.tick()
+            }
+        }
+
+        // Emulator update thread
+        updateTextureThread = updateTexturecoroutineScope.launch(Dispatchers.Default) {
+            while (emulator.isRunning()) {
+                withContext(Dispatchers.Main) {
+                    val pixels = emulator.getVideoBuffer()
+                    setColours(pixels.toList())
+                }
+            }
+        }
+
+        // Show cartridge details
+        val title = emulator.getCartridgeTitle()
+        binding.sampleText.text = title
     }
 
     private fun registerButtons() {
