@@ -42,7 +42,7 @@ void Ppu::Tick()
 {
 	if (!m_Display->IsLcdEnabled())
 	{
-		// return;
+		return;
 	}
 
 	m_Context.dot_ticks++;

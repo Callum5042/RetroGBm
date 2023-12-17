@@ -17,7 +17,7 @@ void CB::ShiftRightLogically(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetFlag(CpuFlag::Carry, bit0 == 1);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::ShiftRightLogicallyIndirectHL(EmulatorContext* context)
@@ -35,7 +35,7 @@ void CB::ShiftRightLogicallyIndirectHL(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, bit0 == 1);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::RotateRight(EmulatorContext* context, RegisterType8 reg)
@@ -54,7 +54,7 @@ void CB::RotateRight(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetFlag(CpuFlag::Carry, bit0 == 1);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::RotateRightIndirectHL(EmulatorContext* context)
@@ -75,7 +75,7 @@ void CB::RotateRightIndirectHL(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, bit0 == 1);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::RotateLeft(EmulatorContext* context, RegisterType8 reg)
@@ -93,7 +93,7 @@ void CB::RotateLeft(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetFlag(CpuFlag::Carry, (data & (1 << 7)) != 0);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::RotateLeftIndirectHL(EmulatorContext* context)
@@ -113,7 +113,7 @@ void CB::RotateLeftIndirectHL(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, (data & (1 << 7)) != 0);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::SwapR8(EmulatorContext* context, RegisterType8 reg)
@@ -128,7 +128,7 @@ void CB::SwapR8(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::SwapIndirectHL(EmulatorContext* context)
@@ -145,7 +145,7 @@ void CB::SwapIndirectHL(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, false);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::RotateRightCarry(EmulatorContext* context, RegisterType8 reg)
@@ -169,7 +169,7 @@ void CB::RotateRightCarry(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::RotateRightCarryIndirectHL(EmulatorContext* context)
@@ -195,7 +195,7 @@ void CB::RotateRightCarryIndirectHL(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::RotateLeftCarry(EmulatorContext* context, RegisterType8 reg)
@@ -219,7 +219,7 @@ void CB::RotateLeftCarry(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::RotateLeftCarryIndirectHL(EmulatorContext* context)
@@ -245,7 +245,7 @@ void CB::RotateLeftCarryIndirectHL(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, false);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::Bit(EmulatorContext* context, uint8_t bit, RegisterType8 reg)
@@ -258,7 +258,7 @@ void CB::Bit(EmulatorContext* context, uint8_t bit, RegisterType8 reg)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, true);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::BitIndirectHL(EmulatorContext* context, uint8_t bit)
@@ -272,7 +272,7 @@ void CB::BitIndirectHL(EmulatorContext* context, uint8_t bit)
 	context->cpu->SetFlag(CpuFlag::HalfCarry, true);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::Set(EmulatorContext* context, uint8_t bit, RegisterType8 reg)
@@ -283,7 +283,7 @@ void CB::Set(EmulatorContext* context, uint8_t bit, RegisterType8 reg)
 	context->cpu->SetRegister(reg, result);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::SetIndirectHL(EmulatorContext* context, uint8_t bit)
@@ -295,7 +295,7 @@ void CB::SetIndirectHL(EmulatorContext* context, uint8_t bit)
 	context->bus->WriteBus(address, result);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::Reset(EmulatorContext* context, uint8_t bit, RegisterType8 reg)
@@ -306,7 +306,7 @@ void CB::Reset(EmulatorContext* context, uint8_t bit, RegisterType8 reg)
 	context->cpu->SetRegister(reg, result);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::ResetIndirectHL(EmulatorContext* context, uint8_t bit)
@@ -318,7 +318,7 @@ void CB::ResetIndirectHL(EmulatorContext* context, uint8_t bit)
 	context->bus->WriteBus(address, result);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::ShiftLeftArithmetically(EmulatorContext* context, RegisterType8 reg)
@@ -334,7 +334,7 @@ void CB::ShiftLeftArithmetically(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetFlag(CpuFlag::Carry, (value & (1 << 7)) != 0);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::ShiftLeftArithmeticallyIndirectHL(EmulatorContext* context)
@@ -351,7 +351,7 @@ void CB::ShiftLeftArithmeticallyIndirectHL(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, (value & (1 << 7)) != 0);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::ShiftRightArithmetically(EmulatorContext* context, RegisterType8 reg)
@@ -367,7 +367,7 @@ void CB::ShiftRightArithmetically(EmulatorContext* context, RegisterType8 reg)
 	context->cpu->SetFlag(CpuFlag::Carry, (value & 1) != 0);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
 
 void CB::ShiftRightArithmeticallyIndirectHL(EmulatorContext* context)
@@ -384,5 +384,5 @@ void CB::ShiftRightArithmeticallyIndirectHL(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, (value & 1) != 0);
 
 	context->cpu->ProgramCounter += 2;
-	context->cycles += 2;
+	context->cycles += 1;
 }
