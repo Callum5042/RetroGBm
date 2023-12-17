@@ -478,7 +478,7 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 	// Write to RAM
 	if (address >= 0xA000 && address <= 0xBFFF)
 	{
-		if (m_CartridgeInfo.enabled_ram)
+		if (m_CartridgeInfo.enabled_ram && !m_CartridgeInfo.external_ram.empty())
 		{
 			uint16_t index = m_CartridgeInfo.ram_bank_controller;
 			int offset = ((index * 0x2000) + address - 0xA000) % m_CartridgeInfo.external_ram.size();

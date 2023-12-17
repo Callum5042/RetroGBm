@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 #include <thread>
+#include <mutex>
 
 #include "Cpu.h"
 #include "Ppu.h"
@@ -70,7 +71,6 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 void Emulator::Stop()
 {
 	m_Running = false;
-	
 }
 
 void Emulator::SetSpeedMode()
@@ -133,6 +133,8 @@ void Emulator::Tick()
 	uint16_t current_pc = m_Cpu->ProgramCounter;
 
 	const uint8_t opcode = this->ReadBus(m_Cpu->ProgramCounter);
+	Cycle(1);
+
 	m_CurrentOpCode = opcode;
 
 	// Execute
@@ -156,7 +158,7 @@ void Emulator::Tick()
 	}
 	else
 	{
-		m_Context.cycles += 4;
+		Cycle(1);
 
 		if (m_Cpu->GetInterruptFlags())
 		{
@@ -168,8 +170,8 @@ void Emulator::Tick()
 	m_Cpu->HandleInterrupts();
 
 	// Do deferred machine cycles
-	Cycle(m_Context.cycles);
-	m_Context.cycles = 0;
+	// Cycle(m_Context.cycles);
+	// m_Context.cycles = 0;
 
 	// Debug
 	//{
@@ -191,7 +193,7 @@ void Emulator::Tick()
 
 void Emulator::Cycle(int machine_cycles)
 {
-	for (int i = 0; i < m_Context.cycles; ++i)
+	for (int i = 0; i < machine_cycles; ++i)
 	{
 		for (int n = 0; n < 4; ++n)
 		{
