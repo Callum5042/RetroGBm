@@ -85,7 +85,14 @@ uint8_t Display::Read(uint16_t address)
 		case 0xFF43:
 			return m_Context.scx;
 		case 0xFF44:
+		{
+			if (!IsLcdEnabled())
+			{
+				return 0;
+			}
+
 			return m_Context.ly;
+		}
 		case 0xFF45:
 			return m_Context.lyc;
 		case 0xFF46:
