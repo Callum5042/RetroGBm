@@ -70,6 +70,24 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 void Emulator::Stop()
 {
 	m_Running = false;
+	
+}
+
+void Emulator::SetSpeedMode()
+{
+	if (!m_Cartridge->IsColourModeDMG())
+	{
+		if ((m_DoubleSpeedMode & 0x1) == 1)
+		{
+			// Enter double speed mode
+			m_DoubleSpeedMode = 0x80;
+		}
+		else
+		{
+			// Enter single speed mode
+			m_DoubleSpeedMode = 0x0;
+		}
+	}
 }
 
 void Emulator::SetHalt(bool value)
@@ -221,6 +239,10 @@ uint8_t Emulator::ReadIO(uint16_t address)
 	{
 		return m_Display->Read(address);
 	}
+	else if (address == 0xFF4D)
+	{
+		return m_DoubleSpeedMode;
+	}
 	else if (address == 0xFF4F)
 	{
 		return m_Ppu->GetVideoRamBank();
@@ -279,6 +301,11 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 		m_Display->Write(address, value);
 		return;
 	}
+	else if (address == 0xFF4D)
+	{
+		m_DoubleSpeedMode |= value & 0x1;
+		return;
+	}
 	else if (address == 0xFF4F)
 	{
 		m_Ppu->SetVideoRamBank(value);
@@ -286,16 +313,19 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	}
 	else if (address == 0xFF51 || address == 0xFF52)
 	{
+		std::cout << "WriteIO: " << address << " - Value: " << value << '\n';
 		m_Dma->SetSource(address, value);
 		return;
 	}
 	else if (address == 0xFF53 || address == 0xFF54)
 	{
+		std::cout << "WriteIO: " << address << " - Value: " << value << '\n';
 		m_Dma->SetDestination(address, value);
 		return;
 	}
 	else if (address == 0xFF55)
 	{
+		std::cout << "WriteIO: " << address << " - Value: " << value << '\n';
 		m_Dma->StartCGB(value);
 		return;
 	}
