@@ -72,7 +72,14 @@ uint8_t Display::Read(uint16_t address)
 		case 0xFF40:
 			return m_Context.lcdc;
 		case 0xFF41:
+		{
+			if (!IsLcdEnabled())
+			{
+				return m_Context.stat & 0xFC;
+			}
+
 			return m_Context.stat;
+		}
 		case 0xFF42:
 			return m_Context.scy;
 		case 0xFF43:
