@@ -4,7 +4,6 @@
 #include "Emulator.h"
 #include "Cpu.h"
 #include <exception>
-#include <iostream>
 using namespace Op;
 
 void Op::Nop(EmulatorContext* context)
@@ -17,9 +16,7 @@ void Op::Stop(EmulatorContext* context)
 {
 	context->cycles += 1;
 	context->cpu->ProgramCounter += 2;
-	// Emulator::Instance->Stop();
-
-	std::cout << "Stop\n";
+	Emulator::Instance->SetSpeedMode();
 }
 
 void Op::Halt(EmulatorContext* context)

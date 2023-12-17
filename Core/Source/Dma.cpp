@@ -2,6 +2,7 @@
 #include "Dma.h"
 #include "Ppu.h"
 #include "Emulator.h"
+#include <iostream>
 
 Dma::Dma()
 {
@@ -27,42 +28,27 @@ void Dma::StartCGB(uint8_t value)
 	m_GeneralPurposeDMA = (value & 0x80) != 0x80;
 
 	m_TransferLength = ((value & 0x7F) + 1) * 10;
+
+	std::cout << "Dma::StartCGB" << '\n';
 }
 
 void Dma::Tick()
 {
-	if (m_ColourDMA)
+	if (!context.active)
 	{
-		if (m_GeneralPurposeDMA)
-		{
-			for (int tick = 0; tick < m_TransferLength; ++tick)
-			{
-				uint16_t source = m_Source & 0xFFF0;
-				uint16_t destination = m_Destination & 0x1FF0;
-
-				uint8_t value = m_Bus->ReadBus(source + tick);
-				m_Ppu->WriteOam(destination + tick, value);
-			}
-		}
+		return;
 	}
-	else
+
+	if (context.start_delay)
 	{
-		if (!context.active)
-		{
-			return;
-		}
-
-		if (context.start_delay)
-		{
-			context.start_delay--;
-			return;
-		}
-
-		m_Ppu->WriteOam(context.byte, m_Bus->ReadBus((context.value * 0x100) + context.byte));
-
-		context.byte++;
-		context.active = context.byte < 0xA0;
+		context.start_delay--;
+		return;
 	}
+
+	m_Ppu->WriteOam(context.byte, m_Bus->ReadBus((context.value * 0x100) + context.byte));
+
+	context.byte++;
+	context.active = context.byte < 0xA0;
 }
 
 bool Dma::IsTransferring()

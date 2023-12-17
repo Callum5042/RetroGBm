@@ -52,6 +52,7 @@ public:
 
 	void Stop();
 	void SetHalt(bool value);
+	void SetSpeedMode();
 	inline bool IsRunning() { return m_Running; }
 	int GetFPS();
 
@@ -121,6 +122,7 @@ private:
 
 	bool m_Running = false;
 	bool m_Halted = false;
+	uint8_t m_DoubleSpeedMode = 0;
 
 	bool m_EnableTraceLog = false;
 	std::ofstream m_TraceLog;
