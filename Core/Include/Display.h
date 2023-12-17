@@ -125,7 +125,7 @@ private:
 	std::vector<uint8_t> m_ObjectColourPalettes;
 
 	// Default palettes
-	std::array<FixedPalette, 45> m_FixedPalettes;
+	std::unordered_map<uint8_t, FixedPalette> m_FixedPalettes;
 	void InitFixedPalettes();
 	void SetFixedPalette(uint8_t hash);
 };

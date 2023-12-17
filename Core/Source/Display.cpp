@@ -4,6 +4,7 @@
 #include "Emulator.h"
 #include "Dma.h"
 #include <iostream>
+#include <Cartridge.h>
 
 namespace
 {
@@ -62,7 +63,10 @@ void Display::Init()
 	// TODO: This should come from the hash of the game title and select the palettes from the list in the link
 	// https://gbdev.io/pandocs/Power_Up_Sequence.html
 	// https://tcrf.net/Notes:Game_Boy_Color_Bootstrap_ROM#Assigned_Palette_Configurations
-	SetFixedPalette(0x0);
+
+	// SetFixedPalette(0x0);
+
+	SetFixedPalette(Emulator::Instance->GetCartridge()->GetTitleChecksum());
 }
 
 uint8_t Display::Read(uint16_t address)
@@ -464,9 +468,9 @@ uint32_t Display::GetColourFromObjectPalette(uint8_t palette, uint8_t index)
 	uint8_t b = rgb555 & 0x1F;         // Blue component (5 bits)
 
 	// Transform from RGB555 to RGB888
-	r = (r << 3) | (r >> 2); // (r * 255) / 31;
-	g = (g << 3) | (g >> 2); // (g * 255) / 31;
-	b = (b << 3) | (b >> 2); // (b * 255) / 31;
+	r = (r << 3) | (r >> 2);
+	g = (g << 3) | (g >> 2);
+	b = (b << 3) | (b >> 2);
 
 	uint32_t colour = (r << 16) | (g << 8) | b;
 	return colour;
@@ -474,16 +478,80 @@ uint32_t Display::GetColourFromObjectPalette(uint8_t palette, uint8_t index)
 
 void Display::InitFixedPalettes()
 {
+	// https://tcrf.net/Notes:Game_Boy_Color_Bootstrap_ROM
+
 	m_FixedPalettes[0] =
 	{
 		0xFFFFFF, 0x7BFF31, 0x0063C5, 0x000000,
 		0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000,
 		0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000,
 	};
+
+	m_FixedPalettes[0x3C] =
+	{
+		0xFFFFFF, 0x63A5FF, 0x0000FF, 0x000000,
+		0xFFFFFF, 0x63A5FF, 0x0000FF, 0x000000,
+		0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000,
+	};
+
+	m_FixedPalettes[0x46] =
+	{
+		0xB5B5FF, 0xFFFF94, 0xAD5A42, 0x000000,
+		0xFFFFFF, 0xFFFFFF, 0xFF8484, 0x943A3A,
+		0xFFFFFF, 0xFFFFFF, 0xFF8484, 0x943A3A,
+	};
+
+	m_FixedPalettes[0x70] =
+	{
+		0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000,
+		0xFFFFFF, 0x00FF00, 0x318400, 0x004A00,
+		0xFFFFFF, 0x63A5FF, 0x0000FF, 0x000000,
+	};
+
+	m_FixedPalettes[0x14] =
+	{
+		0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000,
+		0xFFFFFF, 0x7BFF31, 0x008400, 0x004A00,
+		0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000,
+	};
+
+	m_FixedPalettes[0xDB] =
+	{
+		0xFFFFFF, 0xFFFF00, 0xFF0000, 0x000000,
+		0xFFFFFF, 0xFFFF00, 0xFF0000, 0x000000,
+		0xFFFFFF, 0xFFFF00, 0xFF0000, 0x000000,
+	};
+
+	m_FixedPalettes[0x86] =
+	{
+		0xFFFF9C, 0x94B5FF, 0x639473, 0x003A3A,
+		0xFFC542, 0xFFD600, 0x943A00, 0x4A0000,
+		0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000,
+	};
+
+	m_FixedPalettes[0xA8] =
+	{
+		0xFFFF9C, 0x94B5FF, 0x639473, 0x003A3A,
+		0xFFC542, 0xFFD600, 0x943A00, 0x4A0000,
+		0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000,
+	};
+
+	m_FixedPalettes[0xC6] =
+	{
+		0xFFFFFF, 0xADAD84, 0x42737B, 0x000000,
+		0xFFFFFF, 0xFF7300, 0x944200, 0x000000,
+		0xFFFFFF, 0x5ABDFF, 0xFF0000, 0x0000FF,
+	};
 }
 
 void Display::SetFixedPalette(uint8_t hash)
 {
+	// Check if we have a fixed colour palette to select from otherwise default to 0
+	if (m_FixedPalettes.find(hash) == m_FixedPalettes.end())
+	{
+		hash = 0x0;
+	}
+
 	uint8_t palette = 0;
 
 	// Background

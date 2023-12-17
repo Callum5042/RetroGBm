@@ -479,20 +479,6 @@ void Emulator::WriteBus(uint16_t address, uint8_t value)
 	std::cout << "Unsupported WriteBus: 0x" << address << '\n';
 }
 
-uint16_t Emulator::ReadBus16(uint16_t address)
-{
-	uint16_t lo = this->ReadBus(address);
-	uint16_t hi = this->ReadBus(address + 1);
-
-	return lo | (hi << 8);
-}
-
-void Emulator::WriteBus16(uint16_t address, uint16_t value)
-{
-	this->WriteBus(address + 1, (value >> 8) & 0xFF);
-	this->WriteBus(address, value & 0xFF);
-}
-
 void Emulator::StackPush(uint8_t data)
 {
 	m_Cpu->StackPointer--;
