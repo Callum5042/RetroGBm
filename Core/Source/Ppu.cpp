@@ -176,19 +176,44 @@ void Ppu::PixelTransfer()
 
 void Ppu::VBlank()
 {
+	if (m_Display->m_Context.ly == 153)
+	{
+		if (m_Context.dot_ticks == 4)
+		{
+			m_Display->m_Context.ly = 0;
+			if (m_Display->m_Context.ly == m_Display->m_Context.lyc)
+			{
+				m_Display->m_Context.stat |= 0b100;
+				if (m_Display->IsStatInterruptLYC())
+				{
+					m_Cpu->RequestInterrupt(InterruptFlag::STAT);
+				}
+			}
+			else
+			{
+				m_Display->m_Context.stat &= ~0b100;
+			}
+		}
+	}
+
 	if (m_Context.dot_ticks >= m_DotTicksPerLine)
 	{
-		m_Context.dot_ticks = 0;
-		IncrementLY();
-
 		// Keep increasing LY register until we reach the lines per frame
-		if (m_Display->m_Context.ly >= m_LinesPerFrame)
+		if (m_Display->m_Context.ly == 0)
 		{
+			m_Context.dot_ticks = 0;
+			IncrementLY();
+
 			LimitFrameRate();
 
 			m_Display->SetLcdMode(LcdMode::OAM);
 			m_Display->m_Context.ly = 0;
 			m_Context.window_line_counter = 0;
+		}
+		else
+		{
+			m_Context.dot_ticks = 0;
+			IncrementLY();
 		}
 	}
 }
