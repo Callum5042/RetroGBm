@@ -304,12 +304,12 @@ void Op::LoadIndirectR8(EmulatorContext* context, RegisterType8 reg)
 
 void Op::StoreIO(EmulatorContext* context)
 {
+	// 0xFF00 is the start of the hardware registers
 	uint8_t data = context->bus->ReadBus(context->cpu->ProgramCounter + 1);
 	Emulator::Instance->Cycle(1);
 
 	uint8_t reg_data = context->cpu->GetRegister(RegisterType8::REG_A);
 
-	// 0xFF00 is the start of the hardware registers
 	context->bus->WriteBus(0xFF00 + data, reg_data);
 	Emulator::Instance->Cycle(1);
 
@@ -1859,11 +1859,11 @@ void Op::SubCarryN8(EmulatorContext* context)
 void Op::ReturnFlagNotSet(EmulatorContext* context, CpuFlag flag)
 {
 	bool flag_result = context->cpu->GetFlag(flag);
+	Emulator::Instance->Cycle(1);
 
 	if (!flag_result)
 	{
 		context->cpu->StackPointer += 2;
-		Emulator::Instance->Cycle(1);
 
 		uint8_t high = context->bus->ReadBus(context->cpu->StackPointer - 1);
 		Emulator::Instance->Cycle(1);
@@ -1878,18 +1878,17 @@ void Op::ReturnFlagNotSet(EmulatorContext* context, CpuFlag flag)
 	else
 	{
 		context->cpu->ProgramCounter += 1;
-		Emulator::Instance->Cycle(1);
 	}
 }
 
 void Op::ReturnFlagSet(EmulatorContext* context, CpuFlag flag)
 {
 	bool flag_result = context->cpu->GetFlag(flag);
+	Emulator::Instance->Cycle(1);
 
 	if (flag_result)
 	{
 		context->cpu->StackPointer += 2;
-		Emulator::Instance->Cycle(1);
 
 		uint8_t high = context->bus->ReadBus(context->cpu->StackPointer - 1);
 		Emulator::Instance->Cycle(1);
@@ -1904,7 +1903,6 @@ void Op::ReturnFlagSet(EmulatorContext* context, CpuFlag flag)
 	else
 	{
 		context->cpu->ProgramCounter += 1;
-		Emulator::Instance->Cycle(1);
 	}
 }
 
@@ -1991,7 +1989,6 @@ void Op::Rst(EmulatorContext* context, uint8_t offset)
 
 void Op::ComplementCarryFlag(EmulatorContext* context)
 {
-	// 0x3F
 	bool flag = context->cpu->GetFlag(CpuFlag::Carry);
 
 	context->cpu->SetFlag(CpuFlag::Subtraction, false);
