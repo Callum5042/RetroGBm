@@ -171,7 +171,7 @@ void Application::CreateTileWindow()
 
 	const int window_width = static_cast<int>(16 * 8 * m_TileWindow->GetTileWindowScale());
 	const int window_height = static_cast<int>(24 * 8 * m_TileWindow->GetTileWindowScale());
-	m_TileWindow->Create("RetroGBm Tilemap", window_width, window_height);
+	m_TileWindow->Create("RetroGBm Tiledata", window_width, window_height);
 	m_TileWindow->CreateTilemapWindow();
 }
 
