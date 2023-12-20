@@ -205,18 +205,33 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		case m_MenuFileExitId:
 			PostQuitMessage(0);
 			break;
-		case m_MenuDebugTilemap:
+		case m_MenuDebugTilemap1:
 		{
-			UINT menu_state = GetMenuState(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND);
+			UINT menu_state = GetMenuState(m_DebugMenuItem, m_MenuDebugTilemap1, MF_BYCOMMAND);
 			if (menu_state & MF_CHECKED)
 			{
-				CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND | MF_UNCHECKED);
-				m_Application->CloseTileWindow();
+				CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap1, MF_BYCOMMAND | MF_UNCHECKED);
+				m_Application->CloseTileDataWindow1();
 			}
 			else
 			{
-				CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND | MF_CHECKED);
-				m_Application->CreateTileWindow();
+				CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap1, MF_BYCOMMAND | MF_CHECKED);
+				m_Application->CreateTileDataWindow1();
+			}
+			break;
+		}
+		case m_MenuDebugTilemap2:
+		{
+			UINT menu_state = GetMenuState(m_DebugMenuItem, m_MenuDebugTilemap2, MF_BYCOMMAND);
+			if (menu_state & MF_CHECKED)
+			{
+				CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap2, MF_BYCOMMAND | MF_UNCHECKED);
+				m_Application->CloseTileDataWindow2();
+			}
+			else
+			{
+				CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap2, MF_BYCOMMAND | MF_CHECKED);
+				m_Application->CreateTileDataWindow2();
 			}
 			break;
 		}
@@ -268,15 +283,29 @@ void MainWindow::ToggleEmulationPaused()
 	}
 }
 
-void MainWindow::ToggleTileWindowMenuItem(bool checked)
+void MainWindow::ToggleTileWindowMenuItem(bool checked, int vram_bank)
 {
-	if (checked)
+	if (vram_bank == 0)
 	{
-		CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND | MF_CHECKED);
+		if (checked)
+		{
+			CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap1, MF_BYCOMMAND | MF_CHECKED);
+		}
+		else
+		{
+			CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap1, MF_BYCOMMAND | MF_UNCHECKED);
+		}
 	}
-	else
+	else if (vram_bank == 1)
 	{
-		CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND | MF_UNCHECKED);
+		if (checked)
+		{
+			CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap2, MF_BYCOMMAND | MF_CHECKED);
+		}
+		else
+		{
+			CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap2, MF_BYCOMMAND | MF_UNCHECKED);
+		}
 	}
 }
 
@@ -569,7 +598,8 @@ void MainWindow::CreateMenuBar()
 
 	// Debug menu
 	m_DebugMenuItem = CreateMenu();
-	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTilemap, L"Tilemap");
+	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTilemap1, L"Tiledata 1");
+	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTilemap2, L"Tiledata 2");
 	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTracelog, L"Tracelog");
 	AppendMenuW(m_DebugMenuItem, MF_STRING | MF_DISABLED, m_MenuDebugCartridgeInfo, L"Cartridge Info");
 	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_DebugMenuItem), L"Debug");

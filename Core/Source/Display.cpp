@@ -42,14 +42,6 @@ void Display::Init()
 	m_Context.wy = 0x0;
 	m_Context.wx = 0x0;
 
-	// Set palette colours
-	for (int i = 0; i < 4; i++)
-	{
-		m_Context.background_palette[i] = m_DefaultColours[i];
-		m_Context.sprite1_palette[i] = m_DefaultColours[i];
-		m_Context.sprite2_palette[i] = m_DefaultColours[i];
-	}
-
 	// CGB palettes
 	m_BackgroundColourPalettes.resize(64);
 	std::fill(m_BackgroundColourPalettes.begin(), m_BackgroundColourPalettes.end(), 0);
@@ -63,8 +55,6 @@ void Display::Init()
 	// TODO: This should come from the hash of the game title and select the palettes from the list in the link
 	// https://gbdev.io/pandocs/Power_Up_Sequence.html
 	// https://tcrf.net/Notes:Game_Boy_Color_Bootstrap_ROM#Assigned_Palette_Configurations
-
-	// SetFixedPalette(0x0);
 
 	SetFixedPalette(Emulator::Instance->GetCartridge()->GetTitleChecksum());
 }
@@ -144,13 +134,13 @@ void Display::Write(uint16_t address, uint8_t value)
 			return;
 		case 0xFF47:
 			m_Context.bgp = value;
-			return;
+			break;
 		case 0xFF48:
 			m_Context.obp[0] = value;
-			return;
+			break;
 		case 0xFF49:
 			m_Context.obp[1] = value;
-			return;
+			break;
 		case 0xFF4A:
 			m_Context.wy = value;
 			return;
@@ -162,10 +152,25 @@ void Display::Write(uint16_t address, uint8_t value)
 	// Update palette colours
 	if (address == 0xFF47)
 	{
-		m_Context.background_palette[0] = m_DefaultColours[(value >> 0) & 0b11];
-		m_Context.background_palette[1] = m_DefaultColours[(value >> 2) & 0b11];
-		m_Context.background_palette[2] = m_DefaultColours[(value >> 4) & 0b11];
-		m_Context.background_palette[3] = m_DefaultColours[(value >> 6) & 0b11];
+		uint8_t hash = Emulator::Instance->GetCartridge()->GetTitleChecksum();
+		uint8_t palette = 0;
+
+		uint16_t colour0 = ConvertRGB888ToRGB555(reinterpret_cast<uint32_t*>(&m_FixedPalettes[hash])[(value >> 0) & 0b11]);
+		m_BackgroundColourPalettes[(palette * 8) + (0 * 2) + 0] = (colour0 & 0xFF);
+		m_BackgroundColourPalettes[(palette * 8) + (0 * 2) + 1] = ((colour0 >> 8) & 0xFF);
+
+		uint16_t colour1 = ConvertRGB888ToRGB555(reinterpret_cast<uint32_t*>(&m_FixedPalettes[hash])[(value >> 2) & 0b11]);
+		m_BackgroundColourPalettes[(palette * 8) + (1 * 2) + 0] = (colour1 & 0xFF);
+		m_BackgroundColourPalettes[(palette * 8) + (1 * 2) + 1] = ((colour1 >> 8) & 0xFF);
+
+		uint16_t colour2 = ConvertRGB888ToRGB555(reinterpret_cast<uint32_t*>(&m_FixedPalettes[hash])[(value >> 4) & 0b11]);
+		m_BackgroundColourPalettes[(palette * 8) + (2 * 2) + 0] = (colour2 & 0xFF);
+		m_BackgroundColourPalettes[(palette * 8) + (2 * 2) + 1] = ((colour2 >> 8) & 0xFF);
+
+		uint16_t colour3 = ConvertRGB888ToRGB555(reinterpret_cast<uint32_t*>(&m_FixedPalettes[hash])[(value >> 6) & 0b11]);
+		m_BackgroundColourPalettes[(palette * 8) + (3 * 2) + 0] = (colour3 & 0xFF);
+		m_BackgroundColourPalettes[(palette * 8) + (3 * 2) + 1] = ((colour3 >> 8) & 0xFF);
+
 		return;
 	}
 	else if (address == 0xFF48)
@@ -173,10 +178,25 @@ void Display::Write(uint16_t address, uint8_t value)
 		// Lower two bits are ignored because color index 0 is transparent for OBJs
 		value &= 0b11111100;
 
-		m_Context.sprite1_palette[0] = m_DefaultColours[(value >> 0) & 0b11];
-		m_Context.sprite1_palette[1] = m_DefaultColours[(value >> 2) & 0b11];
-		m_Context.sprite1_palette[2] = m_DefaultColours[(value >> 4) & 0b11];
-		m_Context.sprite1_palette[3] = m_DefaultColours[(value >> 6) & 0b11];
+		uint8_t hash = Emulator::Instance->GetCartridge()->GetTitleChecksum();
+		uint8_t palette = 0;
+
+		uint16_t colour0 = ConvertRGB888ToRGB555(reinterpret_cast<uint32_t*>(&m_FixedPalettes[hash])[((value >> 0) & 0b11) + 4]);
+		m_ObjectColourPalettes[(palette * 8) + (0 * 2) + 0] = (colour0 & 0xFF);
+		m_ObjectColourPalettes[(palette * 8) + (0 * 2) + 1] = ((colour0 >> 8) & 0xFF);
+
+		uint16_t colour1 = ConvertRGB888ToRGB555(reinterpret_cast<uint32_t*>(&m_FixedPalettes[hash])[((value >> 2) & 0b11) + 4]);
+		m_ObjectColourPalettes[(palette * 8) + (1 * 2) + 0] = (colour1 & 0xFF);
+		m_ObjectColourPalettes[(palette * 8) + (1 * 2) + 1] = ((colour1 >> 8) & 0xFF);
+
+		uint16_t colour2 = ConvertRGB888ToRGB555(reinterpret_cast<uint32_t*>(&m_FixedPalettes[hash])[((value >> 4) & 0b11) + 4]);
+		m_ObjectColourPalettes[(palette * 8) + (2 * 2) + 0] = (colour2 & 0xFF);
+		m_ObjectColourPalettes[(palette * 8) + (2 * 2) + 1] = ((colour2 >> 8) & 0xFF);
+
+		uint16_t colour3 = ConvertRGB888ToRGB555(reinterpret_cast<uint32_t*>(&m_FixedPalettes[hash])[((value >> 6) & 0b11) + 4]);
+		m_ObjectColourPalettes[(palette * 8) + (3 * 2) + 0] = (colour3 & 0xFF);
+		m_ObjectColourPalettes[(palette * 8) + (3 * 2) + 1] = ((colour3 >> 8) & 0xFF);
+
 		return;
 	}
 	else if (address == 0xFF49)
@@ -184,10 +204,24 @@ void Display::Write(uint16_t address, uint8_t value)
 		// Lower two bits are ignored because color index 0 is transparent for OBJs
 		value &= 0b11111100;
 
-		m_Context.sprite2_palette[0] = m_DefaultColours[(value >> 0) & 0b11];
-		m_Context.sprite2_palette[1] = m_DefaultColours[(value >> 2) & 0b11];
-		m_Context.sprite2_palette[2] = m_DefaultColours[(value >> 4) & 0b11];
-		m_Context.sprite2_palette[3] = m_DefaultColours[(value >> 6) & 0b11];
+		uint8_t hash = Emulator::Instance->GetCartridge()->GetTitleChecksum();
+		uint8_t palette = 1;
+
+		uint16_t colour0 = ConvertRGB888ToRGB555(reinterpret_cast<uint32_t*>(&m_FixedPalettes[hash])[((value >> 0) & 0b11) + 4]);
+		m_ObjectColourPalettes[(palette * 8) + (0 * 2) + 0] = (colour0 & 0xFF);
+		m_ObjectColourPalettes[(palette * 8) + (0 * 2) + 1] = ((colour0 >> 8) & 0xFF);
+
+		uint16_t colour1 = ConvertRGB888ToRGB555(reinterpret_cast<uint32_t*>(&m_FixedPalettes[hash])[((value >> 2) & 0b11) + 4]);
+		m_ObjectColourPalettes[(palette * 8) + (1 * 2) + 0] = (colour1 & 0xFF);
+		m_ObjectColourPalettes[(palette * 8) + (1 * 2) + 1] = ((colour1 >> 8) & 0xFF);
+
+		uint16_t colour2 = ConvertRGB888ToRGB555(reinterpret_cast<uint32_t*>(&m_FixedPalettes[hash])[((value >> 4) & 0b11) + 4]);
+		m_ObjectColourPalettes[(palette * 8) + (2 * 2) + 0] = (colour2 & 0xFF);
+		m_ObjectColourPalettes[(palette * 8) + (2 * 2) + 1] = ((colour2 >> 8) & 0xFF);
+
+		uint16_t colour3 = ConvertRGB888ToRGB555(reinterpret_cast<uint32_t*>(&m_FixedPalettes[hash])[((value >> 6) & 0b11) + 4]);
+		m_ObjectColourPalettes[(palette * 8) + (3 * 2) + 0] = (colour3 & 0xFF);
+		m_ObjectColourPalettes[(palette * 8) + (3 * 2) + 1] = ((colour3 >> 8) & 0xFF);
 		return;
 	}
 

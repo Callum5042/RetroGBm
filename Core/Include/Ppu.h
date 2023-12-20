@@ -105,7 +105,6 @@ public:
 
 	void* GetVideoBuffer();
 
-
 	// OAM
 	void WriteOam(uint16_t address, uint8_t value);
 	uint8_t ReadOam(uint16_t address);

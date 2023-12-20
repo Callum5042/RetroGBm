@@ -7,7 +7,7 @@
 #include <Windows.h>
 
 #include "MainWindow.h"
-#include "TileWindow.h"
+#include "TileDataWindow.h"
 #include "CartridgeInfoWindow.h"
 
 #include "Render/RenderDevice.h"
@@ -33,8 +33,11 @@ public:
 	void LoadRom(const std::string& file);
 	void StopEmulator();
 
-	void CreateTileWindow();
-	void CloseTileWindow();
+	void CreateTileDataWindow1();
+	void CloseTileDataWindow1();
+
+	void CreateTileDataWindow2();
+	void CloseTileDataWindow2();
 
 	void CreateCartridgeInfoWindow();
 	void ReleaseCartridgeInfoWindow();
@@ -54,7 +57,8 @@ private:
 	void CreateMainWindow();
 
 	// Tile window
-	std::unique_ptr<TileWindow> m_TileWindow = nullptr;
+	std::unique_ptr<TileDataWindow> m_TileDataWindow1 = nullptr;
+	std::unique_ptr<TileDataWindow> m_TileDataWindow2 = nullptr;
 
 	// Cartridge window
 	std::unique_ptr<CartridgeInfoWindow> m_CartridgeInfoWindow = nullptr;
