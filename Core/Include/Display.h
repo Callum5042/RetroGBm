@@ -23,11 +23,6 @@ struct DisplayContext
 	uint8_t wy;
 	uint8_t wx;
 
-	// Other data
-	uint32_t background_palette[4];
-	uint32_t sprite1_palette[4];
-	uint32_t sprite2_palette[4];
-
 	uint8_t priority_mode;
 };
 
@@ -109,12 +104,10 @@ public:
 	void SaveState(std::fstream* file);
 	void LoadState(std::fstream* file);
 
-
 	std::vector<uint8_t> m_BackgroundColourPalettes;
 
 private:
 	DisplayContext m_Context = {};
-	unsigned long m_DefaultColours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
 
 	// CGB Palettes
 	bool m_AutoIncrementBackgroundAddress = false;
