@@ -169,10 +169,6 @@ void Emulator::Tick()
 	// Check flag
 	m_Cpu->HandleInterrupts();
 
-	// Do deferred machine cycles
-	// Cycle(m_Context.cycles);
-	// m_Context.cycles = 0;
-
 	// Debug
 	//{
 	//	uint8_t data = this->ReadBus(0xFF02);
@@ -252,6 +248,10 @@ uint8_t Emulator::ReadIO(uint16_t address)
 	else if (address == 0xFF55)
 	{
 		return m_Dma->GetLengthModeStart();
+	}
+	else if (address >= 0xFF68 && address <= 0xFF6B)
+	{
+		return m_Display->Read(address);
 	}
 	else if (address == 0xFF6C)
 	{
