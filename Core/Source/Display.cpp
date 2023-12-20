@@ -144,13 +144,13 @@ void Display::Write(uint16_t address, uint8_t value)
 			return;
 		case 0xFF47:
 			m_Context.bgp = value;
-			return;
+			break;
 		case 0xFF48:
 			m_Context.obp[0] = value;
-			return;
+			break;
 		case 0xFF49:
 			m_Context.obp[1] = value;
-			return;
+			break;
 		case 0xFF4A:
 			m_Context.wy = value;
 			return;
