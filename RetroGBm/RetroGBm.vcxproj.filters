@@ -39,7 +39,7 @@
     <ClCompile Include="Source\MainWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\TileDataWindow.cpp">
+    <ClCompile Include="Source\TileWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\CartridgeInfoWindow.cpp">
@@ -80,7 +80,7 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\TileDataWindow.h">
+    <ClInclude Include="Include\TileWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\CartridgeInfoWindow.h">
