@@ -4,6 +4,7 @@
 #include "Render/RenderTexture.h"
 #include "Application.h"
 #include <Emulator.h>
+#include <Display.h>
 #include <vector>
 
 TileWindow::TileWindow(Application* application) : Window(application)
@@ -52,7 +53,6 @@ void TileWindow::UpdateTilemapTexture()
 	int tile_number = 0;
 
 	const uint16_t address = 0x8000;
-	const unsigned long tile_colours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
 
 	// 384 tiles, 24 x 16
 	for (int y = 0; y < 24; y++)
@@ -70,7 +70,9 @@ void TileWindow::UpdateTilemapTexture()
 					// Get pixel colour from palette
 					uint8_t high = (static_cast<bool>(byte1 & (1 << bit))) << 1;
 					uint8_t low = (static_cast<bool>(byte2 & (1 << bit))) << 0;
-					uint32_t colour = tile_colours[high | low];
+					uint8_t colour_index = high | low;
+
+					uint32_t colour = m_Application->GetEmulator()->GetDisplay()->GetColourFromBackgroundPalette(0, colour_index);
 
 					// Calculate pixel position in buffer
 					int x1 = xDraw + (x)+((7 - bit));
