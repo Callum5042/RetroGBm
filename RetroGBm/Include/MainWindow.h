@@ -25,7 +25,7 @@ public:
 	LRESULT HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	inline HWND GetHwnd() { return m_RenderHwnd; }
 
-	void ToggleTileWindowMenuItem(bool checked, int vram_bank);
+	void ToggleTileWindowMenuItem(bool checked);
 
 	void SetStatusBarTitle(const std::string& text);
 	void SetStatusBarStats(const std::string& text);
@@ -67,10 +67,9 @@ private:
 	static const UINT m_MenuFileExitId = 103;
 
 	HMENU m_DebugMenuItem = NULL;
-	static const UINT m_MenuDebugTilemap1 = 201;
+	static const UINT m_MenuDebugTilemap = 201;
 	static const UINT m_MenuDebugTracelog = 202;
 	static const UINT m_MenuDebugCartridgeInfo = 203;
-	static const UINT m_MenuDebugTilemap2 = 204;
 
 	HMENU m_EmulationMenuItem = NULL;
 	static const UINT m_MenuEmulationPausePlay = 301;

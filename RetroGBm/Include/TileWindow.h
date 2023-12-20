@@ -11,13 +11,13 @@
 
 class MainWindow;
 
-class TileDataWindow : public Window
+class TileWindow : public Window
 {
 public:
-	TileDataWindow(Application* application);
-	virtual ~TileDataWindow() = default;
+	TileWindow(Application* application);
+	virtual ~TileWindow() = default;
 
-	void CreateTilemapWindow(int vram_bank);
+	void CreateTilemapWindow();
 	void Update();
 
 	inline float GetTileWindowScale() const { return m_TileWindowScale; }
@@ -32,6 +32,4 @@ private:
 	float m_TileWindowScale = 4.0f;
 
 	void UpdateTilemapTexture();
-
-	int m_VramBank = 0;
 };

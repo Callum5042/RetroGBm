@@ -126,14 +126,9 @@ void Application::Run()
 				m_MainWindow->Update();
 
 				// Render debug window
-				if (m_TileDataWindow1 != nullptr)
+				if (m_TileWindow != nullptr)
 				{
-					m_TileDataWindow1->Update();
-				}
-
-				if (m_TileDataWindow2 != nullptr)
-				{
-					m_TileDataWindow2->Update();
+					m_TileWindow->Update();
 				}
 			}
 			else
@@ -170,36 +165,20 @@ void Application::CreateMainWindow()
 	m_MainWindow->Create("RetroGBm", 800, 600);
 }
 
-void Application::CreateTileDataWindow1()
+void Application::CreateTileWindow()
 {
-	m_TileDataWindow1 = std::make_unique<TileDataWindow>(this);
+	m_TileWindow = std::make_unique<TileWindow>(this);
 
-	const int window_width = static_cast<int>(16 * 8 * m_TileDataWindow1->GetTileWindowScale());
-	const int window_height = static_cast<int>(24 * 8 * m_TileDataWindow1->GetTileWindowScale());
-	m_TileDataWindow1->Create("RetroGBm Tiledata 1", window_width, window_height);
-	m_TileDataWindow1->CreateTilemapWindow(0);
+	const int window_width = static_cast<int>(16 * 8 * m_TileWindow->GetTileWindowScale());
+	const int window_height = static_cast<int>(24 * 8 * m_TileWindow->GetTileWindowScale());
+	m_TileWindow->Create("RetroGBm Tilemap", window_width, window_height);
+	m_TileWindow->CreateTilemapWindow();
 }
 
-void Application::CloseTileDataWindow1()
+void Application::CloseTileWindow()
 {
-	m_TileDataWindow1.reset();
-	m_TileDataWindow1 = nullptr;
-}
-
-void Application::CreateTileDataWindow2()
-{
-	m_TileDataWindow2 = std::make_unique<TileDataWindow>(this);
-
-	const int window_width = static_cast<int>(16 * 8 * m_TileDataWindow2->GetTileWindowScale());
-	const int window_height = static_cast<int>(24 * 8 * m_TileDataWindow2->GetTileWindowScale());
-	m_TileDataWindow2->Create("RetroGBm Tiledata 2", window_width, window_height);
-	m_TileDataWindow2->CreateTilemapWindow(1);
-}
-
-void Application::CloseTileDataWindow2()
-{
-	m_TileDataWindow2.reset();
-	m_TileDataWindow2 = nullptr;
+	m_TileWindow.reset();
+	m_TileWindow = nullptr;
 }
 
 void Application::CreateCartridgeInfoWindow()

@@ -1,22 +1,17 @@
-#include "TileDataWindow.h"
+#include "TileWindow.h"
 #include "MainWindow.h"
 #include "Render/RenderTarget.h"
 #include "Render/RenderTexture.h"
 #include "Application.h"
 #include <Emulator.h>
-#include <Display.h>
-#include <Ppu.h>
 #include <vector>
-#include <cstdint>
 
-TileDataWindow::TileDataWindow(Application* application) : Window(application)
+TileWindow::TileWindow(Application* application) : Window(application)
 {
 }
 
-void TileDataWindow::CreateTilemapWindow(int vram_bank)
+void TileWindow::CreateTilemapWindow()
 {
-	m_VramBank = vram_bank;
-
 	// Target
 	m_TileRenderTarget = m_Application->GetRenderDevice()->CreateRenderTarget();
 	m_TileRenderTarget->Create(m_Hwnd);
@@ -29,7 +24,7 @@ void TileDataWindow::CreateTilemapWindow(int vram_bank)
 	m_TileRenderTexture->Create(debug_width, debug_height);
 }
 
-void TileDataWindow::Update()
+void TileWindow::Update()
 {
 	if (!m_Application->GetEmulator()->IsRunning())
 	{
@@ -43,7 +38,7 @@ void TileDataWindow::Update()
 	m_TileRenderTarget->Present();
 }
 
-void TileDataWindow::UpdateTilemapTexture()
+void TileWindow::UpdateTilemapTexture()
 {
 	const int debug_width = static_cast<int>((16 * 8) + (16));
 	const int debug_height = static_cast<int>((24 * 8) + (64));
@@ -57,6 +52,7 @@ void TileDataWindow::UpdateTilemapTexture()
 	int tile_number = 0;
 
 	const uint16_t address = 0x8000;
+	const unsigned long tile_colours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
 
 	// 384 tiles, 24 x 16
 	for (int y = 0; y < 24; y++)
@@ -66,17 +62,15 @@ void TileDataWindow::UpdateTilemapTexture()
 			// Display tile (16 bytes big - 2bits per pixel)
 			for (int tileY = 0; tileY < 16; tileY += 2)
 			{
-				uint8_t byte1 = m_Application->GetEmulator()->GetPpu()->ReadVideoRam(address + (tile_number * 16) + tileY, m_VramBank);
-				uint8_t byte2 = m_Application->GetEmulator()->GetPpu()->ReadVideoRam(address + (tile_number * 16) + tileY + 1, m_VramBank);
+				uint8_t byte1 = m_Application->GetEmulator()->ReadBus(address + (tile_number * 16) + tileY);
+				uint8_t byte2 = m_Application->GetEmulator()->ReadBus(address + (tile_number * 16) + tileY + 1);
 
 				for (int bit = 7; bit >= 0; bit--)
 				{
 					// Get pixel colour from palette
 					uint8_t high = (static_cast<bool>(byte1 & (1 << bit))) << 1;
 					uint8_t low = (static_cast<bool>(byte2 & (1 << bit))) << 0;
-					uint8_t colour_index = high | low;
-
-					uint32_t colour = m_Application->GetEmulator()->GetDisplay()->GetColourFromBackgroundPalette(0, colour_index);
+					uint32_t colour = tile_colours[high | low];
 
 					// Calculate pixel position in buffer
 					int x1 = xDraw + (x)+((7 - bit));
@@ -98,9 +92,9 @@ void TileDataWindow::UpdateTilemapTexture()
 	m_TileRenderTexture->Update(buffer.data(), debug_width * sizeof(uint32_t));
 }
 
-void TileDataWindow::OnClose()
+void TileWindow::OnClose()
 {
 	Window::OnClose();
 
-	m_Application->GetMainWindow()->ToggleTileWindowMenuItem(false, m_VramBank);
+	m_Application->GetMainWindow()->ToggleTileWindowMenuItem(false);
 }
