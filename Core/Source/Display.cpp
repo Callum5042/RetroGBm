@@ -180,11 +180,21 @@ void Display::Write(uint16_t address, uint8_t value)
 			m_FixedPalettes[hash].bg_colour3
 		};
 
-		m_FixedPalettes[hash].bg_colour0 = palettes[(value >> 0) & 0b11];
-		m_FixedPalettes[hash].bg_colour1 = palettes[(value >> 2) & 0b11];
-		m_FixedPalettes[hash].bg_colour2 = palettes[(value >> 4) & 0b11];
-		m_FixedPalettes[hash].bg_colour3 = palettes[(value >> 6) & 0b11];
-		SetFixedPalette(hash);
+		uint16_t colour0 = ConvertRGB888ToRGB555(palettes[(value >> 0) & 0b11]);
+		m_BackgroundColourPalettes[(0 * 8) + (0 * 2) + 0] = (colour0 & 0xFF);
+		m_BackgroundColourPalettes[(0 * 8) + (0 * 2) + 1] = ((colour0 >> 8) & 0xFF);
+
+		uint16_t colour1 = ConvertRGB888ToRGB555(palettes[(value >> 2) & 0b11]);
+		m_BackgroundColourPalettes[(0 * 8) + (1 * 2) + 0] = (colour1 & 0xFF);
+		m_BackgroundColourPalettes[(0 * 8) + (1 * 2) + 1] = ((colour1 >> 8) & 0xFF);
+
+		uint16_t colour2 = ConvertRGB888ToRGB555(palettes[(value >> 4) & 0b11]);
+		m_BackgroundColourPalettes[(0 * 8) + (2 * 2) + 0] = (colour2 & 0xFF);
+		m_BackgroundColourPalettes[(0 * 8) + (2 * 2) + 1] = ((colour2 >> 8) & 0xFF);
+
+		uint16_t colour3 = ConvertRGB888ToRGB555(palettes[(value >> 6) & 0b11]);
+		m_BackgroundColourPalettes[(0 * 8) + (3 * 2) + 0] = (colour3 & 0xFF);
+		m_BackgroundColourPalettes[(0 * 8) + (3 * 2) + 1] = ((colour3 >> 8) & 0xFF);
 
 		return;
 	}
@@ -195,7 +205,7 @@ void Display::Write(uint16_t address, uint8_t value)
 			return;
 		}
 
-		auto hash = Emulator::Instance->GetCartridge()->GetTitleChecksum();
+		uint8_t hash = Emulator::Instance->GetCartridge()->GetTitleChecksum();
 		if (m_FixedPalettes.find(hash) == m_FixedPalettes.end())
 		{
 			hash = 0x0;
@@ -209,11 +219,21 @@ void Display::Write(uint16_t address, uint8_t value)
 			m_FixedPalettes[hash].obj0_colour3
 		};
 
-		m_FixedPalettes[hash].obj0_colour0 = palettes[(value >> 0) & 0b11];
-		m_FixedPalettes[hash].obj0_colour1 = palettes[(value >> 2) & 0b11];
-		m_FixedPalettes[hash].obj0_colour2 = palettes[(value >> 4) & 0b11];
-		m_FixedPalettes[hash].obj0_colour3 = palettes[(value >> 6) & 0b11];
-		SetFixedPalette(hash);
+		uint16_t colour0 = ConvertRGB888ToRGB555(palettes[(value >> 0) & 0b11]);
+		m_ObjectColourPalettes[(0 * 8) + (0 * 2) + 0] = (colour0 & 0xFF);
+		m_ObjectColourPalettes[(0 * 8) + (0 * 2) + 1] = ((colour0 >> 8) & 0xFF);
+
+		uint16_t colour1 = ConvertRGB888ToRGB555(palettes[(value >> 2) & 0b11]);
+		m_ObjectColourPalettes[(0 * 8) + (1 * 2) + 0] = (colour1 & 0xFF);
+		m_ObjectColourPalettes[(0 * 8) + (1 * 2) + 1] = ((colour1 >> 8) & 0xFF);
+
+		uint16_t colour2 = ConvertRGB888ToRGB555(palettes[(value >> 4) & 0b11]);
+		m_ObjectColourPalettes[(0 * 8) + (2 * 2) + 0] = (colour2 & 0xFF);
+		m_ObjectColourPalettes[(0 * 8) + (2 * 2) + 1] = ((colour2 >> 8) & 0xFF);
+
+		uint16_t colour3 = ConvertRGB888ToRGB555(palettes[(value >> 6) & 0b11]);
+		m_ObjectColourPalettes[(0 * 8) + (3 * 2) + 0] = (colour3 & 0xFF);
+		m_ObjectColourPalettes[(0 * 8) + (3 * 2) + 1] = ((colour3 >> 8) & 0xFF);
 
 		return;
 	}
@@ -238,11 +258,21 @@ void Display::Write(uint16_t address, uint8_t value)
 			m_FixedPalettes[hash].obj1_colour3
 		};
 
-		m_FixedPalettes[hash].obj1_colour0 = palettes[(value >> 0) & 0b11];
-		m_FixedPalettes[hash].obj1_colour1 = palettes[(value >> 2) & 0b11];
-		m_FixedPalettes[hash].obj1_colour2 = palettes[(value >> 4) & 0b11];
-		m_FixedPalettes[hash].obj1_colour3 = palettes[(value >> 6) & 0b11];
-		SetFixedPalette(hash);
+		uint16_t colour0 = ConvertRGB888ToRGB555(palettes[(value >> 0) & 0b11]);
+		m_ObjectColourPalettes[(1 * 8) + (0 * 2) + 0] = (colour0 & 0xFF);
+		m_ObjectColourPalettes[(1 * 8) + (0 * 2) + 1] = ((colour0 >> 8) & 0xFF);
+
+		uint16_t colour1 = ConvertRGB888ToRGB555(palettes[(value >> 2) & 0b11]);
+		m_ObjectColourPalettes[(1 * 8) + (1 * 2) + 0] = (colour1 & 0xFF);
+		m_ObjectColourPalettes[(1 * 8) + (1 * 2) + 1] = ((colour1 >> 8) & 0xFF);
+
+		uint16_t colour2 = ConvertRGB888ToRGB555(palettes[(value >> 4) & 0b11]);
+		m_ObjectColourPalettes[(1 * 8) + (2 * 2) + 0] = (colour2 & 0xFF);
+		m_ObjectColourPalettes[(1 * 8) + (2 * 2) + 1] = ((colour2 >> 8) & 0xFF);
+
+		uint16_t colour3 = ConvertRGB888ToRGB555(palettes[(value >> 6) & 0b11]);
+		m_ObjectColourPalettes[(1 * 8) + (3 * 2) + 0] = (colour3 & 0xFF);
+		m_ObjectColourPalettes[(1 * 8) + (3 * 2) + 1] = ((colour3 >> 8) & 0xFF);
 
 		return;
 	}
