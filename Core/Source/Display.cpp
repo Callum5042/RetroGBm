@@ -24,6 +24,23 @@ namespace
 		uint16_t rgb555 = (b5 << 10) | (g5 << 5) | r5;
 		return rgb555;
 	}
+
+	static float ColourFade(uint8_t index)
+	{
+		switch (index)
+		{
+			case 0:
+				return 1.0f;
+			case 1:
+				return 0.66f;
+			case 2:
+				return 0.33f;
+			case 3:
+				return 0;
+			default:
+				return 0;
+		}
+	}
 }
 
 void Display::Init()
@@ -150,13 +167,13 @@ void Display::Write(uint16_t address, uint8_t value)
 			return;
 		case 0xFF47:
 			m_Context.bgp = value;
-			return;
+			break;
 		case 0xFF48:
 			m_Context.obp[0] = value;
-			return;
+			break;
 		case 0xFF49:
 			m_Context.obp[1] = value;
-			return;
+			break;
 		case 0xFF4A:
 			m_Context.wy = value;
 			return;
@@ -168,32 +185,62 @@ void Display::Write(uint16_t address, uint8_t value)
 	// Update palette colours
 	if (address == 0xFF47)
 	{
-		m_Context.background_palette[0] = m_DefaultColours[(value >> 0) & 0b11];
-		m_Context.background_palette[1] = m_DefaultColours[(value >> 2) & 0b11];
-		m_Context.background_palette[2] = m_DefaultColours[(value >> 4) & 0b11];
-		m_Context.background_palette[3] = m_DefaultColours[(value >> 6) & 0b11];
+		auto hash = Emulator::Instance->GetCartridge()->GetTitleChecksum();
+
+		uint32_t palettes[] =
+		{ 
+			m_FixedPalettes[hash].bg_colour0,
+			m_FixedPalettes[hash].bg_colour1,
+			m_FixedPalettes[hash].bg_colour2,
+			m_FixedPalettes[hash].bg_colour3
+		};
+
+		m_FixedPalettes[hash].bg_colour0 = palettes[(value >> 0) & 0b11];
+		m_FixedPalettes[hash].bg_colour1 = palettes[(value >> 2) & 0b11];
+		m_FixedPalettes[hash].bg_colour2 = palettes[(value >> 4) & 0b11];
+		m_FixedPalettes[hash].bg_colour3 = palettes[(value >> 6) & 0b11];
+		SetFixedPalette(hash);
+
 		return;
 	}
 	else if (address == 0xFF48)
 	{
-		// Lower two bits are ignored because color index 0 is transparent for OBJs
-		value &= 0b11111100;
+		/*uint8_t colour0 = (value >> 0) & 0b11;
+		m_ObjectColourPalettes[(0 * 8) + (0 * 2) + 0] *= ColourFade(colour0);
+		m_ObjectColourPalettes[(0 * 8) + (0 * 2) + 1] *= ColourFade(colour0);
 
-		m_Context.sprite1_palette[0] = m_DefaultColours[(value >> 0) & 0b11];
-		m_Context.sprite1_palette[1] = m_DefaultColours[(value >> 2) & 0b11];
-		m_Context.sprite1_palette[2] = m_DefaultColours[(value >> 4) & 0b11];
-		m_Context.sprite1_palette[3] = m_DefaultColours[(value >> 6) & 0b11];
+		uint8_t colour1 = (value >> 2) & 0b11;
+		m_ObjectColourPalettes[(0 * 8) + (1 * 2) + 0] *= ColourFade(colour1);
+		m_ObjectColourPalettes[(0 * 8) + (1 * 2) + 1] *= ColourFade(colour1);
+		
+		uint8_t colour2 = (value >> 4) & 0b11;
+		m_ObjectColourPalettes[(0 * 8) + (2 * 2) + 0] *= ColourFade(colour2);
+		m_ObjectColourPalettes[(0 * 8) + (2 * 2) + 1] *= ColourFade(colour2);
+		
+		uint8_t colour3 = (value >> 6) & 0b11;
+		m_ObjectColourPalettes[(0 * 8) + (3 * 2) + 0] *= ColourFade(colour3);
+		m_ObjectColourPalettes[(0 * 8) + (3 * 2) + 1] *= ColourFade(colour3);*/
+
 		return;
 	}
 	else if (address == 0xFF49)
 	{
-		// Lower two bits are ignored because color index 0 is transparent for OBJs
-		value &= 0b11111100;
+		/*uint8_t colour0 = (value >> 0) & 0b11;
+		m_ObjectColourPalettes[(1 * 8) + (0 * 2) + 0] *= ColourFade(colour0);
+		m_ObjectColourPalettes[(1 * 8) + (0 * 2) + 1] *= ColourFade(colour0);
 
-		m_Context.sprite2_palette[0] = m_DefaultColours[(value >> 0) & 0b11];
-		m_Context.sprite2_palette[1] = m_DefaultColours[(value >> 2) & 0b11];
-		m_Context.sprite2_palette[2] = m_DefaultColours[(value >> 4) & 0b11];
-		m_Context.sprite2_palette[3] = m_DefaultColours[(value >> 6) & 0b11];
+		uint8_t colour1 = (value >> 2) & 0b11;
+		m_ObjectColourPalettes[(1 * 8) + (1 * 2) + 0] *= ColourFade(colour1);
+		m_ObjectColourPalettes[(1 * 8) + (1 * 2) + 1] *= ColourFade(colour1);
+		
+		uint8_t colour2 = (value >> 4) & 0b11;
+		m_ObjectColourPalettes[(1 * 8) + (2 * 2) + 0] *= ColourFade(colour2);
+		m_ObjectColourPalettes[(1 * 8) + (2 * 2) + 1] *= ColourFade(colour2);
+		
+		uint8_t colour3 = (value >> 6) & 0b11;
+		m_ObjectColourPalettes[(1 * 8) + (3 * 2) + 0] *= ColourFade(colour3);
+		m_ObjectColourPalettes[(1 * 8) + (3 * 2) + 1] *= ColourFade(colour3);*/
+
 		return;
 	}
 

@@ -35,7 +35,7 @@ struct OamData
 
 	uint8_t gcb_palette : 3;
 	bool bank : 1;
-	bool dmg_palette : 1;
+	uint8_t dmg_palette : 1;
 	bool flip_x : 1;
 	bool flip_y : 1;
 	bool priority : 1;
