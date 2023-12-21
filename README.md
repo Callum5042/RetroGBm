@@ -1,10 +1,7 @@
 ﻿# RetroGBm
-Gameboy Colour emulator written in C++
+Gameboy Colour emulator written in C++ for Windows and Android.
 
 ![Pokemon Yellow](/Images/pokemon_yellow.png)
-
-## Missing Features
-Currently Windows only and has no plans for sound support.
 
 ## Compatibility
 
@@ -21,11 +18,11 @@ Currently Windows only and has no plans for sound support.
 | Tetris			| ★★★★★ |  |
 | Dr Mario		    | ★★★★★ |  |
 | Pokemon Red		| ★★★★★ |  |
-| Pokemon Yellow    | ★★★★☆ | Pokemon sprites aren't coloured correctly |
+| Pokemon Yellow    | ★★★★☆ | Colour palette is sometimes incorrect |
 | Super Mario Land  | ★★★★☆ | Pause screen is incorrectly displayed |
-| Pokemon Gold		| ★★★★☆ | Text boxes have some graphical issues while in a battle. RTC doesn't work |
+| Pokemon Gold		| ★★★★☆ | RTC doesn't work |
 | Zelda - Link's Awakening DX | ★★★★☆ | Background tiles occasionally turn white |
-| Pokemon Crystal	| ★★☆☆☆ | Doesn't display the New Game window correctly |
+| Pokemon Crystal	| ★★★☆☆ | Menu doesn't clear correctly |
 
 ## Test roms
 
