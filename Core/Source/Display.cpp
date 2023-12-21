@@ -5,6 +5,7 @@
 #include "Dma.h"
 #include <iostream>
 #include <Cartridge.h>
+#include <cstdint>
 
 namespace
 {
@@ -24,23 +25,6 @@ namespace
 		uint16_t rgb555 = (b5 << 10) | (g5 << 5) | r5;
 		return rgb555;
 	}
-
-	static float ColourFade(uint8_t index)
-	{
-		switch (index)
-		{
-			case 0:
-				return 1.0f;
-			case 1:
-				return 0.66f;
-			case 2:
-				return 0.33f;
-			case 3:
-				return 0;
-			default:
-				return 0;
-		}
-	}
 }
 
 void Display::Init()
@@ -58,14 +42,6 @@ void Display::Init()
 	m_Context.obp[1] = 0xFF;
 	m_Context.wy = 0x0;
 	m_Context.wx = 0x0;
-
-	// Set palette colours
-	for (int i = 0; i < 4; i++)
-	{
-		m_Context.background_palette[i] = m_DefaultColours[i];
-		m_Context.sprite1_palette[i] = m_DefaultColours[i];
-		m_Context.sprite2_palette[i] = m_DefaultColours[i];
-	}
 
 	// CGB palettes
 	m_BackgroundColourPalettes.resize(64);
@@ -185,9 +161,18 @@ void Display::Write(uint16_t address, uint8_t value)
 	// Update palette colours
 	if (address == 0xFF47)
 	{
-		auto hash = Emulator::Instance->GetCartridge()->GetTitleChecksum();
+		if (!Emulator::Instance->GetCartridge()->IsColourModeDMG())
+		{
+			return;
+		}
 
-		uint32_t palettes[] =
+		auto hash = Emulator::Instance->GetCartridge()->GetTitleChecksum();
+		if (m_FixedPalettes.find(hash) == m_FixedPalettes.end())
+		{
+			hash = 0x0;
+		}
+
+		const uint32_t palettes[] =
 		{ 
 			m_FixedPalettes[hash].bg_colour0,
 			m_FixedPalettes[hash].bg_colour1,
@@ -205,41 +190,59 @@ void Display::Write(uint16_t address, uint8_t value)
 	}
 	else if (address == 0xFF48)
 	{
-		/*uint8_t colour0 = (value >> 0) & 0b11;
-		m_ObjectColourPalettes[(0 * 8) + (0 * 2) + 0] *= ColourFade(colour0);
-		m_ObjectColourPalettes[(0 * 8) + (0 * 2) + 1] *= ColourFade(colour0);
+		if (!Emulator::Instance->GetCartridge()->IsColourModeDMG())
+		{
+			return;
+		}
 
-		uint8_t colour1 = (value >> 2) & 0b11;
-		m_ObjectColourPalettes[(0 * 8) + (1 * 2) + 0] *= ColourFade(colour1);
-		m_ObjectColourPalettes[(0 * 8) + (1 * 2) + 1] *= ColourFade(colour1);
-		
-		uint8_t colour2 = (value >> 4) & 0b11;
-		m_ObjectColourPalettes[(0 * 8) + (2 * 2) + 0] *= ColourFade(colour2);
-		m_ObjectColourPalettes[(0 * 8) + (2 * 2) + 1] *= ColourFade(colour2);
-		
-		uint8_t colour3 = (value >> 6) & 0b11;
-		m_ObjectColourPalettes[(0 * 8) + (3 * 2) + 0] *= ColourFade(colour3);
-		m_ObjectColourPalettes[(0 * 8) + (3 * 2) + 1] *= ColourFade(colour3);*/
+		auto hash = Emulator::Instance->GetCartridge()->GetTitleChecksum();
+		if (m_FixedPalettes.find(hash) == m_FixedPalettes.end())
+		{
+			hash = 0x0;
+		}
+
+		const uint32_t palettes[] =
+		{
+			m_FixedPalettes[hash].obj0_colour0,
+			m_FixedPalettes[hash].obj0_colour1,
+			m_FixedPalettes[hash].obj0_colour2,
+			m_FixedPalettes[hash].obj0_colour3
+		};
+
+		m_FixedPalettes[hash].obj0_colour0 = palettes[(value >> 0) & 0b11];
+		m_FixedPalettes[hash].obj0_colour1 = palettes[(value >> 2) & 0b11];
+		m_FixedPalettes[hash].obj0_colour2 = palettes[(value >> 4) & 0b11];
+		m_FixedPalettes[hash].obj0_colour3 = palettes[(value >> 6) & 0b11];
+		SetFixedPalette(hash);
 
 		return;
 	}
 	else if (address == 0xFF49)
 	{
-		/*uint8_t colour0 = (value >> 0) & 0b11;
-		m_ObjectColourPalettes[(1 * 8) + (0 * 2) + 0] *= ColourFade(colour0);
-		m_ObjectColourPalettes[(1 * 8) + (0 * 2) + 1] *= ColourFade(colour0);
+		if (!Emulator::Instance->GetCartridge()->IsColourModeDMG())
+		{
+			return;
+		}
 
-		uint8_t colour1 = (value >> 2) & 0b11;
-		m_ObjectColourPalettes[(1 * 8) + (1 * 2) + 0] *= ColourFade(colour1);
-		m_ObjectColourPalettes[(1 * 8) + (1 * 2) + 1] *= ColourFade(colour1);
-		
-		uint8_t colour2 = (value >> 4) & 0b11;
-		m_ObjectColourPalettes[(1 * 8) + (2 * 2) + 0] *= ColourFade(colour2);
-		m_ObjectColourPalettes[(1 * 8) + (2 * 2) + 1] *= ColourFade(colour2);
-		
-		uint8_t colour3 = (value >> 6) & 0b11;
-		m_ObjectColourPalettes[(1 * 8) + (3 * 2) + 0] *= ColourFade(colour3);
-		m_ObjectColourPalettes[(1 * 8) + (3 * 2) + 1] *= ColourFade(colour3);*/
+		auto hash = Emulator::Instance->GetCartridge()->GetTitleChecksum();
+		if (m_FixedPalettes.find(hash) == m_FixedPalettes.end())
+		{
+			hash = 0x0;
+		}
+
+		const uint32_t palettes[] =
+		{
+			m_FixedPalettes[hash].obj1_colour0,
+			m_FixedPalettes[hash].obj1_colour1,
+			m_FixedPalettes[hash].obj1_colour2,
+			m_FixedPalettes[hash].obj1_colour3
+		};
+
+		m_FixedPalettes[hash].obj1_colour0 = palettes[(value >> 0) & 0b11];
+		m_FixedPalettes[hash].obj1_colour1 = palettes[(value >> 2) & 0b11];
+		m_FixedPalettes[hash].obj1_colour2 = palettes[(value >> 4) & 0b11];
+		m_FixedPalettes[hash].obj1_colour3 = palettes[(value >> 6) & 0b11];
+		SetFixedPalette(hash);
 
 		return;
 	}
