@@ -22,15 +22,53 @@ void Dma::StartCGB(uint8_t value)
 {
 	m_HDMA5 = value;
 
+	if (m_EnableHDMA && m_HBlankDMA)
+	{
+		if ((value & 0x80) == 0x80)
+		{
+			// Restart copy
+			m_TransferLength = ((value & 0x7F) + 1) * 16;
+			return;
+		}
+		else
+		{
+			// Stop HDMA if active
+			m_HBlankDMA = false;
+			m_EnableHDMA = false;
+			m_HdmaByte = 0;
+			m_TransferLength = value;
+			return;
+		}
+	}
+
 	// General-Purpose DMA if 0 otherwise do HBlank DMA
 	m_GeneralPurposeDMA = (value & 0x80) != 0x80;
 	m_HBlankDMA = (value & 0x80) == 0x80;
 
 	m_TransferLength = ((value & 0x7F) + 1) * 16;
 
-	if (Emulator::Instance->GetDisplay()->GetLcdMode() != LcdMode::HBlank && m_HBlankDMA)
+	if (m_HBlankDMA)
 	{
+		if (Emulator::Instance->GetDisplay()->GetLcdMode() == LcdMode::HBlank)
+		{
+			return;
+		}
+
 		m_EnableHDMA = true;
+		m_HdmaByte = 0;
+
+		// Copy 1 block if the screen is off
+		if (!Emulator::Instance->GetDisplay()->IsLcdEnabled())
+		{
+			for (int i = 0; i < 16; ++i)
+			{
+				uint8_t source_byte = m_Bus->ReadBus((m_Source & 0xFFF0) + m_HdmaByte);
+				m_Ppu->WriteVideoRam(0x8000 + (m_Destination & 0x1FF0) + m_HdmaByte, source_byte);
+
+				m_HdmaByte++;
+				m_TransferLength--;
+			}
+		}
 	}
 
 	if (m_GeneralPurposeDMA)
@@ -44,6 +82,10 @@ void Dma::StartCGB(uint8_t value)
 			byte++;
 			m_TransferLength--;
 		}
+
+		m_EnableHDMA = false;
+		m_GeneralPurposeDMA = false;
+		m_HBlankDMA = false;
 	}
 }
 
@@ -74,31 +116,37 @@ void Dma::RunHDMA()
 	{
 		if (Emulator::Instance->GetDisplay()->GetLcdMode() == LcdMode::HBlank)
 		{
+			if (!Emulator::Instance->GetDisplay()->IsLcdEnabled())
+			{
+				return;
+			}
+
 			if (m_ByteBlockTransfered)
 			{
 				return;
 			}
 
-			uint8_t source_byte = m_Bus->ReadBus((m_Source & 0xFFF0) + m_HdmaByte);
-			m_Ppu->WriteVideoRam(0x8000 + (m_Destination & 0x1FF0) + m_HdmaByte, source_byte);
-
-			m_HdmaByte++;
-
-			if (m_HdmaByte == 16)
+			for (int i = 0; i < 16; ++i)
 			{
-				// Block completed
+				uint16_t address = (m_Source & 0xFFF0) + m_HdmaByte;
+				uint8_t source_byte = m_Bus->ReadBus(address);
+				m_Ppu->WriteVideoRam(0x8000 + (m_Destination & 0x1FF0) + m_HdmaByte, source_byte);
+
+				m_HdmaByte++;
 				m_TransferLength--;
-				m_ByteBlockTransfered = true;
 
 				if (m_TransferLength == 0)
 				{
 					m_EnableHDMA = false;
+					m_GeneralPurposeDMA = false;
+					m_HBlankDMA = false;
 				}
 			}
+
+			m_ByteBlockTransfered = true;
 		}
 		else
 		{
-			m_HdmaByte = 0;
 			m_ByteBlockTransfered = false;
 		}
 	}
