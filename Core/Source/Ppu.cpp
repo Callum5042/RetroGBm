@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <chrono>
 #include <thread>
+#include <Dma.h>
 
 Ppu::Ppu()
 {

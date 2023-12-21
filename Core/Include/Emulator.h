@@ -89,6 +89,8 @@ public:
 	void* GetVideoBuffer();
 	int GetVideoPitch();
 
+	inline bool IsDoubleSpeedMode() const { return m_DoubleSpeedMode; }
+
 	// Trace log
 	void ToggleTraceLog(bool enable);
 	inline bool IsTraceLogEnabled() const { return m_EnableTraceLog; }

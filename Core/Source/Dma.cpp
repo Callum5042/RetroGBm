@@ -12,7 +12,6 @@ Dma::Dma()
 
 void Dma::Start(uint8_t start)
 {
-	m_ColourDMA = false;
 	context.active = true;
 	context.byte = 0;
 	context.start_delay = 2;
@@ -21,19 +20,37 @@ void Dma::Start(uint8_t start)
 
 void Dma::StartCGB(uint8_t value)
 {
-	m_ColourDMA = true;
-	m_LengthModeStart = value;
+	m_HDMA5 = value;
 
 	// General-Purpose DMA if 0 otherwise do HBlank DMA
 	m_GeneralPurposeDMA = (value & 0x80) != 0x80;
+	m_HBlankDMA = (value & 0x80) == 0x80;
 
-	m_TransferLength = ((value & 0x7F) + 1) * 10;
+	m_TransferLength = ((value & 0x7F) + 1) * 16;
 
-	std::cout << "Dma::StartCGB" << '\n';
+	if (Emulator::Instance->GetDisplay()->GetLcdMode() != LcdMode::HBlank && m_HBlankDMA)
+	{
+		m_EnableHDMA = true;
+	}
+
+	if (m_GeneralPurposeDMA)
+	{
+		uint8_t byte = 0;
+		while (m_TransferLength > 0)
+		{
+			uint8_t source_byte = m_Bus->ReadBus((m_Source & 0xFFF0) + byte);
+			m_Ppu->WriteVideoRam(0x8000 + (m_Destination & 0x1FF0) + byte, source_byte);
+
+			byte++;
+			m_TransferLength--;
+		}
+	}
 }
 
 void Dma::Tick()
 {
+	RunHDMA();
+
 	if (!context.active)
 	{
 		return;
@@ -51,7 +68,43 @@ void Dma::Tick()
 	context.active = context.byte < 0xA0;
 }
 
-bool Dma::IsTransferring()
+void Dma::RunHDMA()
+{
+	if (m_EnableHDMA && m_HBlankDMA)
+	{
+		if (Emulator::Instance->GetDisplay()->GetLcdMode() == LcdMode::HBlank)
+		{
+			if (m_ByteBlockTransfered)
+			{
+				return;
+			}
+
+			uint8_t source_byte = m_Bus->ReadBus((m_Source & 0xFFF0) + m_HdmaByte);
+			m_Ppu->WriteVideoRam(0x8000 + (m_Destination & 0x1FF0) + m_HdmaByte, source_byte);
+
+			m_HdmaByte++;
+
+			if (m_HdmaByte == 16)
+			{
+				// Block completed
+				m_TransferLength--;
+				m_ByteBlockTransfered = true;
+
+				if (m_TransferLength == 0)
+				{
+					m_EnableHDMA = false;
+				}
+			}
+		}
+		else
+		{
+			m_HdmaByte = 0;
+			m_ByteBlockTransfered = false;
+		}
+	}
+}
+
+bool Dma::IsTransferring() const
 {
 	return context.active;
 }
@@ -60,11 +113,18 @@ void Dma::SetSource(uint16_t address, uint8_t value)
 {
 	if (address == 0xFF51)
 	{
-		m_Source |= (value << 8);
+		m_Source &= 0xF0;
+		m_Source |= value << 8;
+
+		if (m_Source >= 0xE000)
+		{
+			m_Source |= 0xF000;
+		}
 	}
 	else if (address == 0xFF52)
 	{
-		m_Source |= value;
+		m_Source &= 0xFF00;
+		m_Source |= value & 0xF0;
 	}
 }
 
@@ -72,12 +132,24 @@ void Dma::SetDestination(uint16_t address, uint8_t value)
 {
 	if (address == 0xFF53)
 	{
-		m_Destination |= (value << 8);
+		m_Destination &= 0xF0;
+		m_Destination |= value << 8;
 	}
 	else if (address == 0xFF54)
 	{
-		m_Destination |= value;
+		m_Destination &= 0xFF00;
+		m_Destination |= value & 0xF0;
 	}
+}
+
+uint8_t Dma::GetHDMA5() const
+{
+	if (m_EnableHDMA)
+	{
+		return (m_TransferLength / 16) - 1;
+	}
+
+	return 0xFF;
 }
 
 void Dma::SaveState(std::fstream* file)

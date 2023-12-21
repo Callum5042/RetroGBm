@@ -194,10 +194,19 @@ void Emulator::Cycle(int machine_cycles)
 		for (int n = 0; n < 4; ++n)
 		{
 			m_Timer->Tick();
+			if (IsDoubleSpeedMode())
+			{
+				m_Timer->Tick();
+			}
+
 			m_Ppu->Tick();
 		}
 
 		m_Dma->Tick();
+		if (IsDoubleSpeedMode())
+		{
+			m_Dma->Tick();
+		}
 	}
 }
 
@@ -245,9 +254,13 @@ uint8_t Emulator::ReadIO(uint16_t address)
 	{
 		return m_Ppu->GetVideoRamBank();
 	}
+	else if (address >= 0xFF51 && address <= 0xFF54)
+	{
+		return 0xFF;
+	}
 	else if (address == 0xFF55)
 	{
-		return m_Dma->GetLengthModeStart();
+		return m_Dma->GetHDMA5();
 	}
 	else if (address >= 0xFF68 && address <= 0xFF6B)
 	{
@@ -315,19 +328,16 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	}
 	else if (address == 0xFF51 || address == 0xFF52)
 	{
-		std::cout << "WriteIO: " << address << " - Value: " << value << '\n';
 		m_Dma->SetSource(address, value);
 		return;
 	}
 	else if (address == 0xFF53 || address == 0xFF54)
 	{
-		std::cout << "WriteIO: " << address << " - Value: " << value << '\n';
 		m_Dma->SetDestination(address, value);
 		return;
 	}
 	else if (address == 0xFF55)
 	{
-		std::cout << "WriteIO: " << address << " - Value: " << value << '\n';
 		m_Dma->StartCGB(value);
 		return;
 	}
