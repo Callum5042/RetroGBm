@@ -5,6 +5,7 @@
 #include "Dma.h"
 #include <iostream>
 #include <Cartridge.h>
+#include <cstdint>
 
 namespace
 {
@@ -41,14 +42,6 @@ void Display::Init()
 	m_Context.obp[1] = 0xFF;
 	m_Context.wy = 0x0;
 	m_Context.wx = 0x0;
-
-	// Set palette colours
-	for (int i = 0; i < 4; i++)
-	{
-		m_Context.background_palette[i] = m_DefaultColours[i];
-		m_Context.sprite1_palette[i] = m_DefaultColours[i];
-		m_Context.sprite2_palette[i] = m_DefaultColours[i];
-	}
 
 	// CGB palettes
 	m_BackgroundColourPalettes.resize(64);
@@ -150,13 +143,13 @@ void Display::Write(uint16_t address, uint8_t value)
 			return;
 		case 0xFF47:
 			m_Context.bgp = value;
-			return;
+			break;
 		case 0xFF48:
 			m_Context.obp[0] = value;
-			return;
+			break;
 		case 0xFF49:
 			m_Context.obp[1] = value;
-			return;
+			break;
 		case 0xFF4A:
 			m_Context.wy = value;
 			return;
@@ -168,32 +161,119 @@ void Display::Write(uint16_t address, uint8_t value)
 	// Update palette colours
 	if (address == 0xFF47)
 	{
-		m_Context.background_palette[0] = m_DefaultColours[(value >> 0) & 0b11];
-		m_Context.background_palette[1] = m_DefaultColours[(value >> 2) & 0b11];
-		m_Context.background_palette[2] = m_DefaultColours[(value >> 4) & 0b11];
-		m_Context.background_palette[3] = m_DefaultColours[(value >> 6) & 0b11];
+		if (!Emulator::Instance->GetCartridge()->IsColourModeDMG())
+		{
+			return;
+		}
+
+		auto hash = Emulator::Instance->GetCartridge()->GetTitleChecksum();
+		if (m_FixedPalettes.find(hash) == m_FixedPalettes.end())
+		{
+			hash = 0x0;
+		}
+
+		const uint32_t palettes[] =
+		{ 
+			m_FixedPalettes[hash].bg_colour0,
+			m_FixedPalettes[hash].bg_colour1,
+			m_FixedPalettes[hash].bg_colour2,
+			m_FixedPalettes[hash].bg_colour3
+		};
+
+		uint16_t colour0 = ConvertRGB888ToRGB555(palettes[(value >> 0) & 0b11]);
+		m_BackgroundColourPalettes[(0 * 8) + (0 * 2) + 0] = (colour0 & 0xFF);
+		m_BackgroundColourPalettes[(0 * 8) + (0 * 2) + 1] = ((colour0 >> 8) & 0xFF);
+
+		uint16_t colour1 = ConvertRGB888ToRGB555(palettes[(value >> 2) & 0b11]);
+		m_BackgroundColourPalettes[(0 * 8) + (1 * 2) + 0] = (colour1 & 0xFF);
+		m_BackgroundColourPalettes[(0 * 8) + (1 * 2) + 1] = ((colour1 >> 8) & 0xFF);
+
+		uint16_t colour2 = ConvertRGB888ToRGB555(palettes[(value >> 4) & 0b11]);
+		m_BackgroundColourPalettes[(0 * 8) + (2 * 2) + 0] = (colour2 & 0xFF);
+		m_BackgroundColourPalettes[(0 * 8) + (2 * 2) + 1] = ((colour2 >> 8) & 0xFF);
+
+		uint16_t colour3 = ConvertRGB888ToRGB555(palettes[(value >> 6) & 0b11]);
+		m_BackgroundColourPalettes[(0 * 8) + (3 * 2) + 0] = (colour3 & 0xFF);
+		m_BackgroundColourPalettes[(0 * 8) + (3 * 2) + 1] = ((colour3 >> 8) & 0xFF);
+
 		return;
 	}
 	else if (address == 0xFF48)
 	{
-		// Lower two bits are ignored because color index 0 is transparent for OBJs
-		value &= 0b11111100;
+		if (!Emulator::Instance->GetCartridge()->IsColourModeDMG())
+		{
+			return;
+		}
 
-		m_Context.sprite1_palette[0] = m_DefaultColours[(value >> 0) & 0b11];
-		m_Context.sprite1_palette[1] = m_DefaultColours[(value >> 2) & 0b11];
-		m_Context.sprite1_palette[2] = m_DefaultColours[(value >> 4) & 0b11];
-		m_Context.sprite1_palette[3] = m_DefaultColours[(value >> 6) & 0b11];
+		uint8_t hash = Emulator::Instance->GetCartridge()->GetTitleChecksum();
+		if (m_FixedPalettes.find(hash) == m_FixedPalettes.end())
+		{
+			hash = 0x0;
+		}
+
+		const uint32_t palettes[] =
+		{
+			m_FixedPalettes[hash].obj0_colour0,
+			m_FixedPalettes[hash].obj0_colour1,
+			m_FixedPalettes[hash].obj0_colour2,
+			m_FixedPalettes[hash].obj0_colour3
+		};
+
+		uint16_t colour0 = ConvertRGB888ToRGB555(palettes[(value >> 0) & 0b11]);
+		m_ObjectColourPalettes[(0 * 8) + (0 * 2) + 0] = (colour0 & 0xFF);
+		m_ObjectColourPalettes[(0 * 8) + (0 * 2) + 1] = ((colour0 >> 8) & 0xFF);
+
+		uint16_t colour1 = ConvertRGB888ToRGB555(palettes[(value >> 2) & 0b11]);
+		m_ObjectColourPalettes[(0 * 8) + (1 * 2) + 0] = (colour1 & 0xFF);
+		m_ObjectColourPalettes[(0 * 8) + (1 * 2) + 1] = ((colour1 >> 8) & 0xFF);
+
+		uint16_t colour2 = ConvertRGB888ToRGB555(palettes[(value >> 4) & 0b11]);
+		m_ObjectColourPalettes[(0 * 8) + (2 * 2) + 0] = (colour2 & 0xFF);
+		m_ObjectColourPalettes[(0 * 8) + (2 * 2) + 1] = ((colour2 >> 8) & 0xFF);
+
+		uint16_t colour3 = ConvertRGB888ToRGB555(palettes[(value >> 6) & 0b11]);
+		m_ObjectColourPalettes[(0 * 8) + (3 * 2) + 0] = (colour3 & 0xFF);
+		m_ObjectColourPalettes[(0 * 8) + (3 * 2) + 1] = ((colour3 >> 8) & 0xFF);
+
 		return;
 	}
 	else if (address == 0xFF49)
 	{
-		// Lower two bits are ignored because color index 0 is transparent for OBJs
-		value &= 0b11111100;
+		if (!Emulator::Instance->GetCartridge()->IsColourModeDMG())
+		{
+			return;
+		}
 
-		m_Context.sprite2_palette[0] = m_DefaultColours[(value >> 0) & 0b11];
-		m_Context.sprite2_palette[1] = m_DefaultColours[(value >> 2) & 0b11];
-		m_Context.sprite2_palette[2] = m_DefaultColours[(value >> 4) & 0b11];
-		m_Context.sprite2_palette[3] = m_DefaultColours[(value >> 6) & 0b11];
+		auto hash = Emulator::Instance->GetCartridge()->GetTitleChecksum();
+		if (m_FixedPalettes.find(hash) == m_FixedPalettes.end())
+		{
+			hash = 0x0;
+		}
+
+		const uint32_t palettes[] =
+		{
+			m_FixedPalettes[hash].obj1_colour0,
+			m_FixedPalettes[hash].obj1_colour1,
+			m_FixedPalettes[hash].obj1_colour2,
+			m_FixedPalettes[hash].obj1_colour3
+		};
+
+		uint16_t colour0 = ConvertRGB888ToRGB555(palettes[(value >> 0) & 0b11]);
+		m_ObjectColourPalettes[(1 * 8) + (0 * 2) + 0] = (colour0 & 0xFF);
+		m_ObjectColourPalettes[(1 * 8) + (0 * 2) + 1] = ((colour0 >> 8) & 0xFF);
+
+		uint16_t colour1 = ConvertRGB888ToRGB555(palettes[(value >> 2) & 0b11]);
+		m_ObjectColourPalettes[(1 * 8) + (1 * 2) + 0] = (colour1 & 0xFF);
+		m_ObjectColourPalettes[(1 * 8) + (1 * 2) + 1] = ((colour1 >> 8) & 0xFF);
+
+		uint16_t colour2 = ConvertRGB888ToRGB555(palettes[(value >> 4) & 0b11]);
+		m_ObjectColourPalettes[(1 * 8) + (2 * 2) + 0] = (colour2 & 0xFF);
+		m_ObjectColourPalettes[(1 * 8) + (2 * 2) + 1] = ((colour2 >> 8) & 0xFF);
+
+		uint16_t colour3 = ConvertRGB888ToRGB555(palettes[(value >> 6) & 0b11]);
+		m_ObjectColourPalettes[(1 * 8) + (3 * 2) + 0] = (colour3 & 0xFF);
+		m_ObjectColourPalettes[(1 * 8) + (3 * 2) + 1] = ((colour3 >> 8) & 0xFF);
+
 		return;
 	}
 

@@ -334,8 +334,16 @@ uint32_t Ppu::FetchSpritePixels(uint32_t color, bool background_pixel_transparen
 		}
 
 		// Select pixel colour
-		uint8_t palette = m_Context.pipeline.fetched_entries[i].oam->gcb_palette;
-		return m_Display->GetColourFromObjectPalette(palette, palette_index);
+		if (Emulator::Instance->GetCartridge()->IsColourModeDMG())
+		{
+			uint8_t palette = m_Context.pipeline.fetched_entries[i].oam->dmg_palette;
+			return m_Display->GetColourFromObjectPalette(palette, palette_index);
+		}
+		else
+		{
+			uint8_t palette = m_Context.pipeline.fetched_entries[i].oam->gcb_palette;
+			return m_Display->GetColourFromObjectPalette(palette, palette_index);
+		}
 	}
 
 	return color;

@@ -114,7 +114,6 @@ public:
 
 private:
 	DisplayContext m_Context = {};
-	unsigned long m_DefaultColours[4] = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
 
 	// CGB Palettes
 	uint8_t m_BackgroundPaletteIndex = 0;
