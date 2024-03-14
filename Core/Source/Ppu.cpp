@@ -462,7 +462,7 @@ void Ppu::LoadWindowTile()
 
 			// Fetch tile
 			uint16_t base_address = m_Display->GetWindowTileBaseAddress();
-			m_Context.pipeline.background_window_tile = this->ReadVideoRam(base_address + (position_x >> 3) + ((position_y >> 3) * 32));
+			m_Context.pipeline.background_window_tile = this->ReadVideoRam(base_address + (position_x >> 3) + ((position_y >> 3) * 32), 0);
 
 			// Check if we are getting tiles from block 1
 			if (m_Display->GetBackgroundAndWindowTileData() == 0x8800)
@@ -509,7 +509,7 @@ void Ppu::PixelFetcher()
 				m_Context.pipeline.background_window_attribute.priority = static_cast<bool>((attribute >> 7) & 0x1);
 
 				// Fetch tile
-				m_Context.pipeline.background_window_tile = this->ReadVideoRam(base_address + (position_x >> 3) + (position_y >> 3) * 32, 0);
+				m_Context.pipeline.background_window_tile = this->ReadVideoRam(base_address + (position_x >> 3) + (position_y >> 3) * 32,0);
 
 				if (m_Display->GetBackgroundAndWindowTileData() == 0x8800)
 				{

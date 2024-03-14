@@ -365,6 +365,16 @@ uint8_t Emulator::ReadBus(uint16_t address)
 	}
 	else if (address >= 0x8000 && address <= 0x9FFF)
 	{
+		if (m_Display->GetLcdMode() == LcdMode::PixelTransfer)
+		{
+			return 0xFF;
+		}
+
+		if (!m_Cartridge->IsColourModeDMG() && m_Display->GetContext()->ly == 0)
+		{
+			return 0xFF;
+		}
+
 		// VRAM (Video RAM)
 		return m_Ppu->ReadVideoRam(address);
 	}
@@ -387,6 +397,11 @@ uint8_t Emulator::ReadBus(uint16_t address)
 	{
 		// OAM
 		if (m_Dma->IsTransferring())
+		{
+			return 0xFF;
+		}
+
+		if (m_Display->GetLcdMode() == LcdMode::PixelTransfer || m_Display->GetLcdMode() == LcdMode::OAM)
 		{
 			return 0xFF;
 		}
@@ -428,6 +443,11 @@ void Emulator::WriteBus(uint16_t address, uint8_t value)
 	}
 	else if (address >= 0x8000 && address <= 0x9FFF)
 	{
+		if (m_Display->GetLcdMode() == LcdMode::PixelTransfer)
+		{
+			return;
+		}
+
 		// VRAM (Video RAM)
 		m_Ppu->WriteVideoRam(address, value);
 		return;
@@ -452,6 +472,11 @@ void Emulator::WriteBus(uint16_t address, uint8_t value)
 	{
 		// OAM
 		if (m_Dma->IsTransferring())
+		{
+			return;
+		}
+
+		if (m_Display->GetLcdMode() == LcdMode::PixelTransfer || m_Display->GetLcdMode() == LcdMode::OAM)
 		{
 			return;
 		}

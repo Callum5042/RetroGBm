@@ -6,6 +6,7 @@
 #include <iostream>
 #include <Cartridge.h>
 #include <cstdint>
+#include <iostream>
 
 namespace
 {
@@ -287,8 +288,12 @@ void Display::Write(uint16_t address, uint8_t value)
 	}
 	else if (address == 0xFF69)
 	{
-		m_BackgroundPaletteData = value;
-		m_BackgroundColourPalettes[m_BackgroundPaletteAddress] = value;
+		if (GetLcdMode() != LcdMode::PixelTransfer)
+		{
+			m_BackgroundPaletteData = value;
+			m_BackgroundColourPalettes[m_BackgroundPaletteAddress] = value;
+		}
+
 		if (m_AutoIncrementBackgroundAddress)
 		{
 			m_BackgroundPaletteAddress = (m_BackgroundPaletteAddress + 1) & 0x3F;
@@ -306,8 +311,12 @@ void Display::Write(uint16_t address, uint8_t value)
 	}
 	else if (address == 0xFF6B)
 	{
-		m_ObjectPaletteData = value;
-		m_ObjectColourPalettes[m_ObjectPaletteAddress] = value;
+		if (GetLcdMode() != LcdMode::PixelTransfer)
+		{
+			m_ObjectPaletteData = value;
+			m_ObjectColourPalettes[m_ObjectPaletteAddress] = value;
+		}
+
 		if (m_AutoIncrementObjectAddress)
 		{
 			m_ObjectPaletteAddress++;
