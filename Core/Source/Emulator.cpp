@@ -203,10 +203,6 @@ void Emulator::Cycle(int machine_cycles)
 		}
 
 		m_Dma->Tick();
-		if (IsDoubleSpeedMode())
-		{
-			m_Dma->Tick();
-		}
 	}
 }
 
