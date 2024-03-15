@@ -93,21 +93,37 @@ void Dma::Tick()
 {
 	RunHDMA();
 
-	if (!context.active)
+
+	// DMA
+	static int tick_count = 0;
+	bool tick = true;
+	if (Emulator::Instance->IsDoubleSpeedMode())
 	{
-		return;
+		tick_count += 1;
+		if (tick_count & 1)
+		{
+			tick = false;
+		}
 	}
 
-	if (context.start_delay)
+	if (tick)
 	{
-		context.start_delay--;
-		return;
+		if (!context.active)
+		{
+			return;
+		}
+
+		if (context.start_delay)
+		{
+			context.start_delay--;
+			return;
+		}
+
+		m_Ppu->WriteOam(context.byte, m_Bus->ReadBus((context.value * 0x100) + context.byte));
+
+		context.byte++;
+		context.active = context.byte < 0xA0;
 	}
-
-	m_Ppu->WriteOam(context.byte, m_Bus->ReadBus((context.value * 0x100) + context.byte));
-
-	context.byte++;
-	context.active = context.byte < 0xA0;
 }
 
 void Dma::RunHDMA()

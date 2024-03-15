@@ -79,11 +79,15 @@ void Emulator::SetSpeedMode()
 	{
 		if ((m_DoubleSpeedMode & 0x1) == 1)
 		{
+			std::cout << "Enter double speed mode\n";
+
 			// Enter double speed mode
 			m_DoubleSpeedMode = 0x80;
 		}
 		else
 		{
+			std::cout << "Enter single speed mode\n";
+
 			// Enter single speed mode
 			m_DoubleSpeedMode = 0x0;
 		}
@@ -194,12 +198,18 @@ void Emulator::Cycle(int machine_cycles)
 		for (int n = 0; n < 4; ++n)
 		{
 			m_Timer->Tick();
+
 			if (IsDoubleSpeedMode())
 			{
-				m_Timer->Tick();
+				if (n & 1)
+				{
+					m_Ppu->Tick();
+				}
 			}
-
-			m_Ppu->Tick();
+			else
+			{
+				m_Ppu->Tick();
+			}
 		}
 
 		m_Dma->Tick();
@@ -315,6 +325,7 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	else if (address == 0xFF4D)
 	{
 		m_DoubleSpeedMode |= value & 0x1;
+		std::cout << "Doublespeed mode: " << (int)m_DoubleSpeedMode << '\n';
 		return;
 	}
 	else if (address == 0xFF4F)
