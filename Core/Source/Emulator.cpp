@@ -146,7 +146,7 @@ void Emulator::Tick()
 	{
 		if (IsTraceLogEnabled())
 		{
-			/*std::string debug_format = std::format("OP:{:X},PC:{:X},AF:{:X},BC:{:X},DE:{:X},HL:{:X},SP:{:X}",
+			std::string debug_format = std::format("OP:{:X},PC:{:X},AF:{:X},BC:{:X},DE:{:X},HL:{:X},SP:{:X}",
 												   opcode,
 												   m_Context.cpu->ProgramCounter,
 												   m_Context.cpu->GetRegister(RegisterType16::REG_AF),
@@ -155,7 +155,7 @@ void Emulator::Tick()
 												   m_Context.cpu->GetRegister(RegisterType16::REG_HL),
 												   m_Context.cpu->StackPointer);
 
-			m_TraceLog << debug_format << std::endl;*/
+			m_TraceLog << debug_format << std::endl;
 		}
 
 		m_Cpu->Execute(&m_Context, opcode);
