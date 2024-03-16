@@ -288,7 +288,7 @@ void Display::Write(uint16_t address, uint8_t value)
 	}
 	else if (address == 0xFF69)
 	{
-		if (GetLcdMode() != LcdMode::PixelTransfer)
+		if (GetLcdMode() != LcdMode::PixelTransfer || !IsLcdEnabled())
 		{
 			m_BackgroundPaletteData = value;
 			m_BackgroundColourPalettes[m_BackgroundPaletteAddress] = value;
@@ -311,7 +311,7 @@ void Display::Write(uint16_t address, uint8_t value)
 	}
 	else if (address == 0xFF6B)
 	{
-		if (GetLcdMode() != LcdMode::PixelTransfer)
+		if (GetLcdMode() != LcdMode::PixelTransfer || !IsLcdEnabled())
 		{
 			m_ObjectPaletteData = value;
 			m_ObjectColourPalettes[m_ObjectPaletteAddress] = value;

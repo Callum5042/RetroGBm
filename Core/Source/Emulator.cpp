@@ -143,13 +143,13 @@ void Emulator::Tick()
 		if (IsTraceLogEnabled())
 		{
 			std::string debug_format = std::format("OP:{:X},PC:{:X},AF:{:X},BC:{:X},DE:{:X},HL:{:X},SP:{:X}",
-												   opcode,
-												   m_Context.cpu->ProgramCounter,
-												   m_Context.cpu->GetRegister(RegisterType16::REG_AF),
-												   m_Context.cpu->GetRegister(RegisterType16::REG_BC),
-												   m_Context.cpu->GetRegister(RegisterType16::REG_DE),
-												   m_Context.cpu->GetRegister(RegisterType16::REG_HL),
-												   m_Context.cpu->StackPointer);
+				opcode,
+				m_Context.cpu->ProgramCounter,
+				m_Context.cpu->GetRegister(RegisterType16::REG_AF),
+				m_Context.cpu->GetRegister(RegisterType16::REG_BC),
+				m_Context.cpu->GetRegister(RegisterType16::REG_DE),
+				m_Context.cpu->GetRegister(RegisterType16::REG_HL),
+				m_Context.cpu->StackPointer);
 
 			m_TraceLog << debug_format << std::endl;
 		}
@@ -371,7 +371,7 @@ uint8_t Emulator::ReadBus(uint16_t address)
 	}
 	else if (address >= 0x8000 && address <= 0x9FFF)
 	{
-		if (m_Display->GetLcdMode() == LcdMode::PixelTransfer)
+		if (m_Display->GetLcdMode() == LcdMode::PixelTransfer && m_Display->IsLcdEnabled())
 		{
 			return 0xFF;
 		}
@@ -407,9 +407,12 @@ uint8_t Emulator::ReadBus(uint16_t address)
 			return 0xFF;
 		}
 
-		if (m_Display->GetLcdMode() == LcdMode::PixelTransfer || m_Display->GetLcdMode() == LcdMode::OAM)
+		if (m_Display->IsLcdEnabled())
 		{
-			return 0xFF;
+			if (m_Display->GetLcdMode() == LcdMode::PixelTransfer || m_Display->GetLcdMode() == LcdMode::OAM)
+			{
+				return 0xFF;
+			}
 		}
 
 		return m_Ppu->ReadOam(address);
@@ -449,7 +452,7 @@ void Emulator::WriteBus(uint16_t address, uint8_t value)
 	}
 	else if (address >= 0x8000 && address <= 0x9FFF)
 	{
-		if (m_Display->GetLcdMode() == LcdMode::PixelTransfer)
+		if (m_Display->GetLcdMode() == LcdMode::PixelTransfer && m_Display->IsLcdEnabled())
 		{
 			return;
 		}
@@ -482,9 +485,12 @@ void Emulator::WriteBus(uint16_t address, uint8_t value)
 			return;
 		}
 
-		if (m_Display->GetLcdMode() == LcdMode::PixelTransfer || m_Display->GetLcdMode() == LcdMode::OAM)
+		if (m_Display->IsLcdEnabled())
 		{
-			return;
+			if (m_Display->GetLcdMode() == LcdMode::PixelTransfer || m_Display->GetLcdMode() == LcdMode::OAM)
+			{
+				return;
+			}
 		}
 
 		m_Ppu->WriteOam(address, value);

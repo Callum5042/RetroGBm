@@ -49,7 +49,7 @@ void Dma::StartCGB(uint8_t value)
 
 	if (m_HBlankDMA)
 	{
-		if (Emulator::Instance->GetDisplay()->GetLcdMode() == LcdMode::HBlank)
+		if (Emulator::Instance->GetDisplay()->GetLcdMode() == LcdMode::HBlank && Emulator::Instance->GetDisplay()->IsLcdEnabled())
 		{
 			return;
 		}
