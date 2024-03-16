@@ -7,6 +7,7 @@
 #include <Cartridge.h>
 #include <cstdint>
 #include <iostream>
+#include <stdexcept>
 
 namespace
 {
@@ -68,27 +69,13 @@ uint8_t Display::Read(uint16_t address)
 		case 0xFF40:
 			return m_Context.lcdc;
 		case 0xFF41:
-		{
-			if (!IsLcdEnabled())
-			{
-				return m_Context.stat & 0xFC;
-			}
-
 			return m_Context.stat;
-		}
 		case 0xFF42:
 			return m_Context.scy;
 		case 0xFF43:
 			return m_Context.scx;
 		case 0xFF44:
-		{
-			if (!IsLcdEnabled())
-			{
-				return 0;
-			}
-
 			return m_Context.ly;
-		}
 		case 0xFF45:
 			return m_Context.lyc;
 		case 0xFF46:
@@ -124,7 +111,7 @@ void Display::Write(uint16_t address, uint8_t value)
 			m_Context.lcdc = value;
 			return;
 		case 0xFF41:
-			m_Context.stat = value;
+			m_Context.stat = (value & 0xF8);
 			return;
 		case 0xFF42:
 			m_Context.scy = value;
@@ -133,7 +120,7 @@ void Display::Write(uint16_t address, uint8_t value)
 			m_Context.scx = value;
 			return;
 		case 0xFF44:
-			m_Context.ly = value;
+			std::cout << "Attempted to write to LY (0xFF44) register: " << value << '\n';
 			return;
 		case 0xFF45:
 			m_Context.lyc = value;
@@ -711,4 +698,45 @@ void Display::SetFixedPalette(uint8_t hash)
 		m_ObjectColourPalettes[(palette * 8) + (3 * 2) + 0] = (colour3 & 0xFF);
 		m_ObjectColourPalettes[(palette * 8) + (3 * 2) + 1] = ((colour3 >> 8) & 0xFF);
 	}
+}
+
+bool Display::IsOamAccessible()
+{
+	LcdMode mode = GetLcdMode();
+	switch (mode)
+	{
+		case LcdMode::HBlank:
+		case LcdMode::VBlank:
+			return true;
+		case LcdMode::PixelTransfer:
+		case LcdMode::OAM:
+			return false;
+		default:
+			throw std::runtime_error("Unknown LcdMode in IsOamAccessible");
+	}
+}
+
+bool Display::IsGbcPalettesAccessible()
+{
+	LcdMode mode = GetLcdMode();
+	switch (mode)
+	{
+		case LcdMode::HBlank:
+		case LcdMode::VBlank:
+		case LcdMode::PixelTransfer:
+			return true;
+		case LcdMode::OAM:
+			return false;
+		default:
+			throw std::runtime_error("Unknown LcdMode in IsGbcPalettesAccessible");
+	}
+}
+
+bool Display::IsWindowVisible()
+{
+	return IsWindowEnabled()
+		&& m_Context.wx >= 0
+		&& m_Context.wx <= 166
+		&& m_Context.wy >= 0
+		&& m_Context.wy < ScreenResolutionY;
 }

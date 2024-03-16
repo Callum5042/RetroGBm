@@ -8,6 +8,9 @@
 
 class Ppu;
 
+const uint16_t ScreenResolutionY = 144;
+const uint16_t ScreenResolutionX = 160;
+
 struct DisplayContext
 {
 	// Registers
@@ -104,6 +107,11 @@ public:
 
 	uint32_t GetColourFromBackgroundPalette(uint8_t palette, uint8_t index);
 	uint32_t GetColourFromObjectPalette(uint8_t palette, uint8_t index);
+
+	bool IsOamAccessible();
+	bool IsGbcPalettesAccessible();
+
+	bool IsWindowVisible();
 
 	// Save state
 	void SaveState(std::fstream* file);
