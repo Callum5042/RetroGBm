@@ -3,12 +3,14 @@
 #include "Display.h"
 #include "Cpu.h"
 #include "Cartridge.h"
+#include "Pipeline.h"
 
 #include <stdexcept>
 #include <cstdint>
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
+#include <memory>
 
 PixelProcessor::PixelProcessor(Display* display) : m_Display(display)
 {
@@ -27,6 +29,8 @@ PixelProcessor::PixelProcessor(Display* display, Cpu* cpu, Cartridge* cartridge)
 
 void PixelProcessor::Init()
 {
+	m_Pipeline = std::make_unique<Pipeline>(this, m_Display, m_Cartridge);
+
 	// 16Kb of VRAM (2 banks of 8Kb each) and fills it to default value of 0
 	m_Context.video_ram.resize(0x4000);
 	std::fill(m_Context.video_ram.begin(), m_Context.video_ram.end(), 0x0);
@@ -34,6 +38,11 @@ void PixelProcessor::Init()
 
 void PixelProcessor::Tick()
 {
+	if (!m_Display->IsLcdEnabled())
+	{
+		return;
+	}
+
 	// Increase dots every tick of the PPU (PPU is ticked 1 times per T-cycle on single speed mode and 2 times per T-cycle on double speed mode)
 	m_Context.dots++;
 
@@ -300,7 +309,14 @@ void PixelProcessor::UpdateOam()
 
 void PixelProcessor::UpdatePixelTransfer()
 {
+	m_Pipeline->PipelineProcess();
 
+	// Process pixels until we finish the line
+	if (m_Pipeline->GetContext()->pushed_x >= ScreenResolutionX)
+	{
+		m_Pipeline = std::make_unique<Pipeline>(this, m_Display, m_Cartridge);
+		m_Display->SetLcdMode(LcdMode::HBlank);
+	}
 }
 
 void PixelProcessor::UpdateHBlank()

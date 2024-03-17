@@ -9,7 +9,6 @@
 #include <mutex>
 
 class Cpu;
-class Ppu;
 class Ram;
 class Dma;
 class Timer;
@@ -17,6 +16,7 @@ class Cartridge;
 class Joypad;
 class Display;
 class IBus;
+class PixelProcessor;
 
 struct EmulatorContext
 {
@@ -80,7 +80,7 @@ public:
 
 	inline Cpu* GetCpu() { return m_Cpu.get(); }
 	inline Display* GetDisplay() { return m_Display.get(); }
-	inline Ppu* GetPpu() { return m_Ppu.get(); }
+	inline PixelProcessor* GetPpu() { return m_PixelProcessor.get(); }
 	inline Dma* GetDma() { return m_Dma.get(); }
 	inline Ram* GetRam() { return m_Ram.get(); }
 	inline Joypad* GetJoypad() { return m_Joypad.get(); }
@@ -115,9 +115,9 @@ private:
 	std::unique_ptr<Ram> m_Ram;
 	std::unique_ptr<Cartridge> m_Cartridge;
 	std::unique_ptr<Display> m_Display;
-	std::unique_ptr<Ppu> m_Ppu;
 	std::unique_ptr<Dma> m_Dma;
 	std::unique_ptr<Joypad> m_Joypad;
+	std::unique_ptr<PixelProcessor> m_PixelProcessor;
 
 	bool m_Running = false;
 	bool m_Halted = false;

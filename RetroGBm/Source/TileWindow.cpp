@@ -3,10 +3,12 @@
 #include "Render/RenderTarget.h"
 #include "Render/RenderTexture.h"
 #include "Application.h"
+
 #include <Emulator.h>
 #include <Display.h>
+#include <PixelProcessor.h>
+
 #include <vector>
-#include <Ppu.h>
 
 TileWindow::TileWindow(Application* application) : Window(application)
 {

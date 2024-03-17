@@ -5,25 +5,11 @@
 #include <array>
 
 #include "HighTimer.h"
+#include "Pipeline.h"
 
 class Cpu;
 class Display;
 class Cartridge;
-
-struct OamDataV2
-{
-	uint8_t position_y;
-	uint8_t position_x;
-	uint8_t tile_id;
-
-	// Attribute data
-	uint8_t gcb_palette : 3;
-	bool bank : 1;
-	uint8_t dmg_palette : 1;
-	bool flip_x : 1;
-	bool flip_y : 1;
-	bool priority : 1;
-};
 
 struct PixelProcessorContext
 {
@@ -86,6 +72,8 @@ public:
 
 private:
 	PixelProcessorContext m_Context;
+
+	std::unique_ptr<Pipeline> m_Pipeline = nullptr;
 
 	void IncrementLY();
 	void CheckLYCFlag();

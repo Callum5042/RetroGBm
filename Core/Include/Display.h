@@ -70,8 +70,6 @@ struct FixedPalette
 
 class Display
 {
-	friend class Ppu;
-
 public:
 	Display() = default;
 	virtual ~Display() = default;

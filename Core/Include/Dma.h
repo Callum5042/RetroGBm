@@ -4,7 +4,7 @@
 #include <fstream>
 
 class IBus;
-class Ppu;
+class PixelProcessor;
 
 struct DmaContext
 {
@@ -17,7 +17,7 @@ struct DmaContext
 class Dma
 {
 	IBus* m_Bus = nullptr;
-	Ppu* m_Ppu = nullptr;
+	PixelProcessor* m_PixelProcessor = nullptr;
 
 public:
 	Dma();

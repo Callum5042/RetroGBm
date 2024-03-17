@@ -4,11 +4,9 @@
 #include <queue>
 #include <cstdint>
 
-#include "PixelProcessor.h"
-
 class Display;
 class Cartridge;
-class Ppu;
+class PixelProcessor;
 
 enum class FetchState
 {
@@ -34,19 +32,20 @@ struct BackgroundWindowAttribute
 	bool priority;
 };
 
-//struct OamData
-//{
-//	uint8_t position_y;
-//	uint8_t position_x;
-//	uint8_t tile_id;
-//
-//	uint8_t gcb_palette : 3;
-//	bool bank : 1;
-//	uint8_t dmg_palette : 1;
-//	bool flip_x : 1;
-//	bool flip_y : 1;
-//	bool priority : 1;
-//};
+struct OamDataV2
+{
+	uint8_t position_y;
+	uint8_t position_x;
+	uint8_t tile_id;
+
+	// Attribute data
+	uint8_t gcb_palette : 3;
+	bool bank : 1;
+	uint8_t dmg_palette : 1;
+	bool flip_x : 1;
+	bool flip_y : 1;
+	bool priority : 1;
+};
 
 struct OamPipelineData
 {
@@ -74,12 +73,12 @@ struct PipelineContext
 
 class Pipeline
 {
-	Ppu* m_Ppu = nullptr;
+	PixelProcessor* m_PixelProcessor = nullptr;
 	Display* m_Display = nullptr;
 	Cartridge* m_Cartridge = nullptr;
 
 public:
-	Pipeline(Ppu* ppu, Display* display, Cartridge* cartridge);
+	Pipeline(PixelProcessor* ppu, Display* display, Cartridge* cartridge);
 	virtual ~Pipeline() = default;
 
 	void PipelineProcess();

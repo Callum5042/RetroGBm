@@ -3,6 +3,7 @@
 #include <Display.h>
 #include <Cpu.h>
 #include <Cartridge.h>
+#include <Pipeline.h>
 
 #include <cstdint>
 #include <stdexcept>
@@ -253,7 +254,10 @@ namespace CoreTests
 		TEST_METHOD(Tick_IncreaseDotCount)
 		{
 			// Arrange
-			PixelProcessor ppu = BuildPixelProcessor();
+			Display display;
+			display.GetContext()->lcdc = (1 << 7);
+
+			PixelProcessor ppu = BuildPixelProcessor(&display);
 
 			// Act
 			ppu.Tick();
@@ -266,6 +270,7 @@ namespace CoreTests
 		{
 			// Arrange
 			Display display;
+			display.GetContext()->lcdc = (1 << 7);
 			display.GetContext()->ly = 4;
 			display.GetContext()->lyc = 5;
 			display.SetLcdMode(LcdMode::HBlank);
@@ -285,6 +290,7 @@ namespace CoreTests
 		{
 			// Arrange
 			Display display;
+			display.GetContext()->lcdc = (1 << 7);
 			display.SetLcdMode(LcdMode::OAM);
 
 			PixelProcessor ppu = BuildPixelProcessor(&display);
@@ -302,6 +308,7 @@ namespace CoreTests
 		{
 			// Arrange
 			Display display;
+			display.GetContext()->lcdc = (1 << 7);
 			display.SetLcdMode(LcdMode::HBlank);
 			display.GetContext()->ly = 5;
 
@@ -321,6 +328,7 @@ namespace CoreTests
 		{
 			// Arrange
 			Display display;
+			display.GetContext()->lcdc = (1 << 7);
 			display.SetLcdMode(LcdMode::HBlank);
 			display.GetContext()->ly = 143;
 
@@ -340,9 +348,10 @@ namespace CoreTests
 		{
 			// Arrange
 			Display display;
+			display.GetContext()->lcdc |= (1 << 7);
 			display.SetLcdMode(LcdMode::HBlank);
 			display.GetContext()->ly = 5;
-			display.GetContext()->lcdc = (1 << 5);
+			display.GetContext()->lcdc |= (1 << 5);
 			display.GetContext()->wy = 0;
 
 			PixelProcessor ppu = BuildPixelProcessor(&display);
@@ -363,6 +372,7 @@ namespace CoreTests
 		{
 			// Arrange
 			Display display;
+			display.GetContext()->lcdc = (1 << 7);
 			display.SetLcdMode(LcdMode::VBlank);
 			display.GetContext()->ly = 0;
 
