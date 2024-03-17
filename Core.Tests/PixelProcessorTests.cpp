@@ -3,7 +3,6 @@
 #include <Display.h>
 #include <Cpu.h>
 #include <Cartridge.h>
-#include <Pipeline.h>
 
 #include <cstdint>
 #include <stdexcept>

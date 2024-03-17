@@ -5,7 +5,7 @@
 #include <array>
 
 #include "HighTimer.h"
-#include "Pipeline.h"
+#include "PixelPipeline.h"
 
 class Cpu;
 class Display;
@@ -73,7 +73,7 @@ public:
 private:
 	PixelProcessorContext m_Context;
 
-	std::unique_ptr<Pipeline> m_Pipeline = nullptr;
+	std::unique_ptr<PixelPipeline> m_Pipeline = nullptr;
 
 	void IncrementLY();
 	void CheckLYCFlag();

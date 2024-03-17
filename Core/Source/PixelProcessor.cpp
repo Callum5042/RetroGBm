@@ -3,7 +3,7 @@
 #include "Display.h"
 #include "Cpu.h"
 #include "Cartridge.h"
-#include "Pipeline.h"
+#include "PixelPipeline.h"
 
 #include <stdexcept>
 #include <cstdint>
@@ -29,7 +29,7 @@ PixelProcessor::PixelProcessor(Display* display, Cpu* cpu, Cartridge* cartridge)
 
 void PixelProcessor::Init()
 {
-	m_Pipeline = std::make_unique<Pipeline>(this, m_Display, m_Cartridge);
+	m_Pipeline = std::make_unique<PixelPipeline>(this, m_Display, m_Cartridge);
 
 	// 16Kb of VRAM (2 banks of 8Kb each) and fills it to default value of 0
 	m_Context.video_ram.resize(0x4000);
@@ -314,7 +314,7 @@ void PixelProcessor::UpdatePixelTransfer()
 	// Process pixels until we finish the line
 	if (m_Pipeline->GetContext()->pushed_x >= ScreenResolutionX)
 	{
-		m_Pipeline = std::make_unique<Pipeline>(this, m_Display, m_Cartridge);
+		m_Pipeline = std::make_unique<PixelPipeline>(this, m_Display, m_Cartridge);
 		m_Display->SetLcdMode(LcdMode::HBlank);
 	}
 }
