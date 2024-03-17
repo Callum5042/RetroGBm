@@ -4,75 +4,15 @@
 #include <vector>
 #include <array>
 #include <queue>
+#include <memory>
 
 #include "Display.h"
 #include "HighTimer.h"
+#include "Pipeline.h"
 
 class IBus;
 class Cpu;
 class Cartridge;
-
-enum class FetchState
-{
-	Tile,
-	TileDataLow,
-	TileDataHigh,
-	Idle,
-	Push,
-};
-
-enum class FetchTileByte
-{
-	ByteLow,
-	ByteHigh
-};
-
-struct OamData
-{
-	uint8_t position_y;
-	uint8_t position_x;
-	uint8_t tile_id;
-
-	uint8_t gcb_palette : 3;
-	bool bank : 1;
-	uint8_t dmg_palette : 1;
-	bool flip_x : 1;
-	bool flip_y : 1;
-	bool priority : 1;
-};
-
-struct OamPipelineData
-{
-	OamData* oam = nullptr;
-	uint8_t byte_low = 0;
-	uint8_t byte_high = 0;
-};
-
-struct BackgroundWindowAttribute
-{
-	uint8_t colour_palette;
-	uint8_t bank;
-	bool flip_x;
-	bool flip_y;
-	bool priority;
-};
-
-struct PipelineContext
-{
-	FetchState pipeline_state = FetchState::Tile;
-	uint8_t line_x = 0;
-	uint8_t pushed_x = 0;
-	uint8_t fetch_x = 0;
-
-	BackgroundWindowAttribute background_window_attribute;
-	uint8_t background_window_tile = 0;
-	uint8_t background_window_byte_low = 0;
-	uint8_t background_window_byte_high = 0;
-
-	std::vector<OamPipelineData> fetched_entries;
-	std::queue<uint32_t> pixel_queue;
-	uint8_t fifo_x;
-};
 
 struct PpuContext
 {
@@ -84,8 +24,6 @@ struct PpuContext
 	std::vector<uint8_t> video_ram;
 	std::array<OamData, 40> oam_ram;
 	std::vector<OamData> objects_per_line;
-
-	PipelineContext pipeline;
 };
 
 class Ppu
@@ -104,7 +42,6 @@ public:
 	void Tick();
 
 	void* GetVideoBuffer();
-
 
 	// OAM
 	void WriteOam(uint16_t address, uint8_t value);
@@ -129,8 +66,11 @@ public:
 	void SaveState(std::fstream* file);
 	void LoadState(std::fstream* file);
 
+	bool IsWindowVisible();
+
 private:
 	PpuContext m_Context = {};
+	std::unique_ptr<Pipeline> m_Pipeline = nullptr;
 
 	const uint16_t m_LinesPerFrame = 154;
 	const uint16_t m_DotTicksPerLine = 456;
@@ -141,22 +81,6 @@ private:
 	void VBlank();
 	void HBlank();
 
-	// Pipeline
-	void PipelineProcess();
-	bool PipelineAddPixel();
-
-	void LoadSpriteTile();
-	void FetchTileData(FetchTileByte tile_byte);
-
-	uint32_t FetchSpritePixels(uint32_t color, bool background_pixel_transparent);
-	void LoadSpriteData(FetchTileByte tile_byte);
-	void LoadWindowTile();
-
-	void PixelFetcher();
-	void PushPixelToVideoBuffer();
-
-	bool IsWindowVisible();
-	bool IsWindowInView(int pixel_x);
 	void IncrementLY();
 
 	// Limit frame rate

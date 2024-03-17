@@ -28,6 +28,7 @@
     <ClInclude Include="Include\Joypad.h" />
     <ClInclude Include="Include\HighTimer.h" />
     <ClInclude Include="Include\Pch.h" />
+    <ClInclude Include="Include\Pipeline.h" />
     <ClInclude Include="Include\PixelPipeline.h" />
     <ClInclude Include="Include\Ppu.h" />
     <ClInclude Include="Include\PixelProcessor.h" />
@@ -36,6 +37,7 @@
     <ClInclude Include="Include\Dma.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Pipeline.cpp" />
     <ClCompile Include="Source\PixelPipeline.cpp" />
     <ClCompile Include="Source\PixelProcessor.cpp" />
     <ClCompile Include="Source\Joypad.cpp" />
