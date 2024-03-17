@@ -120,8 +120,15 @@ public:
 
 	std::vector<uint8_t> m_BackgroundColourPalettes;
 
+	void SetVideoBufferPixel(int x, int y, uint32_t data);
+	void* GetVideoBuffer();
+
 private:
 	DisplayContext m_Context = {};
+
+	// Display screen
+	std::vector<uint32_t> m_VideoBuffer;
+	std::vector<uint32_t> m_BlankVideoBuffer;
 
 	// CGB Palettes
 	uint8_t m_BackgroundPaletteIndex = 0;

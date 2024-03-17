@@ -10,7 +10,7 @@ Pipeline::Pipeline(Ppu* ppu, Display* display, Cartridge* cartridge) : m_Ppu(ppu
 
 void Pipeline::PipelineProcess()
 {
-	if ((m_Ppu->GetContext()->dot_ticks & 1))
+	if ((m_Ppu->m_PixelProcessor->GetContext()->dots & 1))
 	{
 		PixelFetcher();
 	}
@@ -119,7 +119,7 @@ void Pipeline::PushPixelToVideoBuffer()
 
 		if (m_Context.line_x >= (m_Display->GetContext()->scx % 8))
 		{
-			m_Ppu->GetContext()->video_buffer[m_Context.pushed_x + (m_Display->GetContext()->ly * ScreenResolutionX)] = pixel_data;
+			m_Display->SetVideoBufferPixel(m_Context.pushed_x, m_Display->GetContext()->ly, pixel_data);
 			m_Context.pushed_x++;
 		}
 
@@ -135,7 +135,8 @@ void Pipeline::FetchTileData(FetchTileByte tile_byte)
 
 	if (m_Ppu->IsWindowVisible() && this->IsWindowInView(m_Context.fetch_x))
 	{
-		offset_y = ((m_Ppu->GetContext()->window_line_counter & 0x7) << 1);
+		int window_line = m_Ppu->m_PixelProcessor->GetContext()->window_line;
+		offset_y = ((window_line & 0x7) << 1);
 	}
 
 	// Flip y
@@ -190,7 +191,8 @@ void Pipeline::LoadSpriteData(FetchTileByte tile_byte)
 
 void Pipeline::LoadSpriteTile()
 {
-	for (auto& oam : m_Ppu->GetContext()->objects_per_line)
+	PixelProcessorContext* ppu_context = const_cast<PixelProcessorContext*>(m_Ppu->m_PixelProcessor->GetContext());
+	for (auto& oam : ppu_context->objects_per_line)
 	{
 		int sp_x = (oam.position_x - 8) + (m_Display->GetContext()->scx % 8);
 
@@ -218,7 +220,7 @@ void Pipeline::LoadWindowTile()
 		{
 			// Divide by 8
 			uint8_t position_x = (m_Context.fetch_x - m_Display->GetContext()->wx + 7) & 0xFF;
-			uint8_t position_y = m_Ppu->GetContext()->window_line_counter; // (display_context->ly - display_context->wy) & 0xFF;
+			uint8_t position_y = m_Ppu->m_PixelProcessor->GetContext()->window_line; // (display_context->ly - display_context->wy) & 0xFF;
 
 			// Fetch tile
 			uint16_t base_address = m_Display->GetWindowTileBaseAddress();

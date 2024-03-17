@@ -10,38 +10,31 @@
 #include "HighTimer.h"
 #include "Pipeline.h"
 
+#include "PixelProcessor.h"
+
 class IBus;
 class Cpu;
 class Cartridge;
 
 struct PpuContext
 {
-	uint32_t dot_ticks = 0;
-	uint8_t window_line_counter = 0;
-
-	std::vector<uint32_t> video_buffer;
-	std::vector<uint32_t> blank_video_buffer;
-	std::vector<uint8_t> video_ram;
-	std::array<OamData, 40> oam_ram;
-	std::vector<OamData> objects_per_line;
+	/*uint32_t dot_ticks = 0;
+	uint8_t window_line_counter = 0;*/
 };
 
 class Ppu
 {
-	IBus* m_Bus = nullptr;
 	Cpu* m_Cpu = nullptr;
 	Display* m_Display = nullptr;
 	Cartridge* m_Cartridge = nullptr;
 
 public:
 	Ppu();
-	Ppu(IBus* bus, Cpu* cpu, Display* display, Cartridge* cartridge);
+	Ppu(Cpu* cpu, Display* display, Cartridge* cartridge);
 	virtual ~Ppu() = default;
 
 	void Init();
 	void Tick();
-
-	void* GetVideoBuffer();
 
 	// OAM
 	void WriteOam(uint16_t address, uint8_t value);
@@ -52,15 +45,12 @@ public:
 	uint8_t ReadVideoRam(uint16_t address);
 	uint8_t ReadVideoRam(uint16_t address, uint8_t bank);
 
+	// VRAM Bank
 	void SetVideoRamBank(uint8_t value);
-	inline uint8_t GetVideoRamBank() const { return m_VramBank; }
+	inline uint8_t GetVideoRamBank() const { return m_PixelProcessor->GetVideoRamBank(); }
 
 	inline PpuContext* GetContext() { return &m_Context; }
-
-	const uint16_t ScreenResolutionY = 144;
-	const uint16_t ScreenResolutionX = 160;
-
-	inline int GetFPS() { return m_FramesPerSecond; }
+	inline int GetFPS() const { return m_PixelProcessor->GetFPS(); }
 
 	// Save state
 	void SaveState(std::fstream* file);
@@ -70,7 +60,12 @@ public:
 
 private:
 	PpuContext m_Context = {};
+
 	std::unique_ptr<Pipeline> m_Pipeline = nullptr;
+public:
+	// TODO: Make this private
+	std::unique_ptr<PixelProcessor> m_PixelProcessor = nullptr;
+private:
 
 	const uint16_t m_LinesPerFrame = 154;
 	const uint16_t m_DotTicksPerLine = 456;
@@ -94,7 +89,4 @@ private:
 
 	int m_FrameCount = 0;
 	float m_TimeElapsed = 0.0f;
-
-	// Bank
-	uint8_t m_VramBank = 0;
 };

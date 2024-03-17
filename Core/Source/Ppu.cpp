@@ -12,152 +12,125 @@
 
 Ppu::Ppu()
 {
-	m_Bus = Emulator::Instance;
 	m_Cpu = Emulator::Instance->GetCpu();
 	m_Display = Emulator::Instance->GetDisplay();
 	m_Cartridge = Emulator::Instance->GetCartridge();
 }
 
-Ppu::Ppu(IBus* bus, Cpu* cpu, Display* display, Cartridge* cartridge) : m_Bus(bus), m_Cpu(cpu), m_Display(display), m_Cartridge(cartridge)
+Ppu::Ppu(Cpu* cpu, Display* display, Cartridge* cartridge) : m_Cpu(cpu), m_Display(display), m_Cartridge(cartridge)
 {
 }
 
 void Ppu::Init()
 {
-	m_Context.video_buffer.resize(ScreenResolutionY * ScreenResolutionX);
-	std::fill(m_Context.video_buffer.begin(), m_Context.video_buffer.end(), 0x0);
-
-	m_Context.blank_video_buffer.resize(ScreenResolutionY * ScreenResolutionX);
-	std::fill(m_Context.blank_video_buffer.begin(), m_Context.blank_video_buffer.end(), 0xFFFFFFFF);
-
-	m_Context.video_ram.resize(16384);
-	std::fill(m_Context.video_ram.begin(), m_Context.video_ram.end(), 0x0);
+	m_PixelProcessor = std::make_unique<PixelProcessor>(m_Display, m_Cpu, m_Cartridge);
+	m_Pipeline = std::make_unique<Pipeline>(this, m_Display, m_Cartridge);
 
 	m_Display->Init();
 	m_Display->SetLcdMode(LcdMode::OAM);
 
 	m_Timer.Start();
-
-	m_Pipeline = std::make_unique<Pipeline>(this, m_Display, m_Cartridge);
 }
 
 void Ppu::Tick()
-{
+{  
 	if (!m_Display->IsLcdEnabled())
 	{
 		return;
 	}
 
-	m_Context.dot_ticks++;
+	const_cast<PixelProcessorContext*>(m_PixelProcessor->GetContext())->dots++;
 
 	// Display mode
 	switch (m_Display->GetLcdMode())
 	{
 		case LcdMode::OAM:
 			UpdateOam();
+			// m_PixelProcessor->UpdateOam();
 			break;
 		case LcdMode::PixelTransfer:
 			PixelTransfer();
 			break;
 		case LcdMode::HBlank:
 			HBlank();
+			//m_PixelProcessor->UpdateHBlank();
 			break;
 		case LcdMode::VBlank:
 			VBlank();
+			// m_PixelProcessor->UpdateVBlank();
 			break;
-	}
-}
-
-void* Ppu::GetVideoBuffer()
-{
-	if (m_Display->IsLcdEnabled())
-	{
-		return m_Context.video_buffer.data();
-	}
-	else
-	{
-		return m_Context.blank_video_buffer.data();
 	}
 }
 
 void Ppu::WriteOam(uint16_t address, uint8_t value)
 {
-	if (address >= 0xFE00)
-	{
-		address -= 0xFE00;
-	}
-
-	uint8_t* ptr = reinterpret_cast<uint8_t*>(m_Context.oam_ram.data());
-	ptr[address] = value;
+	m_PixelProcessor->WriteOam(address, value);
 }
 
 uint8_t Ppu::ReadOam(uint16_t address)
 {
-	if (address >= 0xFE00)
-	{
-		address -= 0xFE00;
-	}
-
-	uint8_t* ptr = reinterpret_cast<uint8_t*>(m_Context.oam_ram.data());
-	return ptr[address];
+	return m_PixelProcessor->ReadOam(address);
 }
 
 void Ppu::WriteVideoRam(uint16_t address, uint8_t value)
 {
-	m_Context.video_ram[(address - 0x8000) + (m_VramBank * 8192)] = value;
+	m_PixelProcessor->WriteVideoRam(address, value);
 }
 
 uint8_t Ppu::ReadVideoRam(uint16_t address)
 {
-	return m_Context.video_ram[(address - 0x8000) + (m_VramBank * 8192)];
+	return m_PixelProcessor->ReadVideoRam(address);
 }
 
 uint8_t Ppu::ReadVideoRam(uint16_t address, uint8_t bank)
 {
-	return m_Context.video_ram[(address - 0x8000) + (bank * 8192)];
+	return m_PixelProcessor->PipelineReadVideoRam(address, bank);
 }
 
 void Ppu::SetVideoRamBank(uint8_t value)
 {
-	m_VramBank = value & 0b1;
+	m_PixelProcessor->SetVideoRamBank(value);
 }
 
 void Ppu::UpdateOam()
 {
+	// TODO: Temp for migrating to PixelProcessor class
+	PixelProcessorContext* context = const_cast<PixelProcessorContext*>(m_PixelProcessor->GetContext());
+
 	// Searching for objects takes 80 ticks
-	if (m_Context.dot_ticks >= 80)
+	if (const_cast<PixelProcessorContext*>(m_PixelProcessor->GetContext())->dots >= 80)
 	{
 		m_Display->SetLcdMode(LcdMode::PixelTransfer);
 	}
 
 	// Search and order OAMA per line
-	if (m_Context.dot_ticks == 1)
+	if (const_cast<PixelProcessorContext*>(m_PixelProcessor->GetContext())->dots == 1)
 	{
-		m_Context.objects_per_line.clear();
+		context->objects_per_line.clear();
 
 		// Find all objects on the current scan line
 		uint8_t sprite_height = m_Display->GetObjectHeight();
-		for (auto& oam : m_Context.oam_ram)
+		for (auto& oam : context->oam_ram)
 		{
 			if ((oam.position_y + sprite_height > m_Display->m_Context.ly + 16) && (oam.position_y <= m_Display->m_Context.ly + 16))
 			{
-				m_Context.objects_per_line.push_back(oam);
+				context->objects_per_line.push_back(oam);
 			}
 		}
 
 		// Sort by priority and X position
 		if (m_Cartridge->IsColourModeDMG() || m_Display->IsObjectPriorityModeSet())
 		{
-			std::sort(m_Context.objects_per_line.begin(), m_Context.objects_per_line.end(), [](const OamData& lhs, const OamData& rhs)
+			std::sort(context->objects_per_line.begin(), context->objects_per_line.end(), [](const OamDataV2& lhs, const OamDataV2& rhs)
 			{
 				return (lhs.position_x < rhs.position_x);
 			});
 		}
 
 		// Limit to 10 per row
-		if (m_Context.objects_per_line.size() > 10)
+		if (context->objects_per_line.size() > 10)
 		{
-			m_Context.objects_per_line.erase(m_Context.objects_per_line.begin() + 10, m_Context.objects_per_line.end());
+			context->objects_per_line.erase(context->objects_per_line.begin() + 10, context->objects_per_line.end());
 		}
 	}
 }
@@ -176,29 +149,29 @@ void Ppu::PixelTransfer()
 
 void Ppu::VBlank()
 {
-	if (m_Display->m_Context.ly == 153 && m_Context.dot_ticks == 4)
+	if (m_Display->m_Context.ly == 153 && const_cast<PixelProcessorContext*>(m_PixelProcessor->GetContext())->dots == 4)
 	{
 		m_Display->m_Context.ly = 0;
 		CheckLYCFlag();
 	}
 
-	if (m_Context.dot_ticks >= m_DotTicksPerLine)
+	if (const_cast<PixelProcessorContext*>(m_PixelProcessor->GetContext())->dots >= m_DotTicksPerLine)
 	{
 		// Keep increasing LY register until we reach the lines per frame
 		if (m_Display->m_Context.ly == 0)
 		{
-			m_Context.dot_ticks = 0;
+			const_cast<PixelProcessorContext*>(m_PixelProcessor->GetContext())->dots = 0;
 			IncrementLY();
 
 			LimitFrameRate();
 
 			m_Display->SetLcdMode(LcdMode::OAM);
 			m_Display->m_Context.ly = 0;
-			m_Context.window_line_counter = 0;
+			const_cast<PixelProcessorContext*>(m_PixelProcessor->GetContext())->window_line = 0;
 		}
 		else
 		{
-			m_Context.dot_ticks = 0;
+			const_cast<PixelProcessorContext*>(m_PixelProcessor->GetContext())->dots = 0;
 			IncrementLY();
 		}
 	}
@@ -206,9 +179,9 @@ void Ppu::VBlank()
 
 void Ppu::HBlank()
 {
-	if (m_Context.dot_ticks >= m_DotTicksPerLine)
+	if (const_cast<PixelProcessorContext*>(m_PixelProcessor->GetContext())->dots >= m_DotTicksPerLine)
 	{
-		m_Context.dot_ticks = 0;
+		const_cast<PixelProcessorContext*>(m_PixelProcessor->GetContext())->dots = 0;
 		IncrementLY();
 
 		// Enter VBlank if all the scanlines have been drawn
@@ -246,7 +219,7 @@ void Ppu::IncrementLY()
 	// Internal window line is used for the window tiles Y offset and only incremented when the window is visible
 	if (IsWindowVisible() && (m_Display->m_Context.ly > m_Display->m_Context.wy) && (m_Display->m_Context.ly <= m_Display->m_Context.wy + ScreenResolutionY))
 	{
-		m_Context.window_line_counter++;
+		const_cast<PixelProcessorContext*>(m_PixelProcessor->GetContext())->window_line++;
 	}
 
 	CheckLYCFlag();
@@ -304,20 +277,20 @@ void Ppu::LimitFrameRate()
 
 void Ppu::SaveState(std::fstream* file)
 {
-	size_t videoram_size = m_Context.video_ram.size();
+	/*size_t videoram_size = m_Context.video_ram.size();
 	file->write(reinterpret_cast<const char*>(&videoram_size), sizeof(size_t));
-	file->write(reinterpret_cast<const char*>(m_Context.video_ram.data()), videoram_size * sizeof(uint8_t));
+	file->write(reinterpret_cast<const char*>(m_Context.video_ram.data()), videoram_size * sizeof(uint8_t));*/
 
-	file->write(reinterpret_cast<const char*>(&m_VramBank), sizeof(m_VramBank));
+	//file->write(reinterpret_cast<const char*>(&m_VramBank), sizeof(m_VramBank));
 }
 
 void Ppu::LoadState(std::fstream* file)
 {
-	size_t videoram_size = 0;
-	file->read(reinterpret_cast<char*>(&videoram_size), sizeof(size_t));
+	/*size_t videoram_size = 0;
+	file->read(reinterpret_cast<char*>(&videoram_size), sizeof(size_t));*/
 
-	m_Context.video_ram.resize(videoram_size);
-	file->read(reinterpret_cast<char*>(m_Context.video_ram.data()), videoram_size * sizeof(uint8_t));
+	/*m_Context.video_ram.resize(videoram_size);
+	file->read(reinterpret_cast<char*>(m_Context.video_ram.data()), videoram_size * sizeof(uint8_t));*/
 
-	file->read(reinterpret_cast<char*>(&m_VramBank), sizeof(m_VramBank));
+	//file->read(reinterpret_cast<char*>(&m_VramBank), sizeof(m_VramBank));
 }

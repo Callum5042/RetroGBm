@@ -266,16 +266,19 @@ namespace CoreTests
 		{
 			// Arrange
 			Display display;
-			display.GetContext()->ly = 5;
+			display.GetContext()->ly = 4;
 			display.GetContext()->lyc = 5;
+			display.SetLcdMode(LcdMode::HBlank);
 
 			PixelProcessor ppu = BuildPixelProcessor(&display);
+			const_cast<PixelProcessorContext*>(ppu.GetContext())->dots = 455;
 
 			// Act
 			ppu.Tick();
 
 			// Assert
-			Assert::AreEqual(0b100, static_cast<int>(display.GetContext()->stat));
+			int result = static_cast<int>(display.GetContext()->stat) & 0b100;
+			Assert::AreEqual(0b100, result);
 		}
 
 		TEST_METHOD(Tick_ModeIsOAMAndDotsAre79_ChangeToPixelTransferOn80thDot)
@@ -292,7 +295,7 @@ namespace CoreTests
 
 			// Assert
 			Assert::IsTrue(display.GetLcdMode() == LcdMode::PixelTransfer);
-			Assert::AreEqual(0, ppu.GetContext()->dots);
+			Assert::AreEqual(80, ppu.GetContext()->dots);
 		}
 
 		TEST_METHOD(Tick_ModeIsHBlankAndNotLastLine_UpdateLinesAndChangeToOAM)
@@ -303,7 +306,7 @@ namespace CoreTests
 			display.GetContext()->ly = 5;
 
 			PixelProcessor ppu = BuildPixelProcessor(&display);
-			const_cast<PixelProcessorContext*>(ppu.GetContext())->frame_dots = 455;
+			const_cast<PixelProcessorContext*>(ppu.GetContext())->dots = 455;
 
 			// Act
 			ppu.Tick();
@@ -322,7 +325,7 @@ namespace CoreTests
 			display.GetContext()->ly = 143;
 
 			PixelProcessor ppu = BuildPixelProcessor(&display);
-			const_cast<PixelProcessorContext*>(ppu.GetContext())->frame_dots = 455;
+			const_cast<PixelProcessorContext*>(ppu.GetContext())->dots = 455;
 
 			// Act
 			ppu.Tick();
@@ -343,7 +346,7 @@ namespace CoreTests
 			display.GetContext()->wy = 0;
 
 			PixelProcessor ppu = BuildPixelProcessor(&display);
-			const_cast<PixelProcessorContext*>(ppu.GetContext())->frame_dots = 455;
+			const_cast<PixelProcessorContext*>(ppu.GetContext())->dots = 455;
 			const_cast<PixelProcessorContext*>(ppu.GetContext())->window_line = 1;
 
 			// Act
@@ -361,11 +364,11 @@ namespace CoreTests
 			// Arrange
 			Display display;
 			display.SetLcdMode(LcdMode::VBlank);
-			display.GetContext()->ly = 153;
+			display.GetContext()->ly = 0;
 
 			PixelProcessor ppu = BuildPixelProcessor(&display);
-			const_cast<PixelProcessorContext*>(ppu.GetContext())->dots = 4560 - 1;
-			const_cast<PixelProcessorContext*>(ppu.GetContext())->window_line = 143;
+			const_cast<PixelProcessorContext*>(ppu.GetContext())->dots = 456;
+			const_cast<PixelProcessorContext*>(ppu.GetContext())->window_line = 153;
 
 			// Act
 			ppu.Tick();

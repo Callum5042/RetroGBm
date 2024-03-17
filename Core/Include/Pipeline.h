@@ -4,6 +4,8 @@
 #include <queue>
 #include <cstdint>
 
+#include "PixelProcessor.h"
+
 class Display;
 class Cartridge;
 class Ppu;
@@ -32,23 +34,23 @@ struct BackgroundWindowAttribute
 	bool priority;
 };
 
-struct OamData
-{
-	uint8_t position_y;
-	uint8_t position_x;
-	uint8_t tile_id;
-
-	uint8_t gcb_palette : 3;
-	bool bank : 1;
-	uint8_t dmg_palette : 1;
-	bool flip_x : 1;
-	bool flip_y : 1;
-	bool priority : 1;
-};
+//struct OamData
+//{
+//	uint8_t position_y;
+//	uint8_t position_x;
+//	uint8_t tile_id;
+//
+//	uint8_t gcb_palette : 3;
+//	bool bank : 1;
+//	uint8_t dmg_palette : 1;
+//	bool flip_x : 1;
+//	bool flip_y : 1;
+//	bool priority : 1;
+//};
 
 struct OamPipelineData
 {
-	OamData* oam = nullptr;
+	OamDataV2* oam = nullptr;
 	uint8_t byte_low = 0;
 	uint8_t byte_high = 0;
 };

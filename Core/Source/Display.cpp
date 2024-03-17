@@ -45,6 +45,13 @@ void Display::Init()
 	m_Context.wy = 0x0;
 	m_Context.wx = 0x0;
 
+	// Init display screen
+	m_VideoBuffer.resize(ScreenResolutionY * ScreenResolutionX);
+	std::fill(m_VideoBuffer.begin(), m_VideoBuffer.end(), 0x0);
+
+	m_BlankVideoBuffer.resize(ScreenResolutionY * ScreenResolutionX);
+	std::fill(m_BlankVideoBuffer.begin(), m_BlankVideoBuffer.end(), 0xFFFFFFFF);
+
 	// CGB palettes
 	m_BackgroundColourPalettes.resize(64);
 	std::fill(m_BackgroundColourPalettes.begin(), m_BackgroundColourPalettes.end(), 0);
@@ -60,6 +67,24 @@ void Display::Init()
 	// https://tcrf.net/Notes:Game_Boy_Color_Bootstrap_ROM#Assigned_Palette_Configurations
 
 	SetFixedPalette(Emulator::Instance->GetCartridge()->GetTitleChecksum());
+}
+
+void Display::SetVideoBufferPixel(int x, int y, uint32_t data)
+{
+	int offset = x + (y * ScreenResolutionX);
+	m_VideoBuffer[offset] = data;
+}
+
+void* Display::GetVideoBuffer()
+{
+	if (IsLcdEnabled())
+	{
+		return m_VideoBuffer.data();
+	}
+	else
+	{
+		return m_BlankVideoBuffer.data();
+	}
 }
 
 uint8_t Display::Read(uint16_t address)
