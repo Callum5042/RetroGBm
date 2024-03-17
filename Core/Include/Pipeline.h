@@ -78,6 +78,7 @@ class Pipeline
 
 public:
 	Pipeline(Ppu* ppu, Display* display, Cartridge* cartridge);
+	virtual ~Pipeline() = default;
 
 	void PipelineProcess();
 

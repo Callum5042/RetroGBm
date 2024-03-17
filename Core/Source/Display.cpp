@@ -69,13 +69,28 @@ uint8_t Display::Read(uint16_t address)
 		case 0xFF40:
 			return m_Context.lcdc;
 		case 0xFF41:
+		{
+			// TODO: Dr Mario seems to want this but not sure why. Check documentations
+			if (!IsLcdEnabled())
+			{
+				return m_Context.stat & 0xFC;
+			}
+
 			return m_Context.stat;
+		}
 		case 0xFF42:
 			return m_Context.scy;
 		case 0xFF43:
 			return m_Context.scx;
 		case 0xFF44:
+		{
+			/*if (!IsLcdEnabled())
+			{
+				return 0;
+			}*/
+
 			return m_Context.ly;
+		}
 		case 0xFF45:
 			return m_Context.lyc;
 		case 0xFF46:

@@ -114,5 +114,37 @@ namespace CoreTests
 			Assert::IsTrue(LcdMode::OAM == oam);
 			Assert::IsTrue(LcdMode::PixelTransfer == pixel_transfer);
 		}
+
+		TEST_METHOD(Read_LcdIsDisabled_ReturnsSTATMasked)
+		{
+			// This behaviour is required to get Dr. Mario past the main menu
+
+			// Arrange
+			Display display;
+			display.GetContext()->lcdc = !(1 << 7);
+			display.GetContext()->stat = 0xFF;
+
+			// Act
+			uint8_t result = display.Read(0xFF41);
+
+			// Assert
+			Assert::AreEqual(0xFC, static_cast<int>(result));
+		}
+
+		TEST_METHOD(Read_LcdIsEnabled_ReturnsSTATNotMasked)
+		{
+			// This behaviour is required to get Dr. Mario past the main menu
+
+			// Arrange
+			Display display;
+			display.GetContext()->lcdc = (1 << 7);
+			display.GetContext()->stat = 0xFF;
+
+			// Act
+			uint8_t result = display.Read(0xFF41);
+
+			// Assert
+			Assert::AreEqual(0xFF, static_cast<int>(result));
+		}
 	};
 }

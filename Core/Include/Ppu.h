@@ -82,6 +82,7 @@ private:
 	void HBlank();
 
 	void IncrementLY();
+	void CheckLYCFlag();
 
 	// Limit frame rate
 	void LimitFrameRate();

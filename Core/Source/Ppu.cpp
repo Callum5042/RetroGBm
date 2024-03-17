@@ -50,6 +50,7 @@ void Ppu::Tick()
 
 	m_Context.dot_ticks++;
 
+	// Display mode
 	switch (m_Display->GetLcdMode())
 	{
 		case LcdMode::OAM:
@@ -170,33 +171,15 @@ void Ppu::PixelTransfer()
 	{
 		m_Pipeline = std::make_unique<Pipeline>(this, m_Display, m_Cartridge);
 		m_Display->SetLcdMode(LcdMode::HBlank);
-		if (m_Display->IsStatInterruptHBlank())
-		{
-			m_Cpu->RequestInterrupt(InterruptFlag::STAT);
-		}
 	}
 }
 
 void Ppu::VBlank()
 {
-	if (m_Display->m_Context.ly == 153)
+	if (m_Display->m_Context.ly == 153 && m_Context.dot_ticks == 4)
 	{
-		if (m_Context.dot_ticks == 4)
-		{
-			m_Display->m_Context.ly = 0;
-			if (m_Display->m_Context.ly == m_Display->m_Context.lyc)
-			{
-				m_Display->m_Context.stat |= 0b100;
-				if (m_Display->IsStatInterruptLYC())
-				{
-					m_Cpu->RequestInterrupt(InterruptFlag::STAT);
-				}
-			}
-			else
-			{
-				m_Display->m_Context.stat &= ~0b100;
-			}
-		}
+		m_Display->m_Context.ly = 0;
+		CheckLYCFlag();
 	}
 
 	if (m_Context.dot_ticks >= m_DotTicksPerLine)
@@ -232,11 +215,11 @@ void Ppu::HBlank()
 		if (m_Display->m_Context.ly >= ScreenResolutionY)
 		{
 			m_Display->SetLcdMode(LcdMode::VBlank);
-			m_Cpu->RequestInterrupt(InterruptFlag::VBlank);
 
+			m_Cpu->RequestInterrupt(InterruptFlag::VBlank);
 			if (m_Display->IsStatInterruptVBlank())
 			{
-				m_Cpu->RequestInterrupt(InterruptFlag::STAT);
+				m_Cpu->RequestInterrupt(InterruptFlag::VBlank);
 			}
 		}
 		else
@@ -257,8 +240,20 @@ bool Ppu::IsWindowVisible()
 
 void Ppu::IncrementLY()
 {
-	// Increment LY register every 
+	// Increment LY register
 	m_Display->m_Context.ly++;
+
+	// Internal window line is used for the window tiles Y offset and only incremented when the window is visible
+	if (IsWindowVisible() && (m_Display->m_Context.ly > m_Display->m_Context.wy) && (m_Display->m_Context.ly <= m_Display->m_Context.wy + ScreenResolutionY))
+	{
+		m_Context.window_line_counter++;
+	}
+
+	CheckLYCFlag();
+}
+
+void Ppu::CheckLYCFlag()
+{
 	if (m_Display->m_Context.ly == m_Display->m_Context.lyc)
 	{
 		m_Display->m_Context.stat |= 0b100;
@@ -270,12 +265,6 @@ void Ppu::IncrementLY()
 	else
 	{
 		m_Display->m_Context.stat &= ~0b100;
-	}
-
-	// Internal window line is used for the window tiles Y offset and only incremented when the window is visible
-	if (IsWindowVisible() && (m_Display->m_Context.ly > m_Display->m_Context.wy) && (m_Display->m_Context.ly <= m_Display->m_Context.wy + ScreenResolutionY))
-	{
-		m_Context.window_line_counter++;
 	}
 }
 
