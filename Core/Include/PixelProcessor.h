@@ -75,7 +75,7 @@ private:
 	std::unique_ptr<PixelPipeline> m_Pipeline = nullptr;
 
 	void IncrementLY();
-	void CheckLYCFlag();
+	void CheckLYCFlag(bool lyc_interrupt_flag = false);
 
 	// Limit frame rate
 	void LimitFrameRate();

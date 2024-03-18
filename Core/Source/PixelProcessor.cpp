@@ -247,13 +247,13 @@ void PixelProcessor::SetVideoRamBank(uint8_t value)
 	m_Context.video_ram_bank = value & 0b1;
 }
 
-void PixelProcessor::CheckLYCFlag()
+void PixelProcessor::CheckLYCFlag(bool lyc_interrupt_flag)
 {
 	DisplayContext* display_context = const_cast<DisplayContext*>(m_Display->GetContext());
 	if (display_context->ly == display_context->lyc)
 	{
 		display_context->stat |= 0b100;
-		if (m_Display->IsStatInterruptLYC())
+		if (m_Display->IsStatInterruptLYC() || lyc_interrupt_flag)
 		{
 			m_Cpu->RequestInterrupt(InterruptFlag::STAT);
 		}
@@ -316,6 +316,10 @@ void PixelProcessor::UpdatePixelTransfer()
 	{
 		m_Pipeline = std::make_unique<PixelPipeline>(this, m_Display, m_Cartridge);
 		m_Display->SetLcdMode(LcdMode::HBlank);
+		if (m_Display->IsStatInterruptHBlank())
+		{
+			m_Cpu->RequestInterrupt(InterruptFlag::STAT);
+		}
 	}
 }
 
@@ -341,16 +345,21 @@ void PixelProcessor::UpdateHBlank()
 		if (display_context->ly >= ScreenResolutionY)
 		{
 			m_Display->SetLcdMode(LcdMode::VBlank);
-
 			m_Cpu->RequestInterrupt(InterruptFlag::VBlank);
+
 			if (m_Display->IsStatInterruptVBlank())
 			{
-				m_Cpu->RequestInterrupt(InterruptFlag::VBlank);
+				m_Cpu->RequestInterrupt(InterruptFlag::STAT);
 			}
 		}
 		else
 		{
 			m_Display->SetLcdMode(LcdMode::OAM);
+
+			if (m_Display->IsStatInterruptOAM())
+			{
+				m_Cpu->RequestInterrupt(InterruptFlag::STAT);
+			}
 		}
 	}
 }
@@ -361,7 +370,7 @@ void PixelProcessor::UpdateVBlank()
 	if (display_context->ly == 153 && m_Context.dots == 4)
 	{
 		display_context->ly = 0;
-		CheckLYCFlag();
+		CheckLYCFlag(true);
 	}
 
 	int dots_per_line = 456;
@@ -373,6 +382,11 @@ void PixelProcessor::UpdateVBlank()
 		if (display_context->ly == 0)
 		{
 			m_Display->SetLcdMode(LcdMode::OAM);
+			if (m_Display->IsStatInterruptOAM())
+			{
+				m_Cpu->RequestInterrupt(InterruptFlag::STAT);
+			}
+
 			display_context->ly = 0;
 			m_Context.window_line = 0;
 

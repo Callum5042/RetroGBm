@@ -115,10 +115,8 @@ namespace CoreTests
 			Assert::IsTrue(LcdMode::PixelTransfer == pixel_transfer);
 		}
 
-		TEST_METHOD(Read_LcdIsDisabled_ReturnsSTATMasked)
+		TEST_METHOD(Read_LcdIsDisabled_ReturnsSTATLower3BitsMasked)
 		{
-			// This behaviour is required to get Dr. Mario past the main menu
-
 			// Arrange
 			Display display;
 			display.GetContext()->lcdc = !(1 << 7);
@@ -128,7 +126,21 @@ namespace CoreTests
 			uint8_t result = display.Read(0xFF41);
 
 			// Assert
-			Assert::AreEqual(0xFC, static_cast<int>(result));
+			Assert::AreEqual(0xF8, static_cast<int>(result));
+		}
+
+		TEST_METHOD(Read_LcdIsDisabled_ReturnsSTATBit7Always1)
+		{
+			// Arrange
+			Display display;
+			display.GetContext()->lcdc = (1 << 7);
+			display.GetContext()->stat = 0x0;
+
+			// Act
+			uint8_t result = display.Read(0xFF41);
+
+			// Assert
+			Assert::AreEqual(0x80, static_cast<int>(result));
 		}
 
 		TEST_METHOD(Read_LcdIsEnabled_ReturnsSTATNotMasked)

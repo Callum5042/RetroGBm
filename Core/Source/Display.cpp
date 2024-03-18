@@ -95,13 +95,13 @@ uint8_t Display::Read(uint16_t address)
 			return m_Context.lcdc;
 		case 0xFF41:
 		{
-			// TODO: Dr Mario seems to want this but not sure why. Check documentations
+			// Bit 7 is unused and always returns '1'. Bits 0-2 return '0' when the LCD is off.
 			if (!IsLcdEnabled())
 			{
-				return m_Context.stat & 0xFC;
+				return (m_Context.stat & 0xF8) | (1 << 7);
 			}
 
-			return m_Context.stat;
+			return m_Context.stat | (1 << 7);
 		}
 		case 0xFF42:
 			return m_Context.scy;
