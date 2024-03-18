@@ -54,10 +54,10 @@ void Display::Init()
 
 	// CGB palettes
 	m_BackgroundColourPalettes.resize(64);
-	std::fill(m_BackgroundColourPalettes.begin(), m_BackgroundColourPalettes.end(), 0);
+	std::fill(m_BackgroundColourPalettes.begin(), m_BackgroundColourPalettes.end(), 0xFF);
 
 	m_ObjectColourPalettes.resize(64);
-	std::fill(m_ObjectColourPalettes.begin(), m_ObjectColourPalettes.end(), 0);
+	std::fill(m_ObjectColourPalettes.begin(), m_ObjectColourPalettes.end(), 0xFF);
 
 	// Set default for palette 1
 	InitFixedPalettes();

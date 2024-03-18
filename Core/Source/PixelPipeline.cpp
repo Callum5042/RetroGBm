@@ -302,7 +302,7 @@ bool PixelPipeline::PipelineAddPixel()
 	return true;
 }
 
-uint32_t PixelPipeline::FetchSpritePixels(uint32_t color, bool background_pixel_transparent)
+uint32_t PixelPipeline::FetchSpritePixels(uint32_t colour, bool background_pixel_transparent)
 {
 	for (int i = 0; i < m_Context.fetched_entries.size(); i++)
 	{
@@ -362,7 +362,7 @@ uint32_t PixelPipeline::FetchSpritePixels(uint32_t color, bool background_pixel_
 		}
 	}
 
-	return color;
+	return colour;
 }
 
 bool PixelPipeline::IsWindowInView(int pixel_x)

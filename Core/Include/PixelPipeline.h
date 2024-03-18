@@ -106,7 +106,7 @@ private:
 
 
 	bool PipelineAddPixel();
-	uint32_t FetchSpritePixels(uint32_t color, bool background_pixel_transparent);
+	uint32_t FetchSpritePixels(uint32_t colour, bool background_pixel_transparent);
 
 	bool IsWindowInView(int pixel_x);
 
