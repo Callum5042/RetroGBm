@@ -11,12 +11,25 @@ PixelPipeline::PixelPipeline(PixelProcessor* ppu, Display* display, Cartridge* c
 
 void PixelPipeline::PipelineProcess()
 {
-	if ((m_PixelProcessor->GetContext()->dots & 1))
+	m_Context.internal_dots += 1;
+
+	if ((m_Context.internal_dots & 1))
 	{
 		PixelFetcher();
 	}
 
+	// This pops the pixels from the queue to the display screen
 	PushPixelToVideoBuffer();
+
+	// Attempt to push every dot
+	if (m_Context.pipeline_state == FetchState::Push)
+	{
+		if (PipelineAddPixel())
+		{
+			m_Context.pipeline_state = FetchState::Tile;
+			m_Context.internal_dots = 0;
+		}
+	}
 }
 
 void PixelPipeline::PixelFetcher()
@@ -25,44 +38,19 @@ void PixelPipeline::PixelFetcher()
 	{
 		case FetchState::Tile:
 		{
+			// Reset details
 			m_Context.fetched_entries.clear();
+			m_Context.background_window_tile_id = 0;
+			m_Context.background_window_byte_low = 0;
+			m_Context.background_window_byte_high = 0;
+			m_Context.background_window_attribute = {};
 
-			// Load background/window tile
-			if ((m_Cartridge->IsColourModeDMG() && m_Display->IsBackgroundEnabled()) || !m_Cartridge->IsColourModeDMG())
-			{
-				uint16_t base_address = m_Display->GetBackgroundTileBaseAddress();
+			// Fetch tiles
+			FetchBackgroundTileId();
+			FetchWindowTileId();
+			FetchObjectTileId();
 
-				// Divide by 8
-				int position_y = (m_Display->GetContext()->ly + m_Display->GetContext()->scy) & 0xFF;
-				int position_x = (m_Context.fetch_x + m_Display->GetContext()->scx) & 0xFF;
-
-				// Fetch attributes
-				uint8_t attribute = m_PixelProcessor->PipelineReadVideoRam(base_address + (position_x >> 3) + (position_y >> 3) * 32, 1);
-
-				m_Context.background_window_attribute.colour_palette = static_cast<uint8_t>(attribute & 0b111);
-				m_Context.background_window_attribute.bank = static_cast<uint8_t>((attribute >> 3) & 0x1);
-				m_Context.background_window_attribute.flip_x = static_cast<bool>((attribute >> 5) & 0x1);
-				m_Context.background_window_attribute.flip_y = static_cast<bool>((attribute >> 6) & 0x1);
-				m_Context.background_window_attribute.priority = static_cast<bool>((attribute >> 7) & 0x1);
-
-				// Fetch tile
-				m_Context.background_window_tile = m_PixelProcessor->PipelineReadVideoRam(base_address + (position_x >> 3) + (position_y >> 3) * 32, 0);
-
-				if (m_Display->GetBackgroundAndWindowTileData() == 0x8800)
-				{
-					m_Context.background_window_tile += 128;
-				}
-
-				// Load window tile
-				LoadWindowTile();
-			}
-
-			// Load sprite tile
-			if (m_Display->IsObjectEnabled())
-			{
-				LoadSpriteTile();
-			}
-
+			// Advance pipeline state
 			m_Context.pipeline_state = FetchState::TileDataLow;
 			m_Context.fetch_x += 8;
 			break;
@@ -91,21 +79,33 @@ void PixelPipeline::PixelFetcher()
 			m_Context.pipeline_state = FetchState::Push;
 			break;
 		}
-
-		case FetchState::Push:
-		{
-			if (PipelineAddPixel())
-			{
-				m_Context.pipeline_state = FetchState::Tile;
-			}
-
-			break;
-		}
 	}
 }
 
 void PixelPipeline::PushPixelToVideoBuffer()
 {
+	// Check if we're fetching a window tile
+	if (m_Display->IsWindowVisible() && IsWindowInView(m_Context.pushed_x))
+	{
+		if (!m_Context.fetch_window)
+		{
+			// Set fetch to window and destroy pipeline
+			m_Context.fetch_window = true;
+			m_Context.internal_dots = 0;
+			m_Context.pipeline_state = FetchState::Tile;
+
+			m_Context.fifo_x = m_Context.scanline_x;
+			m_Context.fetch_x = m_Context.scanline_x;
+
+			m_Context.pixel_queue.clear();
+		}
+	}
+	else
+	{
+		m_Context.fetch_window = false;
+	}
+
+	// Add pixels to queue
 	if (m_Context.pixel_queue.size() > 8)
 	{
 		uint32_t pixel_data = (m_Context.pixel_queue.front());
@@ -116,22 +116,33 @@ void PixelPipeline::PushPixelToVideoBuffer()
 #endif // !_WIN32
 
 
-		m_Context.pixel_queue.pop();
+		m_Context.pixel_queue.pop_front();
 
-		if (m_Context.line_x >= (m_Display->GetContext()->scx % 8))
+		if (m_Context.fetch_window)
 		{
-			m_Display->SetVideoBufferPixel(m_Context.pushed_x, m_Display->GetContext()->ly, pixel_data);
-			m_Context.pushed_x++;
+			// if (m_Context.scanline_x >= (m_Display->GetContext()->wx - 7))
+			{
+				m_Display->SetVideoBufferPixel(m_Context.pushed_x, m_Display->GetContext()->ly, pixel_data);
+				m_Context.pushed_x++;
+			}
+		}
+		else
+		{
+			if (m_Context.scanline_x >= (m_Display->GetContext()->scx % 8))
+			{
+				m_Display->SetVideoBufferPixel(m_Context.pushed_x, m_Display->GetContext()->ly, pixel_data);
+				m_Context.pushed_x++;
+			}
 		}
 
-		m_Context.line_x++;
+		m_Context.scanline_x++;
 	}
 }
 
 void PixelPipeline::FetchTileData(FetchTileByte tile_byte)
 {
 	// Calculate tile offset
-	uint16_t offset_x = (m_Context.background_window_tile << 4);
+	uint16_t offset_x = (m_Context.background_window_tile_id << 4);
 	uint16_t offset_y = ((m_Display->GetContext()->ly + m_Display->GetContext()->scy) % 8) * 2;
 
 	if (m_Display->IsWindowVisible() && this->IsWindowInView(m_Context.fetch_x))
@@ -225,12 +236,12 @@ void PixelPipeline::LoadWindowTile()
 
 			// Fetch tile
 			uint16_t base_address = m_Display->GetWindowTileBaseAddress();
-			m_Context.background_window_tile = m_PixelProcessor->PipelineReadVideoRam(base_address + (position_x >> 3) + ((position_y >> 3) * 32), 0);
+			m_Context.background_window_tile_id = m_PixelProcessor->PipelineReadVideoRam(base_address + (position_x >> 3) + ((position_y >> 3) * 32), 0);
 
 			// Check if we are getting tiles from block 1
 			if (m_Display->GetBackgroundAndWindowTileData() == 0x8800)
 			{
-				m_Context.background_window_tile += 128;
+				m_Context.background_window_tile_id += 128;
 			}
 
 			// Fetch attributes
@@ -274,7 +285,7 @@ bool PixelPipeline::PipelineAddPixel()
 		uint8_t data_low = (static_cast<bool>(m_Context.background_window_byte_high & (1 << (offset)))) << 1;
 		uint8_t palette_index = data_high | data_low;
 
-		// uint32_t colour = display_context->background_palette[palette_index];
+		// Fetch colour from palette
 		uint8_t palette = m_Context.background_window_attribute.colour_palette;
 		uint32_t colour = m_Display->GetColourFromBackgroundPalette(palette, palette_index);
 
@@ -284,7 +295,7 @@ bool PixelPipeline::PipelineAddPixel()
 			colour = FetchSpritePixels(colour, background_transparent);
 		}
 
-		m_Context.pixel_queue.push(colour);
+		m_Context.pixel_queue.push_back(colour);
 		m_Context.fifo_x++;
 	}
 
@@ -356,10 +367,7 @@ uint32_t PixelPipeline::FetchSpritePixels(uint32_t color, bool background_pixel_
 
 bool PixelPipeline::IsWindowInView(int pixel_x)
 {
-	const int ScreenResolutionX = 160;
-	const int ScreenResolutionY = 144;
-
-	DisplayContext* display_context = m_Display->GetContext();
+	const DisplayContext* display_context = m_Display->GetContext();
 	if (display_context->ly >= display_context->wy && display_context->ly < display_context->wy + ScreenResolutionY)
 	{
 		if ((pixel_x >= display_context->wx - 7) && (pixel_x < display_context->wx + ScreenResolutionX - 7))
@@ -369,4 +377,55 @@ bool PixelPipeline::IsWindowInView(int pixel_x)
 	}
 
 	return false;
+}
+
+void PixelPipeline::FetchBackgroundTileId()
+{
+	if (m_Context.fetch_window)
+	{
+		return;
+	}
+
+	// Load background
+	if ((m_Cartridge->IsColourModeDMG() && m_Display->IsBackgroundEnabled()) || !m_Cartridge->IsColourModeDMG())
+	{
+		uint16_t base_address = m_Display->GetBackgroundTileBaseAddress();
+
+		// Get address
+		int position_y = (m_Display->GetContext()->ly + m_Display->GetContext()->scy) & 0xFF;
+		int position_x = (m_Context.fetch_x + m_Display->GetContext()->scx) & 0xFF;
+
+		uint16_t address = base_address + (position_x / 8) + (position_y / 8) * 32;
+
+		// Fetch tile
+		m_Context.background_window_tile_id = m_PixelProcessor->PipelineReadVideoRam(address, 0);
+		if (m_Display->GetBackgroundAndWindowTileData() == 0x8800)
+		{
+			m_Context.background_window_tile_id += 128;
+		}
+
+		// Fetch attributes
+		uint8_t attribute = m_PixelProcessor->PipelineReadVideoRam(address, 1);
+
+		m_Context.background_window_attribute.colour_palette = static_cast<uint8_t>(attribute & 0b111);
+		m_Context.background_window_attribute.bank = static_cast<uint8_t>((attribute >> 3) & 0x1);
+		m_Context.background_window_attribute.flip_x = static_cast<bool>((attribute >> 5) & 0x1);
+		m_Context.background_window_attribute.flip_y = static_cast<bool>((attribute >> 6) & 0x1);
+		m_Context.background_window_attribute.priority = static_cast<bool>((attribute >> 7) & 0x1);
+	}
+}
+
+void PixelPipeline::FetchWindowTileId()
+{
+	// Load window tile
+	LoadWindowTile();
+}
+
+void PixelPipeline::FetchObjectTileId()
+{
+	// Load sprite tile
+	if (m_Display->IsObjectEnabled())
+	{
+		LoadSpriteTile();
+	}
 }

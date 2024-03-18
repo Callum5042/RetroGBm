@@ -293,7 +293,7 @@ void PixelProcessor::UpdateOam()
 		// Sort by priority and X position
 		if (m_Cartridge->IsColourModeDMG() || m_Display->IsObjectPriorityModeSet())
 		{
-			std::sort(m_Context.objects_per_line.begin(), m_Context.objects_per_line.end(), [](const OamDataV2& lhs, const OamDataV2& rhs)
+			std::sort(m_Context.objects_per_line.begin(), m_Context.objects_per_line.end(), [](const OamData& lhs, const OamData& rhs)
 			{
 				return (lhs.position_x < rhs.position_x);
 			});

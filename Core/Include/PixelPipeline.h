@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <queue>
+#include <deque>
 #include <cstdint>
 
 class Display;
@@ -32,7 +32,7 @@ struct BackgroundWindowAttribute
 	bool priority;
 };
 
-struct OamDataV2
+struct OamData
 {
 	uint8_t position_y;
 	uint8_t position_x;
@@ -49,26 +49,32 @@ struct OamDataV2
 
 struct OamPipelineData
 {
-	OamDataV2* oam = nullptr;
+	OamData* oam = nullptr;
 	uint8_t byte_low = 0;
 	uint8_t byte_high = 0;
 };
 
 struct PipelineContext
 {
+	// Queues and OAM
+	std::vector<OamPipelineData> fetched_entries;
+	std::deque<uint32_t> pixel_queue;
+
+	// Internal data
 	FetchState pipeline_state = FetchState::Tile;
-	uint8_t line_x = 0;
+	uint8_t scanline_x = 0;
 	uint8_t pushed_x = 0;
 	uint8_t fetch_x = 0;
+	uint8_t fifo_x;
 
+	int internal_dots = 0;
+	bool fetch_window = false;
+
+	// Background tile data
 	BackgroundWindowAttribute background_window_attribute;
-	uint8_t background_window_tile = 0;
+	uint8_t background_window_tile_id = 0;
 	uint8_t background_window_byte_low = 0;
 	uint8_t background_window_byte_high = 0;
-
-	std::vector<OamPipelineData> fetched_entries;
-	std::queue<uint32_t> pixel_queue;
-	uint8_t fifo_x;
 };
 
 class PixelPipeline
@@ -103,4 +109,9 @@ private:
 	uint32_t FetchSpritePixels(uint32_t color, bool background_pixel_transparent);
 
 	bool IsWindowInView(int pixel_x);
+
+	// Fetch
+	void FetchBackgroundTileId();
+	void FetchWindowTileId();
+	void FetchObjectTileId();
 };

@@ -15,7 +15,6 @@ struct PixelProcessorContext
 {
 	// Frame dots is dots for the whole frame. HBlank should always be 456 and frame total should always be 70224 
 	int dots = 0;
-
 	int window_line = 0;
 
 	// VRAM
@@ -23,8 +22,8 @@ struct PixelProcessorContext
 	std::vector<uint8_t> video_ram;
 
 	// OAM RAM
-	std::array<OamDataV2, 40> oam_ram;
-	std::vector<OamDataV2> objects_per_line;
+	std::array<OamData, 40> oam_ram;
+	std::vector<OamData> objects_per_line;
 };
 
 class PixelProcessor
