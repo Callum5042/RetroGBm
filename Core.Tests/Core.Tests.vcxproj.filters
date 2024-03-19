@@ -33,9 +33,6 @@
     <ClCompile Include="DisplayTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PpuTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="PixelProcessorTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

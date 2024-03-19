@@ -1,7 +1,8 @@
 #include "CppUnitTest.h"
-#include <Timer.h>
-#include <Cpu.h>
-#include <Cartridge.h>
+
+#include <RetroGBm/Timer.h>
+#include <RetroGBm/Cpu.h>
+#include <RetroGBm/Cartridge.h>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 

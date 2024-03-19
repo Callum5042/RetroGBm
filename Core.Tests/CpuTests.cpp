@@ -1,6 +1,8 @@
 #include "CppUnitTest.h"
-#include <Cpu.h>
-#include <Cartridge.h>
+
+#include <RetroGBm/Cpu.h>
+#include <RetroGBm/Cartridge.h>
+
 #include <vector>
 #include <tuple>
 

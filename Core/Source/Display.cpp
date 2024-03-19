@@ -1,9 +1,9 @@
-#include "Pch.h"
-#include "Display.h"
-#include "Cpu.h"
-#include "Emulator.h"
-#include "Dma.h"
-#include "Cartridge.h"
+#include "RetroGBm/Pch.h"
+#include "RetroGBm/Display.h"
+#include "RetroGBm/Cpu.h"
+#include "RetroGBm/Emulator.h"
+#include "RetroGBm/Dma.h"
+#include "RetroGBm/Cartridge.h"
 
 #include <iostream>
 #include <cstdint>

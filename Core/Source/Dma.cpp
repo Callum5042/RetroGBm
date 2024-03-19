@@ -1,8 +1,8 @@
-#include "Pch.h"
-#include "Dma.h"
-#include "Emulator.h"
-#include "Display.h"
-#include "PixelProcessor.h"
+#include "RetroGBm/Pch.h"
+#include "RetroGBm/Dma.h"
+#include "RetroGBm/Emulator.h"
+#include "RetroGBm/Display.h"
+#include "RetroGBm/PixelProcessor.h"
 
 Dma::Dma()
 {

@@ -1,12 +1,14 @@
 #include "Window.h"
+#include "Application.h"
+#include "../resource.h"
+
+#include "Render/RenderTarget.h"
+#include <RetroGBm/Emulator.h>
+#include <RetroGBm/Joypad.h>
+
 #include <string>
 #include <vector>
 #include <iostream>
-#include "Application.h"
-#include <Emulator.h>
-#include <Joypad.h>
-#include "Render/RenderTarget.h"
-#include "../resource.h"
 
 #define IDM_MYMENURESOURCE 3
 

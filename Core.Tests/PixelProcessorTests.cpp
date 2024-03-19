@@ -1,8 +1,9 @@
 #include "CppUnitTest.h"
-#include <PixelProcessor.h>
-#include <Display.h>
-#include <Cpu.h>
-#include <Cartridge.h>
+
+#include <RetroGBm/PixelProcessor.h>
+#include <RetroGBm/Display.h>
+#include <RetroGBm/Cpu.h>
+#include <RetroGBm/Cartridge.h>
 
 #include <cstdint>
 #include <stdexcept>

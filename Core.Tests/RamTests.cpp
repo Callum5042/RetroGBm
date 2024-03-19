@@ -1,5 +1,5 @@
 #include "CppUnitTest.h"
-#include <Ram.h>
+#include <RetroGBm/Ram.h>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 

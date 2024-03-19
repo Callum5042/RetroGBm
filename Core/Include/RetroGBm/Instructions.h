@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Cpu.h"
+#include "RetroGBm/Cpu.h"
 
 struct EmulatorContext;
 

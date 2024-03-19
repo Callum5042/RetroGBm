@@ -1,6 +1,7 @@
 #include "CppUnitTest.h"
-#include <Joypad.h>
-#include <Cpu.h>
+
+#include <RetroGBm/Joypad.h>
+#include <RetroGBm/Cpu.h>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 

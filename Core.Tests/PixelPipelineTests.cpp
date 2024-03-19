@@ -1,10 +1,10 @@
 #include "CppUnitTest.h"
 
-#include <Cpu.h>
-#include <Cartridge.h>
-#include <Display.h>
-#include <PixelPipeline.h>
-#include <PixelProcessor.h>
+#include <RetroGBm/Cpu.h>
+#include <RetroGBm/Cartridge.h>
+#include <RetroGBm/Display.h>
+#include <RetroGBm/PixelPipeline.h>
+#include <RetroGBm/PixelProcessor.h>
 
 #include <cstdint>
 

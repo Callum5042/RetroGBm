@@ -1,9 +1,9 @@
-#include "Pch.h"
-#include "PixelProcessor.h"
-#include "Display.h"
-#include "Cpu.h"
-#include "Cartridge.h"
-#include "PixelPipeline.h"
+#include "RetroGBm/Pch.h"
+#include "RetroGBm/PixelProcessor.h"
+#include "RetroGBm/Display.h"
+#include "RetroGBm/Cpu.h"
+#include "RetroGBm/Cartridge.h"
+#include "RetroGBm/PixelPipeline.h"
 
 #include <stdexcept>
 #include <cstdint>
