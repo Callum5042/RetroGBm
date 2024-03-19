@@ -245,7 +245,39 @@ uint8_t Emulator::ReadIO(uint16_t address)
 	}
 	else if (((address >= 0xFF10) && (address <= 0xFF3F)))
 	{
-		//ignore sound
+		// Ignore sound
+		switch (address)
+		{
+			// Global
+			case 0xFF26:
+				return m_Context.sound.audio_master_control;
+			case 0xFF25:
+				return m_Context.sound.audio_sound_panning;
+			case 0xFF24:
+				return m_Context.sound.audio_master_volume;
+
+				// Channel 1
+			case 0xFF11:
+				return m_Context.sound.channel1_sweep;
+			case 0xFF12:
+				return m_Context.sound.channel1_length_timer;
+			case 0xFF13:
+				return m_Context.sound.channel1_period_low;
+			case 0xFF14:
+				return m_Context.sound.channel1_period_high;
+
+				// Channel 2
+			case 0xFF16:
+				return m_Context.sound.channel2_pulse1;
+			case 0xFF17:
+				return m_Context.sound.channel2_pulse2;
+			case 0xFF18:
+				return m_Context.sound.channel2_pulse3;
+			case 0xFF19:
+				return m_Context.sound.channel2_pulse4;
+		}
+
+		std::cout << "Read to sound: " << std::hex << address << "\n";
 		return 0;
 	}
 	else if (((address >= 0xFF40) && (address <= 0xFF4B)))
@@ -315,6 +347,57 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	else if (((address >= 0xFF10) && (address <= 0xFF3F)))
 	{
 		// Ignore sound
+		switch (address)
+		{
+			// Global
+			case 0xFF26:
+			{
+				m_Context.sound.audio_master_control = value & 0xC0;
+				if ((value & 0xC0) == 0x80)
+				{
+					m_Context.sound = {};
+					m_Context.sound.audio_master_control = value & 0xC0;
+				}
+
+				return;
+			}
+			case 0xFF25:
+				m_Context.sound.audio_sound_panning = value;
+				return;
+			case 0xFF24:
+				m_Context.sound.audio_master_volume = value;
+				return;
+
+			// Channel 1
+			case 0xFF11:
+				m_Context.sound.channel1_sweep = value;
+				return;
+			case 0xFF12:
+				m_Context.sound.channel1_length_timer = value;
+				return;
+			case 0xFF13:
+				m_Context.sound.channel1_period_low = value;
+				return;
+			case 0xFF14:
+				m_Context.sound.channel1_period_high = value;
+				return;
+
+			// Channel 2
+			case 0xFF16:
+				m_Context.sound.channel2_pulse1 = value;
+				return;
+			case 0xFF17:
+				m_Context.sound.channel2_pulse2 = value;
+				return;
+			case 0xFF18:
+				m_Context.sound.channel2_pulse3 = value;
+				return;
+			case 0xFF19:
+				m_Context.sound.channel2_pulse4 = value;
+				return;
+		}
+
+		std::cout << "Write to sound: " << std::hex << address << "\n";
 		return;
 	}
 	else if (((address >= 0xFF40) && (address <= 0xFF4B)))
@@ -480,6 +563,7 @@ void Emulator::WriteBus(uint16_t address, uint8_t value)
 	else if (address >= 0xE000 && address <= 0xFDFF)
 	{
 		// Reserved echo ram
+		std::cout << "Write to echo RAM\n";
 	}
 	else if (address >= 0xFE00 && address <= 0xFE9F)
 	{
@@ -503,6 +587,7 @@ void Emulator::WriteBus(uint16_t address, uint8_t value)
 	else if (address >= 0xFEA0 && address <= 0xFEFF)
 	{
 		// Unusable reserved
+		std::cout << "Write to unusable reserved\n";
 		return;
 	}
 	else if (address >= 0xFF00 && address <= 0xFF7F)

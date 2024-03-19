@@ -3,8 +3,9 @@
 #include "Cpu.h"
 #include "Emulator.h"
 #include "Dma.h"
+#include "Cartridge.h"
+
 #include <iostream>
-#include <Cartridge.h>
 #include <cstdint>
 #include <iostream>
 #include <stdexcept>

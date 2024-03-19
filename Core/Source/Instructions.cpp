@@ -720,11 +720,11 @@ void Op::PushR16(EmulatorContext* context, RegisterType16 reg)
 	uint8_t high = address >> 8;
 	uint8_t low = address & 0xFF;
 
+	Emulator::Instance->Cycle(1);
 	context->bus->WriteBus(context->cpu->StackPointer + 1, high);
-	Emulator::Instance->Cycle(1);
 
-	context->bus->WriteBus(context->cpu->StackPointer + 0, low);
 	Emulator::Instance->Cycle(1);
+	context->bus->WriteBus(context->cpu->StackPointer + 0, low);
 
 	context->cpu->ProgramCounter += 1;
 	Emulator::Instance->Cycle(1);
@@ -734,14 +734,15 @@ void Op::PopR16(EmulatorContext* context, RegisterType16 reg)
 {
 	context->cpu->StackPointer += 2;
 
+	Emulator::Instance->Cycle(1);
 	uint8_t high = context->bus->ReadBus(context->cpu->StackPointer - 1);
-	Emulator::Instance->Cycle(1);
 
-	uint8_t low = context->bus->ReadBus(context->cpu->StackPointer - 2);
 	Emulator::Instance->Cycle(1);
+	uint8_t low = context->bus->ReadBus(context->cpu->StackPointer - 2);
 
 	uint16_t data = high << 8 | low;
 	context->cpu->SetRegister(reg, data);
+
 	context->cpu->ProgramCounter += 1;
 }
 

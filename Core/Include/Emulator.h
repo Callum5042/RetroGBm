@@ -18,6 +18,26 @@ class Display;
 class IBus;
 class PixelProcessor;
 
+struct SoundContext
+{
+	// Sound
+	uint8_t audio_master_control = 0;
+	uint8_t audio_sound_panning = 0;
+	uint8_t audio_master_volume = 0;
+
+	// Channel 1
+	uint8_t channel1_sweep = 0;
+	uint8_t channel1_length_timer = 0;
+	uint8_t channel1_period_low = 0;
+	uint8_t channel1_period_high = 0;
+
+	// Channel 1
+	uint8_t channel2_pulse1 = 0;
+	uint8_t channel2_pulse2 = 0;
+	uint8_t channel2_pulse3 = 0;
+	uint8_t channel2_pulse4 = 0;
+};
+
 struct EmulatorContext
 {
 	Cpu* cpu = nullptr;
@@ -25,6 +45,8 @@ struct EmulatorContext
 
 	uint64_t ticks = 0;
 	int cycles = 0;
+
+	SoundContext sound;
 };
 
 class IBus
