@@ -85,12 +85,12 @@ namespace
 		{ 0x8B, "Bullet-Proof Software" },
 		{ 0x8C, "Vic Tokai" },
 		{ 0x8E, "Ape" },
-		{ 0x8F, "I�Max" },
+		{ 0x8F, "I Max" },
 		{ 0x91, "Chunsoft Co." },
 		{ 0x92, "Video System" },
 		{ 0x93, "Tsubaraya Productions Co." },
 		{ 0x95, "Varie Corporation" },
-		{ 0x96, "Yonezawa/S�Pal" },
+		{ 0x96, "Yonezawa/S Pal" },
 		{ 0x97, "Kaneko" },
 		{ 0x99, "Arc" },
 		{ 0x9A, "Nihon Bussan" },
@@ -315,6 +315,7 @@ bool Cartridge::Load(const std::vector<uint8_t>& filedata)
 		std::ifstream battery(filename, std::ios::in | std::ios::binary);
 		battery.read(reinterpret_cast<char*>(&m_CartridgeInfo.ram_bank_controller), 1);
 		battery.read(reinterpret_cast<char*>(m_CartridgeInfo.external_ram.data()), m_CartridgeInfo.external_ram.size());
+		battery.read(reinterpret_cast<char*>(&m_BankingMode), sizeof(m_BankingMode));
 
 		battery.close();
 	}
@@ -381,9 +382,14 @@ uint8_t Cartridge::Read(uint16_t address)
 		if (m_CartridgeInfo.enabled_ram)
 		{
 			uint16_t bank = m_CartridgeInfo.ram_bank_controller;
-			if (m_BankingMode == 0)
+
+			// TODO: Investigate if this should be like this for MBC1 This currently breaks saving on Pokemon
+			if (IsMBC1())
 			{
-				bank = 0;
+				if (m_BankingMode == 0)
+				{
+					bank = 0;
+				}
 			}
 
 			int offset = ((bank * 0x2000) + address - 0xA000) % m_CartridgeInfo.external_ram.size();
@@ -426,6 +432,7 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 			std::ofstream battery(filename, std::ios::out | std::ios::binary);
 			battery.write(reinterpret_cast<char*>(&m_CartridgeInfo.ram_bank_controller), 1);
 			battery.write(reinterpret_cast<char*>(m_CartridgeInfo.external_ram.data()), m_CartridgeInfo.external_ram.size());
+			battery.write(reinterpret_cast<char*>(&m_BankingMode), sizeof(m_BankingMode));
 
 			battery.close();
 		}
@@ -489,15 +496,10 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 	if (address >= 0x4000 && address <= 0x5FFF)
 	{
 		m_CartridgeInfo.ram_bank_controller = value & 0b11;
-
-		if (IsMBC5())
-		{
-			m_CartridgeInfo.ram_bank_controller = value & 0x0F;
-		}
-
 		return;
 	}
 
+	// Set clock
 	if (address >= 0x6000 && address <= 0x7FFF)
 	{
 		// Banking mode select
