@@ -358,7 +358,7 @@ void Cpu::RequestInterrupt(InterruptFlag flag)
 
 void Cpu::SetInterrupt(uint8_t data)
 {
-	m_InterruptFlags = data;
+	m_InterruptFlags = data | 0xE0;
 }
 
 void Cpu::SetInterruptEnable(uint8_t data)
@@ -422,7 +422,11 @@ void Cpu::InterruptHandle(InterruptFlag flag, uint16_t address)
 	Emulator::Instance->StackPush16(ProgramCounter);
 	Emulator::Instance->Cycle(2);
 
-	ProgramCounter = address;
+	if (m_InterruptMasterFlag)
+	{
+		ProgramCounter = address;
+	}
+
 	Emulator::Instance->Cycle(1);
 
 	m_InterruptFlags &= ~static_cast<int>(flag);
@@ -430,9 +434,9 @@ void Cpu::InterruptHandle(InterruptFlag flag, uint16_t address)
 	m_InterruptMasterFlag = false;
 }
 
-uint8_t Cpu::GetInterruptFlags()
+uint8_t Cpu::GetInterruptFlags() const
 {
-	return m_InterruptFlags;
+	return m_InterruptFlags | 0xE0;
 }
 
 void Cpu::SaveState(std::fstream* file)

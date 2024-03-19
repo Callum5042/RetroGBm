@@ -121,6 +121,10 @@ public:
 	void SaveState(const std::string& filepath);
 	void LoadState(const std::string& filepath);
 
+	// Halt bug
+	bool m_HaltBug = false;
+	bool m_HaltNoJump = false;
+
 private:
 	std::mutex m_EmulatorMutex;
 	bool m_Paused = false;
