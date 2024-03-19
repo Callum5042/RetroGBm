@@ -277,7 +277,6 @@ uint8_t Emulator::ReadIO(uint16_t address)
 				return m_Context.sound.channel2_pulse4;
 		}
 
-		std::cout << "Read to sound: " << std::hex << address << "\n";
 		return 0;
 	}
 	else if (((address >= 0xFF40) && (address <= 0xFF4B)))
@@ -397,7 +396,7 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 				return;
 		}
 
-		std::cout << "Write to sound: " << std::hex << address << "\n";
+		// std::cout << "Write to sound: " << std::hex << address << "\n";
 		return;
 	}
 	else if (((address >= 0xFF40) && (address <= 0xFF4B)))
@@ -525,7 +524,7 @@ uint8_t Emulator::ReadBus(uint16_t address)
 		return m_Cpu->GetInterruptEnable();
 	}
 
-	std::cout << "Unsupported ReadBus: 0x{:x}" << address << '\n';
+	std::cout << "Unsupported ReadBus: 0x" << std::hex << address << '\n';
 	return 0xFF;
 }
 
