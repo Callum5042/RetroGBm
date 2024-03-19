@@ -116,4 +116,6 @@ private:
 	uint8_t m_TitleChecksum = 0;
 
 	std::string m_BatteryPath = "";
+
+	int m_BankingMode = 0;
 };

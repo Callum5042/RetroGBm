@@ -8,13 +8,14 @@
 #include <mutex>
 
 #include "Cpu.h"
-#include "Ppu.h"
 #include "Ram.h"
 #include "Dma.h"
 #include "Timer.h"
 #include "Cartridge.h"
 #include "Joypad.h"
 #include "Display.h"
+#include "PixelProcessor.h"
+
 using namespace std::chrono_literals;
 
 Emulator* Emulator::Instance = nullptr;
@@ -28,9 +29,10 @@ Emulator::Emulator()
 	m_Timer = std::make_unique<Timer>();
 	m_Ram = std::make_unique<Ram>();
 	m_Display = std::make_unique<Display>();
-	m_Ppu = std::make_unique<Ppu>();
-	m_Dma = std::make_unique<Dma>();
 	m_Joypad = std::make_unique<Joypad>();
+
+	m_PixelProcessor = std::make_unique<PixelProcessor>(m_Display.get(), m_Cpu.get(), m_Cartridge.get());
+	m_Dma = std::make_unique<Dma>();
 
 	m_Context.cpu = m_Cpu.get();
 	m_Context.bus = this;
@@ -51,7 +53,8 @@ bool Emulator::LoadRom(const std::string& path)
 
 	m_Cpu->Init();
 	m_Timer->Init();
-	m_Ppu->Init();
+	m_PixelProcessor->Init();
+	m_Display->Init();
 
 	m_Running = true;
 	return true;
@@ -62,7 +65,8 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	m_Cartridge->Load(filedata);
 	m_Cpu->Init();
 	m_Timer->Init();
-	m_Ppu->Init();
+	m_PixelProcessor->Init();
+	m_Display->Init();
 
 	m_Running = true;
 	return true;
@@ -97,7 +101,7 @@ void Emulator::SetHalt(bool value)
 
 int Emulator::GetFPS()
 {
-	return m_Ppu->GetFPS();
+	return m_PixelProcessor->GetFPS();
 }
 
 void Emulator::Pause(bool pause)
@@ -142,16 +146,16 @@ void Emulator::Tick()
 	{
 		if (IsTraceLogEnabled())
 		{
-			/*std::string debug_format = std::format("OP:{:X},PC:{:X},AF:{:X},BC:{:X},DE:{:X},HL:{:X},SP:{:X}",
-												   opcode,
-												   m_Context.cpu->ProgramCounter,
-												   m_Context.cpu->GetRegister(RegisterType16::REG_AF),
-												   m_Context.cpu->GetRegister(RegisterType16::REG_BC),
-												   m_Context.cpu->GetRegister(RegisterType16::REG_DE),
-												   m_Context.cpu->GetRegister(RegisterType16::REG_HL),
-												   m_Context.cpu->StackPointer);
+			std::string debug_format = std::format("OP:{:X},PC:{:X},AF:{:X},BC:{:X},DE:{:X},HL:{:X},SP:{:X}",
+				opcode,
+				m_Context.cpu->ProgramCounter,
+				m_Context.cpu->GetRegister(RegisterType16::REG_AF),
+				m_Context.cpu->GetRegister(RegisterType16::REG_BC),
+				m_Context.cpu->GetRegister(RegisterType16::REG_DE),
+				m_Context.cpu->GetRegister(RegisterType16::REG_HL),
+				m_Context.cpu->StackPointer);
 
-			m_TraceLog << debug_format << std::endl;*/
+			m_TraceLog << debug_format << std::endl;
 		}
 
 		m_Cpu->Execute(&m_Context, opcode);
@@ -194,19 +198,21 @@ void Emulator::Cycle(int machine_cycles)
 		for (int n = 0; n < 4; ++n)
 		{
 			m_Timer->Tick();
+
 			if (IsDoubleSpeedMode())
 			{
-				m_Timer->Tick();
+				if (n & 1)
+				{
+					m_PixelProcessor->Tick();
+				}
 			}
-
-			m_Ppu->Tick();
+			else
+			{
+				m_PixelProcessor->Tick();
+			}
 		}
 
 		m_Dma->Tick();
-		if (IsDoubleSpeedMode())
-		{
-			m_Dma->Tick();
-		}
 	}
 }
 
@@ -239,7 +245,38 @@ uint8_t Emulator::ReadIO(uint16_t address)
 	}
 	else if (((address >= 0xFF10) && (address <= 0xFF3F)))
 	{
-		//ignore sound
+		// Ignore sound
+		switch (address)
+		{
+			// Global
+			case 0xFF26:
+				return m_Context.sound.audio_master_control;
+			case 0xFF25:
+				return m_Context.sound.audio_sound_panning;
+			case 0xFF24:
+				return m_Context.sound.audio_master_volume;
+
+				// Channel 1
+			case 0xFF11:
+				return m_Context.sound.channel1_sweep;
+			case 0xFF12:
+				return m_Context.sound.channel1_length_timer;
+			case 0xFF13:
+				return m_Context.sound.channel1_period_low;
+			case 0xFF14:
+				return m_Context.sound.channel1_period_high;
+
+				// Channel 2
+			case 0xFF16:
+				return m_Context.sound.channel2_pulse1;
+			case 0xFF17:
+				return m_Context.sound.channel2_pulse2;
+			case 0xFF18:
+				return m_Context.sound.channel2_pulse3;
+			case 0xFF19:
+				return m_Context.sound.channel2_pulse4;
+		}
+
 		return 0;
 	}
 	else if (((address >= 0xFF40) && (address <= 0xFF4B)))
@@ -252,7 +289,7 @@ uint8_t Emulator::ReadIO(uint16_t address)
 	}
 	else if (address == 0xFF4F)
 	{
-		return m_Ppu->GetVideoRamBank();
+		return m_PixelProcessor->GetVideoRamBank();
 	}
 	else if (address >= 0xFF51 && address <= 0xFF54)
 	{
@@ -309,6 +346,57 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	else if (((address >= 0xFF10) && (address <= 0xFF3F)))
 	{
 		// Ignore sound
+		switch (address)
+		{
+			// Global
+			case 0xFF26:
+			{
+				m_Context.sound.audio_master_control = value & 0xC0;
+				if ((value & 0xC0) == 0x80)
+				{
+					m_Context.sound = {};
+					m_Context.sound.audio_master_control = value & 0xC0;
+				}
+
+				return;
+			}
+			case 0xFF25:
+				m_Context.sound.audio_sound_panning = value;
+				return;
+			case 0xFF24:
+				m_Context.sound.audio_master_volume = value;
+				return;
+
+			// Channel 1
+			case 0xFF11:
+				m_Context.sound.channel1_sweep = value;
+				return;
+			case 0xFF12:
+				m_Context.sound.channel1_length_timer = value;
+				return;
+			case 0xFF13:
+				m_Context.sound.channel1_period_low = value;
+				return;
+			case 0xFF14:
+				m_Context.sound.channel1_period_high = value;
+				return;
+
+			// Channel 2
+			case 0xFF16:
+				m_Context.sound.channel2_pulse1 = value;
+				return;
+			case 0xFF17:
+				m_Context.sound.channel2_pulse2 = value;
+				return;
+			case 0xFF18:
+				m_Context.sound.channel2_pulse3 = value;
+				return;
+			case 0xFF19:
+				m_Context.sound.channel2_pulse4 = value;
+				return;
+		}
+
+		// std::cout << "Write to sound: " << std::hex << address << "\n";
 		return;
 	}
 	else if (((address >= 0xFF40) && (address <= 0xFF4B)))
@@ -323,7 +411,7 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	}
 	else if (address == 0xFF4F)
 	{
-		m_Ppu->SetVideoRamBank(value);
+		m_PixelProcessor->SetVideoRamBank(value);
 		return;
 	}
 	else if (address == 0xFF51 || address == 0xFF52)
@@ -369,8 +457,18 @@ uint8_t Emulator::ReadBus(uint16_t address)
 	}
 	else if (address >= 0x8000 && address <= 0x9FFF)
 	{
+		if (m_Display->GetLcdMode() == LcdMode::PixelTransfer && m_Display->IsLcdEnabled())
+		{
+			return 0xFF;
+		}
+
+		if (!m_Cartridge->IsColourModeDMG() && m_Display->GetContext()->ly == 0)
+		{
+			return 0xFF;
+		}
+
 		// VRAM (Video RAM)
-		return m_Ppu->ReadVideoRam(address);
+		return m_PixelProcessor->ReadVideoRam(address);
 	}
 	else if (address >= 0xA000 && address <= 0xBFFF)
 	{
@@ -395,7 +493,15 @@ uint8_t Emulator::ReadBus(uint16_t address)
 			return 0xFF;
 		}
 
-		return m_Ppu->ReadOam(address);
+		if (m_Display->IsLcdEnabled())
+		{
+			if (m_Display->GetLcdMode() == LcdMode::PixelTransfer || m_Display->GetLcdMode() == LcdMode::OAM)
+			{
+				return 0xFF;
+			}
+		}
+
+		return m_PixelProcessor->ReadOam(address);
 	}
 	else if (address >= 0xFEA0 && address <= 0xFEFF)
 	{
@@ -418,7 +524,7 @@ uint8_t Emulator::ReadBus(uint16_t address)
 		return m_Cpu->GetInterruptEnable();
 	}
 
-	std::cout << "Unsupported ReadBus: 0x{:x}" << address << '\n';
+	std::cout << "Unsupported ReadBus: 0x" << std::hex << address << '\n';
 	return 0xFF;
 }
 
@@ -432,8 +538,13 @@ void Emulator::WriteBus(uint16_t address, uint8_t value)
 	}
 	else if (address >= 0x8000 && address <= 0x9FFF)
 	{
+		if (m_Display->GetLcdMode() == LcdMode::PixelTransfer && m_Display->IsLcdEnabled())
+		{
+			return;
+		}
+
 		// VRAM (Video RAM)
-		m_Ppu->WriteVideoRam(address, value);
+		m_PixelProcessor->WriteVideoRam(address, value);
 		return;
 	}
 	else if (address >= 0xA000 && address <= 0xBFFF)
@@ -451,6 +562,7 @@ void Emulator::WriteBus(uint16_t address, uint8_t value)
 	else if (address >= 0xE000 && address <= 0xFDFF)
 	{
 		// Reserved echo ram
+		std::cout << "Write to echo RAM\n";
 	}
 	else if (address >= 0xFE00 && address <= 0xFE9F)
 	{
@@ -460,12 +572,21 @@ void Emulator::WriteBus(uint16_t address, uint8_t value)
 			return;
 		}
 
-		m_Ppu->WriteOam(address, value);
+		if (m_Display->IsLcdEnabled())
+		{
+			if (m_Display->GetLcdMode() == LcdMode::PixelTransfer || m_Display->GetLcdMode() == LcdMode::OAM)
+			{
+				return;
+			}
+		}
+
+		m_PixelProcessor->WriteOam(address, value);
 		return;
 	}
 	else if (address >= 0xFEA0 && address <= 0xFEFF)
 	{
 		// Unusable reserved
+		std::cout << "Write to unusable reserved\n";
 		return;
 	}
 	else if (address >= 0xFF00 && address <= 0xFF7F)
@@ -525,7 +646,7 @@ void Emulator::SaveState(const std::string& filepath)
 	m_Cartridge->SaveState(&file);
 
 	m_Display->SaveState(&file);
-	m_Ppu->SaveState(&file);
+	m_PixelProcessor->SaveState(&file);
 	m_Dma->SaveState(&file);
 }
 
@@ -540,16 +661,16 @@ void Emulator::LoadState(const std::string& filepath)
 	m_Cartridge->LoadState(&file);
 
 	m_Display->LoadState(&file);
-	m_Ppu->LoadState(&file);
+	m_PixelProcessor->LoadState(&file);
 	m_Dma->LoadState(&file);
 }
 
 void* Emulator::GetVideoBuffer()
 {
-	return m_Ppu->GetVideoBuffer();
+	return m_Display->GetVideoBuffer();
 }
 
 int Emulator::GetVideoPitch()
 {
-	return sizeof(uint32_t) * m_Ppu->ScreenResolutionX;
+	return sizeof(uint32_t) * ScreenResolutionX;
 }

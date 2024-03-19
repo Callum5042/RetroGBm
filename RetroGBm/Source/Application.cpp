@@ -11,7 +11,6 @@
 #include <Windows.h>
 
 #include <Emulator.h>
-#include <Ppu.h>
 #include <Joypad.h>
 
 Application* Application::Instance = nullptr;

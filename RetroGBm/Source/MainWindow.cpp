@@ -6,7 +6,6 @@
 #include <Emulator.h>
 #include <Joypad.h>
 #include <Cartridge.h>
-#include <Ppu.h>
 
 #include <string>
 #include <vector>

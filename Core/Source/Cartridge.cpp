@@ -85,12 +85,12 @@ namespace
 		{ 0x8B, "Bullet-Proof Software" },
 		{ 0x8C, "Vic Tokai" },
 		{ 0x8E, "Ape" },
-		{ 0x8F, "I�Max" },
+		{ 0x8F, "I Max" },
 		{ 0x91, "Chunsoft Co." },
 		{ 0x92, "Video System" },
 		{ 0x93, "Tsubaraya Productions Co." },
 		{ 0x95, "Varie Corporation" },
-		{ 0x96, "Yonezawa/S�Pal" },
+		{ 0x96, "Yonezawa/S Pal" },
 		{ 0x97, "Kaneko" },
 		{ 0x99, "Arc" },
 		{ 0x9A, "Nihon Bussan" },
@@ -315,6 +315,7 @@ bool Cartridge::Load(const std::vector<uint8_t>& filedata)
 		std::ifstream battery(filename, std::ios::in | std::ios::binary);
 		battery.read(reinterpret_cast<char*>(&m_CartridgeInfo.ram_bank_controller), 1);
 		battery.read(reinterpret_cast<char*>(m_CartridgeInfo.external_ram.data()), m_CartridgeInfo.external_ram.size());
+		battery.read(reinterpret_cast<char*>(&m_BankingMode), sizeof(m_BankingMode));
 
 		battery.close();
 	}
@@ -337,17 +338,42 @@ bool Cartridge::Checksum(uint8_t* result)
 uint8_t Cartridge::Read(uint16_t address)
 {
 	// Always read from fixed cartridge data 0x0000 to 0x3FFF
-	if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::ROM_ONLY || address < 0x4000)
+	if (m_CartridgeInfo.header.cartridge_type_code == CartridgeType::ROM_ONLY || address <= 0x3FFF)
 	{
-		return m_CartridgeInfo.data[address];
+		if (m_BankingMode == 1)
+		{
+			if (IsMBC1())
+			{
+				uint16_t bank_number = m_CartridgeInfo.ram_bank_controller << 5;
+				int offset = (address + (0x4000 * bank_number)) % m_CartridgeInfo.data.size();
+				return m_CartridgeInfo.data[offset];
+			}
+			else
+			{
+				return m_CartridgeInfo.data[address];
+			}
+		}
+		else
+		{
+			return m_CartridgeInfo.data[address];
+		}
 	}
 
 	// Read from ROM bank for addresses in range 0x4000 to 0x7FFF
 	if (address >= 0x4000 && address <= 0x7FFF)
 	{
-		uint16_t bank_number = m_CartridgeInfo.rom_bank_controller;
-		int offset = ((address - 0x4000) + (0x4000 * bank_number)) % m_CartridgeInfo.data.size();
-		return m_CartridgeInfo.data[offset];
+		if (IsMBC1())
+		{
+			uint16_t bank_number = m_CartridgeInfo.rom_bank_controller | (m_CartridgeInfo.ram_bank_controller << 5);
+			int offset = ((address - 0x4000) + (0x4000 * bank_number)) % m_CartridgeInfo.data.size();
+			return m_CartridgeInfo.data[offset];
+		}
+		else
+		{
+			uint16_t bank_number = m_CartridgeInfo.rom_bank_controller;
+			int offset = ((address - 0x4000) + (0x4000 * bank_number)) % m_CartridgeInfo.data.size();
+			return m_CartridgeInfo.data[offset];
+		}
 	}
 
 	// Read from RAM
@@ -355,8 +381,18 @@ uint8_t Cartridge::Read(uint16_t address)
 	{
 		if (m_CartridgeInfo.enabled_ram)
 		{
-			uint16_t index = m_CartridgeInfo.ram_bank_controller;
-			int offset = ((index * 0x2000) + address - 0xA000) % m_CartridgeInfo.external_ram.size();
+			uint16_t bank = m_CartridgeInfo.ram_bank_controller;
+
+			// TODO: Investigate if this should be like this for MBC1 This currently breaks saving on Pokemon
+			if (IsMBC1())
+			{
+				if (m_BankingMode == 0)
+				{
+					bank = 0;
+				}
+			}
+
+			int offset = ((bank * 0x2000) + address - 0xA000) % m_CartridgeInfo.external_ram.size();
 			return m_CartridgeInfo.external_ram[offset];
 		}
 		else
@@ -378,7 +414,7 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 	}
 
 	// Set RAM
-	if (address >= 0x000 && address <= 0x1FFF)
+	if (address >= 0x0000 && address <= 0x1FFF)
 	{
 		// Only enable ram if the lower 4 bits are 0xA otherwise disable ram
 		m_CartridgeInfo.enabled_ram = (value & 0xF) == 0xA;
@@ -396,6 +432,7 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 			std::ofstream battery(filename, std::ios::out | std::ios::binary);
 			battery.write(reinterpret_cast<char*>(&m_CartridgeInfo.ram_bank_controller), 1);
 			battery.write(reinterpret_cast<char*>(m_CartridgeInfo.external_ram.data()), m_CartridgeInfo.external_ram.size());
+			battery.write(reinterpret_cast<char*>(&m_BankingMode), sizeof(m_BankingMode));
 
 			battery.close();
 		}
@@ -409,9 +446,9 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 		if (IsMBC1())
 		{
 			uint8_t bank_number = value & 0x1F;
-			if (bank_number == 0x0 || bank_number == 0x20 || bank_number == 0x40 || bank_number == 0x60)
+			if ((bank_number & ~0b00000) == 0)
 			{
-				bank_number++;
+				bank_number = 0b00001;
 			}
 
 			m_CartridgeInfo.rom_bank_controller = bank_number;
@@ -465,6 +502,13 @@ void Cartridge::Write(uint16_t address, uint8_t value)
 	// Set clock
 	if (address >= 0x6000 && address <= 0x7FFF)
 	{
+		// Banking mode select
+		if (IsMBC1())
+		{
+			m_BankingMode = value & 0x1;
+		}
+
+		// Set clock
 		if (IsMBC3())
 		{
 			if (value >= 0x08 && value <= 0x0C)
@@ -538,13 +582,13 @@ bool Cartridge::HasBattery()
 {
 	switch (m_CartridgeInfo.header.cartridge_type_code)
 	{
-		case CartridgeType::MBC1_RAM_BATTERY: 
+		case CartridgeType::MBC1_RAM_BATTERY:
 		case CartridgeType::MBC3_RAM_BATTERY:
 		case CartridgeType::MBC3_TIMER_RAM_BATTERY:
 		case CartridgeType::MBC5_RAM_BATTERY:
 		case CartridgeType::MBC5_RUMBLE_RAM_BATTERY:
 			return true;
-		default: 
+		default:
 			return false;
 	}
 }

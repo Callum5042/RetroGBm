@@ -1,13 +1,13 @@
 #include "Pch.h"
 #include "Dma.h"
-#include "Ppu.h"
 #include "Emulator.h"
-#include <iostream>
+#include "Display.h"
+#include "PixelProcessor.h"
 
 Dma::Dma()
 {
 	m_Bus = Emulator::Instance;
-	m_Ppu = Emulator::Instance->GetPpu();
+	m_PixelProcessor = Emulator::Instance->GetPpu();
 }
 
 void Dma::Start(uint8_t start)
@@ -49,7 +49,7 @@ void Dma::StartCGB(uint8_t value)
 
 	if (m_HBlankDMA)
 	{
-		if (Emulator::Instance->GetDisplay()->GetLcdMode() == LcdMode::HBlank)
+		if (Emulator::Instance->GetDisplay()->GetLcdMode() == LcdMode::HBlank && Emulator::Instance->GetDisplay()->IsLcdEnabled())
 		{
 			return;
 		}
@@ -63,7 +63,7 @@ void Dma::StartCGB(uint8_t value)
 			for (int i = 0; i < 16; ++i)
 			{
 				uint8_t source_byte = m_Bus->ReadBus((m_Source & 0xFFF0) + m_HdmaByte);
-				m_Ppu->WriteVideoRam(0x8000 + (m_Destination & 0x1FF0) + m_HdmaByte, source_byte);
+				m_PixelProcessor->WriteVideoRam(0x8000 + (m_Destination & 0x1FF0) + m_HdmaByte, source_byte);
 
 				m_HdmaByte++;
 				m_TransferLength--;
@@ -77,7 +77,7 @@ void Dma::StartCGB(uint8_t value)
 		while (m_TransferLength > 0)
 		{
 			uint8_t source_byte = m_Bus->ReadBus((m_Source & 0xFFF0) + byte);
-			m_Ppu->WriteVideoRam(0x8000 + (m_Destination & 0x1FF0) + byte, source_byte);
+			m_PixelProcessor->WriteVideoRam(0x8000 + (m_Destination & 0x1FF0) + byte, source_byte);
 
 			byte++;
 			m_TransferLength--;
@@ -93,21 +93,37 @@ void Dma::Tick()
 {
 	RunHDMA();
 
-	if (!context.active)
+
+	// DMA
+	static int tick_count = 0;
+	bool tick = true;
+	if (Emulator::Instance->IsDoubleSpeedMode())
 	{
-		return;
+		tick_count += 1;
+		if (tick_count & 1)
+		{
+			tick = false;
+		}
 	}
 
-	if (context.start_delay)
+	if (tick)
 	{
-		context.start_delay--;
-		return;
+		if (!context.active)
+		{
+			return;
+		}
+
+		if (context.start_delay)
+		{
+			context.start_delay--;
+			return;
+		}
+
+		m_PixelProcessor->WriteOam(context.byte, m_Bus->ReadBus((context.value * 0x100) + context.byte));
+
+		context.byte++;
+		context.active = context.byte < 0xA0;
 	}
-
-	m_Ppu->WriteOam(context.byte, m_Bus->ReadBus((context.value * 0x100) + context.byte));
-
-	context.byte++;
-	context.active = context.byte < 0xA0;
 }
 
 void Dma::RunHDMA()
@@ -130,7 +146,7 @@ void Dma::RunHDMA()
 			{
 				uint16_t address = (m_Source & 0xFFF0) + m_HdmaByte;
 				uint8_t source_byte = m_Bus->ReadBus(address);
-				m_Ppu->WriteVideoRam(0x8000 + (m_Destination & 0x1FF0) + m_HdmaByte, source_byte);
+				m_PixelProcessor->WriteVideoRam(0x8000 + (m_Destination & 0x1FF0) + m_HdmaByte, source_byte);
 
 				m_HdmaByte++;
 				m_TransferLength--;
