@@ -65,6 +65,26 @@ void PixelProcessor::Tick()
 	}
 }
 
+void PixelProcessor::SaveState(std::fstream* file)
+{
+	size_t videoram_size = m_Context.video_ram.size();
+	file->write(reinterpret_cast<const char*>(&videoram_size), sizeof(size_t));
+	file->write(reinterpret_cast<const char*>(m_Context.video_ram.data()), videoram_size * sizeof(uint8_t));
+
+	file->write(reinterpret_cast<const char*>(&m_Context.video_ram_bank), sizeof(m_Context.video_ram_bank));
+}
+
+void PixelProcessor::LoadState(std::fstream* file)
+{
+	size_t videoram_size = 0;
+	file->read(reinterpret_cast<char*>(&videoram_size), sizeof(size_t));
+
+	m_Context.video_ram.resize(videoram_size);
+	file->read(reinterpret_cast<char*>(m_Context.video_ram.data()), videoram_size * sizeof(uint8_t));
+
+	file->read(reinterpret_cast<char*>(&m_Context.video_ram_bank), sizeof(m_Context.video_ram_bank));
+}
+
 void PixelProcessor::WriteVideoRam(uint16_t address, uint8_t value)
 {
 	// Assertion

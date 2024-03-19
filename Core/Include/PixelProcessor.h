@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include <array>
+#include <fstream>
 
 #include "HighTimer.h"
 #include "PixelPipeline.h"
@@ -39,6 +40,10 @@ public:
 
 	void Init();
 	void Tick();
+
+	// Save states
+	void SaveState(std::fstream* file);
+	void LoadState(std::fstream* file);
 
 	// Modes
 	void UpdateOam();

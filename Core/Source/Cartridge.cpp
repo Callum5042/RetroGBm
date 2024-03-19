@@ -319,8 +319,6 @@ bool Cartridge::Load(const std::vector<uint8_t>& filedata)
 		battery.close();
 	}
 
-	m_CartridgeInfo.ram_bank_controller = 0;
-
 	return true;
 }
 

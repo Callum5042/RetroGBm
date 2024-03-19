@@ -646,7 +646,7 @@ void Emulator::SaveState(const std::string& filepath)
 	m_Cartridge->SaveState(&file);
 
 	m_Display->SaveState(&file);
-	// m_PixelProcessor->SaveState(&file);
+	m_PixelProcessor->SaveState(&file);
 	m_Dma->SaveState(&file);
 }
 
@@ -661,7 +661,7 @@ void Emulator::LoadState(const std::string& filepath)
 	m_Cartridge->LoadState(&file);
 
 	m_Display->LoadState(&file);
-	// m_PixelProcessor->LoadState(&file);
+	m_PixelProcessor->LoadState(&file);
 	m_Dma->LoadState(&file);
 }
 
