@@ -3,9 +3,9 @@
 #include "Utilities/Utilities.h"
 #include "../resource.h"
 
-#include <Emulator.h>
-#include <Joypad.h>
-#include <Cartridge.h>
+#include <RetroGBm/Emulator.h>
+#include <RetroGBm/Joypad.h>
+#include <RetroGBm/Cartridge.h>
 
 #include <string>
 #include <vector>

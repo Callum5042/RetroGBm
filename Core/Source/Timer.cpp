@@ -1,7 +1,7 @@
-#include "Pch.h"
-#include "Timer.h"
-#include "Emulator.h"
-#include "Cpu.h"
+#include "RetroGBm/Pch.h"
+#include "RetroGBm/Timer.h"
+#include "RetroGBm/Emulator.h"
+#include "RetroGBm/Cpu.h"
 
 Timer::Timer()
 {

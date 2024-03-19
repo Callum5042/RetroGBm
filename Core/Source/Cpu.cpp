@@ -1,8 +1,9 @@
-#include "Pch.h"
-#include "Cpu.h"
-#include "Emulator.h"
-#include "Instructions.h"
-#include "Cartridge.h"
+#include "RetroGBm/Pch.h"
+#include "RetroGBm/Cpu.h"
+#include "RetroGBm/Emulator.h"
+#include "RetroGBm/Instructions.h"
+#include "RetroGBm/Cartridge.h"
+
 #include <exception>
 #include <sstream>
 

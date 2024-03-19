@@ -1,5 +1,5 @@
 #include "CppUnitTest.h"
-#include <Display.h>
+#include <RetroGBm/Display.h>
 
 #include <cstdint>
 

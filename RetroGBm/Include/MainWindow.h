@@ -4,7 +4,7 @@
 #include <Windows.h>
 #include <memory>
 #include <thread>
-#include <HighTimer.h>
+#include <RetroGBm/HighTimer.h>
 
 #include "Render/RenderTarget.h"
 #include "Render/RenderTexture.h"

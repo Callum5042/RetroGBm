@@ -1,7 +1,7 @@
-#include "Pch.h"
-#include "Joypad.h"
-#include "Cpu.h"
-#include "Emulator.h"
+#include "RetroGBm/Pch.h"
+#include "RetroGBm/Joypad.h"
+#include "RetroGBm/Cpu.h"
+#include "RetroGBm/Emulator.h"
 
 Joypad::Joypad()
 {

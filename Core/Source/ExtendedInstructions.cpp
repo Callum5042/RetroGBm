@@ -1,7 +1,7 @@
-#include "Pch.h"
-#include "ExtendedInstructions.h"
-#include "Emulator.h"
-#include "Cpu.h"
+#include "RetroGBm/Pch.h"
+#include "RetroGBm/ExtendedInstructions.h"
+#include "RetroGBm/Emulator.h"
+#include "RetroGBm/Cpu.h"
 
 void CB::ShiftRightLogically(EmulatorContext* context, RegisterType8 reg)
 {

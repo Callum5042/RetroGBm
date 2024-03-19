@@ -1,5 +1,5 @@
-#include "Pch.h"
-#include "Ram.h"
+#include "RetroGBm/Pch.h"
+#include "RetroGBm/Ram.h"
 #include <algorithm>
 #include <iostream>
 

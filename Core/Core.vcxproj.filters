@@ -15,46 +15,46 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\Cartridge.h">
+    <ClInclude Include="Include\RetroGBm\Cartridge.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Cpu.h">
+    <ClInclude Include="Include\RetroGBm\Cpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Emulator.h">
+    <ClInclude Include="Include\RetroGBm\Display.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Instructions.h">
+    <ClInclude Include="Include\RetroGBm\Dma.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\ExtendedInstructions.h">
+    <ClInclude Include="Include\RetroGBm\Emulator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Timer.h">
+    <ClInclude Include="Include\RetroGBm\ExtendedInstructions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Ram.h">
+    <ClInclude Include="Include\RetroGBm\HighTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Display.h">
+    <ClInclude Include="Include\RetroGBm\Instructions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Dma.h">
+    <ClInclude Include="Include\RetroGBm\Joypad.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Joypad.h">
+    <ClInclude Include="Include\RetroGBm\Pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Pch.h">
+    <ClInclude Include="Include\RetroGBm\PixelPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\HighTimer.h">
+    <ClInclude Include="Include\RetroGBm\PixelProcessor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\PixelProcessor.h">
+    <ClInclude Include="Include\RetroGBm\Ram.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\PixelPipeline.h">
+    <ClInclude Include="Include\RetroGBm\Timer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

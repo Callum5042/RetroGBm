@@ -1,7 +1,8 @@
 #include "CppUnitTest.h"
-#include <Emulator.h>
-#include <Instructions.h>
-#include <Cartridge.h>
+
+#include <RetroGBm/Emulator.h>
+#include <RetroGBm/Instructions.h>
+#include <RetroGBm/Cartridge.h>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 

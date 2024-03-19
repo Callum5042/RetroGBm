@@ -1,8 +1,8 @@
-#include "Pch.h"
-#include "Instructions.h"
-#include "ExtendedInstructions.h"
-#include "Emulator.h"
-#include "Cpu.h"
+#include "RetroGBm/Pch.h"
+#include "RetroGBm/Instructions.h"
+#include "RetroGBm/ExtendedInstructions.h"
+#include "RetroGBm/Emulator.h"
+#include "RetroGBm/Cpu.h"
 #include <exception>
 using namespace Op;
 

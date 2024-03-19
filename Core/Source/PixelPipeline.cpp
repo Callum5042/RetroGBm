@@ -1,9 +1,9 @@
-#include "Pch.h"
-#include "PixelPipeline.h"
-#include "PixelProcessor.h"
+#include "RetroGBm/Pch.h"
+#include "RetroGBm/PixelPipeline.h"
+#include "RetroGBm/PixelProcessor.h"
 
-#include "Display.h"
-#include "Cartridge.h"
+#include "RetroGBm/Display.h"
+#include "RetroGBm/Cartridge.h"
 
 PixelPipeline::PixelPipeline(PixelProcessor* ppu, Display* display, Cartridge* cartridge) : m_PixelProcessor(ppu), m_Display(display), m_Cartridge(cartridge)
 {

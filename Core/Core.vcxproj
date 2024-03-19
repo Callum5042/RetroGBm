@@ -19,20 +19,20 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\Cartridge.h" />
-    <ClInclude Include="Include\Cpu.h" />
-    <ClInclude Include="Include\Display.h" />
-    <ClInclude Include="Include\Emulator.h" />
-    <ClInclude Include="Include\ExtendedInstructions.h" />
-    <ClInclude Include="Include\Instructions.h" />
-    <ClInclude Include="Include\Joypad.h" />
-    <ClInclude Include="Include\HighTimer.h" />
-    <ClInclude Include="Include\Pch.h" />
-    <ClInclude Include="Include\PixelPipeline.h" />
-    <ClInclude Include="Include\PixelProcessor.h" />
-    <ClInclude Include="Include\Ram.h" />
-    <ClInclude Include="Include\Timer.h" />
-    <ClInclude Include="Include\Dma.h" />
+    <ClInclude Include="Include\RetroGBm\Cartridge.h" />
+    <ClInclude Include="Include\RetroGBm\Cpu.h" />
+    <ClInclude Include="Include\RetroGBm\Display.h" />
+    <ClInclude Include="Include\RetroGBm\Dma.h" />
+    <ClInclude Include="Include\RetroGBm\Emulator.h" />
+    <ClInclude Include="Include\RetroGBm\ExtendedInstructions.h" />
+    <ClInclude Include="Include\RetroGBm\HighTimer.h" />
+    <ClInclude Include="Include\RetroGBm\Instructions.h" />
+    <ClInclude Include="Include\RetroGBm\Joypad.h" />
+    <ClInclude Include="Include\RetroGBm\Pch.h" />
+    <ClInclude Include="Include\RetroGBm\PixelPipeline.h" />
+    <ClInclude Include="Include\RetroGBm\PixelProcessor.h" />
+    <ClInclude Include="Include\RetroGBm\Ram.h" />
+    <ClInclude Include="Include\RetroGBm\Timer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\PixelPipeline.cpp" />
@@ -48,7 +48,7 @@
     <ClCompile Include="Source\HighTimer.cpp" />
     <ClCompile Include="Source\Pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">RetroGBm/Pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="Source\Ram.cpp" />
     <ClCompile Include="Source\Timer.cpp" />
@@ -154,7 +154,7 @@
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>Pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>RetroGBm/Pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)Include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
