@@ -4,9 +4,9 @@
 #include "Render/RenderTexture.h"
 #include "Application.h"
 
-#include <Emulator.h>
-#include <Display.h>
-#include <PixelProcessor.h>
+#include <RetroGBm/Emulator.h>
+#include <RetroGBm/Display.h>
+#include <RetroGBm/PixelProcessor.h>
 
 #include <vector>
 

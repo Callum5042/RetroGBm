@@ -1,7 +1,8 @@
 #include "CartridgeInfoWindow.h"
 #include "Application.h"
-#include <Emulator.h>
-#include <Cartridge.h>
+
+#include <RetroGBm/Emulator.h>
+#include <RetroGBm/Cartridge.h>
 
 // Set theme
 // https://docs.microsoft.com/en-gb/windows/win32/controls/cookbook-overview?redirectedfrom=MSDN
