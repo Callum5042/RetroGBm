@@ -19,21 +19,9 @@ void Op::Stop(EmulatorContext* context)
 
 void Op::Halt(EmulatorContext* context)
 {
-	/*context->cpu->ProgramCounter++;
-
-	if (Emulator::Instance->GetCpu()->GetInterruptMasterFlag())
-	{
-		Emulator::Instance->SetHalt(true);
-	}
-	else
-	{
-		Emulator::Instance->SetHalt(true);
-	}*/
-
 	context->cpu->ProgramCounter++;
 
 	Cpu* cpu = context->cpu;
-
 	if (cpu->GetInterruptMasterFlag())
 	{
 		Emulator::Instance->SetHalt(true);
