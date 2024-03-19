@@ -158,15 +158,28 @@ void Emulator::Tick()
 			m_TraceLog << debug_format << std::endl;
 		}
 
+		if (m_HaltBug)
+		{
+			m_Cpu->ProgramCounter -= 1;
+			m_HaltBug = false;
+		}
+
 		m_Cpu->Execute(&m_Context, opcode);
 	}
 	else
 	{
 		Cycle(1);
 
-		if (m_Cpu->GetInterruptFlags())
+		// Check if we have interrupts
+		if (!m_Cpu->GetInterruptMasterFlag())
 		{
-			m_Halted = false;
+			uint8_t flags = m_Cpu->GetInterruptFlags();
+			uint8_t enabled = m_Cpu->GetInterruptEnable();
+
+			if (flags != 0 && ((flags & enabled) != 0))
+			{
+				m_Halted = false;
+			}
 		}
 	}
 

@@ -21,13 +21,25 @@ void Op::Halt(EmulatorContext* context)
 {
 	context->cpu->ProgramCounter++;
 
-	if (Emulator::Instance->GetCpu()->GetInterruptMasterFlag())
+	Cpu* cpu = context->cpu;
+	if (cpu->GetInterruptMasterFlag())
 	{
 		Emulator::Instance->SetHalt(true);
 	}
 	else
 	{
-		Emulator::Instance->SetHalt(true);
+		uint8_t interrupt_enables = cpu->GetInterruptEnable();
+		uint8_t interrupt_flags = cpu->GetInterruptFlags();
+
+		if ((interrupt_enables & interrupt_flags & 0x1F) == 0)
+		{
+			Emulator::Instance->SetHalt(true);
+			Emulator::Instance->m_HaltNoJump = true;
+		}
+		else
+		{
+			Emulator::Instance->m_HaltBug = true;
+		}
 	}
 }
 

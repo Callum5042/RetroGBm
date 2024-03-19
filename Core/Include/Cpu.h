@@ -90,7 +90,7 @@ public:
 
 	void RequestInterrupt(InterruptFlag flag);
 	void SetInterrupt(uint8_t data);
-	uint8_t GetInterruptFlags();
+	uint8_t GetInterruptFlags() const;
 
 	void SetInterruptEnable(uint8_t data);
 	uint8_t GetInterruptEnable() const;

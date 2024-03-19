@@ -267,13 +267,13 @@ void PixelProcessor::SetVideoRamBank(uint8_t value)
 	m_Context.video_ram_bank = value & 0b1;
 }
 
-void PixelProcessor::CheckLYCFlag(bool lyc_interrupt_flag)
+void PixelProcessor::CheckLYCFlag()
 {
 	DisplayContext* display_context = const_cast<DisplayContext*>(m_Display->GetContext());
 	if (display_context->ly == display_context->lyc)
 	{
 		display_context->stat |= 0b100;
-		if (m_Display->IsStatInterruptLYC() || lyc_interrupt_flag)
+		if (m_Display->IsStatInterruptLYC())
 		{
 			m_Cpu->RequestInterrupt(InterruptFlag::STAT);
 		}
@@ -365,11 +365,15 @@ void PixelProcessor::UpdateHBlank()
 		if (display_context->ly >= ScreenResolutionY)
 		{
 			m_Display->SetLcdMode(LcdMode::VBlank);
-			m_Cpu->RequestInterrupt(InterruptFlag::VBlank);
 
 			if (m_Display->IsStatInterruptVBlank())
 			{
 				m_Cpu->RequestInterrupt(InterruptFlag::STAT);
+			}
+
+			if (m_Display->IsLcdEnabled())
+			{
+				m_Cpu->RequestInterrupt(InterruptFlag::VBlank);
 			}
 		}
 		else
@@ -390,7 +394,6 @@ void PixelProcessor::UpdateVBlank()
 	if (display_context->ly == 153 && m_Context.dots == 4)
 	{
 		display_context->ly = 0;
-		CheckLYCFlag(true);
 	}
 
 	int dots_per_line = 456;

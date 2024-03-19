@@ -511,5 +511,19 @@ namespace CoreTests
 			// Assert
 			Assert::AreEqual("L", name.c_str());
 		}
+
+		TEST_METHOD(SetInterrupt_InterruptFlagIsMaskedxE0_ReturnsE1)
+		{
+			// Arrange
+			Cartridge cartridge;
+			Cpu cpu(&cartridge);
+
+			// Act
+			cpu.SetInterrupt(1);
+			uint8_t result = cpu.GetInterruptFlags();
+
+			// Assert
+			Assert::AreEqual(0xE1, static_cast<int>(result));
+		}
 	};
 }

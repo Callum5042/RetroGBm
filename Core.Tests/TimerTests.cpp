@@ -1,6 +1,7 @@
 #include "CppUnitTest.h"
 #include <Timer.h>
 #include <Cpu.h>
+#include <Cartridge.h>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -70,7 +71,8 @@ namespace CoreTests
 		TEST_METHOD(Tick_TmaOverflown_TimaIsZero_ResetNotYetDone)
 		{
 			// Arrange
-			Cpu mockCpu;
+			Cartridge cartridge;
+			Cpu mockCpu(&cartridge);
 
 			Timer timer(&mockCpu);
 			timer.Init();
@@ -92,7 +94,8 @@ namespace CoreTests
 		TEST_METHOD(Tick_TmaOverflown_TimaIsIncremented)
 		{
 			// Arrange
-			Cpu mockCpu;
+			Cartridge cartridge;
+			Cpu mockCpu(&cartridge);
 
 			Timer timer(&mockCpu);
 			timer.Init();
@@ -114,7 +117,8 @@ namespace CoreTests
 		TEST_METHOD(Tick_TmaOverflown_TimaIsZero_ResetIsDone4CyclesLater)
 		{
 			// Arrange
-			Cpu mockCpu;
+			Cartridge cartridge;
+			Cpu mockCpu(&cartridge);
 
 			Timer timer(&mockCpu);
 			timer.Init();
@@ -132,7 +136,7 @@ namespace CoreTests
 			// Assert
 			Assert::AreEqual(0xA, static_cast<int>(timer.GetContext()->tima));
 			Assert::AreEqual(static_cast<int>(timer.GetContext()->tma), static_cast<int>(timer.GetContext()->tima));
-			Assert::AreEqual(static_cast<int>(InterruptFlag::Timer), static_cast<int>(mockCpu.GetInterruptFlags()));
+			Assert::AreEqual(static_cast<int>(InterruptFlag::Timer) | 0xE0, static_cast<int>(mockCpu.GetInterruptFlags()));
 		}
 	};
 }
