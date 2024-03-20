@@ -527,5 +527,21 @@ namespace CoreTests
 			// Assert
 			Assert::AreEqual(0xE1, static_cast<int>(result));
 		}
+
+		TEST_METHOD(DisableMasterInterrupts_InterruptsMasterWasEnabled_SetsEnablingFlagAndMasterFlagToFalse)
+		{
+			// Arrange
+			Cartridge cartridge;
+			Cpu cpu(&cartridge);
+
+			cpu.EnableMasterInterrupts();
+
+			// Act
+			cpu.DisableMasterInterrupts();
+
+			// Assert
+			Assert::IsFalse(cpu.GetInterruptMasterFlag());
+			Assert::IsFalse(cpu.m_InterruptMasterFlag);
+		}
 	};
 }
