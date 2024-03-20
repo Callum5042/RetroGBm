@@ -222,7 +222,6 @@ void Op::LoadHLFromSP(EmulatorContext* context)
 void Op::LoadHLFromSPRelative(EmulatorContext* context)
 {
 	uint16_t reg_data = context->cpu->GetRegister(RegisterType16::REG_SP);
-	Emulator::Instance->Cycle(1);
 
 	int8_t data = static_cast<int8_t>(context->bus->ReadBus(context->cpu->ProgramCounter + 1));
 	Emulator::Instance->Cycle(1);
@@ -236,6 +235,7 @@ void Op::LoadHLFromSPRelative(EmulatorContext* context)
 	context->cpu->SetFlag(CpuFlag::Carry, (((reg_data & 0xff) + (data & 0xff)) & 0x100) != 0);
 
 	context->cpu->ProgramCounter += 2;
+	Emulator::Instance->Cycle(1);
 }
 
 void Op::StoreIncrementHL(EmulatorContext* context)
