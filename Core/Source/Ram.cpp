@@ -49,6 +49,18 @@ void Ram::WriteWorkRam(uint16_t address, uint8_t value)
 	}
 }
 
+uint8_t Ram::ReadEchoRam(uint16_t address)
+{
+	uint16_t addr = (address & 0x3FFF) | (m_Bank << 14);
+	return m_WorkRam[addr];
+}
+
+void Ram::WriteEchoRam(uint16_t address, uint8_t value)
+{
+	uint16_t addr = (address & 0x3FFF) | (m_Bank << 14);
+	m_WorkRam[addr] = value;
+}
+
 uint8_t Ram::ReadHighRam(uint16_t address)
 {
 	address -= m_BaseHighRamAddress;

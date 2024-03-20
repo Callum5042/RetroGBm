@@ -496,7 +496,7 @@ uint8_t Emulator::ReadBus(uint16_t address)
 	else if (address >= 0xE000 && address <= 0xFDFF)
 	{
 		// Reserved echo RAM
-		return 0;
+		return m_Ram->ReadEchoRam(address);
 	}
 	else if (address >= 0xFE00 && address <= 0xFE9F)
 	{
@@ -519,7 +519,8 @@ uint8_t Emulator::ReadBus(uint16_t address)
 	else if (address >= 0xFEA0 && address <= 0xFEFF)
 	{
 		// Reserved unusable
-		return 0;
+		uint8_t high_nibble = address & 0xF0;
+		return (high_nibble | high_nibble >> 4);
 	}
 	else if (address >= 0xFF00 && address <= 0xFF7F)
 	{
@@ -575,7 +576,8 @@ void Emulator::WriteBus(uint16_t address, uint8_t value)
 	else if (address >= 0xE000 && address <= 0xFDFF)
 	{
 		// Reserved echo ram
-		std::cout << "Write to echo RAM\n";
+		m_Ram->WriteEchoRam(address, value);
+		return;
 	}
 	else if (address >= 0xFE00 && address <= 0xFE9F)
 	{

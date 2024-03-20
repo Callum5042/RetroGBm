@@ -13,6 +13,9 @@ public:
 	uint8_t ReadWorkRam(uint16_t address);
 	void WriteWorkRam(uint16_t address, uint8_t value);
 
+	uint8_t ReadEchoRam(uint16_t address);
+	void WriteEchoRam(uint16_t address, uint8_t value);
+
 	uint8_t ReadHighRam(uint16_t address);
 	void WriteHighRam(uint16_t address, uint8_t value);
 
