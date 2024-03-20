@@ -648,6 +648,7 @@ void Op::CallN16FlagSet(EmulatorContext* context, CpuFlag flag)
 void Op::Return(EmulatorContext* context)
 {
 	context->cpu->StackPointer += 2;
+	Emulator::Instance->Cycle(1);
 
 	uint8_t high = context->bus->ReadBus(context->cpu->StackPointer - 1);
 	Emulator::Instance->Cycle(1);
@@ -657,7 +658,6 @@ void Op::Return(EmulatorContext* context)
 
 	uint16_t address = low | (high << 8);
 	context->cpu->ProgramCounter = address;
-	Emulator::Instance->Cycle(1);
 }
 
 void Op::ReturnInterrupt(EmulatorContext* context)
@@ -1877,6 +1877,7 @@ void Op::ReturnFlagNotSet(EmulatorContext* context, CpuFlag flag)
 	if (!flag_result)
 	{
 		context->cpu->StackPointer += 2;
+		Emulator::Instance->Cycle(1);
 
 		uint8_t high = context->bus->ReadBus(context->cpu->StackPointer - 1);
 		Emulator::Instance->Cycle(1);
@@ -1886,7 +1887,6 @@ void Op::ReturnFlagNotSet(EmulatorContext* context, CpuFlag flag)
 
 		uint16_t address = high << 8 | low;
 		context->cpu->ProgramCounter = address;
-		Emulator::Instance->Cycle(1);
 	}
 	else
 	{
@@ -1902,6 +1902,7 @@ void Op::ReturnFlagSet(EmulatorContext* context, CpuFlag flag)
 	if (flag_result)
 	{
 		context->cpu->StackPointer += 2;
+		Emulator::Instance->Cycle(1);
 
 		uint8_t high = context->bus->ReadBus(context->cpu->StackPointer - 1);
 		Emulator::Instance->Cycle(1);
@@ -1911,7 +1912,6 @@ void Op::ReturnFlagSet(EmulatorContext* context, CpuFlag flag)
 
 		uint16_t address = high << 8 | low;
 		context->cpu->ProgramCounter = address;
-		Emulator::Instance->Cycle(1);
 	}
 	else
 	{
