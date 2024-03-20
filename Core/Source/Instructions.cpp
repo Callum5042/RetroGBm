@@ -566,6 +566,7 @@ void Op::CallN16(EmulatorContext* context)
 	Emulator::Instance->Cycle(1);
 
 	uint16_t address = low | (high << 8);
+	Emulator::Instance->Cycle(1);
 
 	uint8_t pc_high = (context->cpu->ProgramCounter + 3) >> 8;
 	uint8_t pc_low = (context->cpu->ProgramCounter + 3) & 0xFF;
@@ -577,7 +578,6 @@ void Op::CallN16(EmulatorContext* context)
 	Emulator::Instance->Cycle(1);
 
 	context->cpu->ProgramCounter = address;
-	Emulator::Instance->Cycle(1);
 }
 
 void Op::CallN16FlagNotSet(EmulatorContext* context, CpuFlag flag)
@@ -593,6 +593,7 @@ void Op::CallN16FlagNotSet(EmulatorContext* context, CpuFlag flag)
 	bool flag_result = context->cpu->GetFlag(flag);
 	if (!flag_result)
 	{
+		Emulator::Instance->Cycle(1);
 		context->cpu->StackPointer -= 2;
 
 		uint8_t pc_high = (context->cpu->ProgramCounter + 3) >> 8;
@@ -605,7 +606,6 @@ void Op::CallN16FlagNotSet(EmulatorContext* context, CpuFlag flag)
 		Emulator::Instance->Cycle(1);
 
 		context->cpu->ProgramCounter = address;
-		Emulator::Instance->Cycle(1);
 	}
 	else
 	{
@@ -625,6 +625,7 @@ void Op::CallN16FlagSet(EmulatorContext* context, CpuFlag flag)
 	if (flag_result)
 	{
 		context->cpu->StackPointer -= 2;
+		Emulator::Instance->Cycle(1);
 
 		uint8_t pc_high = (context->cpu->ProgramCounter + 3) >> 8;
 		uint8_t pc_low = (context->cpu->ProgramCounter + 3) & 0xFF;
@@ -637,7 +638,6 @@ void Op::CallN16FlagSet(EmulatorContext* context, CpuFlag flag)
 
 		uint16_t address = low | (high << 8);
 		context->cpu->ProgramCounter = address;
-		Emulator::Instance->Cycle(1);
 	}
 	else
 	{
