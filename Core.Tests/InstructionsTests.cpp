@@ -343,5 +343,25 @@ namespace CoreTests
 			// Assert
 			Assert::AreEqual(0xAABB, static_cast<int>(emulator.GetCpu()->GetRegister(RegisterType16::REG_BC)));
 		}
+
+		TEST_METHOD(ReturnInterrupt_EnableMasterInterruptsImmediately)
+		{
+			// Arrange
+			Emulator emulator;
+			emulator.GetCpu()->ProgramCounter = 0x32;
+			emulator.GetCpu()->StackPointer = 0x0;
+			emulator.GetCpu()->m_InterruptMasterFlag = false;
+
+			const_cast<CartridgeInfo*>(emulator.GetCartridge()->GetCartridgeInfo())->data.resize(0x2);
+			const_cast<CartridgeInfo*>(emulator.GetCartridge()->GetCartridgeInfo())->data[0x0] = 0xAA;
+			const_cast<CartridgeInfo*>(emulator.GetCartridge()->GetCartridgeInfo())->data[0x1] = 0xBB;
+
+			// Act
+			Op::ReturnInterrupt(emulator.GetContext());
+
+			// Assert
+			Assert::IsTrue(emulator.GetCpu()->m_InterruptMasterFlag);
+			Assert::AreEqual(0xBBAA, static_cast<int>(emulator.GetCpu()->ProgramCounter));
+		}
 	};
 }

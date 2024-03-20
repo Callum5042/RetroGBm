@@ -345,6 +345,7 @@ void Cpu::EnableMasterInterrupts()
 void Cpu::DisableMasterInterrupts()
 {
 	m_InterruptMasterFlag = false;
+	m_EnablingInterrupts = false;
 }
 
 bool Cpu::GetInterruptMasterFlag() const

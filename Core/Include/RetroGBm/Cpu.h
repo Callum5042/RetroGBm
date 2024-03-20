@@ -107,6 +107,7 @@ public:
 private:
 	std::map<RegisterType8, uint8_t> m_Registers;
 
+public:
 	bool m_EnablingInterrupts = false;
 	bool m_InterruptMasterFlag = false;
 
