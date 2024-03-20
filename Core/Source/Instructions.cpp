@@ -663,6 +663,7 @@ void Op::Return(EmulatorContext* context)
 void Op::ReturnInterrupt(EmulatorContext* context)
 {
 	context->cpu->StackPointer += 2;
+	Emulator::Instance->Cycle(1);
 
 	uint8_t high = context->bus->ReadBus(context->cpu->StackPointer - 1);
 	Emulator::Instance->Cycle(1);
@@ -671,9 +672,8 @@ void Op::ReturnInterrupt(EmulatorContext* context)
 	Emulator::Instance->Cycle(1);
 
 	uint16_t address = low | (high << 8);
-	context->cpu->EnableMasterInterrupts();
+	context->cpu->m_InterruptMasterFlag = true;
 	context->cpu->ProgramCounter = address;
-	Emulator::Instance->Cycle(1);
 }
 
 void Op::CompareR8(EmulatorContext* context, RegisterType8 reg)
