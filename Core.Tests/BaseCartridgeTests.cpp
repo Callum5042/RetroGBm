@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <vector>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
@@ -212,6 +213,39 @@ namespace CoreTests
 			// Assert
 			CartridgeMBC5* type = dynamic_cast<CartridgeMBC5*>(cartridge.get());
 			Assert::IsNotNull(type);
+		}
+
+		TEST_METHOD(BuildCartridgeData_MapHeaderBytesToCartridgeData_ReturnsCartridgeData)
+		{
+			// Arrange
+			std::vector<uint8_t> data;
+			data.resize(0x2000);
+			data[0x0147] = 0x1;
+
+			// Act
+			CartridgeDataV2 cartridge = BuildCartridgeData(data);
+
+			// Assert
+			Assert::AreEqual(data.size(), cartridge.data.size());
+			Assert::IsTrue(CartridgeTypeV2::MBC1 == cartridge.cartridge_type);
+		}
+
+		TEST_METHOD(CartridgeTypeToString_CartridgeTypeIsMBC1_ReturnsMBC1String)
+		{
+			// Act
+			std::string cartridge_type_name = CartridgeTypeToString(CartridgeTypeV2::MBC1);
+
+			// Assert
+			Assert::AreEqual("MBC1", cartridge_type_name.c_str());
+		}
+
+		TEST_METHOD(CartridgeTypeToString_CartridgeTypeIsUnknown_ReturnsNAString)
+		{
+			// Act
+			std::string cartridge_type_name = CartridgeTypeToString(static_cast<CartridgeTypeV2>(0x4));
+
+			// Assert
+			Assert::AreEqual("N/A", cartridge_type_name.c_str());
 		}
 	};
 }

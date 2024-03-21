@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <vector>
 
 enum class CartridgeTypeV2 : uint8_t
@@ -36,9 +37,32 @@ enum class CartridgeTypeV2 : uint8_t
 	HuC1_RAM_BATTERY = 0xFF,
 };
 
+enum class ColourModeV2 : uint8_t
+{
+	DMG,
+	CGB,
+	CGB_SUPPORT,
+};
+
 struct CartridgeDataV2
 {
+	std::vector<uint8_t> data;
+
+	// Header data
+	std::vector<uint8_t> nintendo_logo;
 	CartridgeTypeV2 cartridge_type;
+	ColourModeV2 colour_mode;
+
+	uint8_t old_licensee_code = 0;
+	uint8_t new_licensee_code = 0;
+
+	int rom_size = 0;
+	int rom_banks = 0;
+	int ram_size = 0;
+	int version = 0;
+
+	std::string title;
+	std::string manufacturer_code;
 };
 
 class BaseCartridge
@@ -48,16 +72,30 @@ public:
 	virtual ~BaseCartridge() = default;
 
 	virtual uint8_t Read(uint16_t address) = 0;
-	virtual uint8_t Write(uint16_t address, uint8_t value) = 0;
+	virtual void Write(uint16_t address, uint8_t value) = 0;
 
-	inline const CartridgeDataV2* GetCartridgeData() const
+	bool HasRAM() const;
+	bool HasBattery() const;
+
+	inline const CartridgeDataV2& GetCartridgeData() const
 	{
-		return &m_CartridgeData;
+		return m_CartridgeData;
+	}
+
+	inline uint8_t GetTitleChecksum() const 
+	{ 
+		return m_TitleChecksum; 
 	}
 
 protected:
 	CartridgeDataV2 m_CartridgeData;
+
+private:
+	uint8_t m_TitleChecksum = 0;
 };
 
 const CartridgeDataV2 BuildCartridgeData(const std::vector<uint8_t>& filedata);
 std::unique_ptr<BaseCartridge> LoadCartridgeFromMemory(const std::vector<uint8_t>& filedata);
+
+const std::string& CartridgeTypeToString(CartridgeTypeV2 cartridge_type);
+std::string ColourModeToString(ColourModeV2 colour_mode);

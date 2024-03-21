@@ -167,6 +167,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BaseCartridgeTests.cpp" />
+    <ClCompile Include="CartridgeROMTests.cpp" />
     <ClCompile Include="CpuTests.cpp" />
     <ClCompile Include="DisplayTests.cpp" />
     <ClCompile Include="InstructionsTests.cpp" />

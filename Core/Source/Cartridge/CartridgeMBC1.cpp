@@ -10,7 +10,6 @@ uint8_t CartridgeMBC1::Read(uint16_t address)
     return 0;
 }
 
-uint8_t CartridgeMBC1::Write(uint16_t address, uint8_t value)
+void CartridgeMBC1::Write(uint16_t address, uint8_t value)
 {
-    return 0;
 }

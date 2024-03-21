@@ -45,5 +45,8 @@
     <ClCompile Include="BaseCartridgeTests.cpp">
       <Filter>Source Files\Cartridges</Filter>
     </ClCompile>
+    <ClCompile Include="CartridgeROMTests.cpp">
+      <Filter>Source Files\Cartridges</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
