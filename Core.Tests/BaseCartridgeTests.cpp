@@ -1,0 +1,217 @@
+#include "CppUnitTest.h"
+
+#include <RetroGBm/Cartridge/BaseCartridge.h>
+#include <RetroGBm/Cartridge/CartridgeROM.h>
+#include <RetroGBm/Cartridge/CartridgeMBC1.h>
+#include <RetroGBm/Cartridge/CartridgeMBC3.h>
+#include <RetroGBm/Cartridge/CartridgeMBC5.h>
+
+#include <cstdint>
+#include <memory>
+#include <vector>
+
+using namespace Microsoft::VisualStudio::CppUnitTestFramework;
+
+namespace CoreTests
+{
+	TEST_CLASS(CartridgeTests)
+	{
+	public:
+
+		/// <summary>
+		///  ROM
+		/// </summary>
+
+		TEST_METHOD(LoadCartridgeFromMemory_CartrideTypeIsROMONLY_ReturnsCartridgeROM)
+		{
+			// Arrange
+			std::vector<uint8_t> data;
+			data.resize(0x2000);
+			data[0x0147] = 0x0;
+
+			// Act
+			std::unique_ptr<BaseCartridge> cartridge = LoadCartridgeFromMemory(data);
+
+			// Assert
+			CartridgeROM* type = dynamic_cast<CartridgeROM*>(cartridge.get());
+			Assert::IsNotNull(type);
+		}
+
+		TEST_METHOD(LoadCartridgeFromMemory_CartrideTypeIsROM_RAM_ReturnsCartridgeROM)
+		{
+			// Arrange
+			std::vector<uint8_t> data;
+			data.resize(0x2000);
+			data[0x0147] = 0x8;
+
+			// Act
+			std::unique_ptr<BaseCartridge> cartridge = LoadCartridgeFromMemory(data);
+
+			// Assert
+			CartridgeROM* type = dynamic_cast<CartridgeROM*>(cartridge.get());
+			Assert::IsNotNull(type);
+		}
+
+		TEST_METHOD(LoadCartridgeFromMemory_CartrideTypeIsROM_RAM_BATTERY_ReturnsCartridgeROM)
+		{
+			// Arrange
+			std::vector<uint8_t> data;
+			data.resize(0x2000);
+			data[0x0147] = 0x9;
+
+			// Act
+			std::unique_ptr<BaseCartridge> cartridge = LoadCartridgeFromMemory(data);
+
+			// Assert
+			CartridgeROM* type = dynamic_cast<CartridgeROM*>(cartridge.get());
+			Assert::IsNotNull(type);
+		}
+
+		/// <summary>
+		///  MB1
+		/// </summary>
+
+		TEST_METHOD(LoadCartridgeFromMemory_CartrideTypeIsMBC1_ReturnsCartridgeMBC1)
+		{
+			// Arrange
+			std::vector<uint8_t> data;
+			data.resize(0x2000);
+			data[0x0147] = 0x1;
+
+			// Act
+			std::unique_ptr<BaseCartridge> cartridge = LoadCartridgeFromMemory(data);
+
+			// Assert
+			CartridgeMBC1* type = dynamic_cast<CartridgeMBC1*>(cartridge.get());
+			Assert::IsNotNull(type);
+		}
+
+		TEST_METHOD(LoadCartridgeFromMemory_CartrideTypeIsMBC1_RAM_ReturnsCartridgeMBC1)
+		{
+			// Arrange
+			std::vector<uint8_t> data;
+			data.resize(0x2000);
+			data[0x0147] = 0x2;
+
+			// Act
+			std::unique_ptr<BaseCartridge> cartridge = LoadCartridgeFromMemory(data);
+
+			// Assert
+			CartridgeMBC1* type = dynamic_cast<CartridgeMBC1*>(cartridge.get());
+			Assert::IsNotNull(type);
+		}
+
+		TEST_METHOD(LoadCartridgeFromMemory_CartrideTypeIsMBC1_RAM_BATTERY_ReturnsCartridgeMBC1)
+		{
+			// Arrange
+			std::vector<uint8_t> data;
+			data.resize(0x2000);
+			data[0x0147] = 0x3;
+
+			// Act
+			std::unique_ptr<BaseCartridge> cartridge = LoadCartridgeFromMemory(data);
+
+			// Assert
+			CartridgeMBC1* type = dynamic_cast<CartridgeMBC1*>(cartridge.get());
+			Assert::IsNotNull(type);
+		}
+
+		/// <summary>
+		///  MB3
+		/// </summary>
+
+		TEST_METHOD(LoadCartridgeFromMemory_CartrideTypeIsMBC3_ReturnsCartridgeMBC3)
+		{
+			// Arrange
+			std::vector<uint8_t> data;
+			data.resize(0x2000);
+			data[0x0147] = 0x11;
+
+			// Act
+			std::unique_ptr<BaseCartridge> cartridge = LoadCartridgeFromMemory(data);
+
+			// Assert
+			CartridgeMBC3* type = dynamic_cast<CartridgeMBC3*>(cartridge.get());
+			Assert::IsNotNull(type);
+		}
+
+		TEST_METHOD(LoadCartridgeFromMemory_CartrideTypeIsMBC3_RAM_ReturnsCartridgeMBC3)
+		{
+			// Arrange
+			std::vector<uint8_t> data;
+			data.resize(0x2000);
+			data[0x0147] = 0x12;
+
+			// Act
+			std::unique_ptr<BaseCartridge> cartridge = LoadCartridgeFromMemory(data);
+
+			// Assert
+			CartridgeMBC3* type = dynamic_cast<CartridgeMBC3*>(cartridge.get());
+			Assert::IsNotNull(type);
+		}
+
+		TEST_METHOD(LoadCartridgeFromMemory_CartrideTypeIsMBC3_RAM_BATTERY_ReturnsCartridgeMBC3)
+		{
+			// Arrange
+			std::vector<uint8_t> data;
+			data.resize(0x2000);
+			data[0x0147] = 0x13;
+
+			// Act
+			std::unique_ptr<BaseCartridge> cartridge = LoadCartridgeFromMemory(data);
+
+			// Assert
+			CartridgeMBC3* type = dynamic_cast<CartridgeMBC3*>(cartridge.get());
+			Assert::IsNotNull(type);
+		}
+
+		/// <summary>
+		///  MB5
+		/// </summary>
+
+		TEST_METHOD(LoadCartridgeFromMemory_CartrideTypeIsMBC5_ReturnsCartridgeMBC5)
+		{
+			// Arrange
+			std::vector<uint8_t> data;
+			data.resize(0x2000);
+			data[0x0147] = 0x19;
+
+			// Act
+			std::unique_ptr<BaseCartridge> cartridge = LoadCartridgeFromMemory(data);
+
+			// Assert
+			CartridgeMBC5* type = dynamic_cast<CartridgeMBC5*>(cartridge.get());
+			Assert::IsNotNull(type);
+		}
+
+		TEST_METHOD(LoadCartridgeFromMemory_CartrideTypeIsMBC5_RAM_ReturnsCartridgeMBC5)
+		{
+			// Arrange
+			std::vector<uint8_t> data;
+			data.resize(0x2000);
+			data[0x0147] = 0x1A;
+
+			// Act
+			std::unique_ptr<BaseCartridge> cartridge = LoadCartridgeFromMemory(data);
+
+			// Assert
+			CartridgeMBC5* type = dynamic_cast<CartridgeMBC5*>(cartridge.get());
+			Assert::IsNotNull(type);
+		}
+
+		TEST_METHOD(LoadCartridgeFromMemory_CartrideTypeIsMBC5_RAM_BATTERY_ReturnsCartridgeMBC5)
+		{
+			// Arrange
+			std::vector<uint8_t> data;
+			data.resize(0x2000);
+			data[0x0147] = 0x1B;
+
+			// Act
+			std::unique_ptr<BaseCartridge> cartridge = LoadCartridgeFromMemory(data);
+
+			// Assert
+			CartridgeMBC5* type = dynamic_cast<CartridgeMBC5*>(cartridge.get());
+			Assert::IsNotNull(type);
+		}
+	};
+}
