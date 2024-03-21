@@ -5,8 +5,8 @@ CartridgeROM::CartridgeROM(CartridgeDataV2 cartridge_data) noexcept : BaseCartri
 {
 	if (this->HasRAM())
 	{
-		m_Ram.resize(m_CartridgeData.ram_size);
-		std::fill(m_Ram.begin(), m_Ram.end(), 0x0);
+		m_ExternalRam.resize(m_CartridgeData.ram_size);
+		std::fill(m_ExternalRam.begin(), m_ExternalRam.end(), 0x0);
 	}
 }
 
@@ -22,7 +22,7 @@ uint8_t CartridgeROM::Read(uint16_t address)
 		// Read from RAM only if cartridge supports it
 		if (this->HasRAM())
 		{
-			return m_Ram[address - 0xA000];
+			return m_ExternalRam[address - 0xA000];
 		}
 	}
 
@@ -40,7 +40,7 @@ void CartridgeROM::Write(uint16_t address, uint8_t value)
 		// Write to RAM only if cartridge supports it
 		if (this->HasRAM())
 		{
-			m_Ram[address - 0xA000] = value;
+			m_ExternalRam[address - 0xA000] = value;
 		}
 	}
 }

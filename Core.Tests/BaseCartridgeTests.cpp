@@ -15,6 +15,22 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace CoreTests
 {
+	class TestCartridge : public BaseCartridge
+	{
+	public:
+		TestCartridge(CartridgeDataV2 data) : BaseCartridge(data) {}
+
+		// Inherited via BaseCartridge
+		uint8_t Read(uint16_t address) override
+		{
+			return 0;
+		}
+
+		void Write(uint16_t address, uint8_t value) override
+		{
+		}
+	};
+
 	TEST_CLASS(CartridgeTests)
 	{
 	public:
@@ -246,6 +262,25 @@ namespace CoreTests
 
 			// Assert
 			Assert::AreEqual("N/A", cartridge_type_name.c_str());
+		}
+
+		TEST_METHOD(SetExternalRam_SetsExternalRamToData)
+		{
+			// Arrange
+			CartridgeDataV2 cartridge_data;
+			cartridge_data.cartridge_type = CartridgeTypeV2::ROM_RAM;
+
+			std::vector<uint8_t> ram;
+			ram.resize(0x2000);
+			ram[0] = 0xAB;
+
+			// Act
+			TestCartridge cartridge(cartridge_data);
+			cartridge.SetExternalRam(std::move(ram));
+
+			// Assert
+			std::vector<uint8_t> result = cartridge.GetExternalRam();
+			Assert::AreEqual(0xAB, static_cast<int>(result[0]));
 		}
 	};
 }

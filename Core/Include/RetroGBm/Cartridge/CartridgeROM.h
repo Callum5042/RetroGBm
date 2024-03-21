@@ -15,5 +15,5 @@ public:
 	void Write(uint16_t address, uint8_t value) override;
 
 private:
-	std::vector<uint8_t> m_Ram;
+	std::vector<uint8_t> m_ExternalRam;
 };

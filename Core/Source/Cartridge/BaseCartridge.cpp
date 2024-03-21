@@ -21,6 +21,16 @@ BaseCartridge::BaseCartridge(const CartridgeDataV2 cartridge_data) noexcept : m_
 	m_TitleChecksum = std::accumulate(cartridge_data.title.begin(), cartridge_data.title.end(), 0);
 }
 
+void BaseCartridge::SetExternalRam(std::vector<uint8_t>&& ram_data)
+{
+	m_ExternalRam = ram_data;
+}
+
+const std::vector<uint8_t>& BaseCartridge::GetExternalRam()
+{
+	return m_ExternalRam;
+}
+
 bool BaseCartridge::HasRAM() const
 {
 	switch (m_CartridgeData.cartridge_type)

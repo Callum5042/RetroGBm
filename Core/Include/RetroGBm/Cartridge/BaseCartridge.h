@@ -74,6 +74,9 @@ public:
 	virtual uint8_t Read(uint16_t address) = 0;
 	virtual void Write(uint16_t address, uint8_t value) = 0;
 
+	virtual void SetExternalRam(std::vector<uint8_t>&& ram_data);
+	virtual const std::vector<uint8_t>& GetExternalRam();
+
 	bool HasRAM() const;
 	bool HasBattery() const;
 
@@ -89,6 +92,8 @@ public:
 
 protected:
 	CartridgeDataV2 m_CartridgeData;
+
+	std::vector<uint8_t> m_ExternalRam;
 
 private:
 	uint8_t m_TitleChecksum = 0;
