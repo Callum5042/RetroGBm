@@ -318,14 +318,14 @@ namespace CoreTests
 			CartridgeDataV2 data;
 			data.cartridge_type = CartridgeTypeV2::MBC1_RAM;
 			data.data.resize(0x10000);
-			data.data[0x9FFF] = 0xAB;
+			data.data[0x8000] = 0xAB;
 
 			CartridgeMBC3 cartridge(data);
 			uint16_t rombank_address = 0x2000;
 			cartridge.Write(rombank_address, 2);
 
 			// Act
-			uint16_t address = 0x7FFF;
+			uint16_t address = 0x4000;
 			uint8_t result = cartridge.Read(address);
 
 			// Assert

@@ -33,7 +33,7 @@ namespace CoreTests
 			// Arrange
 			CartridgeDataV2 data;
 			data.data.resize(0x8000);
-			data.data[0x7FFF] = 0xAB;
+			data.data[0x3FFF] = 0xAB;
 
 			uint16_t address = 0x7FFF;
 
@@ -233,7 +233,7 @@ namespace CoreTests
 			// Arrange
 			CartridgeDataV2 data;
 			data.data.resize(0x800000); // 8MB
-			data.data[0x8000] = 0xAB; // First byte of Bank 1
+			data.data[0x4000] = 0xAB; // First byte of Bank 1
 
 			CartridgeMBC5 cartridge(data);
 			cartridge.Write(0x2000, 1);
