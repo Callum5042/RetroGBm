@@ -93,6 +93,11 @@ void CartridgeMBC1::Write(uint16_t address, uint8_t value)
 				int offset = ((address - 0xA000) + (bank * 0x2000)) % m_ExternalRam.size();
 				m_ExternalRam[offset] = value;
 			}
+
+			if (this->HasBattery())
+			{
+				m_WriteRamCallback();
+			}
 		}
 	}
 }

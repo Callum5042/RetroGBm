@@ -41,6 +41,11 @@ void CartridgeROM::Write(uint16_t address, uint8_t value)
 		if (this->HasRAM() && !m_ExternalRam.empty())
 		{
 			m_ExternalRam[(address - 0xA000) % m_ExternalRam.size()] = value;
+
+			if (this->HasBattery())
+			{
+				m_WriteRamCallback();
+			}
 		}
 	}
 }

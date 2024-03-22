@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <functional>
 
 enum class CartridgeTypeV2 : uint8_t
 {
@@ -68,7 +69,7 @@ struct CartridgeDataV2
 class BaseCartridge
 {
 public:
-	BaseCartridge() = default;
+	BaseCartridge() noexcept;
 	BaseCartridge(const CartridgeDataV2 cartridge_data) noexcept;
 	virtual ~BaseCartridge() = default;
 
@@ -77,6 +78,8 @@ public:
 
 	virtual void SetExternalRam(std::vector<uint8_t>&& ram_data);
 	virtual const std::vector<uint8_t>& GetExternalRam();
+
+	void SetWriteRamCallback(std::function<void()> writeram_callback);
 
 	bool HasRAM() const;
 	bool HasBattery() const;
@@ -100,6 +103,7 @@ protected:
 	CartridgeDataV2 m_CartridgeData;
 
 	std::vector<uint8_t> m_ExternalRam;
+	std::function<void()> m_WriteRamCallback;
 
 private:
 	uint8_t m_TitleChecksum = 0;

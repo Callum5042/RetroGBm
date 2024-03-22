@@ -100,6 +100,42 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	m_PixelProcessor->Init();
 	m_Display->Init();
 
+	// Load RAM if cartridge has a battery
+	if (m_Cartridge->HasBattery())
+	{
+		{
+			std::string filename = m_Cartridge->GetCartridgeData().title + ".save";
+			std::ifstream battery(filename, std::ios::in | std::ios::binary);
+
+			// Discard is currently required it will break current battery saves if removed
+			uint8_t discard = 0;
+			battery.read(reinterpret_cast<char*>(&discard), 1);
+
+			std::vector<uint8_t> external_ram;
+			external_ram.resize(0x8000);
+
+			battery.read(reinterpret_cast<char*>(external_ram.data()), external_ram.size());
+			m_Cartridge->SetExternalRam(std::move(external_ram));
+
+			battery.close();
+		}
+
+		// Set write
+		m_Cartridge->SetWriteRamCallback([&]
+		{
+			std::string filename = m_Cartridge->GetCartridgeData().title + ".save";
+			std::ofstream battery(filename, std::ios::out | std::ios::binary);
+
+			uint8_t discard = 0;
+			battery.write(reinterpret_cast<char*>(&discard), 1);
+
+			std::vector<uint8_t> external_ram = m_Cartridge->GetExternalRam();
+			battery.write(reinterpret_cast<char*>(external_ram.data()), external_ram.size());
+
+			battery.close();
+		});
+	}
+
 	m_Running = true;
 	return true;
 }

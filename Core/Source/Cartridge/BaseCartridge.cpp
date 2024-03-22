@@ -8,12 +8,17 @@
 
 #include <cmath>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <numeric>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+BaseCartridge::BaseCartridge() noexcept
+{
+}
 
 BaseCartridge::BaseCartridge(const CartridgeDataV2 cartridge_data) noexcept : m_CartridgeData(cartridge_data)
 {
@@ -29,6 +34,11 @@ void BaseCartridge::SetExternalRam(std::vector<uint8_t>&& ram_data)
 const std::vector<uint8_t>& BaseCartridge::GetExternalRam()
 {
 	return m_ExternalRam;
+}
+
+void BaseCartridge::SetWriteRamCallback(std::function<void()> writeram_callback)
+{
+	m_WriteRamCallback = writeram_callback;
 }
 
 bool BaseCartridge::HasRAM() const
