@@ -726,7 +726,7 @@ void Emulator::SaveState(const std::string& filepath)
 	m_Cpu->SaveState(&file);
 	m_Timer->SaveState(&file);
 	m_Ram->SaveState(&file);
-	// m_Cartridge->SaveState(&file);
+	m_Cartridge->SaveState(&file);
 
 	m_Display->SaveState(&file);
 	m_PixelProcessor->SaveState(&file);
@@ -741,7 +741,7 @@ void Emulator::LoadState(const std::string& filepath)
 	m_Cpu->LoadState(&file);
 	m_Timer->LoadState(&file);
 	m_Ram->LoadState(&file);
-	// m_Cartridge->LoadState(&file);
+	m_Cartridge->LoadState(&file);
 
 	m_Display->LoadState(&file);
 	m_PixelProcessor->LoadState(&file);

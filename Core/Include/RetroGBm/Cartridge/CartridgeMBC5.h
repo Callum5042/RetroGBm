@@ -13,6 +13,9 @@ public:
 	uint8_t Read(uint16_t address) override;
 	void Write(uint16_t address, uint8_t value) override;
 
+	void SaveState(std::fstream* file);
+	void LoadState(std::fstream* file);
+
 	inline bool IsRamEnabled() const
 	{
 		return m_ExternalRamEnabled && !m_ExternalRam.empty();

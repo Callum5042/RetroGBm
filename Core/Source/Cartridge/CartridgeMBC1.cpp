@@ -101,3 +101,27 @@ void CartridgeMBC1::Write(uint16_t address, uint8_t value)
 		}
 	}
 }
+
+void CartridgeMBC1::SaveState(std::fstream* file)
+{
+	int ram_size = static_cast<int>(m_ExternalRam.size());
+	file->write(reinterpret_cast<const char*>(&ram_size), sizeof(ram_size));
+	file->write(reinterpret_cast<const char*>(m_ExternalRam.data()), m_ExternalRam.size() * sizeof(uint8_t));
+
+	file->write(reinterpret_cast<const char*>(&m_ExternalRamEnabled), sizeof(m_ExternalRamEnabled));
+	file->write(reinterpret_cast<const char*>(&m_RomBank), sizeof(m_RomBank));
+	file->write(reinterpret_cast<const char*>(&m_BankMode), sizeof(m_BankMode));
+}
+
+void CartridgeMBC1::LoadState(std::fstream* file)
+{
+	int ram_size = 0;
+	file->read(reinterpret_cast<char*>(&ram_size), sizeof(ram_size));
+
+	m_ExternalRam.resize(ram_size);
+	file->read(reinterpret_cast<char*>(m_ExternalRam.data()), m_ExternalRam.size() * sizeof(uint8_t));
+
+	file->read(reinterpret_cast<char*>(&m_ExternalRamEnabled), sizeof(m_ExternalRamEnabled));
+	file->read(reinterpret_cast<char*>(&m_RomBank), sizeof(m_RomBank));
+	file->read(reinterpret_cast<char*>(&m_BankMode), sizeof(m_BankMode));
+}

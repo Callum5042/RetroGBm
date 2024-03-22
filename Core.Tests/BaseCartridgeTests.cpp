@@ -29,6 +29,14 @@ namespace CoreTests
 		void Write(uint16_t address, uint8_t value) override
 		{
 		}
+
+		void SaveState(std::fstream* file) override
+		{
+		}
+
+		void LoadState(std::fstream* file) override
+		{
+		}
 	};
 
 	TEST_CLASS(CartridgeTests)

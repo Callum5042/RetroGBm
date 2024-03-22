@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <fstream>
 #include <memory>
 #include <string>
 #include <vector>
@@ -75,6 +76,9 @@ public:
 
 	virtual uint8_t Read(uint16_t address) = 0;
 	virtual void Write(uint16_t address, uint8_t value) = 0;
+
+	virtual void SaveState(std::fstream* file) = 0;
+	virtual void LoadState(std::fstream* file) = 0;
 
 	virtual void SetExternalRam(std::vector<uint8_t>&& ram_data);
 	virtual const std::vector<uint8_t>& GetExternalRam();

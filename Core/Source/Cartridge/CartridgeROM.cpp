@@ -49,3 +49,19 @@ void CartridgeROM::Write(uint16_t address, uint8_t value)
 		}
 	}
 }
+
+void CartridgeROM::SaveState(std::fstream* file)
+{
+	int ram_size = static_cast<int>(m_ExternalRam.size());
+	file->write(reinterpret_cast<const char*>(&ram_size), sizeof(ram_size));
+	file->write(reinterpret_cast<const char*>(m_ExternalRam.data()), m_ExternalRam.size() * sizeof(uint8_t));
+}
+
+void CartridgeROM::LoadState(std::fstream* file)
+{
+	int ram_size = 0;
+	file->read(reinterpret_cast<char*>(&ram_size), sizeof(ram_size));
+
+	m_ExternalRam.resize(ram_size);
+	file->read(reinterpret_cast<char*>(m_ExternalRam.data()), m_ExternalRam.size() * sizeof(uint8_t));
+}
