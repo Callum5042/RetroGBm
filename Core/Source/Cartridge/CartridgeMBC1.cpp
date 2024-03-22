@@ -3,6 +3,7 @@
 
 CartridgeMBC1::CartridgeMBC1(CartridgeDataV2 cartridge_data) : BaseCartridge(cartridge_data)
 {
+    m_ExternalRam.resize(cartridge_data.ram_size);
 }
 
 uint8_t CartridgeMBC1::Read(uint16_t address)
@@ -27,7 +28,8 @@ uint8_t CartridgeMBC1::Read(uint16_t address)
         if (m_BankMode == BankMode::ROM)
         {
             uint8_t bank = m_RomBank;
-            return m_CartridgeData.data[(address - 0x4000) + (0x4000 * bank)];
+            int offset = ((address - 0x4000) + (0x4000 * bank)) % m_CartridgeData.data.size();
+            return m_CartridgeData.data[offset];
         }
         else if (m_BankMode == BankMode::RAM)
         {
@@ -79,6 +81,21 @@ void CartridgeMBC1::Write(uint16_t address, uint8_t value)
     else if (address >= 0x6000 && address <= 0x7FFF)
     {
         m_BankMode = static_cast<BankMode>(value & 0x1);
+    }
+    else if (address >= 0xA000 && address <= 0xBFFF)
+    {
+        if (this->IsRamEnabled())
+        {
+            if (m_BankMode == BankMode::ROM)
+            {
+                m_ExternalRam[address - 0xA000] = value;
+            }
+            else if (m_BankMode == BankMode::RAM)
+            {
+                uint8_t bank = (m_RomBank >> 6);
+                m_ExternalRam[(address - 0xA000) + (bank * 0x2000)] = value;
+            }
+        }
     }
 }
  

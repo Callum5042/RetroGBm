@@ -3,6 +3,7 @@
 
 CartridgeMBC5::CartridgeMBC5(CartridgeDataV2 cartridge_data) : BaseCartridge(cartridge_data)
 {
+    m_ExternalRam.resize(cartridge_data.ram_size);
 }
 
 uint8_t CartridgeMBC5::Read(uint16_t address)
@@ -13,13 +14,16 @@ uint8_t CartridgeMBC5::Read(uint16_t address)
     }
     else if (address >= 0x4000 && address <= 0x7FFF)
     {
-        return m_CartridgeData.data[(address) + (0x4000 * m_RomBank)];
+        uint16_t bank_number = m_RomBank;
+        int offset = ((address - 0x4000) + (0x4000 * bank_number)) % m_CartridgeData.data.size();
+        return m_CartridgeData.data[offset];
     }
     else if (address >= 0xA000 && address <= 0xBFFF)
     {
         if (this->IsRamEnabled())
         {
-            return m_ExternalRam[(address - 0xA000) + (m_RamBank * 0x2000)];
+            int offset = ((address - 0xA000) + (m_RamBank * 0x2000)) % m_ExternalRam.size();
+            return m_ExternalRam[offset];
         }
     }
 
@@ -50,6 +54,14 @@ void CartridgeMBC5::Write(uint16_t address, uint8_t value)
         {
             // Only write values less than F to RAM bank
             m_RamBank = value;
+        }
+    }
+    else if (address >= 0xA000 && address <= 0xBFFF)
+    {
+        if (this->IsRamEnabled())
+        {
+            int offset = ((address - 0xA000) + (m_RamBank * 0x2000)) % m_ExternalRam.size();
+            m_ExternalRam[offset] = value;
         }
     }
 }
