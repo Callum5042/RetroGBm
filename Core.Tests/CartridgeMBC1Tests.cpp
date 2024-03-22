@@ -217,7 +217,7 @@ namespace CoreTests
 			cartridge.Write(address, 0xF);
 
 			// Assert
-			Assert::AreEqual(0xC1, static_cast<int>(cartridge.GetRomBank()));
+			Assert::AreEqual(0x61, static_cast<int>(cartridge.GetRomBank()));
 		}
 
 		TEST_METHOD(Write_BankModeValueIsBit0Is1_SetsBankModeToAdvance)
