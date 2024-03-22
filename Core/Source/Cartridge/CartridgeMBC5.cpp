@@ -4,6 +4,7 @@
 CartridgeMBC5::CartridgeMBC5(CartridgeDataV2 cartridge_data) : BaseCartridge(cartridge_data)
 {
     m_ExternalRam.resize(cartridge_data.ram_size);
+    std::fill(m_ExternalRam.begin(), m_ExternalRam.end(), 0x0);
 }
 
 uint8_t CartridgeMBC5::Read(uint16_t address)
@@ -34,7 +35,7 @@ void CartridgeMBC5::Write(uint16_t address, uint8_t value)
 {
     if (address >= 0x0 && address <= 0x1FFF)
     {
-        m_ExternalRamEnabled = value == 0xA;
+        m_ExternalRamEnabled = (value & 0xF) == 0xA;
     }
     else if (address >= 0x2000 && address <= 0x2FFF)
     {
@@ -46,7 +47,7 @@ void CartridgeMBC5::Write(uint16_t address, uint8_t value)
     {
         // Set bit 8
         m_RomBank &= ~0x100;
-        m_RomBank |= (value << 8);
+        m_RomBank |= ((value & 1) << 8);
     }
     else if (address >= 0x4000 && address <= 0x5FFF)
     {

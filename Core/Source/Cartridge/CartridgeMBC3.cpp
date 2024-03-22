@@ -34,7 +34,7 @@ void CartridgeMBC3::Write(uint16_t address, uint8_t value)
 {
     if (address >= 0x0 && address <= 0x1FFF)
     {
-        m_ExternalRamEnabled = value == 0xA;
+        m_ExternalRamEnabled = (value & 0xF) == 0xA;
         // TODO: Enable RTC here too (RTC)
     }
     else if (address >= 0x2000 && address <= 0x3FFF)

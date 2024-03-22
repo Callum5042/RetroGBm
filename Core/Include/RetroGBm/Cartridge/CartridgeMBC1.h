@@ -21,7 +21,7 @@ public:
 
 	inline bool IsRamEnabled() const
 	{
-		return m_ExternalRamEnabled;
+		return m_ExternalRamEnabled && !m_ExternalRam.empty();
 	}
 
 	inline uint8_t GetRomBank() const

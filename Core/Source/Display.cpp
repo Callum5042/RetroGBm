@@ -3,7 +3,6 @@
 #include "RetroGBm/Cpu.h"
 #include "RetroGBm/Emulator.h"
 #include "RetroGBm/Dma.h"
-#include "RetroGBm/Cartridge.h"
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 
 #include <iostream>

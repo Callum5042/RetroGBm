@@ -52,11 +52,34 @@ namespace CoreTests
 			data.cartridge_type = CartridgeTypeV2::MBC1_RAM;
 			data.data.resize(0x8000);
 
-			uint16_t address = 0x1FFF;
+			CartridgeMBC3 cartridge(data);
+			std::vector<uint8_t> ram;
+			ram.resize(0x8000);
+			cartridge.SetExternalRam(std::move(ram));
 
 			// Act
-			CartridgeMBC3 cartridge(data);
+			uint16_t address = 0x1FFF;
 			cartridge.Write(address, 0xA);
+
+			// Assert
+			Assert::IsTrue(cartridge.IsRamEnabled());
+		}
+
+		TEST_METHOD(Write_RamAddressLower4BitsA_EnableRam)
+		{
+			// Arrange
+			CartridgeDataV2 data;
+			data.cartridge_type = CartridgeTypeV2::MBC1_RAM;
+			data.data.resize(0x8000);
+
+			CartridgeMBC3 cartridge(data);
+			std::vector<uint8_t> ram;
+			ram.resize(0x8000);
+			cartridge.SetExternalRam(std::move(ram));
+
+			// Act
+			uint16_t address = 0x1FFF;
+			cartridge.Write(address, 0x6A);
 
 			// Assert
 			Assert::IsTrue(cartridge.IsRamEnabled());

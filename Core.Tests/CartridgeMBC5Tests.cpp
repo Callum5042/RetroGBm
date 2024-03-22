@@ -35,10 +35,11 @@ namespace CoreTests
 			data.data.resize(0x8000);
 			data.data[0x3FFF] = 0xAB;
 
-			uint16_t address = 0x7FFF;
+			CartridgeMBC5 cartridge(data);
+			cartridge.Write(0x2000, 0);
 
 			// Act
-			CartridgeMBC5 cartridge(data);
+			uint16_t address = 0x7FFF;
 			uint8_t result = cartridge.Read(address);
 
 			// Assert
@@ -98,9 +99,33 @@ namespace CoreTests
 			CartridgeDataV2 data;
 			CartridgeMBC5 cartridge(data);
 
+			std::vector<uint8_t> ram;
+			ram.resize(0x8000);
+			cartridge.SetExternalRam(std::move(ram));
+
 			// Act
 			uint16_t ram_enable_address = 0x0;
 			cartridge.Write(ram_enable_address, 0xA);
+
+			// Assert
+			Assert::IsTrue(cartridge.IsRamEnabled());
+		}
+
+		TEST_METHOD(Write_RamAddressLower4BitsA_EnableRam)
+		{
+			// Arrange
+			CartridgeDataV2 data;
+			data.cartridge_type = CartridgeTypeV2::MBC1_RAM;
+			data.data.resize(0x8000);
+
+			CartridgeMBC5 cartridge(data);
+			std::vector<uint8_t> ram;
+			ram.resize(0x8000);
+			cartridge.SetExternalRam(std::move(ram));
+
+			// Act
+			uint16_t address = 0x1FFF;
+			cartridge.Write(address, 0x6A);
 
 			// Assert
 			Assert::IsTrue(cartridge.IsRamEnabled());
@@ -166,6 +191,7 @@ namespace CoreTests
 			// Arrange
 			CartridgeDataV2 data;
 			CartridgeMBC5 cartridge(data);
+			cartridge.Write(0x2000, 0);
 
 			// Act
 			cartridge.Write(0x3000, 0x1);
@@ -244,6 +270,23 @@ namespace CoreTests
 			// Assert
 			Assert::AreEqual(1, static_cast<int>(cartridge.GetRomBank()));
 			Assert::AreEqual(0xAB, static_cast<int>(result));
+		}
+
+		TEST_METHOD(Write_RomBankUpper_OnlyReadBit0_SetsRomBank)
+		{
+			// Arrange
+			CartridgeDataV2 data;
+			data.data.resize(0x800000); // 8MB
+			data.data[0x4000] = 0xAB; // First byte of Bank 1
+
+			CartridgeMBC5 cartridge(data);
+			cartridge.Write(0x2000, 0);
+
+			// Act
+			cartridge.Write(0x3000, 0xFF);
+
+			// Assert
+			Assert::AreEqual(0x100, static_cast<int>(cartridge.GetRomBank()));
 		}
 	};
 }

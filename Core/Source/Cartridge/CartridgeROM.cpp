@@ -20,9 +20,9 @@ uint8_t CartridgeROM::Read(uint16_t address)
 	else if (address >= 0xA000 && address <= 0xBFFF)
 	{
 		// Read from RAM only if cartridge supports it
-		if (this->HasRAM())
+		if (this->HasRAM() && !m_ExternalRam.empty())
 		{
-			return m_ExternalRam[address - 0xA000];
+			return m_ExternalRam[(address - 0xA000) % m_ExternalRam.size()];
 		}
 	}
 
@@ -38,9 +38,9 @@ void CartridgeROM::Write(uint16_t address, uint8_t value)
 	else if (address >= 0xA000 && address <= 0xBFFF)
 	{
 		// Write to RAM only if cartridge supports it
-		if (this->HasRAM())
+		if (this->HasRAM() && !m_ExternalRam.empty())
 		{
-			m_ExternalRam[address - 0xA000] = value;
+			m_ExternalRam[(address - 0xA000) % m_ExternalRam.size()] = value;
 		}
 	}
 }

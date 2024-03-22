@@ -15,7 +15,7 @@ public:
 
 	inline bool IsRamEnabled() const
 	{
-		return m_ExternalRamEnabled;
+		return m_ExternalRamEnabled && !m_ExternalRam.empty();
 	}
 
 	inline uint16_t GetRomBank() const
@@ -30,6 +30,6 @@ public:
 
 protected:
 	bool m_ExternalRamEnabled = false;
-	uint16_t m_RomBank = 0;
+	uint16_t m_RomBank = 1;
 	uint16_t m_RamBank = 0;
 };

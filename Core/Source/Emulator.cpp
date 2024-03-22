@@ -12,7 +12,6 @@
 #include "RetroGBm/Ram.h"
 #include "RetroGBm/Dma.h"
 #include "RetroGBm/Timer.h"
-#include "RetroGBm/Cartridge.h"
 #include "RetroGBm/Joypad.h"
 #include "RetroGBm/Display.h"
 #include "RetroGBm/PixelProcessor.h"
@@ -634,7 +633,7 @@ void Emulator::WriteBus(uint16_t address, uint8_t value)
 	else if (address >= 0xFEA0 && address <= 0xFEFF)
 	{
 		// Unusable reserved
-		std::cout << "Write to unusable reserved\n";
+		// std::cout << "Write to unusable reserved\n";
 		return;
 	}
 	else if (address >= 0xFF00 && address <= 0xFF7F)

@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\RetroGBm\Cartridge.h" />
     <ClInclude Include="Include\RetroGBm\Cartridge\BaseCartridge.h" />
     <ClInclude Include="Include\RetroGBm\Cartridge\CartridgeMBC1.h" />
     <ClInclude Include="Include\RetroGBm\Cartridge\CartridgeMBC5.h" />
@@ -51,7 +50,6 @@
     <ClCompile Include="Source\Display.cpp" />
     <ClCompile Include="Source\Dma.cpp" />
     <ClCompile Include="Source\ExtendedInstructions.cpp" />
-    <ClCompile Include="Source\Cartridge.cpp" />
     <ClCompile Include="Source\Cpu.cpp" />
     <ClCompile Include="Source\Emulator.cpp" />
     <ClCompile Include="Source\Instructions.cpp" />
