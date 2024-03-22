@@ -68,6 +68,7 @@ struct CartridgeDataV2
 class BaseCartridge
 {
 public:
+	BaseCartridge() = default;
 	BaseCartridge(const CartridgeDataV2 cartridge_data) noexcept;
 	virtual ~BaseCartridge() = default;
 
@@ -88,6 +89,11 @@ public:
 	inline uint8_t GetTitleChecksum() const 
 	{ 
 		return m_TitleChecksum; 
+	}
+
+	inline bool IsColourModeDMG() const 
+	{ 
+		return m_CartridgeData.colour_mode == ColourModeV2::DMG; 
 	}
 
 protected:

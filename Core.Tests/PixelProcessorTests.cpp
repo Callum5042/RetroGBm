@@ -1,9 +1,9 @@
 #include "CppUnitTest.h"
+#include "MockCartridge.h"
 
 #include <RetroGBm/PixelProcessor.h>
 #include <RetroGBm/Display.h>
 #include <RetroGBm/Cpu.h>
-#include <RetroGBm/Cartridge.h>
 
 #include <cstdint>
 #include <stdexcept>
@@ -23,7 +23,7 @@ namespace CoreTests
 
 	static PixelProcessor BuildPixelProcessor()
 	{
-		Cartridge cartridge;
+		MockCartridge cartridge;
 		Cpu processor(&cartridge);
 
 		Display display;
@@ -32,7 +32,7 @@ namespace CoreTests
 
 	static PixelProcessor BuildPixelProcessor(Display* display)
 	{
-		Cartridge cartridge;
+		MockCartridge cartridge;
 		Cpu processor(&cartridge);
 
 		return PixelProcessor(display, &processor);

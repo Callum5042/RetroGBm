@@ -172,6 +172,8 @@ std::unique_ptr<BaseCartridge> LoadCartridgeFromMemory(const std::vector<uint8_t
 		case CartridgeTypeV2::MBC3:
 		case CartridgeTypeV2::MBC3_RAM:
 		case CartridgeTypeV2::MBC3_RAM_BATTERY:
+		case CartridgeTypeV2::MBC3_TIMER_BATTERY:
+		case CartridgeTypeV2::MBC3_TIMER_RAM_BATTERY:
 			return std::make_unique<CartridgeMBC3>(data);
 		case CartridgeTypeV2::MBC5:
 		case CartridgeTypeV2::MBC5_RAM:

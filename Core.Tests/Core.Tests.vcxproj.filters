@@ -16,6 +16,9 @@
     <Filter Include="Source Files\Cartridges">
       <UniqueIdentifier>{98a6d935-31d1-47b5-abd0-ed5d7271c91a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Mocks">
+      <UniqueIdentifier>{5a9ad09e-7adf-4dd9-bdab-7ae6002ec1d5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CpuTests.cpp">
@@ -57,5 +60,13 @@
     <ClCompile Include="CartridgeMBC5Tests.cpp">
       <Filter>Source Files\Cartridges</Filter>
     </ClCompile>
+    <ClCompile Include="MockCartridge.cpp">
+      <Filter>Source Files\Mocks</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="MockCartridge.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

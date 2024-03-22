@@ -1,8 +1,8 @@
 #include "CppUnitTest.h"
+#include "MockCartridge.h"
 
 #include <RetroGBm/Timer.h>
 #include <RetroGBm/Cpu.h>
-#include <RetroGBm/Cartridge.h>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -72,7 +72,7 @@ namespace CoreTests
 		TEST_METHOD(Tick_TmaOverflown_TimaIsZero_ResetNotYetDone)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu mockCpu(&cartridge);
 
 			Timer timer(&mockCpu);
@@ -95,7 +95,7 @@ namespace CoreTests
 		TEST_METHOD(Tick_TmaOverflown_TimaIsIncremented)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu mockCpu(&cartridge);
 
 			Timer timer(&mockCpu);
@@ -118,7 +118,7 @@ namespace CoreTests
 		TEST_METHOD(Tick_TmaOverflown_TimaIsZero_ResetIsDone4CyclesLater)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu mockCpu(&cartridge);
 
 			Timer timer(&mockCpu);

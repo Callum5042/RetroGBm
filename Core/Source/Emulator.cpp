@@ -6,6 +6,7 @@
 #include <vector>
 #include <thread>
 #include <mutex>
+#include <fstream>
 
 #include "RetroGBm/Cpu.h"
 #include "RetroGBm/Ram.h"
@@ -16,6 +17,8 @@
 #include "RetroGBm/Display.h"
 #include "RetroGBm/PixelProcessor.h"
 
+#include "RetroGBm/Cartridge/BaseCartridge.h"
+
 using namespace std::chrono_literals;
 
 Emulator* Emulator::Instance = nullptr;
@@ -24,7 +27,25 @@ Emulator::Emulator()
 {
 	Instance = this;
 
-	m_Cartridge = std::make_unique<Cartridge>();
+	// TODO: Do I still need this here?
+	m_Cpu = std::make_unique<Cpu>(m_Cartridge.get());
+	m_Timer = std::make_unique<Timer>();
+	m_Ram = std::make_unique<Ram>();
+	m_Display = std::make_unique<Display>();
+	m_Joypad = std::make_unique<Joypad>();
+
+	m_PixelProcessor = std::make_unique<PixelProcessor>(m_Display.get(), m_Cpu.get(), m_Cartridge.get());
+	m_Dma = std::make_unique<Dma>();
+
+	m_Context.cpu = m_Cpu.get();
+	m_Context.bus = this;
+}
+
+Emulator::Emulator(std::unique_ptr<BaseCartridge> cartridge)
+{
+	Instance = this;
+
+	m_Cartridge = std::move(cartridge);
 	m_Cpu = std::make_unique<Cpu>(m_Cartridge.get());
 	m_Timer = std::make_unique<Timer>();
 	m_Ram = std::make_unique<Ram>();
@@ -45,24 +66,36 @@ Emulator::~Emulator()
 
 bool Emulator::LoadRom(const std::string& path)
 {
-	if (!m_Cartridge->Load(const_cast<char*>(path.c_str())))
+	std::ifstream file(path, std::ios::binary);
+	if (!file.is_open())
 	{
-		std::cerr << "Unable to load cartidge\n";
 		return false;
 	}
 
-	m_Cpu->Init();
-	m_Timer->Init();
-	m_PixelProcessor->Init();
-	m_Display->Init();
+	std::vector<uint8_t> data;
+	data.clear();
+	data.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
 
-	m_Running = true;
-	return true;
+	return LoadRom(data);
 }
 
 bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 {
-	m_Cartridge->Load(filedata);
+	// Allocate memory
+	m_Cartridge = LoadCartridgeFromMemory(filedata);
+	m_Cpu = std::make_unique<Cpu>(m_Cartridge.get());
+	m_Timer = std::make_unique<Timer>();
+	m_Ram = std::make_unique<Ram>();
+	m_Display = std::make_unique<Display>();
+	m_Joypad = std::make_unique<Joypad>();
+
+	m_PixelProcessor = std::make_unique<PixelProcessor>(m_Display.get(), m_Cpu.get(), m_Cartridge.get());
+	m_Dma = std::make_unique<Dma>();
+
+	m_Context.cpu = m_Cpu.get();
+	m_Context.bus = this;
+
+	// Initialise subsystems
 	m_Cpu->Init();
 	m_Timer->Init();
 	m_PixelProcessor->Init();
@@ -653,12 +686,12 @@ uint16_t Emulator::StackPop16()
 void Emulator::SaveState(const std::string& filepath)
 {
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
-	std::fstream file(filepath + m_Cartridge->GetCartridgeInfo()->title + ".state", std::ios::binary | std::ios::out);
+	std::fstream file(filepath + m_Cartridge->GetCartridgeData().title + ".state", std::ios::binary | std::ios::out);
 
 	m_Cpu->SaveState(&file);
 	m_Timer->SaveState(&file);
 	m_Ram->SaveState(&file);
-	m_Cartridge->SaveState(&file);
+	// m_Cartridge->SaveState(&file);
 
 	m_Display->SaveState(&file);
 	m_PixelProcessor->SaveState(&file);
@@ -668,12 +701,12 @@ void Emulator::SaveState(const std::string& filepath)
 void Emulator::LoadState(const std::string& filepath)
 {
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
-	std::fstream file(filepath + m_Cartridge->GetCartridgeInfo()->title + ".state", std::ios::binary | std::ios::in);
+	std::fstream file(filepath + m_Cartridge->GetCartridgeData().title + ".state", std::ios::binary | std::ios::in);
 
 	m_Cpu->LoadState(&file);
 	m_Timer->LoadState(&file);
 	m_Ram->LoadState(&file);
-	m_Cartridge->LoadState(&file);
+	// m_Cartridge->LoadState(&file);
 
 	m_Display->LoadState(&file);
 	m_PixelProcessor->LoadState(&file);

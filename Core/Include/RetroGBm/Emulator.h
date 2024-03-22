@@ -17,6 +17,7 @@ class Joypad;
 class Display;
 class IBus;
 class PixelProcessor;
+class BaseCartridge;
 
 struct SoundContext
 {
@@ -63,6 +64,7 @@ class Emulator : public IBus
 {
 public:
 	Emulator();
+	Emulator(std::unique_ptr<BaseCartridge> cartridge);
 	virtual ~Emulator();
 
 	static Emulator* Instance;
@@ -106,7 +108,7 @@ public:
 	inline Dma* GetDma() { return m_Dma.get(); }
 	inline Ram* GetRam() { return m_Ram.get(); }
 	inline Joypad* GetJoypad() { return m_Joypad.get(); }
-	inline Cartridge* GetCartridge() { return m_Cartridge.get(); }
+	inline BaseCartridge* GetCartridge() { return m_Cartridge.get(); }
 
 	void* GetVideoBuffer();
 	int GetVideoPitch();
@@ -139,7 +141,7 @@ private:
 	std::unique_ptr<Cpu> m_Cpu;
 	std::unique_ptr<Timer> m_Timer;
 	std::unique_ptr<Ram> m_Ram;
-	std::unique_ptr<Cartridge> m_Cartridge;
+	std::unique_ptr<BaseCartridge> m_Cartridge;
 	std::unique_ptr<Display> m_Display;
 	std::unique_ptr<Dma> m_Dma;
 	std::unique_ptr<Joypad> m_Joypad;

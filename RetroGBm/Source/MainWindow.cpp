@@ -5,8 +5,9 @@
 
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Joypad.h>
-#include <RetroGBm/Cartridge.h>
+#include <RetroGBm/Cartridge/BaseCartridge.h>
 
+#include <format>
 #include <string>
 #include <vector>
 #include <shobjidl.h>
@@ -303,7 +304,7 @@ void MainWindow::OpenDialog()
 		m_Application->LoadRom(path);
 		EnableMenuItem(m_DebugMenuItem, m_MenuDebugCartridgeInfo, MF_ENABLED);
 
-		this->SetStatusBarTitle(m_Application->GetEmulator()->GetCartridge()->GetCartridgeInfo()->title);
+		this->SetStatusBarTitle(m_Application->GetEmulator()->GetCartridge()->GetCartridgeData().title);
 		this->SetStatusBarState("Playing");
 	}
 }

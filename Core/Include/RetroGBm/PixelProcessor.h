@@ -10,7 +10,7 @@
 
 class Cpu;
 class Display;
-class Cartridge;
+class BaseCartridge;
 
 struct PixelProcessorContext
 {
@@ -31,12 +31,12 @@ class PixelProcessor
 {
 	Display* m_Display = nullptr;
 	Cpu* m_Cpu = nullptr;
-	Cartridge* m_Cartridge = nullptr;
+	BaseCartridge* m_Cartridge = nullptr;
 
 public:
 	PixelProcessor(Display* display);
 	PixelProcessor(Display* display, Cpu* cpu);
-	PixelProcessor(Display* display, Cpu* cpu, Cartridge* cartridge);
+	PixelProcessor(Display* display, Cpu* cpu, BaseCartridge* cartridge);
 
 	void Init();
 	void Tick();

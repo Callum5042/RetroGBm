@@ -1,8 +1,10 @@
 #include "CppUnitTest.h"
+#include "MockCartridge.h"
 
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Instructions.h>
-#include <RetroGBm/Cartridge.h>
+#include <RetroGBm/Cartridge/BaseCartridge.h>
+#include <RetroGBm/Cartridge/CartridgeROM.h>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -279,12 +281,13 @@ namespace CoreTests
 		TEST_METHOD(LoadN8_SetRegisterToBusValue)
 		{
 			// Arrange
-			Emulator emulator;
+			CartridgeDataV2 cartridge_data;
+			cartridge_data.data.resize(0x3FFF);
+			cartridge_data.data[0x33] = 0xA;
+
+			Emulator emulator(std::make_unique<CartridgeROM>(cartridge_data));
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_D, 0x0);
 			emulator.GetCpu()->ProgramCounter = 0x32;
-
-			const_cast<CartridgeInfo*>(emulator.GetCartridge()->GetCartridgeInfo())->data.resize(0x3FFF);
-			const_cast<CartridgeInfo*>(emulator.GetCartridge()->GetCartridgeInfo())->data[0x33] = 0xA;
 
 			// Act
 			Op::LoadN8(emulator.GetContext(), RegisterType8::REG_D);
@@ -296,12 +299,14 @@ namespace CoreTests
 		TEST_METHOD(StoreN8_SetValuePointerToAtBusToBusValue)
 		{
 			// Arrange
-			Emulator emulator;
+			CartridgeDataV2 cartridge_data;
+			cartridge_data.data.resize(0x3FFF);
+			cartridge_data.data[0x33] = 0xA;
+
+			Emulator emulator(std::make_unique<CartridgeROM>(cartridge_data));
 			emulator.GetCpu()->SetRegister(RegisterType16::REG_HL, 0xC000);
 			emulator.GetCpu()->ProgramCounter = 0x32;
 
-			const_cast<CartridgeInfo*>(emulator.GetCartridge()->GetCartridgeInfo())->data.resize(0xFFFF);
-			const_cast<CartridgeInfo*>(emulator.GetCartridge()->GetCartridgeInfo())->data[0x33] = 0xA;
 			emulator.WriteBus(0xC000, 0x0);
 
 			// Act
@@ -347,14 +352,15 @@ namespace CoreTests
 		TEST_METHOD(ReturnInterrupt_EnableMasterInterruptsImmediately)
 		{
 			// Arrange
-			Emulator emulator;
+			CartridgeDataV2 cartridge_data;
+			cartridge_data.data.resize(0x3FFF);
+			cartridge_data.data[0x0] = 0xAA;
+			cartridge_data.data[0x1] = 0xBB;
+
+			Emulator emulator(std::make_unique<CartridgeROM>(cartridge_data));
 			emulator.GetCpu()->ProgramCounter = 0x32;
 			emulator.GetCpu()->StackPointer = 0x0;
 			emulator.GetCpu()->m_InterruptMasterFlag = false;
-
-			const_cast<CartridgeInfo*>(emulator.GetCartridge()->GetCartridgeInfo())->data.resize(0x2);
-			const_cast<CartridgeInfo*>(emulator.GetCartridge()->GetCartridgeInfo())->data[0x0] = 0xAA;
-			const_cast<CartridgeInfo*>(emulator.GetCartridge()->GetCartridgeInfo())->data[0x1] = 0xBB;
 
 			// Act
 			Op::ReturnInterrupt(emulator.GetContext());
