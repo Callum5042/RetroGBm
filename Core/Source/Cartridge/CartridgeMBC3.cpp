@@ -23,7 +23,7 @@ uint8_t CartridgeMBC3::Read(uint16_t address)
         }
     }
 
-    return 0;
+    return 0xFF;
 }
 
 void CartridgeMBC3::Write(uint16_t address, uint8_t value)

@@ -194,7 +194,8 @@ namespace CoreTests
 			uint8_t result = cartridge.Read(address);
 
 			// Assert
-			Assert::AreEqual(0x0, static_cast<int>(result));
+			Assert::AreNotEqual(0xAB, static_cast<int>(result));
+			Assert::AreEqual(0xFF, static_cast<int>(result));
 		}
 
 		TEST_METHOD(Write_AddressIsRamAndRamIsEnabled_WritesToRam)
