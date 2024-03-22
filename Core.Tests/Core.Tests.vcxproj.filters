@@ -51,5 +51,11 @@
     <ClCompile Include="CartridgeMBC1Tests.cpp">
       <Filter>Source Files\Cartridges</Filter>
     </ClCompile>
+    <ClCompile Include="CartridgeMBC3Tests.cpp">
+      <Filter>Source Files\Cartridges</Filter>
+    </ClCompile>
+    <ClCompile Include="CartridgeMBC5Tests.cpp">
+      <Filter>Source Files\Cartridges</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
