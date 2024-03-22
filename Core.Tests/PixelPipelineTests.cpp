@@ -1,7 +1,7 @@
 #include "CppUnitTest.h"
+#include "MockCartridge.h"
 
 #include <RetroGBm/Cpu.h>
-#include <RetroGBm/Cartridge.h>
 #include <RetroGBm/Display.h>
 #include <RetroGBm/PixelPipeline.h>
 #include <RetroGBm/PixelProcessor.h>
@@ -16,7 +16,7 @@ namespace CoreTests
 
 	static PixelPipeline BuildPixelPipeline()
 	{
-		Cartridge cartidge;
+		MockCartridge cartidge;
 		Cpu _cpu(&cartidge);
 
 		Display* display = new Display();

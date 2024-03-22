@@ -5,7 +5,7 @@
 #include <cstdint>
 
 class Display;
-class Cartridge;
+class BaseCartridge;
 class PixelProcessor;
 
 enum class FetchState
@@ -81,10 +81,10 @@ class PixelPipeline
 {
 	PixelProcessor* m_PixelProcessor = nullptr;
 	Display* m_Display = nullptr;
-	Cartridge* m_Cartridge = nullptr;
+	BaseCartridge* m_Cartridge = nullptr;
 
 public:
-	PixelPipeline(PixelProcessor* ppu, Display* display, Cartridge* cartridge);
+	PixelPipeline(PixelProcessor* ppu, Display* display, BaseCartridge* cartridge);
 	virtual ~PixelPipeline() = default;
 
 	void PipelineProcess();

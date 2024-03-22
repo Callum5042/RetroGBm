@@ -166,10 +166,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BaseCartridgeTests.cpp" />
+    <ClCompile Include="CartridgeMBC1Tests.cpp" />
+    <ClCompile Include="CartridgeMBC3Tests.cpp" />
+    <ClCompile Include="CartridgeMBC5Tests.cpp" />
+    <ClCompile Include="CartridgeROMTests.cpp" />
     <ClCompile Include="CpuTests.cpp" />
     <ClCompile Include="DisplayTests.cpp" />
     <ClCompile Include="InstructionsTests.cpp" />
     <ClCompile Include="JoypadTests.cpp" />
+    <ClCompile Include="MockCartridge.cpp" />
     <ClCompile Include="PixelPipelineTests.cpp" />
     <ClCompile Include="PixelProcessorTests.cpp" />
     <ClCompile Include="RamTests.cpp" />
@@ -179,6 +185,9 @@
     <ProjectReference Include="..\Core\Core.vcxproj">
       <Project>{7f1d2fb0-4646-4440-a67b-6aff16aade0e}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="MockCartridge.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

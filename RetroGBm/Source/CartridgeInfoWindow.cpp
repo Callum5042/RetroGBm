@@ -2,7 +2,7 @@
 #include "Application.h"
 
 #include <RetroGBm/Emulator.h>
-#include <RetroGBm/Cartridge.h>
+#include <RetroGBm/Cartridge/BaseCartridge.h>
 
 // Set theme
 // https://docs.microsoft.com/en-gb/windows/win32/controls/cookbook-overview?redirectedfrom=MSDN
@@ -64,17 +64,18 @@ void CartridgeInfoWindow::Create(const std::string& title, int width, int height
 	FontCreate();
 	CreateGroupBox(width, height);
 
-	Cartridge* cartridge = m_Application->GetEmulator()->GetCartridge();
-	const CartridgeInfo* info = cartridge->GetCartridgeInfo();
+	BaseCartridge* cartridge = m_Application->GetEmulator()->GetCartridge();
+	const CartridgeDataV2* info = &cartridge->GetCartridgeData();
 
 	std::vector<InfoModel> content;
 	content.push_back({ L"Title", ConvertToWString(info->title) });
-	content.push_back({ L"Cartridge", ConvertToWString(info->header.cartridge_type) });
-	content.push_back({ L"Manufacturer", ConvertToWString(info->header.manufacturer_code) });
-	content.push_back({ L"Old Licensee", ConvertToWString(info->header.old_licensee) });
-	content.push_back({ L"ROM size", std::to_wstring(info->header.rom_size) });
-	content.push_back({ L"RAM size", std::to_wstring(info->header.ram_size) });
-	content.push_back({ L"Colour mode", ConvertToWString(cartridge->GetColourMode()) });
+	content.push_back({ L"Cartridge", ConvertToWString(CartridgeTypeToString(info->cartridge_type)) });
+	content.push_back({ L"Manufacturer", ConvertToWString(info->manufacturer_code) });
+	// content.push_back({ L"Old Licensee", ConvertToWString(info->old_licensee) });
+	content.push_back({ L"Old Licensee", ConvertToWString("N/A") });
+	content.push_back({ L"ROM size", std::to_wstring(info->rom_size) });
+	content.push_back({ L"RAM size", std::to_wstring(info->ram_size) });
+	content.push_back({ L"Colour mode", ConvertToWString(ColourModeToString(info->colour_mode)) });
 	CreateContentModel(content, width);
 }
 

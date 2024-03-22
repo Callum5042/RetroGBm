@@ -2,7 +2,7 @@
 #include "RetroGBm/PixelProcessor.h"
 #include "RetroGBm/Display.h"
 #include "RetroGBm/Cpu.h"
-#include "RetroGBm/Cartridge.h"
+#include "RetroGBm/Cartridge/BaseCartridge.h"
 #include "RetroGBm/PixelPipeline.h"
 
 #include <stdexcept>
@@ -22,7 +22,7 @@ PixelProcessor::PixelProcessor(Display* display, Cpu* cpu) : m_Display(display),
 	Init();
 }
 
-PixelProcessor::PixelProcessor(Display* display, Cpu* cpu, Cartridge* cartridge) : m_Display(display), m_Cpu(cpu), m_Cartridge(cartridge)
+PixelProcessor::PixelProcessor(Display* display, Cpu* cpu, BaseCartridge* cartridge) : m_Display(display), m_Cpu(cpu), m_Cartridge(cartridge)
 {
 	Init();
 }

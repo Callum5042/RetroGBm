@@ -5,7 +5,7 @@
 #include <fstream>
 
 struct EmulatorContext;
-class Cartridge;
+class BaseCartridge;
 
 enum class RegisterType8
 {
@@ -57,11 +57,11 @@ inline InterruptFlag operator&(int a, InterruptFlag b)
 
 class Cpu
 {
-	Cartridge* m_Cartridge = nullptr;
+	BaseCartridge* m_Cartridge = nullptr;
 
 public:
 	Cpu();
-	Cpu(Cartridge* cartridge);
+	Cpu(BaseCartridge* cartridge);
 	virtual ~Cpu() = default;
 
 	void Init();

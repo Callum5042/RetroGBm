@@ -1,7 +1,7 @@
 #include "CppUnitTest.h"
+#include "MockCartridge.h"
 
 #include <RetroGBm/Cpu.h>
-#include <RetroGBm/Cartridge.h>
 
 #include <vector>
 #include <tuple>
@@ -16,7 +16,7 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegA_ValueIs100)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 
 			// Act
@@ -30,7 +30,7 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegF_ValueIs100_LowerNibbleOfByteNotSet)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 
 			// Act
@@ -44,7 +44,7 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegB_ValueIs100)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 
 			// Act
@@ -58,7 +58,7 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegC_ValueIs100)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 
 			// Act
@@ -72,7 +72,7 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegD_ValueIs100)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 
 			// Act
@@ -86,7 +86,7 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegE_ValueIs100)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 
 			// Act
@@ -100,7 +100,7 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegH_ValueIs100)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 
 			// Act
@@ -114,7 +114,7 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegL_ValueIs100)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 
 			// Act
@@ -128,7 +128,7 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegBC_SetRegisterB_SRegisterC)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 
 			uint16_t data = 12000;
@@ -152,7 +152,7 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegDE_SetRegisterD_SRegisterE)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 
 			uint16_t data = 12000;
@@ -176,7 +176,7 @@ namespace CoreTests
 		TEST_METHOD(SetRegister_RegHL_SetRegisterH_SRegisterL)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 
 			uint16_t data = 12000;
@@ -200,7 +200,7 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagZero_FlagIsTrue)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 
 			// Act
@@ -217,7 +217,7 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagZero_FlagIsFalse)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 
 			// Act
@@ -234,7 +234,7 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagZero_RegisterFHasData_FlagIsTrue)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 			_cpu.SetRegister(RegisterType8::REG_F, 255);
 
@@ -249,7 +249,7 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagSubtraction_FlagIsTrue)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 
 			// Act
@@ -266,7 +266,7 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagSubtraction_FlagIsFalse)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 			_cpu.SetRegister(RegisterType8::REG_F, 0x0);
 
@@ -284,7 +284,7 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagSubtraction_RegisterFHasData_FlagIsTrue)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 			_cpu.SetRegister(RegisterType8::REG_F, 255);
 
@@ -299,7 +299,7 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagHalfCarry_FlagIsTrue)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 
 			// Act
@@ -316,7 +316,7 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagHalfCarry_FlagIsFalse)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 			_cpu.SetRegister(RegisterType8::REG_F, 0x0);
 
@@ -334,7 +334,7 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagHalfCarry_RegisterFHasData_FlagIsTrue)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 			_cpu.SetRegister(RegisterType8::REG_F, 255);
 
@@ -349,7 +349,7 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagCarry_FlagIsTrue)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 
 			// Act
@@ -366,7 +366,7 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagCarry_FlagIsFalse)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 			_cpu.SetRegister(RegisterType8::REG_F, 0x0);
 
@@ -384,7 +384,7 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagIsSet_SetToFalse)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 			_cpu.SetRegister(RegisterType8::REG_F, 0x0);
 			_cpu.SetFlag(CpuFlag::Carry, true);
@@ -403,7 +403,7 @@ namespace CoreTests
 		TEST_METHOD(SetFlag_FlagCarry_RegisterFHasData_FlagIsTrue)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu _cpu(&cartridge);
 			_cpu.SetRegister(RegisterType8::REG_F, 255);
 
@@ -517,7 +517,7 @@ namespace CoreTests
 		TEST_METHOD(SetInterrupt_InterruptFlagIsMaskedxE0_ReturnsE1)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu cpu(&cartridge);
 
 			// Act
@@ -531,7 +531,7 @@ namespace CoreTests
 		TEST_METHOD(DisableMasterInterrupts_InterruptsMasterWasEnabled_SetsEnablingFlagAndMasterFlagToFalse)
 		{
 			// Arrange
-			Cartridge cartridge;
+			MockCartridge cartridge;
 			Cpu cpu(&cartridge);
 
 			cpu.EnableMasterInterrupts();

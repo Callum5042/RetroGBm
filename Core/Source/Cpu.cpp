@@ -2,7 +2,7 @@
 #include "RetroGBm/Cpu.h"
 #include "RetroGBm/Emulator.h"
 #include "RetroGBm/Instructions.h"
-#include "RetroGBm/Cartridge.h"
+#include "RetroGBm/Cartridge/BaseCartridge.h"
 
 #include <exception>
 #include <sstream>
@@ -12,7 +12,7 @@ Cpu::Cpu()
 	m_Cartridge = Emulator::Instance->GetCartridge();
 }
 
-Cpu::Cpu(Cartridge* cartridge) : m_Cartridge(cartridge)
+Cpu::Cpu(BaseCartridge* cartridge) : m_Cartridge(cartridge)
 {
 }
 
@@ -32,8 +32,8 @@ void Cpu::Init()
 		SetRegister(RegisterType8::REG_H, 0x0);
 		SetRegister(RegisterType8::REG_L, 0x7C);
 
-		const CartridgeInfo* info = m_Cartridge->GetCartridgeInfo();
-		if (info->header.old_licensee_code == 0x01 || (info->header.old_licensee_code == 0x33 && info->header.new_licensee_code == 0x01))
+		const CartridgeDataV2 info = m_Cartridge->GetCartridgeData();
+		if (info.old_licensee_code == 0x01 || (info.old_licensee_code == 0x33 && info.new_licensee_code == 0x01))
 		{
 			uint8_t checksum = m_Cartridge->GetTitleChecksum();
 			SetRegister(RegisterType8::REG_B, checksum);
