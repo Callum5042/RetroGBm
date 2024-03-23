@@ -4,6 +4,7 @@
 CartridgeMBC1::CartridgeMBC1(CartridgeDataV2 cartridge_data) : BaseCartridge(cartridge_data)
 {
 	m_ExternalRam.resize(cartridge_data.ram_size);
+	std::fill(m_ExternalRam.begin(), m_ExternalRam.end(), 0x0);
 }
 
 uint8_t CartridgeMBC1::Read(uint16_t address)
@@ -54,6 +55,12 @@ void CartridgeMBC1::Write(uint16_t address, uint8_t value)
 	if (address >= 0 && address <= 0x1FFF)
 	{
 		m_ExternalRamEnabled = (value & 0xF) == 0xA;
+
+		// Save to file each time we disable the ram
+		if (this->HasBattery() && !m_ExternalRamEnabled)
+		{
+			m_WriteRamCallback();
+		}
 	}
 	else if (address >= 0x2000 && address <= 0x3FFF)
 	{
@@ -92,11 +99,6 @@ void CartridgeMBC1::Write(uint16_t address, uint8_t value)
 				uint8_t bank = (m_RomBank >> 5);
 				int offset = ((address - 0xA000) + (bank * 0x2000)) % m_ExternalRam.size();
 				m_ExternalRam[offset] = value;
-			}
-
-			if (this->HasBattery())
-			{
-				m_WriteRamCallback();
 			}
 		}
 	}

@@ -112,7 +112,7 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 			battery.read(reinterpret_cast<char*>(&discard), 1);
 
 			std::vector<uint8_t> external_ram;
-			external_ram.resize(0x8000);
+			external_ram.resize(m_Cartridge->GetExternalRam().size());
 
 			battery.read(reinterpret_cast<char*>(external_ram.data()), external_ram.size());
 			m_Cartridge->SetExternalRam(std::move(external_ram));
