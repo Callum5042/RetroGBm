@@ -4,6 +4,7 @@
 CartridgeMBC3::CartridgeMBC3(CartridgeDataV2 cartridge_data) : BaseCartridge(cartridge_data)
 {
     m_ExternalRam.resize(cartridge_data.ram_size);
+    std::fill(m_ExternalRam.begin(), m_ExternalRam.end(), 0x0);
 }
 
 uint8_t CartridgeMBC3::Read(uint16_t address)
@@ -36,6 +37,12 @@ void CartridgeMBC3::Write(uint16_t address, uint8_t value)
     {
         m_ExternalRamEnabled = (value & 0xF) == 0xA;
         // TODO: Enable RTC here too (RTC)
+
+		// Save to file each time we disable the ram
+        if (this->HasBattery() && !m_ExternalRamEnabled)
+        {
+            m_WriteRamCallback();
+        }
     }
     else if (address >= 0x2000 && address <= 0x3FFF)
     {
@@ -64,11 +71,6 @@ void CartridgeMBC3::Write(uint16_t address, uint8_t value)
         {
             int offset = ((address - 0xA000) + (m_RamBank * 0x2000)) % m_ExternalRam.size();
             m_ExternalRam[offset] = value;
-
-            if (this->HasBattery())
-            {
-                m_WriteRamCallback();
-            }
         }
     }
 }
