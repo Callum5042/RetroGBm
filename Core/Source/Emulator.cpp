@@ -147,7 +147,7 @@ void Emulator::Stop()
 
 void Emulator::SetSpeedMode()
 {
-	if (!m_Cartridge->IsColourModeDMG())
+	if (m_Cartridge->GetCartridgeData().colour_mode == ColourModeV2::CGB)
 	{
 		if ((m_DoubleSpeedMode & 0x1) == 1)
 		{
@@ -366,7 +366,12 @@ uint8_t Emulator::ReadIO(uint16_t address)
 	}
 	else if (address == 0xFF4D)
 	{
-		return m_DoubleSpeedMode;
+		if (m_Cartridge->GetCartridgeData().colour_mode == ColourModeV2::CGB)
+		{
+			return m_DoubleSpeedMode;
+		}
+
+		return 0xFF;
 	}
 	else if (address == 0xFF4F)
 	{
@@ -487,7 +492,11 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	}
 	else if (address == 0xFF4D)
 	{
-		m_DoubleSpeedMode |= value & 0x1;
+		if (m_Cartridge->GetCartridgeData().colour_mode == ColourModeV2::CGB)
+		{
+			m_DoubleSpeedMode |= value & 0x1;
+		}
+
 		return;
 	}
 	else if (address == 0xFF4F)
