@@ -39,12 +39,6 @@
     <ClCompile Include="DisplayTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PixelProcessorTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PixelPipelineTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="BaseCartridgeTests.cpp">
       <Filter>Source Files\Cartridges</Filter>
     </ClCompile>
@@ -68,5 +62,8 @@
     <ClInclude Include="MockCartridge.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClCompile Include="PpuTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

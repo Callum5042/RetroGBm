@@ -8,9 +8,6 @@
 
 class Ppu;
 
-const uint16_t ScreenResolutionY = 144;
-const uint16_t ScreenResolutionX = 160;
-
 struct DisplayContext
 {
 	// Registers
@@ -70,6 +67,8 @@ struct FixedPalette
 
 class Display
 {
+	friend class Ppu;
+
 public:
 	Display() = default;
 	virtual ~Display() = default;
@@ -106,11 +105,6 @@ public:
 	uint32_t GetColourFromBackgroundPalette(uint8_t palette, uint8_t index);
 	uint32_t GetColourFromObjectPalette(uint8_t palette, uint8_t index);
 
-	bool IsOamAccessible();
-	bool IsGbcPalettesAccessible();
-
-	bool IsWindowVisible();
-
 	// Save state
 	void SaveState(std::fstream* file);
 	void LoadState(std::fstream* file);
@@ -118,15 +112,8 @@ public:
 
 	std::vector<uint8_t> m_BackgroundColourPalettes;
 
-	void SetVideoBufferPixel(int x, int y, uint32_t data);
-	void* GetVideoBuffer();
-
 private:
 	DisplayContext m_Context = {};
-
-	// Display screen
-	std::vector<uint32_t> m_VideoBuffer;
-	std::vector<uint32_t> m_BlankVideoBuffer;
 
 	// CGB Palettes
 	uint8_t m_BackgroundPaletteIndex = 0;

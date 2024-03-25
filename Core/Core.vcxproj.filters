@@ -92,6 +92,9 @@
     <ClCompile Include="Source\Display.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Ppu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Dma.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

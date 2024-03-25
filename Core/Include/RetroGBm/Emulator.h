@@ -9,6 +9,7 @@
 #include <mutex>
 
 class Cpu;
+class Ppu;
 class Ram;
 class Dma;
 class Timer;
@@ -16,28 +17,7 @@ class Cartridge;
 class Joypad;
 class Display;
 class IBus;
-class PixelProcessor;
 class BaseCartridge;
-
-struct SoundContext
-{
-	// Sound
-	uint8_t audio_master_control = 0;
-	uint8_t audio_sound_panning = 0;
-	uint8_t audio_master_volume = 0;
-
-	// Channel 1
-	uint8_t channel1_sweep = 0;
-	uint8_t channel1_length_timer = 0;
-	uint8_t channel1_period_low = 0;
-	uint8_t channel1_period_high = 0;
-
-	// Channel 1
-	uint8_t channel2_pulse1 = 0;
-	uint8_t channel2_pulse2 = 0;
-	uint8_t channel2_pulse3 = 0;
-	uint8_t channel2_pulse4 = 0;
-};
 
 struct EmulatorContext
 {
@@ -46,8 +26,6 @@ struct EmulatorContext
 
 	uint64_t ticks = 0;
 	int cycles = 0;
-
-	SoundContext sound;
 };
 
 class IBus
@@ -104,7 +82,7 @@ public:
 
 	inline Cpu* GetCpu() { return m_Cpu.get(); }
 	inline Display* GetDisplay() { return m_Display.get(); }
-	inline PixelProcessor* GetPpu() { return m_PixelProcessor.get(); }
+	inline Ppu* GetPpu() { return m_Ppu.get(); }
 	inline Dma* GetDma() { return m_Dma.get(); }
 	inline Ram* GetRam() { return m_Ram.get(); }
 	inline Joypad* GetJoypad() { return m_Joypad.get(); }
@@ -143,9 +121,9 @@ private:
 	std::unique_ptr<Ram> m_Ram;
 	std::unique_ptr<BaseCartridge> m_Cartridge;
 	std::unique_ptr<Display> m_Display;
+	std::unique_ptr<Ppu> m_Ppu;
 	std::unique_ptr<Dma> m_Dma;
 	std::unique_ptr<Joypad> m_Joypad;
-	std::unique_ptr<PixelProcessor> m_PixelProcessor;
 
 	bool m_Running = false;
 	bool m_Halted = false;

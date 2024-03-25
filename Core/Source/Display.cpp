@@ -6,9 +6,8 @@
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 
 #include <iostream>
+#include <Cartridge.h>
 #include <cstdint>
-#include <iostream>
-#include <stdexcept>
 
 namespace
 {
@@ -46,19 +45,12 @@ void Display::Init()
 	m_Context.wy = 0x0;
 	m_Context.wx = 0x0;
 
-	// Init display screen
-	m_VideoBuffer.resize(ScreenResolutionY * ScreenResolutionX);
-	std::fill(m_VideoBuffer.begin(), m_VideoBuffer.end(), 0x0);
-
-	m_BlankVideoBuffer.resize(ScreenResolutionY * ScreenResolutionX);
-	std::fill(m_BlankVideoBuffer.begin(), m_BlankVideoBuffer.end(), 0xFFFFFFFF);
-
 	// CGB palettes
 	m_BackgroundColourPalettes.resize(64);
-	std::fill(m_BackgroundColourPalettes.begin(), m_BackgroundColourPalettes.end(), 0xFF);
+	std::fill(m_BackgroundColourPalettes.begin(), m_BackgroundColourPalettes.end(), 0);
 
 	m_ObjectColourPalettes.resize(64);
-	std::fill(m_ObjectColourPalettes.begin(), m_ObjectColourPalettes.end(), 0xFF);
+	std::fill(m_ObjectColourPalettes.begin(), m_ObjectColourPalettes.end(), 0);
 
 	// Set default for palette 1
 	InitFixedPalettes();
@@ -70,24 +62,6 @@ void Display::Init()
 	SetFixedPalette(Emulator::Instance->GetCartridge()->GetTitleChecksum());
 }
 
-void Display::SetVideoBufferPixel(int x, int y, uint32_t data)
-{
-	int offset = x + (y * ScreenResolutionX);
-	m_VideoBuffer[offset] = data;
-}
-
-void* Display::GetVideoBuffer()
-{
-	if (IsLcdEnabled())
-	{
-		return m_VideoBuffer.data();
-	}
-	else
-	{
-		return m_BlankVideoBuffer.data();
-	}
-}
-
 uint8_t Display::Read(uint16_t address)
 {
 	switch (address)
@@ -96,13 +70,12 @@ uint8_t Display::Read(uint16_t address)
 			return m_Context.lcdc;
 		case 0xFF41:
 		{
-			// Bit 7 is unused and always returns '1'. Bits 0-2 return '0' when the LCD is off.
 			if (!IsLcdEnabled())
 			{
-				return (m_Context.stat & 0xF8) | (1 << 7);
+				return m_Context.stat & 0xFC;
 			}
 
-			return m_Context.stat | (1 << 7);
+			return m_Context.stat;
 		}
 		case 0xFF42:
 			return m_Context.scy;
@@ -110,10 +83,10 @@ uint8_t Display::Read(uint16_t address)
 			return m_Context.scx;
 		case 0xFF44:
 		{
-			/*if (!IsLcdEnabled())
+			if (!IsLcdEnabled())
 			{
 				return 0;
-			}*/
+			}
 
 			return m_Context.ly;
 		}
@@ -152,7 +125,7 @@ void Display::Write(uint16_t address, uint8_t value)
 			m_Context.lcdc = value;
 			return;
 		case 0xFF41:
-			m_Context.stat = (value & 0xF8);
+			m_Context.stat = value;
 			return;
 		case 0xFF42:
 			m_Context.scy = value;
@@ -161,7 +134,7 @@ void Display::Write(uint16_t address, uint8_t value)
 			m_Context.scx = value;
 			return;
 		case 0xFF44:
-			std::cout << "Attempted to write to LY (0xFF44) register: " << value << '\n';
+			m_Context.ly = value;
 			return;
 		case 0xFF45:
 			m_Context.lyc = value;
@@ -316,12 +289,8 @@ void Display::Write(uint16_t address, uint8_t value)
 	}
 	else if (address == 0xFF69)
 	{
-		if (GetLcdMode() != LcdMode::PixelTransfer || !IsLcdEnabled())
-		{
-			m_BackgroundPaletteData = value;
-			m_BackgroundColourPalettes[m_BackgroundPaletteAddress] = value;
-		}
-
+		m_BackgroundPaletteData = value;
+		m_BackgroundColourPalettes[m_BackgroundPaletteAddress] = value;
 		if (m_AutoIncrementBackgroundAddress)
 		{
 			m_BackgroundPaletteAddress = (m_BackgroundPaletteAddress + 1) & 0x3F;
@@ -339,12 +308,8 @@ void Display::Write(uint16_t address, uint8_t value)
 	}
 	else if (address == 0xFF6B)
 	{
-		if (GetLcdMode() != LcdMode::PixelTransfer || !IsLcdEnabled())
-		{
-			m_ObjectPaletteData = value;
-			m_ObjectColourPalettes[m_ObjectPaletteAddress] = value;
-		}
-
+		m_ObjectPaletteData = value;
+		m_ObjectColourPalettes[m_ObjectPaletteAddress] = value;
 		if (m_AutoIncrementObjectAddress)
 		{
 			m_ObjectPaletteAddress++;
@@ -739,45 +704,4 @@ void Display::SetFixedPalette(uint8_t hash)
 		m_ObjectColourPalettes[(palette * 8) + (3 * 2) + 0] = (colour3 & 0xFF);
 		m_ObjectColourPalettes[(palette * 8) + (3 * 2) + 1] = ((colour3 >> 8) & 0xFF);
 	}
-}
-
-bool Display::IsOamAccessible()
-{
-	LcdMode mode = GetLcdMode();
-	switch (mode)
-	{
-		case LcdMode::HBlank:
-		case LcdMode::VBlank:
-			return true;
-		case LcdMode::PixelTransfer:
-		case LcdMode::OAM:
-			return false;
-		default:
-			throw std::runtime_error("Unknown LcdMode in IsOamAccessible");
-	}
-}
-
-bool Display::IsGbcPalettesAccessible()
-{
-	LcdMode mode = GetLcdMode();
-	switch (mode)
-	{
-		case LcdMode::HBlank:
-		case LcdMode::VBlank:
-		case LcdMode::PixelTransfer:
-			return true;
-		case LcdMode::OAM:
-			return false;
-		default:
-			throw std::runtime_error("Unknown LcdMode in IsGbcPalettesAccessible");
-	}
-}
-
-bool Display::IsWindowVisible()
-{
-	return IsWindowEnabled()
-		&& m_Context.wx >= 0
-		&& m_Context.wx <= 166
-		&& m_Context.wy >= 0
-		&& m_Context.wy < ScreenResolutionY;
 }

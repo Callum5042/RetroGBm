@@ -58,6 +58,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">RetroGBm/Pch.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="Source\Ppu.cpp" />
     <ClCompile Include="Source\Ram.cpp" />
     <ClCompile Include="Source\Timer.cpp" />
   </ItemGroup>

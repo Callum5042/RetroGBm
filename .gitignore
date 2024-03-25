@@ -367,4 +367,3 @@ FodyWeavers.xsd
 *.gbc
 !testroms/*.gb
 !testroms/*.gbc
-*.sav
