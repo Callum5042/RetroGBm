@@ -641,12 +641,12 @@ void Emulator::LoadState(const std::string& filepath)
 
 void* Emulator::GetVideoBuffer()
 {
-	return m_Ppu->GetVideoBuffer();
+	return m_Display->GetVideoBuffer();
 }
 
 int Emulator::GetVideoPitch()
 {
-	return sizeof(uint32_t) * m_Ppu->ScreenResolutionX;
+	return sizeof(uint32_t) * m_Display->ScreenResolutionX;
 }
 
 void Emulator::SetBatteryPath(const std::string& path)

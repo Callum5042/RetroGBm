@@ -39,6 +39,12 @@ Display::Display(BaseCartridge* cartridge) : m_Cartridge(cartridge)
 
 void Display::Init()
 {
+	m_VideoBuffer.resize(ScreenResolutionY * ScreenResolutionX);
+	std::fill(m_VideoBuffer.begin(), m_VideoBuffer.end(), 0x0);
+
+	m_BlankVideoBuffer.resize(ScreenResolutionY * ScreenResolutionX);
+	std::fill(m_BlankVideoBuffer.begin(), m_BlankVideoBuffer.end(), 0xFFFFFFFF);
+
 	// Initialise registers to defaults (after bootrom)
 	m_Context.lcdc = 0x91;
 	m_Context.stat = 0x85;
@@ -712,4 +718,36 @@ void Display::SetFixedPalette(uint8_t hash)
 		m_ObjectColourPalettes[(palette * 8) + (3 * 2) + 0] = (colour3 & 0xFF);
 		m_ObjectColourPalettes[(palette * 8) + (3 * 2) + 1] = ((colour3 >> 8) & 0xFF);
 	}
+}
+
+bool Display::IsWindowVisible()
+{
+	return this->IsWindowEnabled()
+		&& this->m_Context.wx >= 0
+		&& this->m_Context.wx <= 166
+		&& this->m_Context.wy >= 0
+		&& this->m_Context.wy < ScreenResolutionY;
+}
+
+void* Display::GetVideoBuffer()
+{
+	if (this->IsLcdEnabled())
+	{
+		return m_VideoBuffer.data();
+	}
+	else
+	{
+		return m_BlankVideoBuffer.data();
+	}
+}
+
+int Display::GetVideoBufferSize()
+{
+	return m_VideoBuffer.size();
+}
+
+void Display::SetVideoBufferPixel(int x, int y, uint32_t data)
+{
+	int offset = x + (y * ScreenResolutionX);
+	m_VideoBuffer[offset] = data;
 }
