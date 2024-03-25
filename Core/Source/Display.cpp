@@ -713,3 +713,12 @@ void Display::SetFixedPalette(uint8_t hash)
 		m_ObjectColourPalettes[(palette * 8) + (3 * 2) + 1] = ((colour3 >> 8) & 0xFF);
 	}
 }
+
+bool Display::IsWindowVisible()
+{
+	return this->IsWindowEnabled()
+		&& this->m_Context.wx >= 0
+		&& this->m_Context.wx <= 166
+		&& this->m_Context.wy >= 0
+		&& this->m_Context.wy < ScreenResolutionY;
+}

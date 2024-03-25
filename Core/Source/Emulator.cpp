@@ -646,7 +646,7 @@ void* Emulator::GetVideoBuffer()
 
 int Emulator::GetVideoPitch()
 {
-	return sizeof(uint32_t) * m_Ppu->ScreenResolutionX;
+	return sizeof(uint32_t) * m_Display->ScreenResolutionX;
 }
 
 void Emulator::SetBatteryPath(const std::string& path)

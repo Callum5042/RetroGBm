@@ -112,6 +112,10 @@ public:
 	void SaveState(std::fstream* file);
 	void LoadState(std::fstream* file);
 
+	bool IsWindowVisible();
+
+	const uint16_t ScreenResolutionY = 144;
+	const uint16_t ScreenResolutionX = 160;
 
 	std::vector<uint8_t> m_BackgroundColourPalettes;
 

@@ -122,9 +122,6 @@ public:
 
 	inline PpuContext* GetContext() { return &m_Context; }
 
-	const uint16_t ScreenResolutionY = 144;
-	const uint16_t ScreenResolutionX = 160;
-
 	inline int GetFPS() { return m_FramesPerSecond; }
 
 	// Save state
@@ -147,17 +144,18 @@ private:
 	void PipelineProcess();
 	bool PipelineAddPixel();
 
-	void LoadSpriteTile();
+	void FetchBackgroundTileId();
+	void FetchWindowTileId();
+	void FetchObjectTileId();
+
 	void FetchTileData(FetchTileByte tile_byte);
+	void FetchObjectData(FetchTileByte tile_byte);
 
 	uint32_t FetchSpritePixels(uint32_t color, bool background_pixel_transparent);
-	void LoadSpriteData(FetchTileByte tile_byte);
-	void LoadWindowTile();
 
 	void PixelFetcher();
 	void PushPixelToVideoBuffer();
 
-	bool IsWindowVisible();
 	bool IsWindowInView(int pixel_x);
 	void IncrementLY();
 
