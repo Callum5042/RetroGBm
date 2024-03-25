@@ -390,7 +390,7 @@ bool Ppu::PipelineAddPixel()
 			colour = FetchSpritePixels(colour, background_transparent);
 		}
 
-		m_Context.pipeline.pixel_queue.push(colour);
+		m_Context.pipeline.pixel_queue.push_back(colour);
 		m_Context.pipeline.fifo_x++;
 	}
 
@@ -570,6 +570,27 @@ void Ppu::PixelFetcher()
 
 void Ppu::PushPixelToVideoBuffer()
 {
+	// Check if we're fetching a window tile
+	if (IsWindowVisible() && IsWindowInView(m_Context.pipeline.pushed_x))
+	{
+		if (!m_Context.pipeline.fetch_window)
+		{
+			// Set fetch to window and destroy pipeline
+			m_Context.pipeline.fetch_window = true;
+			m_Context.dot_ticks = 0;
+			m_Context.pipeline.pipeline_state = FetchState::Tile;
+
+			m_Context.pipeline.fifo_x = m_Context.pipeline.line_x;
+			m_Context.pipeline.fetch_x = m_Context.pipeline.line_x;
+
+			m_Context.pipeline.pixel_queue.clear();
+		}
+	}
+	else
+	{
+		m_Context.pipeline.fetch_window = false;
+	}
+
 	if (m_Context.pipeline.pixel_queue.size() > 8)
 	{
 		uint32_t pixel_data = (m_Context.pipeline.pixel_queue.front());
@@ -580,12 +601,20 @@ void Ppu::PushPixelToVideoBuffer()
 #endif // !_WIN32
 
 
-		m_Context.pipeline.pixel_queue.pop();
+		m_Context.pipeline.pixel_queue.pop_front();
 
-		if (m_Context.pipeline.line_x >= (m_Display->m_Context.scx % 8))
+		if (m_Context.pipeline.fetch_window)
 		{
 			m_Context.video_buffer[m_Context.pipeline.pushed_x + (m_Display->m_Context.ly * ScreenResolutionX)] = pixel_data;
 			m_Context.pipeline.pushed_x++;
+		}
+		else
+		{
+			if (m_Context.pipeline.line_x >= (m_Display->m_Context.scx % 8))
+			{
+				m_Context.video_buffer[m_Context.pipeline.pushed_x + (m_Display->m_Context.ly * ScreenResolutionX)] = pixel_data;
+				m_Context.pipeline.pushed_x++;
+			}
 		}
 
 		m_Context.pipeline.line_x++;

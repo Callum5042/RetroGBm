@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include <array>
-#include <queue>
+#include <deque>
 
 #include "RetroGBm/Display.h"
 #include "RetroGBm/HighTimer.h"
@@ -70,8 +70,10 @@ struct PipelineContext
 	uint8_t background_window_byte_high = 0;
 
 	std::vector<OamPipelineData> fetched_entries;
-	std::queue<uint32_t> pixel_queue;
+	std::deque<uint32_t> pixel_queue;
 	uint8_t fifo_x;
+
+	bool fetch_window = false;
 };
 
 struct PpuContext
