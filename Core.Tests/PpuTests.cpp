@@ -1,9 +1,10 @@
 #include "CppUnitTest.h"
-#include <Display.h>
-#include <Ppu.h>
-#include <Cpu.h>
-#include <Emulator.h>
-#include <Cartridge.h>
+#include "MockCartridge.h"
+
+#include <RetroGBm/Display.h>
+#include <RetroGBm/Ppu.h>
+#include <RetroGBm/Cpu.h>
+#include <RetroGBm/Emulator.h>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -24,10 +25,10 @@ namespace CoreTests
 		TEST_METHOD(Init_StartsInOAM_Has0DotTicks_RamAndBufferInitialisedAndResizedCorrectly)
 		{
 			// Arrange
-			Cpu cpu;
-			Display display;
 			NullBus bus;
-			Cartridge cartridge;
+			MockCartridge cartridge;
+			Display display(&cartridge);
+			Cpu cpu(&cartridge);
 
 			Ppu ppu(&bus, &cpu, &display, &cartridge);
 
@@ -46,10 +47,10 @@ namespace CoreTests
 		TEST_METHOD(Tick_80Ticks_EnterPixelTransferMode)
 		{
 			// Arrange
-			Cpu cpu;
-			Display display;
 			NullBus bus;
-			Cartridge cartridge;
+			MockCartridge cartridge;
+			Display display(&cartridge);
+			Cpu cpu(&cartridge);
 
 			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
@@ -68,10 +69,10 @@ namespace CoreTests
 		TEST_METHOD(Tick_456Ticks_EnterOamMode_DotTicksReset_IncreaseDisplayLyRegister)
 		{
 			// Arrange
-			Cpu cpu;
-			Display display;
 			NullBus bus;
-			Cartridge cartridge;
+			MockCartridge cartridge;
+			Display display(&cartridge);
+			Cpu cpu(&cartridge);
 
 			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
@@ -91,10 +92,10 @@ namespace CoreTests
 		TEST_METHOD(Tick_65664Ticks_EnterVBlankMode)
 		{
 			// Arrange
-			Cpu cpu;
-			Display display;
 			NullBus bus;
-			Cartridge cartridge;
+			MockCartridge cartridge;
+			Display display(&cartridge);
+			Cpu cpu(&cartridge);
 
 			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
@@ -116,10 +117,10 @@ namespace CoreTests
 		TEST_METHOD(Tick_IsInVBlankMode_TickFor4560Dots_Resets)
 		{
 			// Arrange
-			Cpu cpu;
-			Display display;
 			NullBus bus;
-			Cartridge cartridge;
+			MockCartridge cartridge;
+			Display display(&cartridge);
+			Cpu cpu(&cartridge);
 
 			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
@@ -142,10 +143,10 @@ namespace CoreTests
 		TEST_METHOD(OamWrite_PopulatesOam)
 		{
 			// Arrange
-			Cpu cpu;
-			Display display;
 			NullBus bus;
-			Cartridge cartridge;
+			MockCartridge cartridge;
+			Display display(&cartridge);
+			Cpu cpu(&cartridge);
 
 			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
@@ -190,10 +191,10 @@ namespace CoreTests
 		TEST_METHOD(Tick_OamSort_OrderByPositionX)
 		{
 			// Arrange
-			Cpu cpu;
-			Display display;
 			NullBus bus;
-			Cartridge cartridge;
+			MockCartridge cartridge;
+			Display display(&cartridge);
+			Cpu cpu(&cartridge);
 
 			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
@@ -229,10 +230,10 @@ namespace CoreTests
 		TEST_METHOD(Tick_OamSort_LimitTo10PerRow)
 		{
 			// Arrange
-			Cpu cpu;
-			Display display;
 			NullBus bus;
-			Cartridge cartridge;
+			MockCartridge cartridge;
+			Display display(&cartridge);
+			Cpu cpu(&cartridge);
 
 			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
@@ -258,10 +259,10 @@ namespace CoreTests
 		TEST_METHOD(SetVideoRamBank_IgnoreAllBitsButBitZero)
 		{
 			// Arrange
-			Cpu cpu;
-			Display display;
 			NullBus bus;
-			Cartridge cartridge;
+			MockCartridge cartridge;
+			Display display(&cartridge);
+			Cpu cpu(&cartridge);
 
 			Ppu ppu(&bus, &cpu, &display, &cartridge);
 
@@ -275,10 +276,10 @@ namespace CoreTests
 		TEST_METHOD(WriteVideoRam_VRamBank0Selected_WriteDataToFirstBank)
 		{
 			// Arrange
-			Cpu cpu;
-			Display display;
 			NullBus bus;
-			Cartridge cartridge;
+			MockCartridge cartridge;
+			Display display(&cartridge);
+			Cpu cpu(&cartridge);
 
 			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();
@@ -296,10 +297,10 @@ namespace CoreTests
 		TEST_METHOD(WriteVideoRam_VRamBank1Selected_WriteDataToFirstBank)
 		{
 			// Arrange
-			Cpu cpu;
-			Display display;
 			NullBus bus;
-			Cartridge cartridge;
+			MockCartridge cartridge;
+			Display display(&cartridge);
+			Cpu cpu(&cartridge);
 
 			Ppu ppu(&bus, &cpu, &display, &cartridge);
 			ppu.Init();

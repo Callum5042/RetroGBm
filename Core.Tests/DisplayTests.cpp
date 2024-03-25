@@ -1,4 +1,5 @@
 #include "CppUnitTest.h"
+#include "MockCartridge.h"
 #include <RetroGBm/Display.h>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
@@ -11,7 +12,8 @@ namespace CoreTests
 		TEST_METHOD(IsBackgroundEnabled_LcdcBit0NotSet_ReturnsFalse)
 		{
 			// Arrange
-			Display display;
+			MockCartridge cartridge;
+			Display display(&cartridge);
 			const_cast<DisplayContext*>(display.GetContext())->lcdc = 0b0;
 
 			// Act
@@ -24,7 +26,8 @@ namespace CoreTests
 		TEST_METHOD(IsBackgroundEnabled_LcdcBit0Set_ReturnsTrue)
 		{
 			// Arrange
-			Display display;
+			MockCartridge cartridge;
+			Display display(&cartridge);
 			const_cast<DisplayContext*>(display.GetContext())->lcdc = 0b1;
 
 			// Act
@@ -37,7 +40,8 @@ namespace CoreTests
 		TEST_METHOD(IsObjectEnabled_LcdcBit2Set_ReturnsTrue)
 		{
 			// Arrange
-			Display display;
+			MockCartridge cartridge;
+			Display display(&cartridge);
 			const_cast<DisplayContext*>(display.GetContext())->lcdc = 0b10;
 
 			// Act
@@ -50,7 +54,8 @@ namespace CoreTests
 		TEST_METHOD(IsObjectEnabled_LcdcBit2NotSet_ReturnsFalse)
 		{
 			// Arrange
-			Display display;
+			MockCartridge cartridge;
+			Display display(&cartridge);
 			const_cast<DisplayContext*>(display.GetContext())->lcdc = 0b00;
 
 			// Act

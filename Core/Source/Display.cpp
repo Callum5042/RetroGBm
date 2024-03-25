@@ -28,6 +28,15 @@ namespace
 	}
 }
 
+Display::Display()
+{
+	m_Cartridge = Emulator::Instance->GetCartridge();
+}
+
+Display::Display(BaseCartridge* cartridge) : m_Cartridge(cartridge)
+{
+}
+
 void Display::Init()
 {
 	// Initialise registers to defaults (after bootrom)
@@ -58,7 +67,7 @@ void Display::Init()
 	// https://gbdev.io/pandocs/Power_Up_Sequence.html
 	// https://tcrf.net/Notes:Game_Boy_Color_Bootstrap_ROM#Assigned_Palette_Configurations
 
-	SetFixedPalette(Emulator::Instance->GetCartridge()->GetTitleChecksum());
+	SetFixedPalette(m_Cartridge->GetTitleChecksum());
 }
 
 uint8_t Display::Read(uint16_t address)

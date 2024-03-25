@@ -7,6 +7,7 @@
 #include <array>
 
 class Ppu;
+class BaseCartridge;
 
 struct DisplayContext
 {
@@ -68,9 +69,11 @@ struct FixedPalette
 class Display
 {
 	friend class Ppu;
+	BaseCartridge* m_Cartridge = nullptr;
 
 public:
-	Display() = default;
+	Display();
+	Display(BaseCartridge* cartridge);
 	virtual ~Display() = default;
 
 	void Init();
