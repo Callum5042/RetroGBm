@@ -192,6 +192,11 @@ void Ppu::VBlank()
 			LimitFrameRate();
 
 			m_Display->SetLcdMode(LcdMode::OAM);
+			if (m_Display->IsStatInterruptOAM())
+			{
+				m_Cpu->RequestInterrupt(InterruptFlag::STAT);
+			}
+
 			m_Display->m_Context.ly = 0;
 			m_Context.window_line_counter = 0;
 		}
@@ -224,6 +229,11 @@ void Ppu::HBlank()
 		else
 		{
 			m_Display->SetLcdMode(LcdMode::OAM);
+
+			if (m_Display->IsStatInterruptOAM())
+			{
+				m_Cpu->RequestInterrupt(InterruptFlag::STAT);
+			}
 		}
 	}
 }
