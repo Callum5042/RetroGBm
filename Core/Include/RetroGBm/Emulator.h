@@ -105,6 +105,8 @@ public:
 	bool m_HaltBug = false;
 	bool m_HaltNoJump = false;
 
+	void SetBatteryPath(const std::string& path);
+
 private:
 	std::mutex m_EmulatorMutex;
 	bool m_Paused = false;
@@ -131,4 +133,6 @@ private:
 
 	bool m_EnableTraceLog = false;
 	std::ofstream m_TraceLog;
+
+	std::string m_BatteryPath;
 };

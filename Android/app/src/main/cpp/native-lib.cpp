@@ -2,10 +2,10 @@
 #include <string>
 #include <fstream>
 
-#include <Emulator.h>
-#include <Cartridge.h>
-#include <Ppu.h>
-#include <Joypad.h>
+#include <RetroGBm/Emulator.h>
+#include <RetroGBm/Cartridge/BaseCartridge.h>
+#include <RetroGBm/Ppu.h>
+#include <RetroGBm/Joypad.h>
 
 extern "C"
 {
@@ -78,7 +78,7 @@ extern "C"
             return env->NewStringUTF("Emulator not loaded");
         }
 
-        std::string title = emulator->GetCartridge()->GetCartridgeInfo()->title;
+        std::string title = emulator->GetCartridge()->GetCartridgeData().title;
         return env->NewStringUTF(title.c_str());
     }
 
@@ -146,7 +146,7 @@ extern "C"
         Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
         if (emulator != nullptr)
         {
-            emulator->GetCartridge()->SetBatteryPath(env->GetStringUTFChars(path, nullptr));
+            emulator->SetBatteryPath(env->GetStringUTFChars(path, nullptr));
         }
     }
 }
