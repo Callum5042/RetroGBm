@@ -6,7 +6,6 @@
 
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Display.h>
-#include <RetroGBm/PixelProcessor.h>
 
 #include <vector>
 
@@ -65,21 +64,17 @@ void TileWindow::UpdateTilemapTexture()
 			// Display tile (16 bytes big - 2bits per pixel)
 			for (int tileY = 0; tileY < 16; tileY += 2)
 			{
-				uint8_t byte1 = m_Application->GetEmulator()->GetPpu()->PipelineReadVideoRam(address + (tile_number * 16) + tileY, 0);
-				uint8_t byte2 = m_Application->GetEmulator()->GetPpu()->PipelineReadVideoRam(address + (tile_number * 16) + tileY + 1, 0);
+				uint8_t byte1 = m_Application->GetEmulator()->ReadBus(address + (tile_number * 16) + tileY);
+				uint8_t byte2 = m_Application->GetEmulator()->ReadBus(address + (tile_number * 16) + tileY + 1);
 
 				for (int bit = 7; bit >= 0; bit--)
 				{
-					uint8_t offset = bit;
+					// Get pixel colour from palette
+					uint8_t high = (static_cast<bool>(byte1 & (1 << bit))) << 1;
+					uint8_t low = (static_cast<bool>(byte2 & (1 << bit))) << 0;
+					uint8_t colour_index = high | low;
 
-					// Decode and get pixel colour from palette
-					uint8_t data_high = (static_cast<bool>(byte1 & (1 << (offset)))) << 0;
-					uint8_t data_low = (static_cast<bool>(byte2 & (1 << (offset)))) << 1;
-					uint8_t palette_index = data_high | data_low;
-
-					// Fetch colour from palette
-					uint8_t palette = 0;
-					uint32_t colour = m_Application->GetEmulator()->GetDisplay()->GetColourFromBackgroundPalette(palette, palette_index);
+					uint32_t colour = m_Application->GetEmulator()->GetDisplay()->GetColourFromBackgroundPalette(0, colour_index);
 
 					// Calculate pixel position in buffer
 					int x1 = xDraw + (x)+((7 - bit));

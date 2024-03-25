@@ -175,9 +175,8 @@
     <ClCompile Include="DisplayTests.cpp" />
     <ClCompile Include="InstructionsTests.cpp" />
     <ClCompile Include="JoypadTests.cpp" />
+    <ClCompile Include="PpuTests.cpp" />
     <ClCompile Include="MockCartridge.cpp" />
-    <ClCompile Include="PixelPipelineTests.cpp" />
-    <ClCompile Include="PixelProcessorTests.cpp" />
     <ClCompile Include="RamTests.cpp" />
     <ClCompile Include="TimerTests.cpp" />
   </ItemGroup>

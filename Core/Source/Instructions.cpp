@@ -754,7 +754,6 @@ void Op::PopR16(EmulatorContext* context, RegisterType16 reg)
 
 	uint16_t data = high << 8 | low;
 	context->cpu->SetRegister(reg, data);
-
 	context->cpu->ProgramCounter += 1;
 }
 
