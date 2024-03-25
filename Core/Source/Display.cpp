@@ -741,6 +741,11 @@ void* Display::GetVideoBuffer()
 	}
 }
 
+int Display::GetVideoBufferSize()
+{
+	return m_VideoBuffer.size();
+}
+
 void Display::SetVideoBufferPixel(int x, int y, uint32_t data)
 {
 	int offset = x + (y * ScreenResolutionX);

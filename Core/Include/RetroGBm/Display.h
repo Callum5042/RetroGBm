@@ -120,6 +120,7 @@ public:
 	std::vector<uint8_t> m_BackgroundColourPalettes;
 
 	void* GetVideoBuffer();
+	int GetVideoBufferSize();
 	void SetVideoBufferPixel(int x, int y, uint32_t data);
 
 private:

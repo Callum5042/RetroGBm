@@ -51,12 +51,12 @@ extern "C"
             return result;
         }
 
-        size_t size = emulator->GetPpu()->GetContext()->video_buffer.size();
+        size_t size = emulator->GetDisplay()->GetVideoBufferSize();
         // data = emulator->GetPpu()->GetContext()->video_buffer.data();
 
         // Copy the C++ array to the JVM array
         jintArray result = env->NewIntArray(size);
-        env->SetIntArrayRegion(result, 0, size, (jint*)emulator->GetPpu()->GetContext()->video_buffer.data());
+        env->SetIntArrayRegion(result, 0, size, (jint*)emulator->GetDisplay()->GetVideoBuffer());
         return result;
     }
 
