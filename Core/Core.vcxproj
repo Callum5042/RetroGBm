@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\RetroGBm\Ppu.h" />
     <ClInclude Include="Include\RetroGBm\Cartridge\BaseCartridge.h" />
     <ClInclude Include="Include\RetroGBm\Cartridge\CartridgeMBC1.h" />
     <ClInclude Include="Include\RetroGBm\Cartridge\CartridgeMBC5.h" />
@@ -32,8 +33,6 @@
     <ClInclude Include="Include\RetroGBm\Instructions.h" />
     <ClInclude Include="Include\RetroGBm\Joypad.h" />
     <ClInclude Include="Include\RetroGBm\Pch.h" />
-    <ClInclude Include="Include\RetroGBm\PixelPipeline.h" />
-    <ClInclude Include="Include\RetroGBm\PixelProcessor.h" />
     <ClInclude Include="Include\RetroGBm\Ram.h" />
     <ClInclude Include="Include\RetroGBm\Timer.h" />
   </ItemGroup>
@@ -44,8 +43,6 @@
     <ClCompile Include="Source\Cartridge\CartridgeMBC3.cpp" />
     <ClCompile Include="Source\Cartridge\CartridgeMBC5.cpp" />
     <ClCompile Include="Source\Cartridge\CartridgeROM.cpp" />
-    <ClCompile Include="Source\PixelPipeline.cpp" />
-    <ClCompile Include="Source\PixelProcessor.cpp" />
     <ClCompile Include="Source\Joypad.cpp" />
     <ClCompile Include="Source\Display.cpp" />
     <ClCompile Include="Source\Dma.cpp" />

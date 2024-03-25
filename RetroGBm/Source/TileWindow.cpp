@@ -6,7 +6,6 @@
 
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Display.h>
-#include <RetroGBm/PixelProcessor.h>
 
 #include <vector>
 

@@ -14,7 +14,7 @@
 #include "RetroGBm/Timer.h"
 #include "RetroGBm/Joypad.h"
 #include "RetroGBm/Display.h"
-#include "RetroGBm/PixelProcessor.h"
+#include "RetroGBm/Ppu.h"
 
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 
@@ -33,7 +33,7 @@ Emulator::Emulator()
 	m_Display = std::make_unique<Display>();
 	m_Joypad = std::make_unique<Joypad>();
 
-	m_PixelProcessor = std::make_unique<PixelProcessor>(m_Display.get(), m_Cpu.get(), m_Cartridge.get());
+	m_Ppu = std::make_unique<Ppu>(this, m_Cpu.get(), m_Display.get(), m_Cartridge.get());
 	m_Dma = std::make_unique<Dma>();
 
 	m_Context.cpu = m_Cpu.get();
@@ -87,7 +87,7 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	m_Display = std::make_unique<Display>();
 	m_Joypad = std::make_unique<Joypad>();
 
-	m_PixelProcessor = std::make_unique<PixelProcessor>(m_Display.get(), m_Cpu.get(), m_Cartridge.get());
+	m_Ppu = std::make_unique<Ppu>(this, m_Cpu.get(), m_Display.get(), m_Cartridge.get());
 	m_Dma = std::make_unique<Dma>();
 
 	m_Context.cpu = m_Cpu.get();

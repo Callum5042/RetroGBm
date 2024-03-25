@@ -1,14 +1,15 @@
-#include "Pch.h"
-#include "Ppu.h"
-#include "Cpu.h"
-#include "Display.h"
-#include "Emulator.h"
-#include "Cartridge.h"
-#include "HighTimer.h"
+#include "RetroGBm/Pch.h"
+#include "RetroGBm/Ppu.h"
+#include "RetroGBm/Cpu.h"
+#include "RetroGBm/Display.h"
+#include "RetroGBm/Emulator.h"
+#include "RetroGBm/Cartridge/BaseCartridge.h"
+#include "RetroGBm/HighTimer.h"
+#include "RetroGBm/Dma.h"
+
 #include <algorithm>
 #include <chrono>
 #include <thread>
-#include <Dma.h>
 
 Ppu::Ppu()
 {
@@ -18,7 +19,7 @@ Ppu::Ppu()
 	m_Cartridge = Emulator::Instance->GetCartridge();
 }
 
-Ppu::Ppu(IBus* bus, Cpu* cpu, Display* display, Cartridge* cartridge) : m_Bus(bus), m_Cpu(cpu), m_Display(display), m_Cartridge(cartridge)
+Ppu::Ppu(IBus* bus, Cpu* cpu, Display* display, BaseCartridge* cartridge) : m_Bus(bus), m_Cpu(cpu), m_Display(display), m_Cartridge(cartridge)
 {
 }
 

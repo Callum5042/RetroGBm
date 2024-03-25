@@ -2,7 +2,7 @@
 #include "RetroGBm/Dma.h"
 #include "RetroGBm/Emulator.h"
 #include "RetroGBm/Display.h"
-#include "RetroGBm/PixelProcessor.h"
+#include "RetroGBm/Ppu.h"
 
 Dma::Dma()
 {

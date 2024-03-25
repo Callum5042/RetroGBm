@@ -5,12 +5,12 @@
 #include <array>
 #include <queue>
 
-#include "Display.h"
-#include "HighTimer.h"
+#include "RetroGBm/Display.h"
+#include "RetroGBm/HighTimer.h"
 
 class IBus;
 class Cpu;
-class Cartridge;
+class BaseCartridge;
 
 enum class FetchState
 {
@@ -93,11 +93,11 @@ class Ppu
 	IBus* m_Bus = nullptr;
 	Cpu* m_Cpu = nullptr;
 	Display* m_Display = nullptr;
-	Cartridge* m_Cartridge = nullptr;
+	BaseCartridge* m_Cartridge = nullptr;
 
 public:
 	Ppu();
-	Ppu(IBus* bus, Cpu* cpu, Display* display, Cartridge* cartridge);
+	Ppu(IBus* bus, Cpu* cpu, Display* display, BaseCartridge* cartridge);
 	virtual ~Ppu() = default;
 
 	void Init();

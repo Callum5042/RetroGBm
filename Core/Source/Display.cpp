@@ -6,7 +6,6 @@
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 
 #include <iostream>
-#include <Cartridge.h>
 #include <cstdint>
 
 namespace
