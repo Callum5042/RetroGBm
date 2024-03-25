@@ -104,7 +104,7 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	if (m_Cartridge->HasBattery())
 	{
 		{
-			std::string filename = m_Cartridge->GetCartridgeData().title + ".save";
+			std::string filename = m_BatteryPath + m_Cartridge->GetCartridgeData().title + ".save";
 			std::ifstream battery(filename, std::ios::in | std::ios::binary);
 
 			// Discard is currently required it will break current battery saves if removed
@@ -123,7 +123,7 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 		// Set write
 		m_Cartridge->SetWriteRamCallback([&]
 		{
-			std::string filename = m_Cartridge->GetCartridgeData().title + ".save";
+			std::string filename = m_BatteryPath + m_Cartridge->GetCartridgeData().title + ".save";
 			std::ofstream battery(filename, std::ios::out | std::ios::binary);
 
 			uint8_t discard = 0;
@@ -214,6 +214,7 @@ void Emulator::Tick()
 	{
 		if (IsTraceLogEnabled())
 		{
+#ifdef _MSC_VER
 			std::string debug_format = std::format("OP:{:X},PC:{:X},AF:{:X},BC:{:X},DE:{:X},HL:{:X},SP:{:X}",
 				opcode,
 				m_Context.cpu->ProgramCounter,
@@ -224,6 +225,7 @@ void Emulator::Tick()
 				m_Context.cpu->StackPointer);
 
 			m_TraceLog << debug_format << std::endl;
+#endif
 		}
 
 		if (m_HaltBug)
@@ -765,4 +767,9 @@ void* Emulator::GetVideoBuffer()
 int Emulator::GetVideoPitch()
 {
 	return sizeof(uint32_t) * ScreenResolutionX;
+}
+
+void Emulator::SetBatteryPath(const std::string& path)
+{
+	m_BatteryPath = path;
 }

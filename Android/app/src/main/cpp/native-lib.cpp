@@ -2,10 +2,11 @@
 #include <string>
 #include <fstream>
 
-#include <Emulator.h>
-#include <Cartridge.h>
-#include <Ppu.h>
-#include <Joypad.h>
+#include <RetroGBm/Emulator.h>
+#include <RetroGBm/PixelProcessor.h>
+#include <RetroGBm/Cartridge/BaseCartridge.h>
+#include <RetroGBm/Joypad.h>
+#include <RetroGBm/Display.h>
 
 extern "C"
 {
@@ -51,12 +52,12 @@ extern "C"
             return result;
         }
 
-        size_t size = emulator->GetPpu()->GetContext()->video_buffer.size();
+        size_t size = emulator->GetDisplay()->GetVideoBufferSize();
         // data = emulator->GetPpu()->GetContext()->video_buffer.data();
 
         // Copy the C++ array to the JVM array
         jintArray result = env->NewIntArray(size);
-        env->SetIntArrayRegion(result, 0, size, (jint*)emulator->GetPpu()->GetContext()->video_buffer.data());
+        env->SetIntArrayRegion(result, 0, size, (jint*)emulator->GetDisplay()->GetVideoBuffer());
         return result;
     }
 
@@ -78,7 +79,7 @@ extern "C"
             return env->NewStringUTF("Emulator not loaded");
         }
 
-        std::string title = emulator->GetCartridge()->GetCartridgeInfo()->title;
+        std::string title = emulator->GetCartridge()->GetCartridgeData().title;
         return env->NewStringUTF(title.c_str());
     }
 
@@ -146,7 +147,7 @@ extern "C"
         Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
         if (emulator != nullptr)
         {
-            emulator->GetCartridge()->SetBatteryPath(env->GetStringUTFChars(path, nullptr));
+            emulator->SetBatteryPath(env->GetStringUTFChars(path, nullptr));
         }
     }
 }

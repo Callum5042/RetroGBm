@@ -32,7 +32,11 @@ include_directories(${EmulatorCoreIncDir})
 add_library(${CMAKE_PROJECT_NAME} SHARED
         # List C/C++ source files with relative paths to this CMakeLists.txt.
         native-lib.cpp
-        ${EmulatorCoreSrcDir}/Cartridge.cpp
+        ${EmulatorCoreSrcDir}/Cartridge/BaseCartridge.cpp
+        ${EmulatorCoreSrcDir}/Cartridge/CartridgeROM.cpp
+        ${EmulatorCoreSrcDir}/Cartridge/CartridgeMBC1.cpp
+        ${EmulatorCoreSrcDir}/Cartridge/CartridgeMBC3.cpp
+        ${EmulatorCoreSrcDir}/Cartridge/CartridgeMBC5.cpp
         ${EmulatorCoreSrcDir}/Cpu.cpp
         ${EmulatorCoreSrcDir}/Display.cpp
         ${EmulatorCoreSrcDir}/Dma.cpp
@@ -40,7 +44,8 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         ${EmulatorCoreSrcDir}/ExtendedInstructions.cpp
         ${EmulatorCoreSrcDir}/Instructions.cpp
         ${EmulatorCoreSrcDir}/Joypad.cpp
-        ${EmulatorCoreSrcDir}/Ppu.cpp
+        ${EmulatorCoreSrcDir}/PixelProcessor.cpp
+        ${EmulatorCoreSrcDir}/PixelPipeline.cpp
         ${EmulatorCoreSrcDir}/Ram.cpp
         ${EmulatorCoreSrcDir}/Timer.cpp
         ${EmulatorCoreSrcDir}/HighTimer.cpp

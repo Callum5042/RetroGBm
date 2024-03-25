@@ -120,6 +120,7 @@ public:
 
 	void SetVideoBufferPixel(int x, int y, uint32_t data);
 	void* GetVideoBuffer();
+	size_t GetVideoBufferSize();
 
 private:
 	DisplayContext m_Context = {};

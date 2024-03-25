@@ -76,6 +76,18 @@ void Display::SetVideoBufferPixel(int x, int y, uint32_t data)
 	m_VideoBuffer[offset] = data;
 }
 
+size_t Display::GetVideoBufferSize()
+{
+	if (IsLcdEnabled())
+	{
+		return m_VideoBuffer.size();
+	}
+	else
+	{
+		return m_BlankVideoBuffer.size();
+	}
+}
+
 void* Display::GetVideoBuffer()
 {
 	if (IsLcdEnabled())
