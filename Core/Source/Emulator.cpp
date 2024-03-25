@@ -641,7 +641,7 @@ void Emulator::LoadState(const std::string& filepath)
 
 void* Emulator::GetVideoBuffer()
 {
-	return m_Ppu->GetVideoBuffer();
+	return m_Display->GetVideoBuffer();
 }
 
 int Emulator::GetVideoPitch()

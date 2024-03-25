@@ -25,11 +25,6 @@ Ppu::Ppu(IBus* bus, Cpu* cpu, Display* display, BaseCartridge* cartridge) : m_Bu
 
 void Ppu::Init()
 {
-	m_Context.video_buffer.resize(m_Display->ScreenResolutionY * m_Display->ScreenResolutionX);
-	std::fill(m_Context.video_buffer.begin(), m_Context.video_buffer.end(), 0x0);
-
-	m_Context.blank_video_buffer.resize(m_Display->ScreenResolutionY * m_Display->ScreenResolutionX);
-	std::fill(m_Context.blank_video_buffer.begin(), m_Context.blank_video_buffer.end(), 0xFFFFFFFF);
 
 	m_Context.video_ram.resize(16384);
 	std::fill(m_Context.video_ram.begin(), m_Context.video_ram.end(), 0x0);
@@ -63,18 +58,6 @@ void Ppu::Tick()
 		case LcdMode::VBlank:
 			VBlank();
 			break;
-	}
-}
-
-void* Ppu::GetVideoBuffer()
-{
-	if (m_Display->IsLcdEnabled())
-	{
-		return m_Context.video_buffer.data();
-	}
-	else
-	{
-		return m_Context.blank_video_buffer.data();
 	}
 }
 
@@ -606,14 +589,16 @@ void Ppu::PushPixelToVideoBuffer()
 
 		if (m_Context.pipeline.fetch_window)
 		{
-			m_Context.video_buffer[m_Context.pipeline.pushed_x + (m_Display->m_Context.ly * m_Display->ScreenResolutionX)] = pixel_data;
+			m_Display->SetVideoBufferPixel(m_Context.pipeline.pushed_x, m_Display->GetContext()->ly, pixel_data);
+			// m_Context.video_buffer[m_Context.pipeline.pushed_x + (m_Display->m_Context.ly * m_Display->ScreenResolutionX)] = pixel_data;
 			m_Context.pipeline.pushed_x++;
 		}
 		else
 		{
 			if (m_Context.pipeline.line_x >= (m_Display->m_Context.scx % 8))
 			{
-				m_Context.video_buffer[m_Context.pipeline.pushed_x + (m_Display->m_Context.ly * m_Display->ScreenResolutionX)] = pixel_data;
+				m_Display->SetVideoBufferPixel(m_Context.pipeline.pushed_x, m_Display->GetContext()->ly, pixel_data);
+				// m_Context.video_buffer[m_Context.pipeline.pushed_x + (m_Display->m_Context.ly * m_Display->ScreenResolutionX)] = pixel_data;
 				m_Context.pipeline.pushed_x++;
 			}
 		}

@@ -119,6 +119,9 @@ public:
 
 	std::vector<uint8_t> m_BackgroundColourPalettes;
 
+	void* GetVideoBuffer();
+	void SetVideoBufferPixel(int x, int y, uint32_t data);
+
 private:
 	DisplayContext m_Context = {};
 
@@ -138,4 +141,8 @@ private:
 	std::unordered_map<uint8_t, FixedPalette> m_FixedPalettes;
 	void InitFixedPalettes();
 	void SetFixedPalette(uint8_t hash);
+
+	// Video buffers
+	std::vector<uint32_t> m_VideoBuffer;
+	std::vector<uint32_t> m_BlankVideoBuffer;
 };
