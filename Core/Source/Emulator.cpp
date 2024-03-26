@@ -348,7 +348,8 @@ uint8_t Emulator::ReadIO(uint16_t address)
 	}
 	else if (address == 0xFF55)
 	{
-		return m_Dma->GetHDMA5();
+		return 0xFF;
+		// return m_Dma->GetHDMA5();
 	}
 	else if (address >= 0xFF68 && address <= 0xFF6B)
 	{

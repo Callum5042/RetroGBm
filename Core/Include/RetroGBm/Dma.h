@@ -28,6 +28,8 @@ public:
 
 	void RunHDMA();
 
+	void Reset();
+
 	bool IsTransferring() const;
 	inline uint8_t GetLengthModeStart() { return m_LengthModeStart; }
 
@@ -63,4 +65,13 @@ private:
 	bool m_ByteBlockTransfered = false;
 
 	uint8_t m_HDMA5 = 0;
+
+	// INPROGRESS
+	bool Active = false;
+	short Length;
+	uint8_t LengthCode;
+	bool HBlankMode; // Transfer 16 bytes at a time during each hblank period
+
+	uint16_t dmaSrc;
+	uint16_t dmaDest;
 };

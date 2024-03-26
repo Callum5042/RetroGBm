@@ -8,6 +8,8 @@ Dma::Dma()
 {
 	m_Bus = Emulator::Instance;
 	m_Ppu = Emulator::Instance->GetPpu();
+
+	Reset();
 }
 
 void Dma::Start(uint8_t start)
@@ -20,78 +22,60 @@ void Dma::Start(uint8_t start)
 
 void Dma::StartCGB(uint8_t value)
 {
-	m_HDMA5 = value;
+	bool prev_active = Active;
 
-	if (m_EnableHDMA && m_HBlankDMA)
+	if (!Active)
 	{
-		if ((value & 0x80) == 0x80)
+		LengthCode = value & 0x7F;
+		Length = (LengthCode + 1) << 4;
+		HBlankMode = (value & 0x80) != 0;
+		Active = true;
+	}
+	else
+	{
+		if ((value & 0x80) == 0)
 		{
-			// Restart copy
-			m_TransferLength = ((value & 0x7F) + 1) * 16;
-			return;
-		}
-		else
-		{
-			// Stop HDMA if active
-			m_HBlankDMA = false;
-			m_EnableHDMA = false;
-			m_HdmaByte = 0;
-			m_TransferLength = value;
-			return;
+			LengthCode = 0x7F;
+			Length = 0;
+			HBlankMode = false;
+			Active = false;
 		}
 	}
 
-	// General-Purpose DMA if 0 otherwise do HBlank DMA
-	m_GeneralPurposeDMA = (value & 0x80) != 0x80;
-	m_HBlankDMA = (value & 0x80) == 0x80;
-
-	m_TransferLength = ((value & 0x7F) + 1) * 16;
-
-	if (m_HBlankDMA)
+	if (Active && !prev_active)
 	{
-		if (Emulator::Instance->GetDisplay()->GetLcdMode() == LcdMode::HBlank)
-		{
-			return;
-		}
+		dmaSrc = m_Source;
+		dmaDest = m_Destination;
 
-		m_EnableHDMA = true;
-		m_HdmaByte = 0;
-
-		// Copy 1 block if the screen is off
-		if (!Emulator::Instance->GetDisplay()->IsLcdEnabled())
+		// Peform a general purpose DMA right now
+		if (!HBlankMode)
 		{
-			for (int i = 0; i < 16; ++i)
+			for (int i = 0; i < Length; i++)
 			{
-				uint8_t source_byte = m_Bus->ReadBus((m_Source & 0xFFF0) + m_HdmaByte);
-				m_Ppu->WriteVideoRam(0x8000 + (m_Destination & 0x1FF0) + m_HdmaByte, source_byte);
-
-				m_HdmaByte++;
-				m_TransferLength--;
+				uint8_t data = m_Bus->ReadBus(dmaSrc++);
+				m_Ppu->WriteVideoRam(0x8000 + dmaDest++, data);
 			}
+
+			dmaSrc = 0;
+			dmaDest = 0;
+
+			Reset();
 		}
 	}
+}
 
-	if (m_GeneralPurposeDMA)
-	{
-		uint8_t byte = 0;
-		while (m_TransferLength > 0)
-		{
-			uint8_t source_byte = m_Bus->ReadBus((m_Source & 0xFFF0) + byte);
-			m_Ppu->WriteVideoRam(0x8000 + (m_Destination & 0x1FF0) + byte, source_byte);
-
-			byte++;
-			m_TransferLength--;
-		}
-
-		m_EnableHDMA = false;
-		m_GeneralPurposeDMA = false;
-		m_HBlankDMA = false;
-	}
+void Dma::Reset()
+{
+	m_Source = 0;
+	m_Destination = 0;
+	HBlankMode = false;
+	LengthCode = 0x7F;
+	Active = false;
 }
 
 void Dma::Tick()
 {
-	RunHDMA();
+	// RunHDMA();
 
 	if (!context.active)
 	{
@@ -161,18 +145,11 @@ void Dma::SetSource(uint16_t address, uint8_t value)
 {
 	if (address == 0xFF51)
 	{
-		m_Source &= 0xF0;
-		m_Source |= value << 8;
-
-		if (m_Source >= 0xE000)
-		{
-			m_Source |= 0xF000;
-		}
+		m_Source = (value << 8) | (m_Source & 0xFF);
 	}
 	else if (address == 0xFF52)
 	{
-		m_Source &= 0xFF00;
-		m_Source |= value & 0xF0;
+		m_Source = (m_Source & 0xFF00) | (value & 0xF0);
 	}
 }
 
@@ -180,13 +157,11 @@ void Dma::SetDestination(uint16_t address, uint8_t value)
 {
 	if (address == 0xFF53)
 	{
-		m_Destination &= 0xF0;
-		m_Destination |= value << 8;
+		m_Destination = ((value & 0x1F) << 8) | (m_Destination & 0xFF);
 	}
 	else if (address == 0xFF54)
 	{
-		m_Destination &= 0xFF00;
-		m_Destination |= value & 0xF0;
+		m_Destination = (m_Destination & 0xFF00) | (value & 0xF0);
 	}
 }
 
