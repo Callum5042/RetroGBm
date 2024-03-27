@@ -14,6 +14,7 @@ Gameboy Colour emulator written in C++ for Windows and Android.
 ![Pokemon Yellow](/Images/pokemon_yellow.png)
 ![Donkey Kong Land](/Images/donkey_kong_land.png)
 ![Super Mario Land](/Images/super_mario_land.png)
+![Mario Tennis](/Images/mario_tennis.png)
 
 ## Build
 
@@ -37,10 +38,10 @@ Gameboy Colour emulator written in C++ for Windows and Android.
 | Dr Mario		    | ★★★★★ |  |
 | Pokemon Red		| ★★★★★ |  |
 | Zelda - Link's Awakening DX | ★★★★★ |  |
-| Pokemon Yellow    | ★★★★☆ | Colour palette is sometimes incorrect |
+| Pokemon Yellow    | ★★★★★ |  |
 | Super Mario Land  | ★★★★☆ | Pause screen is incorrectly displayed |
 | Pokemon Gold		| ★★★★☆ | RTC doesn't work |
-| Pokemon Crystal	| ★★★☆☆ | Menu doesn't clear correctly |
+| Pokemon Crystal	| ★★★★☆ | RTC doesn't work |
 
 ## Test roms
 
