@@ -147,28 +147,28 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Application.cpp" />
-    <ClCompile Include="Source\CartridgeInfoWindow.cpp" />
+    <ClCompile Include="Source\Windows\CartridgeInfoWindow.cpp" />
     <ClCompile Include="Source\Main.cpp" />
-    <ClCompile Include="Source\MainWindow.cpp" />
+    <ClCompile Include="Source\Windows\MainWindow.cpp" />
     <ClCompile Include="Source\Render\RenderDevice.cpp" />
     <ClCompile Include="Source\Render\RenderShader.cpp" />
     <ClCompile Include="Source\Render\RenderTarget.cpp" />
     <ClCompile Include="Source\Render\RenderTexture.cpp" />
-    <ClCompile Include="Source\TileWindow.cpp" />
+    <ClCompile Include="Source\Windows\TileWindow.cpp" />
     <ClCompile Include="Source\Utilities\Utilities.cpp" />
-    <ClCompile Include="Source\Window.cpp" />
+    <ClCompile Include="Source\Windows\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Application.h" />
-    <ClInclude Include="Include\CartridgeInfoWindow.h" />
-    <ClInclude Include="Include\MainWindow.h" />
+    <ClInclude Include="Include\Windows\CartridgeInfoWindow.h" />
+    <ClInclude Include="Include\Windows\MainWindow.h" />
     <ClInclude Include="Include\Render\RenderDevice.h" />
     <ClInclude Include="Include\Render\RenderShader.h" />
     <ClInclude Include="Include\Render\RenderTarget.h" />
     <ClInclude Include="Include\Render\RenderTexture.h" />
-    <ClInclude Include="Include\TileWindow.h" />
+    <ClInclude Include="Include\Windows\TileWindow.h" />
     <ClInclude Include="Include\Utilities\Utilities.h" />
-    <ClInclude Include="Include\Window.h" />
+    <ClInclude Include="Include\Windows\Window.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Shaders\PixelShader.hlsl.h" />
     <ClInclude Include="Shaders\VertexShader.hlsl.h" />

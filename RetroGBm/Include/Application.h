@@ -6,9 +6,9 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-#include "MainWindow.h"
-#include "TileWindow.h"
-#include "CartridgeInfoWindow.h"
+#include "Windows/MainWindow.h"
+#include "Windows/TileWindow.h"
+#include "Windows/CartridgeInfoWindow.h"
 
 #include "Render/RenderDevice.h"
 #include "Render/RenderShader.h"

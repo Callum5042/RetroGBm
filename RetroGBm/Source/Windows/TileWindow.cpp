@@ -1,5 +1,5 @@
-#include "TileWindow.h"
-#include "MainWindow.h"
+#include "Windows/TileWindow.h"
+#include "Windows/MainWindow.h"
 #include "Render/RenderTarget.h"
 #include "Render/RenderTexture.h"
 #include "Application.h"
