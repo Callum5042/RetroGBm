@@ -743,7 +743,7 @@ void* Display::GetVideoBuffer()
 
 int Display::GetVideoBufferSize()
 {
-	return m_VideoBuffer.size();
+	return static_cast<int>(m_VideoBuffer.size());
 }
 
 void Display::SetVideoBufferPixel(int x, int y, uint32_t data)

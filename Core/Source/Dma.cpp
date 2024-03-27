@@ -22,61 +22,40 @@ void Dma::Start(uint8_t start)
 
 void Dma::StartCGB(uint8_t value)
 {
-	bool prev_active = Active;
+	bool previous_active = m_Active;
 
-	if (!Active)
+	if (!m_Active)
 	{
-		LengthCode = value & 0x7F;
-		Length = (LengthCode + 1) << 4;
-		HBlankMode = (value & 0x80) != 0;
-		Active = true;
+		m_LengthCode = value & 0x7F;
+		m_Length = (m_LengthCode + 1) << 4;
+		m_HBlankMode = (value & 0x80) != 0;
+		m_Active = true;
 	}
 	else
 	{
 		if ((value & 0x80) == 0)
 		{
-			LengthCode = 0x7F;
-			Length = 0;
-			HBlankMode = false;
-			Active = false;
+			m_LengthCode = 0x7F;
+			m_Length = 0;
+			m_HBlankMode = false;
+			m_Active = false;
 		}
 	}
 
-	if (Active && !prev_active)
-	{
-		dmaSrc = m_Source;
-		dmaDest = m_Destination;
-
-		// Peform a general purpose DMA right now
-		if (!HBlankMode)
-		{
-			for (int i = 0; i < Length; i++)
-			{
-				uint8_t data = m_Bus->ReadBus(dmaSrc++);
-				m_Ppu->WriteVideoRam(0x8000 + dmaDest++, data);
-			}
-
-			dmaSrc = 0;
-			dmaDest = 0;
-
-			Reset();
-		}
-	}
+	this->RunGDMA(previous_active);
 }
 
 void Dma::Reset()
 {
 	m_Source = 0;
 	m_Destination = 0;
-	HBlankMode = false;
-	LengthCode = 0x7F;
-	Active = false;
+	m_HBlankMode = false;
+	m_LengthCode = 0x7F;
+	m_Active = false;
 }
 
 void Dma::Tick()
 {
-	// RunHDMA();
-
 	if (!context.active)
 	{
 		return;
@@ -96,42 +75,47 @@ void Dma::Tick()
 
 void Dma::RunHDMA()
 {
-	if (m_EnableHDMA && m_HBlankDMA)
+	if (m_Active && m_HBlankMode)
 	{
-		if (Emulator::Instance->GetDisplay()->GetLcdMode() == LcdMode::HBlank)
+		if (m_Length <= 0)
 		{
-			if (!Emulator::Instance->GetDisplay()->IsLcdEnabled())
-			{
-				return;
-			}
-
-			if (m_ByteBlockTransfered)
-			{
-				return;
-			}
-
-			for (int i = 0; i < 16; ++i)
-			{
-				uint16_t address = (m_Source & 0xFFF0) + m_HdmaByte;
-				uint8_t source_byte = m_Bus->ReadBus(address);
-				m_Ppu->WriteVideoRam(0x8000 + (m_Destination & 0x1FF0) + m_HdmaByte, source_byte);
-
-				m_HdmaByte++;
-				m_TransferLength--;
-
-				if (m_TransferLength == 0)
-				{
-					m_EnableHDMA = false;
-					m_GeneralPurposeDMA = false;
-					m_HBlankDMA = false;
-				}
-			}
-
-			m_ByteBlockTransfered = true;
+			Reset();
+			dmaSrc = 0;
+			dmaDest = 0;
 		}
 		else
 		{
-			m_ByteBlockTransfered = false;
+			for (int i = 0; i < 16; i++)
+			{
+				uint8_t data = m_Bus->ReadBus(dmaSrc++);
+				m_Ppu->WriteVideoRam(0x8000 + dmaDest++, data);
+			}
+
+			m_Length -= 16;
+		}
+	}
+}
+
+void Dma::RunGDMA(bool previous_active)
+{
+	if (m_Active && !previous_active)
+	{
+		dmaSrc = m_Source;
+		dmaDest = m_Destination;
+
+		// Peform a general purpose DMA right now
+		if (!m_HBlankMode)
+		{
+			for (int i = 0; i < m_Length; i++)
+			{
+				uint8_t data = m_Bus->ReadBus(dmaSrc++);
+				m_Ppu->WriteVideoRam(0x8000 + dmaDest++, data);
+			}
+
+			dmaSrc = 0;
+			dmaDest = 0;
+
+			Reset();
 		}
 	}
 }
@@ -167,9 +151,9 @@ void Dma::SetDestination(uint16_t address, uint8_t value)
 
 uint8_t Dma::GetHDMA5() const
 {
-	if (m_EnableHDMA)
+	if (m_Active)
 	{
-		return (m_TransferLength / 16) - 1;
+		return (m_Length / 16) - 1;
 	}
 
 	return 0xFF;
@@ -177,22 +161,22 @@ uint8_t Dma::GetHDMA5() const
 
 void Dma::SaveState(std::fstream* file)
 {
-	file->write(reinterpret_cast<const char*>(&m_ColourDMA), sizeof(m_ColourDMA));
+	/*file->write(reinterpret_cast<const char*>(&m_ColourDMA), sizeof(m_ColourDMA));
 	file->write(reinterpret_cast<const char*>(&m_Source), sizeof(m_Source));
 	file->write(reinterpret_cast<const char*>(&m_Destination), sizeof(m_Destination));
 
 	file->write(reinterpret_cast<const char*>(&m_GeneralPurposeDMA), sizeof(m_GeneralPurposeDMA));
 	file->write(reinterpret_cast<const char*>(&m_TransferLength), sizeof(m_TransferLength));
-	file->write(reinterpret_cast<const char*>(&m_LengthModeStart), sizeof(m_LengthModeStart));
+	file->write(reinterpret_cast<const char*>(&m_LengthModeStart), sizeof(m_LengthModeStart));*/
 }
 
 void Dma::LoadState(std::fstream* file)
 {
-	file->read(reinterpret_cast<char*>(&m_ColourDMA), sizeof(m_ColourDMA));
+	/*file->read(reinterpret_cast<char*>(&m_ColourDMA), sizeof(m_ColourDMA));
 	file->read(reinterpret_cast<char*>(&m_Source), sizeof(m_Source));
 	file->read(reinterpret_cast<char*>(&m_Destination), sizeof(m_Destination));
 
 	file->read(reinterpret_cast<char*>(&m_GeneralPurposeDMA), sizeof(m_GeneralPurposeDMA));
 	file->read(reinterpret_cast<char*>(&m_TransferLength), sizeof(m_TransferLength));
-	file->read(reinterpret_cast<char*>(&m_LengthModeStart), sizeof(m_LengthModeStart));
+	file->read(reinterpret_cast<char*>(&m_LengthModeStart), sizeof(m_LengthModeStart));*/
 }

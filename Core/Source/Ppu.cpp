@@ -156,6 +156,8 @@ void Ppu::PixelTransfer()
 		{
 			m_Cpu->RequestInterrupt(InterruptFlag::STAT);
 		}
+
+		Emulator::Instance->GetDma()->RunHDMA();
 	}
 }
 

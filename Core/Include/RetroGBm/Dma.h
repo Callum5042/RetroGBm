@@ -27,11 +27,12 @@ public:
 	void Tick();
 
 	void RunHDMA();
+	void RunGDMA(bool previous_active);
 
 	void Reset();
 
 	bool IsTransferring() const;
-	inline uint8_t GetLengthModeStart() { return m_LengthModeStart; }
+	inline uint8_t GetLengthModeStart() const { return m_LengthCode; }
 
 	uint8_t GetHDMA5() const;
 
@@ -48,29 +49,29 @@ private:
 	DmaContext context = {};
 
 	// TODO: Delete
-	bool m_ColourDMA = false;
-	uint8_t m_LengthModeStart = 0;
+	//bool m_ColourDMA = false;
+	//uint8_t m_LengthModeStart = 0;
 
 	// Gameboy colour
 	uint16_t m_Source = 0;
 	uint16_t m_Destination = 0;
 
-	bool m_GeneralPurposeDMA = false;
+	/*bool m_GeneralPurposeDMA = false;
 	bool m_HBlankDMA = false;
-	uint32_t m_TransferLength = 0;
+	uint32_t m_TransferLength = 0;*/
 
 	// HDMA
-	bool m_EnableHDMA = false;
+	/*bool m_EnableHDMA = false;
 	uint8_t m_HdmaByte = 0;
 	bool m_ByteBlockTransfered = false;
 
-	uint8_t m_HDMA5 = 0;
+	uint8_t m_HDMA5 = 0;*/
 
 	// INPROGRESS
-	bool Active = false;
-	short Length;
-	uint8_t LengthCode;
-	bool HBlankMode; // Transfer 16 bytes at a time during each hblank period
+	bool m_Active = false;
+	short m_Length;
+	uint8_t m_LengthCode;
+	bool m_HBlankMode; // Transfer 16 bytes at a time during each hblank period
 
 	uint16_t dmaSrc;
 	uint16_t dmaDest;
