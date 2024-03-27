@@ -1,10 +1,7 @@
 #pragma once
 
-#include "Window.h"
+#include "Windows/Window.h"
 #include <memory>
-
-//class Render::RenderTarget;
-//class Render::RenderTexture;
 
 #include "Render/RenderTarget.h"
 #include "Render/RenderTexture.h"

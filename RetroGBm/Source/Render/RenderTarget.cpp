@@ -1,6 +1,5 @@
 #include "Render/RenderTarget.h"
 #include "Render/RenderDevice.h"
-#include "Window.h"
 #include <DirectXColors.h>
 
 namespace DX

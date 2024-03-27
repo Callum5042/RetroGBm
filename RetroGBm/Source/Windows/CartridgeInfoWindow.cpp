@@ -1,4 +1,4 @@
-#include "CartridgeInfoWindow.h"
+#include "Windows/CartridgeInfoWindow.h"
 #include "Application.h"
 
 #include <RetroGBm/Emulator.h>

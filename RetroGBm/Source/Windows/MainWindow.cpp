@@ -1,4 +1,4 @@
-#include "MainWindow.h"
+#include "Windows/MainWindow.h"
 #include "Application.h"
 #include "Utilities/Utilities.h"
 #include "../resource.h"

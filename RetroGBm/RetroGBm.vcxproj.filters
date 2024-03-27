@@ -21,7 +21,7 @@
     <ClCompile Include="Source\Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Window.cpp">
+    <ClCompile Include="Source\Windows\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Render\RenderDevice.cpp">
@@ -36,13 +36,13 @@
     <ClCompile Include="Source\Render\RenderTexture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\MainWindow.cpp">
+    <ClCompile Include="Source\Windows\MainWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\TileWindow.cpp">
+    <ClCompile Include="Source\Windows\TileWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CartridgeInfoWindow.cpp">
+    <ClCompile Include="Source\Windows\CartridgeInfoWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Utilities\Utilities.cpp">
@@ -53,7 +53,7 @@
     <ClInclude Include="Include\Application.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Window.h">
+    <ClInclude Include="Include\Windows\Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\Render\RenderDevice.h">
@@ -74,16 +74,16 @@
     <ClInclude Include="Shaders\VertexShader.hlsl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\MainWindow.h">
+    <ClInclude Include="Include\Windows\MainWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\TileWindow.h">
+    <ClInclude Include="Include\Windows\TileWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\CartridgeInfoWindow.h">
+    <ClInclude Include="Include\Windows\CartridgeInfoWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\Utilities\Utilities.h">
