@@ -52,6 +52,9 @@ void Dma::Reset()
 	m_HBlankMode = false;
 	m_LengthCode = 0x7F;
 	m_Active = false;
+
+	m_DmaSrc = 0;
+	m_DmaDest = 0;
 }
 
 void Dma::Tick()
@@ -80,15 +83,13 @@ void Dma::RunHDMA()
 		if (m_Length <= 0)
 		{
 			Reset();
-			dmaSrc = 0;
-			dmaDest = 0;
 		}
 		else
 		{
 			for (int i = 0; i < 16; i++)
 			{
-				uint8_t data = m_Bus->ReadBus(dmaSrc++);
-				m_Ppu->WriteVideoRam(0x8000 + dmaDest++, data);
+				uint8_t data = m_Bus->ReadBus(m_DmaSrc++);
+				m_Ppu->WriteVideoRam(0x8000 + m_DmaDest++, data);
 			}
 
 			m_Length -= 16;
@@ -100,20 +101,17 @@ void Dma::RunGDMA(bool previous_active)
 {
 	if (m_Active && !previous_active)
 	{
-		dmaSrc = m_Source;
-		dmaDest = m_Destination;
+		m_DmaSrc = m_Source;
+		m_DmaDest = m_Destination;
 
 		// Peform a general purpose DMA right now
 		if (!m_HBlankMode)
 		{
 			for (int i = 0; i < m_Length; i++)
 			{
-				uint8_t data = m_Bus->ReadBus(dmaSrc++);
-				m_Ppu->WriteVideoRam(0x8000 + dmaDest++, data);
+				uint8_t data = m_Bus->ReadBus(m_DmaSrc++);
+				m_Ppu->WriteVideoRam(0x8000 + m_DmaDest++, data);
 			}
-
-			dmaSrc = 0;
-			dmaDest = 0;
 
 			Reset();
 		}
