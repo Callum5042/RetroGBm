@@ -1,5 +1,8 @@
 ﻿# RetroGBm
+
 Gameboy Colour emulator written in C++ for Windows and Android.
+
+![Build](https://github.com/Callum5042/RetroGBm/actions/workflows/msbuild.yml/badge.svg)
 
 ### Features
 
