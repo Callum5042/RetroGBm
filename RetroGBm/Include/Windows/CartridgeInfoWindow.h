@@ -3,6 +3,7 @@
 #include "Window.h"
 #include <string>
 #include <vector>
+#include <map>
 
 class Application;
 
@@ -24,6 +25,8 @@ public:
 	void Destroy();
 	LRESULT HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+	void UpdateCartridgeInfo();
+
 private:
 	HFONT m_Font = NULL;
 	void FontCreate();
@@ -41,4 +44,5 @@ private:
 
 	// Draw content
 	void CreateContentModel(const std::vector<InfoModel>& content, int window_width);
+	std::map<std::wstring, HWND> m_ContentText;
 };
