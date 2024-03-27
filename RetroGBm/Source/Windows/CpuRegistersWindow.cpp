@@ -2,8 +2,15 @@
 #include "Application.h"
 
 #include "Utilities/Utilities.h"
+#include <RetroGBm/Emulator.h>
+#include <RetroGBm/Cpu.h>
 
 #include <string>
+#include <chrono>
+
+// Set theme
+// https://docs.microsoft.com/en-gb/windows/win32/controls/cookbook-overview?redirectedfrom=MSDN
+#pragma comment(linker,"\"/manifestdependency:type='win32' name = 'Microsoft.Windows.Common-Controls' version = '6.0.0.0' processorArchitecture = '*' publicKeyToken = '6595b64144ccf1df' language = '*'\"")
 
 namespace
 {
@@ -34,6 +41,20 @@ namespace
 
 		return window->HandleMessage(hwnd, msg, wParam, lParam);
 	}
+
+	static std::wstring ConvertUint16ToHexString(uint16_t value)
+	{
+		std::wstringstream stream;
+		stream << std::uppercase << std::hex << std::setw(4) << std::setfill(L'0') << static_cast<int>(value);
+		return stream.str();
+	}
+
+	static std::wstring ConvertUint8ToHexString(uint8_t value)
+	{
+		std::wstringstream stream;
+		stream << std::uppercase << std::hex << std::setw(2) << std::setfill(L'0') << static_cast<int>(value);
+		return stream.str();
+	}
 }
 
 CpuRegisterWindow::CpuRegisterWindow()
@@ -42,16 +63,148 @@ CpuRegisterWindow::CpuRegisterWindow()
 
 CpuRegisterWindow::~CpuRegisterWindow()
 {
+	// Cleanup thread
+	m_ThreadPolling = false;
+	if (m_CpuPollThread.joinable())
+	{
+		m_CpuPollThread.join();
+	}
+
+	// Cleanup edit boxes
+	for (auto& text : m_TextBoxes)
+	{
+		DestroyWindow(text.second);
+	}
+
+	// Cleanup window
 	this->Destroy();
 }
 
 void CpuRegisterWindow::Create()
 {
 	const std::string title = "CPU Registers";
-	const int width = 400;
+	const int width = 250;
 	const int height = 200;
 
 	WindowCreate(title, width, height);
+
+	// Create font
+	{
+		HDC hdc = GetDC(NULL);
+		long lfHeight = -MulDiv(12, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+		ReleaseDC(NULL, hdc);
+
+		m_Font = CreateFont(lfHeight, 0, 0, 0, 0, FALSE, 0, 0, 0, 0, 0, 0, 0, L"Arial");
+	}
+	// Group box
+	m_BrushBackground = CreateSolidBrush(RGB(255, 255, 255));
+
+	m_GroupBox = CreateWindowEx(WS_EX_WINDOWEDGE,
+		L"BUTTON",  // Predefined class; Unicode assumed 
+		L"Registers",      // Button text 
+		BS_GROUPBOX | WS_GROUP | WS_CHILD | BS_DEFPUSHBUTTON | WS_VISIBLE,  // Styles 
+		10,         // x position 
+		0,          // y position 
+		width - 20,        // Button width
+		height - 10,        // Button height
+		m_Hwnd,     // Parent window
+		NULL,
+		(HINSTANCE)GetWindowLongPtr(m_Hwnd, GWLP_HINSTANCE),
+		NULL);      // Pointer not needed.
+
+	SendMessage(m_GroupBox, WM_SETFONT, (WPARAM)m_Font, TRUE);
+
+	// CPU Details
+	/*
+		PC: 0x10	SP: 0x10
+		A: 0x10		F: 0x20
+		B: 0x30		C: 0x40
+		D: 0x30		E: 0x40
+		H: 0x30		L: 0x40
+
+		Zero: 1		Sub: 0
+		Carry: 1	Half: 0
+	*/
+
+	// Draw text
+	PAINTSTRUCT ps;
+	HDC hdc = BeginPaint(m_Hwnd, &ps);
+	FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
+	SelectObject(hdc, m_Font);
+
+	// Calculate position
+	RECT rect;
+	GetClientRect(m_GroupBox, &rect);
+	rect.left = 20;
+	rect.top = 26;
+
+	// Data
+	std::vector<std::string> text;
+	text.push_back("PC");
+	text.push_back("SP");
+	text.push_back("A");
+	text.push_back("F");
+	text.push_back("B");
+	text.push_back("C");
+	text.push_back("D");
+	text.push_back("E");
+	text.push_back("H");
+	text.push_back("L");
+
+	int y = 0;
+	for (int i = 0; i < text.size(); i += 2)
+	{
+		rect.top = 26 + (y * 32);
+
+		// Column 1
+		std::wstring text1 = Utilities::ConvertToWString(std::string(text[i] + ": "));
+		DrawText(hdc, text1.c_str(), -1, &rect, DT_SINGLELINE | DT_NOCLIP);
+
+		HWND textbox1 = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_DISABLED, rect.left + 40, rect.top, 56, 24, m_Hwnd, NULL, (HINSTANCE)GetWindowLongPtr(m_Hwnd, GWLP_HINSTANCE), NULL);
+		SendMessage(textbox1, WM_SETFONT, (WPARAM)m_Font, TRUE);
+
+		m_TextBoxes[text[i]] = textbox1;
+
+		// Column 2
+		RECT col2 = rect;
+		col2.left = 130;
+
+		std::wstring text2 = Utilities::ConvertToWString(std::string(text[i + 1] + ": "));
+		DrawText(hdc, text2.c_str(), -1, &col2, DT_SINGLELINE | DT_NOCLIP);
+
+		HWND textbox2 = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_DISABLED, col2.left + 40, col2.top, 56, 24, m_Hwnd, NULL, (HINSTANCE)GetWindowLongPtr(m_Hwnd, GWLP_HINSTANCE), NULL);
+		SendMessage(textbox2, WM_SETFONT, (WPARAM)m_Font, TRUE);
+
+		m_TextBoxes[text[i + 1]] = textbox2;
+
+		y++;
+	}
+
+	// CPU poll thread
+	m_ThreadPolling = true;
+	m_CpuPollThread = std::thread([&]
+	{
+		while (m_ThreadPolling)
+		{
+			Emulator* emulator = Application::Instance->GetEmulator();
+			if (emulator != nullptr && emulator->IsRunning())
+			{
+				Cpu* cpu = emulator->GetCpu();
+				SetWindowText(m_TextBoxes["PC"], ConvertUint16ToHexString(cpu->ProgramCounter).c_str());
+				SetWindowText(m_TextBoxes["SP"], ConvertUint16ToHexString(cpu->StackPointer).c_str());
+				SetWindowText(m_TextBoxes["A"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_A)).c_str());
+				SetWindowText(m_TextBoxes["F"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_F)).c_str());
+				SetWindowText(m_TextBoxes["B"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_B)).c_str());
+				SetWindowText(m_TextBoxes["C"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_C)).c_str());
+				SetWindowText(m_TextBoxes["D"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_D)).c_str());
+				SetWindowText(m_TextBoxes["E"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_E)).c_str());
+				SetWindowText(m_TextBoxes["H"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_H)).c_str());
+				SetWindowText(m_TextBoxes["L"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_L)).c_str());
+			}
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
+	});
 }
 
 void CpuRegisterWindow::Destroy()
@@ -70,13 +223,13 @@ LRESULT CpuRegisterWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPA
 			Destroy();
 			return 0;
 
-		/*case WM_CTLCOLORSTATIC:
+		case WM_CTLCOLORSTATIC:
 		{
 			HDC hdc = (HDC)wParam;
 			SetBkMode(hdc, TRANSPARENT);
 			SetTextColor(hdc, RGB(255, 255, 255));
 			return (LONG_PTR)(m_BrushBackground);
-		}*/
+		}
 	}
 
 	return DefWindowProc(hwnd, msg, wParam, lParam);
