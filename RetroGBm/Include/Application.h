@@ -40,6 +40,7 @@ public:
 	void ReleaseCartridgeInfoWindow();
 
 	inline MainWindow* GetMainWindow() const { return m_MainWindow.get(); }
+	inline CartridgeInfoWindow* GetCartridgeInfoWindow() const { return m_CartridgeInfoWindow.get(); }
 
 	void SaveState();
 	void LoadState();

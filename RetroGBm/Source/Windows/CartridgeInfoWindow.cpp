@@ -55,6 +55,12 @@ CartridgeInfoWindow::CartridgeInfoWindow(Application* application) : m_Applicati
 
 CartridgeInfoWindow::~CartridgeInfoWindow()
 {
+	for (auto& text : m_ContentText)
+	{
+		DestroyWindow(text.second);
+	}
+
+	DestroyWindow(m_GroupBox);
 	Destroy();
 }
 
@@ -71,12 +77,25 @@ void CartridgeInfoWindow::Create(const std::string& title, int width, int height
 	content.push_back({ L"Title", ConvertToWString(info->title) });
 	content.push_back({ L"Cartridge", ConvertToWString(CartridgeTypeToString(info->cartridge_type)) });
 	content.push_back({ L"Manufacturer", ConvertToWString(info->manufacturer_code) });
-	// content.push_back({ L"Old Licensee", ConvertToWString(info->old_licensee) });
 	content.push_back({ L"Old Licensee", ConvertToWString("N/A") });
 	content.push_back({ L"ROM size", std::to_wstring(info->rom_size) });
 	content.push_back({ L"RAM size", std::to_wstring(info->ram_size) });
 	content.push_back({ L"Colour mode", ConvertToWString(ColourModeToString(info->colour_mode)) });
 	CreateContentModel(content, width);
+}
+
+void CartridgeInfoWindow::UpdateCartridgeInfo()
+{
+	BaseCartridge* cartridge = m_Application->GetEmulator()->GetCartridge();
+	const CartridgeDataV2* info = &cartridge->GetCartridgeData();
+
+	SetWindowText(m_ContentText[L"Title"], ConvertToWString(info->title).c_str());
+	SetWindowText(m_ContentText[L"Cartridge"], ConvertToWString(CartridgeTypeToString(info->cartridge_type)).c_str());
+	SetWindowText(m_ContentText[L"Manufacturer"], ConvertToWString(info->manufacturer_code).c_str());
+	SetWindowText(m_ContentText[L"Old Licensee"], ConvertToWString("N/A").c_str());
+	SetWindowText(m_ContentText[L"ROM size"], std::to_wstring(info->rom_size).c_str());
+	SetWindowText(m_ContentText[L"RAM size"], std::to_wstring(info->ram_size).c_str());
+	SetWindowText(m_ContentText[L"Colour mode"], ConvertToWString(ColourModeToString(info->colour_mode)).c_str());
 }
 
 void CartridgeInfoWindow::Destroy()
@@ -169,7 +188,7 @@ void CartridgeInfoWindow::CreateGroupBox(int width, int height)
 {
 	m_BrushBackground = CreateSolidBrush(RGB(255, 255, 255));
 
-	HWND groupbox = CreateWindowEx(WS_EX_WINDOWEDGE,
+	m_GroupBox = CreateWindowEx(WS_EX_WINDOWEDGE,
 								   L"BUTTON",  // Predefined class; Unicode assumed 
 								   L"Info",      // Button text 
 								   BS_GROUPBOX | WS_GROUP | WS_CHILD | BS_DEFPUSHBUTTON | WS_VISIBLE,  // Styles 
@@ -182,7 +201,7 @@ void CartridgeInfoWindow::CreateGroupBox(int width, int height)
 								   (HINSTANCE)GetWindowLongPtr(m_Hwnd, GWLP_HINSTANCE),
 								   NULL);      // Pointer not needed.
 
-	SendMessage(groupbox, WM_SETFONT, (WPARAM)m_Font, TRUE);
+	SendMessage(m_GroupBox, WM_SETFONT, (WPARAM)m_Font, TRUE);
 }
 
 void CartridgeInfoWindow::CreateContentModel(const std::vector<InfoModel>& content, int window_width)
@@ -212,6 +231,8 @@ void CartridgeInfoWindow::CreateContentModel(const std::vector<InfoModel>& conte
 
 		HWND textbox = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", data.text.c_str(), WS_CHILD | WS_VISIBLE | WS_DISABLED, edit_x, rect.top, edit_width, 24, m_Hwnd, NULL, (HINSTANCE)GetWindowLongPtr(m_Hwnd, GWLP_HINSTANCE), NULL);
 		SendMessage(textbox, WM_SETFONT, (WPARAM)m_Font, TRUE);
+
+		m_ContentText[data.tag] = textbox;
 
 		++y;
 	}

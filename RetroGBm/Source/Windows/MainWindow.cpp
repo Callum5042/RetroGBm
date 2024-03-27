@@ -1,4 +1,5 @@
 #include "Windows/MainWindow.h"
+#include "Windows/CartridgeInfoWindow.h"
 #include "Application.h"
 #include "Utilities/Utilities.h"
 #include "../resource.h"
@@ -306,6 +307,13 @@ void MainWindow::OpenDialog()
 
 		this->SetStatusBarTitle(m_Application->GetEmulator()->GetCartridge()->GetCartridgeData().title);
 		this->SetStatusBarState("Playing");
+
+		// Reload cartridge info
+		CartridgeInfoWindow* cartridge_info_window = m_Application->GetCartridgeInfoWindow();
+		if (cartridge_info_window != nullptr)
+		{
+			cartridge_info_window->UpdateCartridgeInfo();
+		}
 	}
 }
 
