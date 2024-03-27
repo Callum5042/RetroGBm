@@ -26,8 +26,8 @@ void Dma::StartCGB(uint8_t value)
 
 	if (!m_Active)
 	{
-		m_LengthCode = value & 0x7F;
-		m_Length = (m_LengthCode + 1) << 4;
+		m_LengthStart = value & 0x7F;
+		m_Length = (m_LengthStart + 1) << 4;
 		m_HBlankMode = (value & 0x80) != 0;
 		m_Active = true;
 	}
@@ -35,7 +35,7 @@ void Dma::StartCGB(uint8_t value)
 	{
 		if ((value & 0x80) == 0)
 		{
-			m_LengthCode = 0x7F;
+			m_LengthStart = 0x7F;
 			m_Length = 0;
 			m_HBlankMode = false;
 			m_Active = false;
@@ -50,7 +50,7 @@ void Dma::Reset()
 	m_Source = 0;
 	m_Destination = 0;
 	m_HBlankMode = false;
-	m_LengthCode = 0x7F;
+	m_LengthStart = 0x7F;
 	m_Active = false;
 
 	m_DmaSrc = 0;
@@ -159,22 +159,28 @@ uint8_t Dma::GetHDMA5() const
 
 void Dma::SaveState(std::fstream* file)
 {
-	/*file->write(reinterpret_cast<const char*>(&m_ColourDMA), sizeof(m_ColourDMA));
 	file->write(reinterpret_cast<const char*>(&m_Source), sizeof(m_Source));
 	file->write(reinterpret_cast<const char*>(&m_Destination), sizeof(m_Destination));
 
-	file->write(reinterpret_cast<const char*>(&m_GeneralPurposeDMA), sizeof(m_GeneralPurposeDMA));
-	file->write(reinterpret_cast<const char*>(&m_TransferLength), sizeof(m_TransferLength));
-	file->write(reinterpret_cast<const char*>(&m_LengthModeStart), sizeof(m_LengthModeStart));*/
+	file->write(reinterpret_cast<const char*>(&m_Active), sizeof(m_Active));
+	file->write(reinterpret_cast<const char*>(&m_HBlankMode), sizeof(m_HBlankMode));
+	file->write(reinterpret_cast<const char*>(&m_Length), sizeof(m_Length));
+	file->write(reinterpret_cast<const char*>(&m_LengthStart), sizeof(m_LengthStart));
+
+	file->write(reinterpret_cast<const char*>(&m_DmaSrc), sizeof(m_DmaSrc));
+	file->write(reinterpret_cast<const char*>(&m_DmaDest), sizeof(m_DmaDest));
 }
 
 void Dma::LoadState(std::fstream* file)
 {
-	/*file->read(reinterpret_cast<char*>(&m_ColourDMA), sizeof(m_ColourDMA));
 	file->read(reinterpret_cast<char*>(&m_Source), sizeof(m_Source));
 	file->read(reinterpret_cast<char*>(&m_Destination), sizeof(m_Destination));
 
-	file->read(reinterpret_cast<char*>(&m_GeneralPurposeDMA), sizeof(m_GeneralPurposeDMA));
-	file->read(reinterpret_cast<char*>(&m_TransferLength), sizeof(m_TransferLength));
-	file->read(reinterpret_cast<char*>(&m_LengthModeStart), sizeof(m_LengthModeStart));*/
+	file->read(reinterpret_cast<char*>(&m_Active), sizeof(m_Active));
+	file->read(reinterpret_cast<char*>(&m_HBlankMode), sizeof(m_HBlankMode));
+	file->read(reinterpret_cast<char*>(&m_Length), sizeof(m_Length));
+	file->read(reinterpret_cast<char*>(&m_LengthStart), sizeof(m_LengthStart));
+
+	file->read(reinterpret_cast<char*>(&m_DmaSrc), sizeof(m_DmaSrc));
+	file->read(reinterpret_cast<char*>(&m_DmaDest), sizeof(m_DmaDest));
 }

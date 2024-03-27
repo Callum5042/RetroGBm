@@ -32,8 +32,6 @@ public:
 	void Reset();
 
 	bool IsTransferring() const;
-	inline uint8_t GetLengthModeStart() const { return m_LengthCode; }
-
 	uint8_t GetHDMA5() const;
 
 	// Gameboy colour
@@ -54,9 +52,9 @@ private:
 
 	// HDMA
 	bool m_Active = false;
-	short m_Length;
-	uint8_t m_LengthCode;
 	bool m_HBlankMode;
+	uint16_t m_Length;
+	uint8_t m_LengthStart;
 
 	uint16_t m_DmaSrc;
 	uint16_t m_DmaDest;
