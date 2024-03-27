@@ -149,6 +149,7 @@
     <ClCompile Include="Source\Application.cpp" />
     <ClCompile Include="Source\Windows\CartridgeInfoWindow.cpp" />
     <ClCompile Include="Source\Main.cpp" />
+    <ClCompile Include="Source\Windows\CpuRegistersWindow.cpp" />
     <ClCompile Include="Source\Windows\MainWindow.cpp" />
     <ClCompile Include="Source\Render\RenderDevice.cpp" />
     <ClCompile Include="Source\Render\RenderShader.cpp" />
@@ -161,6 +162,7 @@
   <ItemGroup>
     <ClInclude Include="Include\Application.h" />
     <ClInclude Include="Include\Windows\CartridgeInfoWindow.h" />
+    <ClInclude Include="Include\Windows\CpuRegistersWindow.h" />
     <ClInclude Include="Include\Windows\MainWindow.h" />
     <ClInclude Include="Include\Render\RenderDevice.h" />
     <ClInclude Include="Include\Render\RenderShader.h" />

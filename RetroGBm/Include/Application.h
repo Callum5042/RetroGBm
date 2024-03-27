@@ -10,6 +10,8 @@
 #include "Windows/TileWindow.h"
 #include "Windows/CartridgeInfoWindow.h"
 
+#include "Windows/CpuRegistersWindow.h"
+
 #include "Render/RenderDevice.h"
 #include "Render/RenderShader.h"
 #include "Render/RenderTarget.h"
@@ -44,6 +46,9 @@ public:
 
 	void SaveState();
 	void LoadState();
+	
+	// Tools Windows
+	std::unique_ptr<CpuRegisterWindow> CpuRegistersWindow = nullptr;
 
 private:
 	void Init();

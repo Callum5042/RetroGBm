@@ -190,6 +190,7 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 	const UINT menu_id = LOWORD(wParam);
 	switch (menu_id)
 	{
+		// File Menu
 		case m_MenuFileOpenId:
 			OpenDialog();
 			break;
@@ -206,6 +207,39 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		case m_MenuFileExitId:
 			PostQuitMessage(0);
 			break;
+
+			// Emulation Menu
+		case m_MenuEmulationPausePlay:
+			ToggleEmulationPaused();
+			break;
+		case m_MenuEmulationSaveState:
+			m_Application->SaveState();
+			break;
+		case m_MenuEmulationLoadState:
+			m_Application->LoadState();
+			break;
+
+			// Tools Menu
+		case m_MenuToolsCpuRegisters:
+		{
+			UINT menu_state = GetMenuState(m_ToolsMenuItem, m_MenuToolsCpuRegisters, MF_BYCOMMAND);
+			if (menu_state & MF_CHECKED)
+			{
+				CheckMenuItem(m_ToolsMenuItem, m_MenuToolsCpuRegisters, MF_BYCOMMAND | MF_UNCHECKED);
+			
+				m_Application->CpuRegistersWindow->Destroy();
+				m_Application->CpuRegistersWindow.release();
+			}
+			else
+			{
+				CheckMenuItem(m_ToolsMenuItem, m_MenuToolsCpuRegisters, MF_BYCOMMAND | MF_CHECKED);
+
+				m_Application->CpuRegistersWindow = std::make_unique<CpuRegisterWindow>();
+				m_Application->CpuRegistersWindow->Create();
+			}
+
+			break;
+		}
 		case m_MenuToolsTilemap:
 		{
 			UINT menu_state = GetMenuState(m_ToolsMenuItem, m_MenuToolsTilemap, MF_BYCOMMAND);
@@ -233,15 +267,6 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 					m_Application->CreateCartridgeInfoWindow();
 				}
 			}
-			break;
-		case m_MenuEmulationPausePlay:
-			ToggleEmulationPaused();
-			break;
-		case m_MenuEmulationSaveState:
-			m_Application->SaveState();
-			break;
-		case m_MenuEmulationLoadState:
-			m_Application->LoadState();
 			break;
 	}
 }
@@ -577,7 +602,7 @@ void MainWindow::CreateMenuBar()
 
 	// Debug menu
 	m_ToolsMenuItem = CreateMenu();
-	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED | MF_DISABLED, m_MenuToolsCpuRegisters, L"CPU Registers");
+	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsCpuRegisters, L"CPU Registers");
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTilemap, L"Tiledata");
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTracelog, L"Tracelog");
