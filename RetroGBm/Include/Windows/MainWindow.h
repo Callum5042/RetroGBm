@@ -66,10 +66,11 @@ private:
 	static const UINT m_MenuFileRestartId = 104;
 	static const UINT m_MenuFileExitId = 103;
 
-	HMENU m_DebugMenuItem = NULL;
-	static const UINT m_MenuDebugTilemap = 201;
-	static const UINT m_MenuDebugTracelog = 202;
-	static const UINT m_MenuDebugCartridgeInfo = 203;
+	HMENU m_ToolsMenuItem = NULL;
+	static const UINT m_MenuToolsCpuRegisters = 204;
+	static const UINT m_MenuToolsTilemap = 201;
+	static const UINT m_MenuToolsTracelog = 202;
+	static const UINT m_MenuToolsCartridgeInfo = 203;
 
 	HMENU m_EmulationMenuItem = NULL;
 	static const UINT m_MenuEmulationPausePlay = 301;

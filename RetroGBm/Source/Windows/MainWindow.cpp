@@ -195,7 +195,7 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 		case m_MenuFileCloseId:
 			m_Application->StopEmulator();
-			EnableMenuItem(m_DebugMenuItem, m_MenuDebugCartridgeInfo, MF_DISABLED);
+			EnableMenuItem(m_ToolsMenuItem, m_MenuToolsCartridgeInfo, MF_DISABLED);
 			this->SetStatusBarTitle("");
 			this->SetStatusBarStats("");
 			this->SetStatusBarState("");
@@ -206,28 +206,28 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		case m_MenuFileExitId:
 			PostQuitMessage(0);
 			break;
-		case m_MenuDebugTilemap:
+		case m_MenuToolsTilemap:
 		{
-			UINT menu_state = GetMenuState(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND);
+			UINT menu_state = GetMenuState(m_ToolsMenuItem, m_MenuToolsTilemap, MF_BYCOMMAND);
 			if (menu_state & MF_CHECKED)
 			{
-				CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND | MF_UNCHECKED);
+				CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTilemap, MF_BYCOMMAND | MF_UNCHECKED);
 				m_Application->CloseTileWindow();
 			}
 			else
 			{
-				CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND | MF_CHECKED);
+				CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTilemap, MF_BYCOMMAND | MF_CHECKED);
 				m_Application->CreateTileWindow();
 			}
 			break;
 		}
-		case m_MenuDebugTracelog:
+		case m_MenuToolsTracelog:
 			ToggleTracelog();
 			break;
-		case m_MenuDebugCartridgeInfo:
+		case m_MenuToolsCartridgeInfo:
 			if (m_Application->GetEmulator()->IsRunning())
 			{
-				UINT menu_state = GetMenuState(m_DebugMenuItem, m_MenuDebugCartridgeInfo, MF_BYCOMMAND);
+				UINT menu_state = GetMenuState(m_ToolsMenuItem, m_MenuToolsCartridgeInfo, MF_BYCOMMAND);
 				if (!(menu_state & MF_DISABLED))
 				{
 					m_Application->CreateCartridgeInfoWindow();
@@ -273,25 +273,25 @@ void MainWindow::ToggleTileWindowMenuItem(bool checked)
 {
 	if (checked)
 	{
-		CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND | MF_CHECKED);
+		CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTilemap, MF_BYCOMMAND | MF_CHECKED);
 	}
 	else
 	{
-		CheckMenuItem(m_DebugMenuItem, m_MenuDebugTilemap, MF_BYCOMMAND | MF_UNCHECKED);
+		CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTilemap, MF_BYCOMMAND | MF_UNCHECKED);
 	}
 }
 
 void MainWindow::ToggleTracelog()
 {
-	UINT menu_state = GetMenuState(m_DebugMenuItem, m_MenuDebugTracelog, MF_BYCOMMAND);
+	UINT menu_state = GetMenuState(m_ToolsMenuItem, m_MenuToolsTracelog, MF_BYCOMMAND);
 	if (menu_state & MF_CHECKED)
 	{
-		CheckMenuItem(m_DebugMenuItem, m_MenuDebugTracelog, MF_BYCOMMAND | MF_UNCHECKED);
+		CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTracelog, MF_BYCOMMAND | MF_UNCHECKED);
 		m_Application->GetEmulator()->ToggleTraceLog(false);
 	}
 	else
 	{
-		CheckMenuItem(m_DebugMenuItem, m_MenuDebugTracelog, MF_BYCOMMAND | MF_CHECKED);
+		CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTracelog, MF_BYCOMMAND | MF_CHECKED);
 		m_Application->GetEmulator()->ToggleTraceLog(true);
 	}
 }
@@ -303,7 +303,7 @@ void MainWindow::OpenDialog()
 	{
 		m_FilePath = path;
 		m_Application->LoadRom(path);
-		EnableMenuItem(m_DebugMenuItem, m_MenuDebugCartridgeInfo, MF_ENABLED);
+		EnableMenuItem(m_ToolsMenuItem, m_MenuToolsCartridgeInfo, MF_ENABLED);
 
 		this->SetStatusBarTitle(m_Application->GetEmulator()->GetCartridge()->GetCartridgeData().title);
 		this->SetStatusBarState("Playing");
@@ -576,11 +576,13 @@ void MainWindow::CreateMenuBar()
 	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_EmulationMenuItem), L"Emulation");
 
 	// Debug menu
-	m_DebugMenuItem = CreateMenu();
-	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTilemap, L"Tiledata");
-	AppendMenuW(m_DebugMenuItem, MF_UNCHECKED, m_MenuDebugTracelog, L"Tracelog");
-	AppendMenuW(m_DebugMenuItem, MF_STRING | MF_DISABLED, m_MenuDebugCartridgeInfo, L"Cartridge Info");
-	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_DebugMenuItem), L"Debug");
+	m_ToolsMenuItem = CreateMenu();
+	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED | MF_DISABLED, m_MenuToolsCpuRegisters, L"CPU Registers");
+	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
+	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTilemap, L"Tiledata");
+	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTracelog, L"Tracelog");
+	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsCartridgeInfo, L"Cartridge Info");
+	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_ToolsMenuItem), L"Tools");
 
 	// Assign menubar to window
 	SetMenu(m_Hwnd, m_MenuBar);
