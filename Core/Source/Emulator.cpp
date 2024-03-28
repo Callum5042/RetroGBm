@@ -15,6 +15,7 @@
 #include "RetroGBm/Joypad.h"
 #include "RetroGBm/Display.h"
 #include "RetroGBm/Ppu.h"
+#include "RetroGBm/Apu.h"
 
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 
@@ -35,6 +36,7 @@ Emulator::Emulator()
 
 	m_Ppu = std::make_unique<Ppu>(this, m_Cpu.get(), m_Display.get(), m_Cartridge.get());
 	m_Dma = std::make_unique<Dma>();
+	m_Apu = std::make_unique<Apu>();
 
 	m_Context.cpu = m_Cpu.get();
 	m_Context.bus = this;
@@ -52,6 +54,7 @@ Emulator::Emulator(std::unique_ptr<BaseCartridge> cartridge)
 	m_Ppu = std::make_unique<Ppu>();
 	m_Dma = std::make_unique<Dma>();
 	m_Joypad = std::make_unique<Joypad>();
+	m_Apu = std::make_unique<Apu>();
 
 	m_Context.cpu = m_Cpu.get();
 	m_Context.bus = this;
@@ -89,6 +92,7 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 
 	m_Ppu = std::make_unique<Ppu>(this, m_Cpu.get(), m_Display.get(), m_Cartridge.get());
 	m_Dma = std::make_unique<Dma>();
+	m_Apu = std::make_unique<Apu>();
 
 	m_Context.cpu = m_Cpu.get();
 	m_Context.bus = this;
@@ -97,6 +101,7 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	m_Cpu->Init();
 	m_Timer->Init();
 	m_Ppu->Init();
+	m_Apu->Init();
 
 	// Load RAM if cartridge has a battery
 	if (m_Cartridge->HasBattery())
@@ -324,8 +329,7 @@ uint8_t Emulator::ReadIO(uint16_t address)
 	}
 	else if (((address >= 0xFF10) && (address <= 0xFF3F)))
 	{
-		//ignore sound
-		return 0;
+		return m_Apu->Read(address);
 	}
 	else if (((address >= 0xFF40) && (address <= 0xFF4B)))
 	{
@@ -398,7 +402,7 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	}
 	else if (((address >= 0xFF10) && (address <= 0xFF3F)))
 	{
-		// Ignore sound
+		m_Apu->Write(address, value);
 		return;
 	}
 	else if (((address >= 0xFF40) && (address <= 0xFF4B)))

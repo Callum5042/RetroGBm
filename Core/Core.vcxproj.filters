@@ -42,12 +42,6 @@
     <ClInclude Include="Include\RetroGBm\Pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\RetroGBm\PixelPipeline.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\RetroGBm\PixelProcessor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Include\RetroGBm\Ram.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -70,6 +64,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\RetroGBm\Ppu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\RetroGBm\Apu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -110,12 +107,6 @@
     <ClCompile Include="Source\HighTimer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\PixelProcessor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\PixelPipeline.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Cartridge\CartridgeMBC1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -129,6 +120,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Cartridge\CartridgeMBC5.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Apu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
