@@ -7,6 +7,7 @@
 
 #include <string>
 #include <chrono>
+#include <thread>
 
 // Set theme
 // https://docs.microsoft.com/en-gb/windows/win32/controls/cookbook-overview?redirectedfrom=MSDN
@@ -63,13 +64,6 @@ CpuRegisterWindow::CpuRegisterWindow()
 
 CpuRegisterWindow::~CpuRegisterWindow()
 {
-	// Cleanup thread
-	m_ThreadPolling = false;
-	if (m_CpuPollThread.joinable())
-	{
-		m_CpuPollThread.join();
-	}
-
 	// Cleanup edit boxes
 	for (auto& text : m_TextBoxes)
 	{
@@ -179,32 +173,6 @@ void CpuRegisterWindow::Create()
 
 		y++;
 	}
-
-	// CPU poll thread
-	m_ThreadPolling = true;
-	m_CpuPollThread = std::thread([&]
-	{
-		while (m_ThreadPolling)
-		{
-			Emulator* emulator = Application::Instance->GetEmulator();
-			if (emulator != nullptr && emulator->IsRunning())
-			{
-				Cpu* cpu = emulator->GetCpu();
-				SetWindowText(m_TextBoxes["PC"], ConvertUint16ToHexString(cpu->ProgramCounter).c_str());
-				SetWindowText(m_TextBoxes["SP"], ConvertUint16ToHexString(cpu->StackPointer).c_str());
-				SetWindowText(m_TextBoxes["A"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_A)).c_str());
-				SetWindowText(m_TextBoxes["F"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_F)).c_str());
-				SetWindowText(m_TextBoxes["B"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_B)).c_str());
-				SetWindowText(m_TextBoxes["C"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_C)).c_str());
-				SetWindowText(m_TextBoxes["D"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_D)).c_str());
-				SetWindowText(m_TextBoxes["E"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_E)).c_str());
-				SetWindowText(m_TextBoxes["H"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_H)).c_str());
-				SetWindowText(m_TextBoxes["L"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_L)).c_str());
-			}
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
-		}
-	});
 }
 
 void CpuRegisterWindow::Destroy()
@@ -281,4 +249,37 @@ void CpuRegisterWindow::WindowCreate(const std::string& title, int width, int he
 
 	// Show window
 	ShowWindow(m_Hwnd, SW_SHOWNORMAL);
+}
+
+void CpuRegisterWindow::Update()
+{
+	Emulator* emulator = Application::Instance->GetEmulator();
+	if (emulator != nullptr && emulator->IsRunning())
+	{
+		Cpu* cpu = emulator->GetCpu();
+		SetWindowText(m_TextBoxes["PC"], ConvertUint16ToHexString(cpu->ProgramCounter).c_str());
+		SetWindowText(m_TextBoxes["SP"], ConvertUint16ToHexString(cpu->StackPointer).c_str());
+		SetWindowText(m_TextBoxes["A"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_A)).c_str());
+		SetWindowText(m_TextBoxes["F"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_F)).c_str());
+		SetWindowText(m_TextBoxes["B"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_B)).c_str());
+		SetWindowText(m_TextBoxes["C"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_C)).c_str());
+		SetWindowText(m_TextBoxes["D"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_D)).c_str());
+		SetWindowText(m_TextBoxes["E"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_E)).c_str());
+		SetWindowText(m_TextBoxes["H"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_H)).c_str());
+		SetWindowText(m_TextBoxes["L"], ConvertUint8ToHexString(cpu->GetRegister(RegisterType8::REG_L)).c_str());
+	}
+}
+
+void CpuRegisterWindow::Clear()
+{
+	SetWindowText(m_TextBoxes["PC"], L"");
+	SetWindowText(m_TextBoxes["SP"], L"");
+	SetWindowText(m_TextBoxes["A"], L"");
+	SetWindowText(m_TextBoxes["F"], L"");
+	SetWindowText(m_TextBoxes["B"], L"");
+	SetWindowText(m_TextBoxes["C"], L"");
+	SetWindowText(m_TextBoxes["D"], L"");
+	SetWindowText(m_TextBoxes["E"], L"");
+	SetWindowText(m_TextBoxes["H"], L"");
+	SetWindowText(m_TextBoxes["L"], L"");
 }

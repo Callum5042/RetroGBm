@@ -3,7 +3,6 @@
 #include "Window.h"
 #include <string>
 #include <map>
-#include <thread>
 
 class CpuRegisterWindow
 {
@@ -15,6 +14,10 @@ public:
 	void Destroy();
 
 	LRESULT HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+	// CPU Registers Thread
+	void Update();
+	void Clear();
 
 private:
 
@@ -29,7 +32,4 @@ private:
 
 	// Edit textboxes
 	std::map<std::string, HWND> m_TextBoxes;
-
-	std::thread m_CpuPollThread;
-	std::atomic_bool m_ThreadPolling = false;
 };

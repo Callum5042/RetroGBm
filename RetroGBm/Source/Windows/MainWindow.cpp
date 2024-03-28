@@ -195,12 +195,20 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			OpenDialog();
 			break;
 		case m_MenuFileCloseId:
+		{
 			m_Application->StopEmulator();
 			EnableMenuItem(m_ToolsMenuItem, m_MenuToolsCartridgeInfo, MF_DISABLED);
 			this->SetStatusBarTitle("");
 			this->SetStatusBarStats("");
 			this->SetStatusBarState("");
+
+			if (m_Application->CpuRegistersWindow != nullptr)
+			{
+				m_Application->CpuRegistersWindow->Clear();
+			}
+
 			break;
+		}
 		case m_MenuFileRestartId:
 			RestartEmulation();
 			break;
