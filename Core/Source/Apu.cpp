@@ -9,13 +9,14 @@ Apu::Apu()
 
 void Apu::Init()
 {
+	m_Context = {};
 }
 
 void Apu::Write(uint16_t address, uint8_t value)
 {
 	if (address == 0xFF26)
 	{
-		m_Context.audio_master = value;
+		m_Context.audio_master = value & 0x80;
 	}
 	else if (address == 0xFF25)
 	{
