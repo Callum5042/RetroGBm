@@ -189,6 +189,7 @@ LRESULT CpuRegisterWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPA
 	{
 		case WM_CLOSE:
 			Destroy();
+			Application::Instance->GetMainWindow()->ToggleCpuRegistersWindowMenuItem(false);
 			return 0;
 
 		case WM_CTLCOLORSTATIC:

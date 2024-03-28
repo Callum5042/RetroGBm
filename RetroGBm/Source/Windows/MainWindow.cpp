@@ -314,6 +314,18 @@ void MainWindow::ToggleTileWindowMenuItem(bool checked)
 	}
 }
 
+void MainWindow::ToggleCpuRegistersWindowMenuItem(bool checked)
+{
+	if (checked)
+	{
+		CheckMenuItem(m_ToolsMenuItem, m_MenuToolsCpuRegisters, MF_BYCOMMAND | MF_CHECKED);
+	}
+	else
+	{
+		CheckMenuItem(m_ToolsMenuItem, m_MenuToolsCpuRegisters, MF_BYCOMMAND | MF_UNCHECKED);
+	}
+}
+
 void MainWindow::ToggleTracelog()
 {
 	UINT menu_state = GetMenuState(m_ToolsMenuItem, m_MenuToolsTracelog, MF_BYCOMMAND);

@@ -26,6 +26,7 @@ public:
 	inline HWND GetHwnd() { return m_RenderHwnd; }
 
 	void ToggleTileWindowMenuItem(bool checked);
+	void ToggleCpuRegistersWindowMenuItem(bool checked);
 
 	void SetStatusBarTitle(const std::string& text);
 	void SetStatusBarStats(const std::string& text);
