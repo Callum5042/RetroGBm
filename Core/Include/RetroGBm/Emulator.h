@@ -18,6 +18,7 @@ class Joypad;
 class Display;
 class IBus;
 class BaseCartridge;
+class Apu;
 
 struct EmulatorContext
 {
@@ -126,6 +127,7 @@ private:
 	std::unique_ptr<Ppu> m_Ppu;
 	std::unique_ptr<Dma> m_Dma;
 	std::unique_ptr<Joypad> m_Joypad;
+	std::unique_ptr<Apu> m_Apu;
 
 	bool m_Running = false;
 	bool m_Halted = false;

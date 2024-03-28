@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\RetroGBm\Apu.h" />
     <ClInclude Include="Include\RetroGBm\Ppu.h" />
     <ClInclude Include="Include\RetroGBm\Cartridge\BaseCartridge.h" />
     <ClInclude Include="Include\RetroGBm\Cartridge\CartridgeMBC1.h" />
@@ -38,6 +39,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\RetroGBm\Cartridge\CartridgeMBC3.h" />
+    <ClCompile Include="Source\Apu.cpp" />
     <ClCompile Include="Source\Cartridge\BaseCartridge.cpp" />
     <ClCompile Include="Source\Cartridge\CartridgeMBC1.cpp" />
     <ClCompile Include="Source\Cartridge\CartridgeMBC3.cpp" />
