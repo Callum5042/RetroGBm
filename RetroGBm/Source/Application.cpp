@@ -89,6 +89,7 @@ void Application::LoadRom(const std::string& file)
 
 void Application::StopEmulator()
 {
+	// Stop the emulator
 	m_Emulator->Stop();
 	if (m_EmulatorThread.joinable())
 	{
@@ -129,6 +130,12 @@ void Application::Run()
 				{
 					m_TileWindow->Update();
 				}
+
+				// CPU register window
+				if (CpuRegistersWindow != nullptr)
+				{
+					CpuRegistersWindow->Update();
+				}
 			}
 			else
 			{
@@ -137,11 +144,7 @@ void Application::Run()
 		}
 	}
 
-	m_Emulator->Stop();
-	if (m_EmulatorThread.joinable())
-	{
-		m_EmulatorThread.join();
-	}
+	this->StopEmulator();
 }
 
 void Application::Init()
