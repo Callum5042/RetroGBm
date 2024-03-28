@@ -284,19 +284,23 @@ void Emulator::Cycle(int machine_cycles)
 		for (int n = 0; n < 4; ++n)
 		{
 			m_Timer->Tick();
+
 			if (IsDoubleSpeedMode())
 			{
-				m_Timer->Tick();
+				if (n & 1)
+				{
+					m_Ppu->Tick();
+					m_Apu->Tick();
+				}
 			}
-
-			m_Ppu->Tick();
+			else
+			{
+				m_Ppu->Tick();
+				m_Apu->Tick();
+			}
 		}
 
 		m_Dma->Tick();
-		if (IsDoubleSpeedMode())
-		{
-			m_Dma->Tick();
-		}
 	}
 }
 

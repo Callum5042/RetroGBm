@@ -12,6 +12,11 @@ void Apu::Init()
 	m_Context = {};
 }
 
+void Apu::Tick()
+{
+
+}
+
 void Apu::Write(uint16_t address, uint8_t value)
 {
 	if (address == 0xFF26)
