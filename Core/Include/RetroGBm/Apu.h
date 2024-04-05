@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+class Timer;
+
 struct ApuContext
 {
 	uint8_t audio_master = 0xF1;
@@ -41,12 +43,14 @@ struct ApuContext
 
 class Apu
 {
+	Timer* m_Timer = nullptr;
+
 public:
-	Apu();
+	Apu(Timer* timer);
 	virtual ~Apu() = default;
 
 	void Init();
-	void Tick();
+	void Tick(bool doublespeed);
 
 	void Write(uint16_t address, uint8_t value);
 	uint8_t Read(uint16_t address);
@@ -55,4 +59,9 @@ public:
 
 private:
 	ApuContext m_Context = {};
+
+	bool m_ApuBitset = false;
+	uint16_t m_ApuDiv = 0;
+
+	void IncrementApuTimer(bool doublespeed);
 };

@@ -1,9 +1,10 @@
 #include "RetroGBm/Pch.h"
 #include "RetroGBm/Apu.h"
+#include "RetroGBm/Timer.h"
 
 #include <cstdint>
 
-Apu::Apu()
+Apu::Apu(Timer* timer) : m_Timer(timer)
 {
 }
 
@@ -12,9 +13,24 @@ void Apu::Init()
 	m_Context = {};
 }
 
-void Apu::Tick()
+void Apu::Tick(bool doublespeed)
 {
+	IncrementApuTimer(doublespeed);
+}
 
+void Apu::IncrementApuTimer(bool doublespeed)
+{
+	// Bit 5 in doublespeed mode, otherwise bit 4
+	uint8_t bitmask = doublespeed ? 0x32 : 0x16;
+
+	bool old_apu_bitset = m_ApuBitset;
+	m_ApuBitset = ((m_Timer->GetContext()->div & bitmask) == bitmask);
+
+	// Increment APU timer if the bit has gone from a 1 to a 0
+	if (old_apu_bitset && !m_ApuBitset)
+	{
+		m_ApuDiv++;
+	}
 }
 
 void Apu::Write(uint16_t address, uint8_t value)
