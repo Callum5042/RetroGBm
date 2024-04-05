@@ -41,9 +41,51 @@ void Apu::Write(uint16_t address, uint8_t value)
 {
 	std::cout << "Write APU: 0x" << std::hex << address << '\n';
 
+	// Ignores writes to register if APU is off unless its the master control register 'NR52'
+	if (!this->IsAudioOn() && address != 0xFF26)
+	{
+		return;
+	}
+
 	if (address == 0xFF26)
 	{
 		m_Context.audio_master = value & 0x80;
+
+		if (!this->IsAudioOn())
+		{
+			m_Context.sound_panning = 0x0;
+			m_Context.master_volume = 0x0;
+
+			// Channel 1
+			m_Context.channel1_sweep = 0x0;
+			m_Context.channel1_length = 0x0;
+			m_Context.channel1_volume = 0x0;
+			m_Context.channel1_periodlow = 0x0;
+			m_Context.channel1_periodhigh = 0x0;
+
+			// Channel 2
+			m_Context.channel2_length = 0x0;
+			m_Context.channel2_volume = 0;
+			m_Context.channel2_periodlow = 0x0;
+			m_Context.channel2_periodhigh = 0x0;
+
+			// Channel 3
+			m_Context.channel3_dac_enable = 0x0;
+			m_Context.channel3_length = 0x0;
+			m_Context.channel3_output_level = 0x0;
+			m_Context.channel3_perioidlow = 0x0;
+			m_Context.channel3_perioidhigh = 0x0;
+
+			// Channel 4
+			m_Context.channel4_length = 0x0;
+			m_Context.channel4_volume = 0x0;
+			m_Context.channel4_frequency = 0x0;
+			m_Context.channel4_control = 0x0;
+
+			// PCM
+			m_Context.pcm12 = 0;
+			m_Context.pcm34 = 0;
+		}
 	}
 	else if (address == 0xFF25)
 	{
@@ -147,7 +189,7 @@ uint8_t Apu::Read(uint16_t address)
 
 	if (address == 0xFF26)
 	{
-		return m_Context.audio_master;
+		return m_Context.audio_master | 0x70;
 	}
 	else if (address == 0xFF25)
 	{
@@ -161,69 +203,69 @@ uint8_t Apu::Read(uint16_t address)
 	// Channel 1
 	if (address == 0xFF10)
 	{
-		return m_Context.channel1_sweep;
+		return m_Context.channel1_sweep | 0x80;
 	}
 	else if (address == 0xFF11)
 	{
-		return m_Context.channel1_length;
+		return m_Context.channel1_length | 0x3F;
 	}
 	else if (address == 0xFF12)
 	{
-		return m_Context.channel1_volume;
+		return m_Context.channel1_volume | 0x0;
 	}
 	else if (address == 0xFF13)
 	{
-		return m_Context.channel1_periodlow;
+		return m_Context.channel1_periodlow | 0xFF;
 	}
 	else if (address == 0xFF14)
 	{
-		return m_Context.channel1_periodhigh;
+		return m_Context.channel1_periodhigh | 0xBF;
 	}
 
 	// Channel 2
 	if (address == 0xFF16)
 	{
-		return m_Context.channel2_length;
+		return m_Context.channel2_length | 0x3F;
 	}
 	else if (address == 0xFF17)
 	{
-		return m_Context.channel2_volume;
+		return m_Context.channel2_volume | 0x0;
 	}
 	else if (address == 0xFF18)
 	{
-		return m_Context.channel2_periodlow;
+		return m_Context.channel2_periodlow | 0xFF;
 	}
 	else if (address == 0xFF19)
 	{
-		return m_Context.channel2_periodhigh;
+		return m_Context.channel2_periodhigh | 0xBF;
 	}
 
 	// Channel 3
 	if (address == 0xFF1A)
 	{
-		return m_Context.channel3_dac_enable;
+		return m_Context.channel3_dac_enable | 0x7F;
 	}
 	else if (address == 0xFF1B)
 	{
-		return m_Context.channel3_length;
+		return m_Context.channel3_length | 0xFF;
 	}
 	else if (address == 0xFF1C)
 	{
-		return m_Context.channel3_output_level;
+		return m_Context.channel3_output_level | 0x9F;
 	}
 	else if (address == 0xFF1D)
 	{
-		return m_Context.channel3_perioidlow;
+		return m_Context.channel3_perioidlow | 0xFF;
 	}
 	else if (address == 0xFF1E)
 	{
-		return m_Context.channel3_perioidhigh;
+		return m_Context.channel3_perioidhigh | 0xBF;
 	}
 
 	// Channel 4
 	if (address == 0xFF20)
 	{
-		return m_Context.channel4_length;
+		return m_Context.channel4_length | 0xFF;
 	}
 	else if (address == 0xFF21)
 	{
@@ -235,7 +277,7 @@ uint8_t Apu::Read(uint16_t address)
 	}
 	else if (address == 0xFF23)
 	{
-		return m_Context.channel4_control;
+		return m_Context.channel4_control | 0xBF;
 	}
 
 	// Write wave pattern RAM
@@ -255,4 +297,9 @@ uint8_t Apu::Read(uint16_t address)
 	}
 
 	return 0xFF;
+}
+
+bool Apu::IsAudioOn() const
+{
+	return (m_Context.audio_master & 0x80) == 0x80;
 }

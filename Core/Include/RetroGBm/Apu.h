@@ -58,6 +58,8 @@ public:
 
 	inline ApuContext* GetContext() { return &m_Context; }
 
+	bool IsAudioOn() const;
+
 private:
 	ApuContext m_Context = {};
 
