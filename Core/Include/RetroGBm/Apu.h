@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 
 class Timer;
 
@@ -64,4 +65,6 @@ private:
 	uint16_t m_ApuDiv = 0;
 
 	void IncrementApuTimer(bool doublespeed);
+
+	std::vector<uint8_t> m_WavePatternRam;
 };

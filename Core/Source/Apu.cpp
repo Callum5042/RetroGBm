@@ -3,6 +3,7 @@
 #include "RetroGBm/Timer.h"
 
 #include <cstdint>
+#include <iostream>
 
 Apu::Apu(Timer* timer) : m_Timer(timer)
 {
@@ -11,6 +12,9 @@ Apu::Apu(Timer* timer) : m_Timer(timer)
 void Apu::Init()
 {
 	m_Context = {};
+
+	m_WavePatternRam.resize(16);
+	std::fill(m_WavePatternRam.begin(), m_WavePatternRam.end(), 0);
 }
 
 void Apu::Tick(bool doublespeed)
@@ -35,6 +39,8 @@ void Apu::IncrementApuTimer(bool doublespeed)
 
 void Apu::Write(uint16_t address, uint8_t value)
 {
+	std::cout << "Write APU: 0x" << std::hex << address << '\n';
+
 	if (address == 0xFF26)
 	{
 		m_Context.audio_master = value & 0x80;
@@ -127,10 +133,18 @@ void Apu::Write(uint16_t address, uint8_t value)
 	{
 		m_Context.channel4_control = value;
 	}
+
+	// Write wave pattern RAM
+	if (address >= 0xFF30 && address <= 0xFF3F)
+	{
+		m_WavePatternRam[address - 0xFF30] = value;
+	}
 }
 
 uint8_t Apu::Read(uint16_t address)
 {
+	std::cout << "Read APU: 0x" << std::hex << address << '\n';
+
 	if (address == 0xFF26)
 	{
 		return m_Context.audio_master;
@@ -222,6 +236,12 @@ uint8_t Apu::Read(uint16_t address)
 	else if (address == 0xFF23)
 	{
 		return m_Context.channel4_control;
+	}
+
+	// Write wave pattern RAM
+	if (address >= 0xFF30 && address <= 0xFF3F)
+	{
+		return m_WavePatternRam[address - 0xFF30];
 	}
 
 	// PCM
