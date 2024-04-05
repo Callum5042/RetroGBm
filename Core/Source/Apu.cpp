@@ -208,5 +208,15 @@ uint8_t Apu::Read(uint16_t address)
 		return m_Context.channel4_control;
 	}
 
+	// PCM
+	if (address == 0xFF76)
+	{
+		return m_Context.pcm12;
+	}
+	else if (address == 0xFF77)
+	{
+		return m_Context.pcm34;
+	}
+
 	return 0xFF;
 }

@@ -33,6 +33,10 @@ struct ApuContext
 	uint8_t channel4_volume = 0;
 	uint8_t channel4_frequency = 0;
 	uint8_t channel4_control = 0xBF;
+
+	// PCM
+	uint8_t pcm12 = 0;
+	uint8_t pcm34 = 0;
 };
 
 class Apu
