@@ -34,12 +34,56 @@ void Apu::IncrementApuTimer(bool doublespeed)
 	if (old_apu_bitset && !m_ApuBitset)
 	{
 		m_ApuDiv++;
+
+		// Channel 1
+		if ((m_ApuDiv % 2) == 0)
+		{
+			// Channel 1
+			if (m_LengthCounter1 != 0)
+			{
+				m_LengthCounter1--;
+				if (m_LengthCounter1 == 0)
+				{
+					m_Context.audio_master &= ~0x1;
+				}
+			}
+
+			// Channel 2
+			if (m_LengthCounter2 != 0)
+			{
+				m_LengthCounter2--;
+				if (m_LengthCounter2 == 0)
+				{
+					m_Context.audio_master &= ~0x2;
+				}
+			}
+
+			// Channel 3
+			if (m_LengthCounter3 != 0)
+			{
+				m_LengthCounter3--;
+				if (m_LengthCounter3 == 0)
+				{
+					m_Context.audio_master &= ~0x4;
+				}
+			}
+
+			// Channel 4
+			if (m_LengthCounter4 != 0)
+			{
+				m_LengthCounter4--;
+				if (m_LengthCounter4 == 0)
+				{
+					m_Context.audio_master &= ~0x8;
+				}
+			}
+		}
 	}
 }
 
 void Apu::Write(uint16_t address, uint8_t value)
 {
-	std::cout << "Write APU: 0x" << std::hex << address << '\n';
+	// std::cout << "Write APU: 0x" << std::hex << address << '\n';
 
 	// Ignores writes to register if APU is off unless its the master control register 'NR52'
 	if (!this->IsAudioOn() && address != 0xFF26)
@@ -50,9 +94,9 @@ void Apu::Write(uint16_t address, uint8_t value)
 	if (address == 0xFF26)
 	{
 		m_Context.audio_master = value & 0x80;
-
 		if (!this->IsAudioOn())
 		{
+			m_Context.audio_master &= ~0xF;
 			m_Context.sound_panning = 0x0;
 			m_Context.master_volume = 0x0;
 
@@ -104,6 +148,7 @@ void Apu::Write(uint16_t address, uint8_t value)
 	else if (address == 0xFF11)
 	{
 		m_Context.channel1_length = value;
+		m_LengthCounter1 = 63 - (value & 0x3F);
 	}
 	else if (address == 0xFF12)
 	{
@@ -116,12 +161,20 @@ void Apu::Write(uint16_t address, uint8_t value)
 	else if (address == 0xFF14)
 	{
 		m_Context.channel1_periodhigh = value;
+
+		bool dac_enabled_flag = (m_Context.channel1_volume & 0xF8) != 0;
+		bool enable_channel_flag = (value & 0x80) == 0x80;
+		if (enable_channel_flag && dac_enabled_flag)
+		{
+			// m_Context.audio_master |= 0x1;
+		}
 	}
 
 	// Channel 2
 	if (address == 0xFF16)
 	{
 		m_Context.channel2_length = value;
+		m_LengthCounter2 = 63 - (value & 0x3F);
 	}
 	else if (address == 0xFF17)
 	{
@@ -134,6 +187,13 @@ void Apu::Write(uint16_t address, uint8_t value)
 	else if (address == 0xFF19)
 	{
 		m_Context.channel2_periodhigh = value;
+
+		bool dac_enabled_flag = (m_Context.channel2_volume & 0xF8) != 0;
+		bool enable_channel_flag = (value & 0x80) == 0x80;
+		if (enable_channel_flag && dac_enabled_flag)
+		{
+			// m_Context.audio_master |= 0x2;
+		}
 	}
 
 	// Channel 3
@@ -144,6 +204,7 @@ void Apu::Write(uint16_t address, uint8_t value)
 	else if (address == 0xFF1B)
 	{
 		m_Context.channel3_length = value;
+		m_LengthCounter3 = 63 - (value & 0x3F);
 	}
 	else if (address == 0xFF1C)
 	{
@@ -156,12 +217,20 @@ void Apu::Write(uint16_t address, uint8_t value)
 	else if (address == 0xFF1E)
 	{
 		m_Context.channel3_perioidhigh = value;
+
+		bool dac_enabled_flag = (m_Context.channel3_dac_enable & 0x80) == 0x80;
+		bool enable_channel_flag = (value & 0x80) == 0x80;
+		if (enable_channel_flag && dac_enabled_flag)
+		{
+			// m_Context.audio_master |= 0x4;
+		}
 	}
 
 	// Channel 4
 	if (address == 0xFF20)
 	{
 		m_Context.channel4_length = value;
+		m_LengthCounter4 = 63 - (value & 0x3F);
 	}
 	else if (address == 0xFF21)
 	{
@@ -174,6 +243,13 @@ void Apu::Write(uint16_t address, uint8_t value)
 	else if (address == 0xFF23)
 	{
 		m_Context.channel4_control = value;
+
+		bool dac_enabled_flag = (m_Context.channel4_volume & 0xF8) != 0;
+		bool enable_channel_flag = (value & 0x80) == 0x80;
+		if (enable_channel_flag && dac_enabled_flag)
+		{
+			// m_Context.audio_master |= 0x8;
+		}
 	}
 
 	// Write wave pattern RAM
@@ -185,7 +261,7 @@ void Apu::Write(uint16_t address, uint8_t value)
 
 uint8_t Apu::Read(uint16_t address)
 {
-	std::cout << "Read APU: 0x" << std::hex << address << '\n';
+	// std::cout << "Read APU: 0x" << std::hex << address << '\n';
 
 	if (address == 0xFF26)
 	{
