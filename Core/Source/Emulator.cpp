@@ -36,7 +36,7 @@ Emulator::Emulator()
 
 	m_Ppu = std::make_unique<Ppu>(this, m_Cpu.get(), m_Display.get(), m_Cartridge.get());
 	m_Dma = std::make_unique<Dma>();
-	m_Apu = std::make_unique<Apu>();
+	m_Apu = std::make_unique<Apu>(m_Timer.get());
 
 	m_Context.cpu = m_Cpu.get();
 	m_Context.bus = this;
@@ -54,7 +54,7 @@ Emulator::Emulator(std::unique_ptr<BaseCartridge> cartridge)
 	m_Ppu = std::make_unique<Ppu>();
 	m_Dma = std::make_unique<Dma>();
 	m_Joypad = std::make_unique<Joypad>();
-	m_Apu = std::make_unique<Apu>();
+	m_Apu = std::make_unique<Apu>(m_Timer.get());
 
 	m_Context.cpu = m_Cpu.get();
 	m_Context.bus = this;
@@ -92,7 +92,7 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 
 	m_Ppu = std::make_unique<Ppu>(this, m_Cpu.get(), m_Display.get(), m_Cartridge.get());
 	m_Dma = std::make_unique<Dma>();
-	m_Apu = std::make_unique<Apu>();
+	m_Apu = std::make_unique<Apu>(m_Timer.get());
 
 	m_Context.cpu = m_Cpu.get();
 	m_Context.bus = this;
@@ -284,19 +284,23 @@ void Emulator::Cycle(int machine_cycles)
 		for (int n = 0; n < 4; ++n)
 		{
 			m_Timer->Tick();
+
 			if (IsDoubleSpeedMode())
 			{
-				m_Timer->Tick();
+				if (n & 1)
+				{
+					m_Ppu->Tick();
+					m_Apu->Tick(this->IsDoubleSpeedMode());
+				}
 			}
-
-			m_Ppu->Tick();
+			else
+			{
+				m_Ppu->Tick();
+				m_Apu->Tick(this->IsDoubleSpeedMode());
+			}
 		}
 
 		m_Dma->Tick();
-		if (IsDoubleSpeedMode())
-		{
-			m_Dma->Tick();
-		}
 	}
 }
 
