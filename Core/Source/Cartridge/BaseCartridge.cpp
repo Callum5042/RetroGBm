@@ -188,6 +188,9 @@ std::unique_ptr<BaseCartridge> LoadCartridgeFromMemory(const std::vector<uint8_t
 		case CartridgeTypeV2::MBC5:
 		case CartridgeTypeV2::MBC5_RAM:
 		case CartridgeTypeV2::MBC5_RAM_BATTERY:
+		case CartridgeTypeV2::MBC5_RUMBLE:
+		case CartridgeTypeV2::MBC5_RUMBLE_RAM:
+		case CartridgeTypeV2::MBC5_RUMBLE_RAM_BATTERY:
 			return std::make_unique<CartridgeMBC5>(data);
 		default:
 			throw std::runtime_error("Could not determine cartridge from file");
