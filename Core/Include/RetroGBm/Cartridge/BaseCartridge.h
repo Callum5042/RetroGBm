@@ -118,3 +118,5 @@ std::unique_ptr<BaseCartridge> LoadCartridgeFromMemory(const std::vector<uint8_t
 
 const std::string& CartridgeTypeToString(CartridgeTypeV2 cartridge_type);
 std::string ColourModeToString(ColourModeV2 colour_mode);
+
+bool CartridgeHasRTC(const BaseCartridge* cartridge);

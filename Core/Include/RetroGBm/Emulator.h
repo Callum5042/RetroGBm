@@ -8,6 +8,8 @@
 #include <fstream>
 #include <mutex>
 
+#include "HighTimer.h"
+
 class Cpu;
 class Ppu;
 class Ram;
@@ -137,4 +139,11 @@ private:
 	std::ofstream m_TraceLog;
 
 	std::string m_BatteryPath;
+
+	// Real-Time Clock (RTC)
+	HighTimer m_RealTimeClockTimer;
+	uint8_t m_RtcSeconds = 0;
+	uint8_t m_RtcMinutes = 0;
+	uint8_t m_RtcHours = 0;
+	uint16_t m_RtcDays = 0;
 };

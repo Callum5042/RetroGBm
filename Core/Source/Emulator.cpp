@@ -16,8 +16,10 @@
 #include "RetroGBm/Display.h"
 #include "RetroGBm/Ppu.h"
 #include "RetroGBm/Apu.h"
+#include "RetroGBm/HighTimer.h"
 
 #include "RetroGBm/Cartridge/BaseCartridge.h"
+#include "RetroGBm/Cartridge/CartridgeMBC3.h"
 
 using namespace std::chrono_literals;
 
@@ -102,6 +104,8 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	m_Timer->Init();
 	m_Ppu->Init();
 	m_Apu->Init();
+
+	m_RealTimeClockTimer.Start();
 
 	// Load RAM if cartridge has a battery
 	if (m_Cartridge->HasBattery())
@@ -219,13 +223,13 @@ void Emulator::Tick()
 		if (IsTraceLogEnabled())
 		{
 			std::string debug_format = std::format("OP:{:X},PC:{:X},AF:{:X},BC:{:X},DE:{:X},HL:{:X},SP:{:X}",
-												   opcode,
-												   m_Context.cpu->ProgramCounter,
-												   m_Context.cpu->GetRegister(RegisterType16::REG_AF),
-												   m_Context.cpu->GetRegister(RegisterType16::REG_BC),
-												   m_Context.cpu->GetRegister(RegisterType16::REG_DE),
-												   m_Context.cpu->GetRegister(RegisterType16::REG_HL),
-												   m_Context.cpu->StackPointer);
+				opcode,
+				m_Context.cpu->ProgramCounter,
+				m_Context.cpu->GetRegister(RegisterType16::REG_AF),
+				m_Context.cpu->GetRegister(RegisterType16::REG_BC),
+				m_Context.cpu->GetRegister(RegisterType16::REG_DE),
+				m_Context.cpu->GetRegister(RegisterType16::REG_HL),
+				m_Context.cpu->StackPointer);
 
 			m_TraceLog << debug_format << std::endl;
 		}
@@ -238,6 +242,46 @@ void Emulator::Tick()
 		}
 
 		m_Cpu->Execute(&m_Context, opcode);
+
+		// Real-Time Clock (RTC)
+		if (CartridgeHasRTC(m_Cartridge.get()))
+		{
+			m_RealTimeClockTimer.Tick();
+			if (m_RealTimeClockTimer.TotalTime() > 1.0f)
+			{
+				// Seconds
+				m_RtcSeconds++;
+				if (m_RtcSeconds >= 60)
+				{
+					// Minutes
+					m_RtcSeconds = 0;
+					m_RtcMinutes++;
+
+					if (m_RtcMinutes >= 60)
+					{
+						// Hours
+						m_RtcMinutes = 0;
+						m_RtcHours++;
+
+						if (m_RtcHours >= 24)
+						{
+							// Days
+							m_RtcHours = 0;
+							m_RtcDays++;
+						}
+					}
+				}
+
+				m_RealTimeClockTimer.Reset();
+
+				// Update registers
+				CartridgeMBC3* mbc3 = dynamic_cast<CartridgeMBC3*>(m_Cartridge.get());
+				if (mbc3 != nullptr)
+				{
+					mbc3->SetRTC(m_RtcSeconds, m_RtcMinutes, m_RtcHours, m_RtcDays);
+				}
+			}
+		}
 	}
 	else
 	{

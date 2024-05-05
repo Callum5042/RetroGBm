@@ -16,6 +16,8 @@ public:
 	void SaveState(std::fstream* file);
 	void LoadState(std::fstream* file);
 
+	void SetRTC(uint8_t seconds, uint8_t minutes, uint8_t hours, uint16_t days);
+
 	inline bool IsRamEnabled() const
 	{
 		return m_ExternalRamEnabled && !m_ExternalRam.empty();
@@ -35,4 +37,7 @@ protected:
 	bool m_ExternalRamEnabled = false;
 	uint8_t m_RomBank = 1;
 	uint8_t m_RamBank = 0;
+
+	// RTC registers
+	std::vector<uint8_t> m_RtcRegisters;
 };

@@ -253,3 +253,15 @@ std::string ColourModeToString(ColourModeV2 colour_mode)
 			return "Unknown";
 	}
 }
+
+bool CartridgeHasRTC(const BaseCartridge* cartridge)
+{
+	switch (cartridge->GetCartridgeData().cartridge_type)
+	{
+		case CartridgeTypeV2::MBC3_TIMER_BATTERY:
+		case CartridgeTypeV2::MBC3_TIMER_RAM_BATTERY:
+			return true;
+		default:
+			return false;
+	}
+}

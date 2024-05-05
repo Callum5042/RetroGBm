@@ -5,6 +5,9 @@ CartridgeMBC3::CartridgeMBC3(CartridgeDataV2 cartridge_data) : BaseCartridge(car
 {
     m_ExternalRam.resize(cartridge_data.ram_size);
     std::fill(m_ExternalRam.begin(), m_ExternalRam.end(), 0x0);
+
+    m_RtcRegisters.resize(5);
+    std::fill(m_RtcRegisters.begin(), m_RtcRegisters.end(), 0x0);
 }
 
 uint8_t CartridgeMBC3::Read(uint16_t address)
@@ -23,8 +26,18 @@ uint8_t CartridgeMBC3::Read(uint16_t address)
     {
         if (this->IsRamEnabled())
         {
-            int offset = ((address - 0xA000) + (m_RamBank * 0x2000)) % m_ExternalRam.size();
-            return m_ExternalRam[offset];
+            if (m_RamBank >= 0x0 && m_RamBank <= 0x03)
+            {
+                // RAM
+                int offset = ((address - 0xA000) + (m_RamBank * 0x2000)) % m_ExternalRam.size();
+                return m_ExternalRam[offset];
+            }
+            else if (m_RamBank >= 0x08 && m_RamBank <= 0x0C)
+            {
+                // Real-Time Clock (RTC)
+                uint8_t index = (m_RamBank - 0x08);
+                return m_RtcRegisters[index];
+            }
         }
     }
 
@@ -63,14 +76,42 @@ void CartridgeMBC3::Write(uint16_t address, uint8_t value)
             // Only set RAM bank if value is less then 3
             m_RamBank = value & 0x3;
         }
+
+        // Real-Time Clock (RTC)
+        if (value >= 0x08 && value <= 0x0C)
+        {
+            m_RamBank = value;
+        }
+    }
+    else if (address >= 0x6000 && address <= 0x7FFF)
+    {
+        // TODO: RTC Latch
+        if (value == 0x0)
+        {
+
+        }
+        else if (value == 0x1)
+        {
+
+        }
     }
     else if (address >= 0xA000 && address <= 0xBFFF)
     {
         // Writes to RAM
         if (this->IsRamEnabled())
         {
-            int offset = ((address - 0xA000) + (m_RamBank * 0x2000)) % m_ExternalRam.size();
-            m_ExternalRam[offset] = value;
+            if (m_RamBank >= 0x0 && m_RamBank <= 0x03)
+            {
+                // RAM
+                int offset = ((address - 0xA000) + (m_RamBank * 0x2000)) % m_ExternalRam.size();
+                m_ExternalRam[offset] = value;
+            }
+            else if (m_RamBank >= 0x08 && m_RamBank <= 0x0C)
+            {
+                // Real-Time Clock (RTC)
+                uint8_t index = (m_RamBank - 0x08);
+                m_RtcRegisters[index] = value;
+            }
         }
     }
 }
@@ -97,4 +138,13 @@ void CartridgeMBC3::LoadState(std::fstream* file)
     file->read(reinterpret_cast<char*>(&m_ExternalRamEnabled), sizeof(m_ExternalRamEnabled));
     file->read(reinterpret_cast<char*>(&m_RomBank), sizeof(m_RomBank));
     file->read(reinterpret_cast<char*>(&m_RamBank), sizeof(m_RamBank));
+}
+
+void CartridgeMBC3::SetRTC(uint8_t seconds, uint8_t minutes, uint8_t hours, uint16_t days)
+{
+    m_RtcRegisters[0] = seconds & 0x3B;
+    m_RtcRegisters[1] = minutes & 0x3B;
+    m_RtcRegisters[2] = hours & 0x17;
+    m_RtcRegisters[3] = days & 0xFF;
+    m_RtcRegisters[4] = days & 0x100;
 }
