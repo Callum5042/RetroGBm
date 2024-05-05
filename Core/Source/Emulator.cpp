@@ -16,8 +16,10 @@
 #include "RetroGBm/Display.h"
 #include "RetroGBm/Ppu.h"
 #include "RetroGBm/Apu.h"
+#include "RetroGBm/HighTimer.h"
 
 #include "RetroGBm/Cartridge/BaseCartridge.h"
+#include "RetroGBm/Cartridge/CartridgeMBC3.h"
 
 using namespace std::chrono_literals;
 
@@ -120,6 +122,18 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 			battery.read(reinterpret_cast<char*>(external_ram.data()), external_ram.size());
 			m_Cartridge->SetExternalRam(std::move(external_ram));
 
+			// Save RTC
+			CartridgeMBC3* mbc3 = dynamic_cast<CartridgeMBC3*>(m_Cartridge.get());
+			if (mbc3 != nullptr && CartridgeHasRTC(mbc3))
+			{
+				int rtc_size = 0;
+				battery.read(reinterpret_cast<char*>(&rtc_size), sizeof(rtc_size));
+
+				mbc3->m_RtcRegisters.resize(5);
+				battery.read(reinterpret_cast<char*>(mbc3->m_RtcRegisters.data()), mbc3->m_RtcRegisters.size() * sizeof(uint8_t));
+				battery.read(reinterpret_cast<char*>(&mbc3->m_RtcData), sizeof(mbc3->m_RtcData));
+			}
+
 			battery.close();
 		}
 
@@ -134,6 +148,16 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 
 			std::vector<uint8_t> external_ram = m_Cartridge->GetExternalRam();
 			battery.write(reinterpret_cast<char*>(external_ram.data()), external_ram.size());
+
+			// Save RTC
+			CartridgeMBC3* mbc3 = dynamic_cast<CartridgeMBC3*>(m_Cartridge.get());
+			if (mbc3 != nullptr && CartridgeHasRTC(mbc3))
+			{
+				int rtc_size = static_cast<int>(mbc3->m_RtcRegisters.size());
+				battery.write(reinterpret_cast<const char*>(&rtc_size), sizeof(rtc_size));
+				battery.write(reinterpret_cast<const char*>(mbc3->m_RtcRegisters.data()), mbc3->m_RtcRegisters.size() * sizeof(uint8_t));
+				battery.write(reinterpret_cast<const char*>(&mbc3->m_RtcData), sizeof(mbc3->m_RtcData));
+			}
 
 			battery.close();
 		});
@@ -219,13 +243,13 @@ void Emulator::Tick()
 		if (IsTraceLogEnabled())
 		{
 			std::string debug_format = std::format("OP:{:X},PC:{:X},AF:{:X},BC:{:X},DE:{:X},HL:{:X},SP:{:X}",
-												   opcode,
-												   m_Context.cpu->ProgramCounter,
-												   m_Context.cpu->GetRegister(RegisterType16::REG_AF),
-												   m_Context.cpu->GetRegister(RegisterType16::REG_BC),
-												   m_Context.cpu->GetRegister(RegisterType16::REG_DE),
-												   m_Context.cpu->GetRegister(RegisterType16::REG_HL),
-												   m_Context.cpu->StackPointer);
+				opcode,
+				m_Context.cpu->ProgramCounter,
+				m_Context.cpu->GetRegister(RegisterType16::REG_AF),
+				m_Context.cpu->GetRegister(RegisterType16::REG_BC),
+				m_Context.cpu->GetRegister(RegisterType16::REG_DE),
+				m_Context.cpu->GetRegister(RegisterType16::REG_HL),
+				m_Context.cpu->StackPointer);
 
 			m_TraceLog << debug_format << std::endl;
 		}
@@ -238,6 +262,16 @@ void Emulator::Tick()
 		}
 
 		m_Cpu->Execute(&m_Context, opcode);
+
+		// Real-Time Clock (RTC)
+		if (CartridgeHasRTC(m_Cartridge.get()))
+		{
+			CartridgeMBC3* mbc3 = dynamic_cast<CartridgeMBC3*>(m_Cartridge.get());
+			if (mbc3 != nullptr && mbc3->IsRtcEnabled())
+			{
+				mbc3->TickRTC();
+			}
+		}
 	}
 	else
 	{
