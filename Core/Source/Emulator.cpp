@@ -105,8 +105,6 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	m_Ppu->Init();
 	m_Apu->Init();
 
-	m_RealTimeClockTimer.Start();
-
 	// Load RAM if cartridge has a battery
 	if (m_Cartridge->HasBattery())
 	{
@@ -124,6 +122,18 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 			battery.read(reinterpret_cast<char*>(external_ram.data()), external_ram.size());
 			m_Cartridge->SetExternalRam(std::move(external_ram));
 
+			// Save RTC
+			CartridgeMBC3* mbc3 = dynamic_cast<CartridgeMBC3*>(m_Cartridge.get());
+			if (mbc3 != nullptr && CartridgeHasRTC(mbc3))
+			{
+				int rtc_size = 0;
+				battery.read(reinterpret_cast<char*>(&rtc_size), sizeof(rtc_size));
+
+				mbc3->m_RtcRegisters.resize(5);
+				battery.read(reinterpret_cast<char*>(mbc3->m_RtcRegisters.data()), mbc3->m_RtcRegisters.size() * sizeof(uint8_t));
+				battery.read(reinterpret_cast<char*>(&mbc3->m_RtcData), sizeof(mbc3->m_RtcData));
+			}
+
 			battery.close();
 		}
 
@@ -138,6 +148,16 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 
 			std::vector<uint8_t> external_ram = m_Cartridge->GetExternalRam();
 			battery.write(reinterpret_cast<char*>(external_ram.data()), external_ram.size());
+
+			// Save RTC
+			CartridgeMBC3* mbc3 = dynamic_cast<CartridgeMBC3*>(m_Cartridge.get());
+			if (mbc3 != nullptr && CartridgeHasRTC(mbc3))
+			{
+				int rtc_size = static_cast<int>(mbc3->m_RtcRegisters.size());
+				battery.write(reinterpret_cast<const char*>(&rtc_size), sizeof(rtc_size));
+				battery.write(reinterpret_cast<const char*>(mbc3->m_RtcRegisters.data()), mbc3->m_RtcRegisters.size() * sizeof(uint8_t));
+				battery.write(reinterpret_cast<const char*>(&mbc3->m_RtcData), sizeof(mbc3->m_RtcData));
+			}
 
 			battery.close();
 		});
@@ -246,40 +266,10 @@ void Emulator::Tick()
 		// Real-Time Clock (RTC)
 		if (CartridgeHasRTC(m_Cartridge.get()))
 		{
-			m_RealTimeClockTimer.Tick();
-			if (m_RealTimeClockTimer.TotalTime() > 1.0f)
+			CartridgeMBC3* mbc3 = dynamic_cast<CartridgeMBC3*>(m_Cartridge.get());
+			if (mbc3 != nullptr && mbc3->IsRtcEnabled())
 			{
-				// Seconds
-				m_RtcSeconds++;
-				if (m_RtcSeconds >= 60)
-				{
-					// Minutes
-					m_RtcSeconds = 0;
-					m_RtcMinutes++;
-
-					if (m_RtcMinutes >= 60)
-					{
-						// Hours
-						m_RtcMinutes = 0;
-						m_RtcHours++;
-
-						if (m_RtcHours >= 24)
-						{
-							// Days
-							m_RtcHours = 0;
-							m_RtcDays++;
-						}
-					}
-				}
-
-				m_RealTimeClockTimer.Reset();
-
-				// Update registers
-				CartridgeMBC3* mbc3 = dynamic_cast<CartridgeMBC3*>(m_Cartridge.get());
-				if (mbc3 != nullptr)
-				{
-					mbc3->SetRTC(m_RtcSeconds, m_RtcMinutes, m_RtcHours, m_RtcDays);
-				}
+				mbc3->TickRTC();
 			}
 		}
 	}
