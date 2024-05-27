@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.provider.DocumentsContract
+import android.util.Log
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
@@ -159,6 +160,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun registerButtons() {
+
+        Log.d("RetroGBm", "Register Button double yes")
+
         val buttonLeft = findViewById<Button>(R.id.btnLeft)
         val buttonRight = findViewById<Button>(R.id.btnRight)
         val buttonUp = findViewById<Button>(R.id.btnUp)
@@ -183,6 +187,7 @@ class MainActivity : AppCompatActivity() {
     private fun setButtonTouchListener(button: View, btn: Int) {
         button.setOnTouchListener(object : View.OnTouchListener {
             override fun onTouch(view: View?, event: MotionEvent?): Boolean {
+                Log.d("RetroGBm", "A button has been touched indeed")
                 when (event?.action) {
                     MotionEvent.ACTION_DOWN -> {
                         // Handle touch down event
