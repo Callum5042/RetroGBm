@@ -156,10 +156,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-
-        // Show cartridge details
-        val title = emulator.getCartridgeTitle()
-        binding.sampleText.text = title
     }
 
     private fun registerButtons() {
