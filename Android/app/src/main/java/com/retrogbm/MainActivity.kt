@@ -238,15 +238,15 @@ class MainActivity : AppCompatActivity() {
                                         emulator.pressButton(4, true)
                                     }
                                     else if (currentSection == 3) {
-                                        // Up
+                                        // Left
                                         emulator.pressButton(6, true)
                                     }
                                     else if (currentSection == 5) {
-                                        // Up
+                                        // Right
                                         emulator.pressButton(7, true)
                                     }
                                     else if (currentSection == 7) {
-                                        // Up
+                                        // Down
                                         emulator.pressButton(5, true)
                                     }
                                 }
@@ -254,26 +254,56 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+                else if (event?.action == MotionEvent.ACTION_DOWN) {
+                    // Check which subsection we are in
+                    for (i in subRects.indices) {
+                        if (subRects[i].contains(x!!, y!!)) {
+                            if (i == 1 || i == 3 || i == 5 || i == 7) {
+                                currentSection = i
+                                if (currentSection == 1) {
+                                    // Up
+                                    emulator.pressButton(4, true)
+                                } else if (currentSection == 3) {
+                                    // Left
+                                    emulator.pressButton(6, true)
+                                } else if (currentSection == 5) {
+                                    // Right
+                                    emulator.pressButton(7, true)
+                                } else if (currentSection == 7) {
+                                    // Down
+                                    emulator.pressButton(5, true)
+                                }
+                                Log.d("RetroGBm", "DPad section ${currentSection} down")
+                            }
+                        }
+                    }
+                }
+                else if (event?.action == MotionEvent.ACTION_UP) {
+                    // Check which subsection we are in
+                    val subRects = subdivideRectInto9(rect)
+                    for (i in subRects.indices) {
+                        if (subRects[i].contains(x!!, y!!)) {
+                            if (i == 1 || i == 3 || i == 5 || i == 7) {
+                                if (currentSection == 1) {
+                                    // Up
+                                    emulator.pressButton(4, false)
+                                } else if (currentSection == 3) {
+                                    // Left
+                                    emulator.pressButton(6, false)
+                                } else if (currentSection == 5) {
+                                    // Right
+                                    emulator.pressButton(7, false)
+                                } else if (currentSection == 7) {
+                                    // Down
+                                    emulator.pressButton(5, false)
+                                }
 
-//                if (event?.action == MotionEvent.ACTION_DOWN) {
-//                    // Check which subsection we are in
-//                    for (i in subRects.indices) {
-//                        if (subRects[i].contains(x!!, y!!)) {
-//                            Log.d("RetroGBm", "DPad section ${i} down")
-//                            break
-//                        }
-//                    }
-//                }
-//                else if (event?.action == MotionEvent.ACTION_UP) {
-//                    // Check which subsection we are in
-//                    val subRects = subdivideRectInto9(rect)
-//                    for (i in subRects.indices) {
-//                        if (subRects[i].contains(x!!, y!!)) {
-//                            Log.d("RetroGBm", "DPad section ${i} up")
-//                            break
-//                        }
-//                    }
-//                }
+                                currentSection
+                                Log.d("RetroGBm", "DPad section ${currentSection} up")
+                            }
+                        }
+                    }
+                }
 
 //                when (event?.action) {
 //                    MotionEvent.ACTION_HOVER_ENTER -> Log.d("RetroGBm", "DButton hover enter")
