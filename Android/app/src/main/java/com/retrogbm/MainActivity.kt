@@ -163,29 +163,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun registerButtons() {
 
-        Log.d("RetroGBm", "Register Button double yes")
-
-//        val buttonLeft = findViewById<Button>(R.id.btnLeft)
-//        val buttonRight = findViewById<Button>(R.id.btnRight)
-//        val buttonUp = findViewById<Button>(R.id.btnUp)
-//        val buttonDown = findViewById<Button>(R.id.btnDown)
-//
-//        val buttonA = findViewById<Button>(R.id.btnA)
-//        val buttonB = findViewById<Button>(R.id.btnB)
-//        val buttonStart = findViewById<Button>(R.id.btnStart)
-//        val buttonSelect = findViewById<Button>(R.id.btnSelect)
-//
-//        setButtonTouchListener(buttonLeft, 6)
-//        setButtonTouchListener(buttonRight, 7)
-//        setButtonTouchListener(buttonUp, 4)
-//        setButtonTouchListener(buttonDown, 5)
-//
-//        setButtonTouchListener(buttonA, 0)
-//        setButtonTouchListener(buttonB, 1)
-//        setButtonTouchListener(buttonStart, 2)
-//        setButtonTouchListener(buttonSelect, 3)
-
-
         val buttonDPad = findViewById<ImageButton>(R.id.btnDPad)
         var currentSection = 0
 
@@ -202,113 +179,64 @@ class MainActivity : AppCompatActivity() {
                 rect.offsetTo(0, 0)
                 val subRects = subdivideRectInto9(rect)
 
-                if (event?.action == MotionEvent.ACTION_MOVE) {
-                    // Check which subsection we are in
-                    for (i in subRects.indices) {
-                        if (subRects[i].contains(x!!, y!!)) {
+                when (event?.action) {
+                    MotionEvent.ACTION_MOVE -> {
+                        // Check which subsection we are in
+                        for (i in subRects.indices) {
+                            if (subRects[i].contains(x!!, y!!)) {
+                                // We only care about 1, 3, 5, 7
+                                if (i == 1 || i == 3 || i == 5 || i == 7) {
+                                    if (currentSection != i) {
+                                        val buttonIndex = selectedButton(currentSection)
+                                        if (buttonIndex != null) {
+                                            emulator.pressButton(buttonIndex, false)
+                                            Log.d("RetroGBm", "DPad section ${buttonIndex} up")
 
-                            // We only care about 1, 3, 5, 7
-                            if (i == 1 || i == 3 || i == 5 || i == 7) {
-                                if (currentSection != i) {
+                                            currentSection = i
 
-                                    if (currentSection == 1) {
-                                        // Up
-                                        emulator.pressButton(4, false)
+                                            val buttonIndexDown = selectedButton(currentSection)
+                                            if (buttonIndexDown != null) {
+                                                emulator.pressButton(buttonIndexDown, true)
+                                                Log.d("RetroGBm", "DPad section ${buttonIndexDown} down"                                            )
+                                            }
+                                        }
                                     }
-                                    else if (currentSection == 3) {
-                                        // Up
-                                        emulator.pressButton(6, false)
-                                    }
-                                    else if (currentSection == 5) {
-                                        // Up
-                                        emulator.pressButton(7, false)
-                                    }
-                                    else if (currentSection == 7) {
-                                        // Up
-                                        emulator.pressButton(5, false)
-                                    }
-
-                                    Log.d("RetroGBm", "DPad section ${currentSection} up")
-
+                                }
+                            }
+                        }
+                    }
+                    MotionEvent.ACTION_DOWN -> {
+                        // Check which subsection we are in
+                        for (i in subRects.indices) {
+                            if (subRects[i].contains(x!!, y!!)) {
+                                if (i == 1 || i == 3 || i == 5 || i == 7) {
                                     currentSection = i
 
-                                    Log.d("RetroGBm", "DPad section ${currentSection} down")
-                                    if (currentSection == 1) {
-                                        // Up
-                                        emulator.pressButton(4, true)
+                                    val buttonIndex = selectedButton(currentSection)
+                                    if (buttonIndex != null){
+                                        emulator.pressButton(buttonIndex, true)
+                                        Log.d("RetroGBm", "DPad section ${buttonIndex} down")
                                     }
-                                    else if (currentSection == 3) {
-                                        // Left
-                                        emulator.pressButton(6, true)
-                                    }
-                                    else if (currentSection == 5) {
-                                        // Right
-                                        emulator.pressButton(7, true)
-                                    }
-                                    else if (currentSection == 7) {
-                                        // Down
-                                        emulator.pressButton(5, true)
+                                }
+                            }
+                        }
+                    }
+                    MotionEvent.ACTION_UP -> {
+                        // Check which subsection we are in
+                        val subRects = subdivideRectInto9(rect)
+                        for (i in subRects.indices) {
+                            if (subRects[i].contains(x!!, y!!)) {
+                                if (i == 1 || i == 3 || i == 5 || i == 7) {
+                                    val buttonIndex = selectedButton(currentSection)
+                                    if (buttonIndex != null){
+                                        emulator.pressButton(buttonIndex, false)
+                                        Log.d("RetroGBm", "DPad section ${buttonIndex} up")
                                     }
                                 }
                             }
                         }
                     }
                 }
-                else if (event?.action == MotionEvent.ACTION_DOWN) {
-                    // Check which subsection we are in
-                    for (i in subRects.indices) {
-                        if (subRects[i].contains(x!!, y!!)) {
-                            if (i == 1 || i == 3 || i == 5 || i == 7) {
-                                currentSection = i
-                                if (currentSection == 1) {
-                                    // Up
-                                    emulator.pressButton(4, true)
-                                } else if (currentSection == 3) {
-                                    // Left
-                                    emulator.pressButton(6, true)
-                                } else if (currentSection == 5) {
-                                    // Right
-                                    emulator.pressButton(7, true)
-                                } else if (currentSection == 7) {
-                                    // Down
-                                    emulator.pressButton(5, true)
-                                }
-                                Log.d("RetroGBm", "DPad section ${currentSection} down")
-                            }
-                        }
-                    }
-                }
-                else if (event?.action == MotionEvent.ACTION_UP) {
-                    // Check which subsection we are in
-                    val subRects = subdivideRectInto9(rect)
-                    for (i in subRects.indices) {
-                        if (subRects[i].contains(x!!, y!!)) {
-                            if (i == 1 || i == 3 || i == 5 || i == 7) {
-                                if (currentSection == 1) {
-                                    // Up
-                                    emulator.pressButton(4, false)
-                                } else if (currentSection == 3) {
-                                    // Left
-                                    emulator.pressButton(6, false)
-                                } else if (currentSection == 5) {
-                                    // Right
-                                    emulator.pressButton(7, false)
-                                } else if (currentSection == 7) {
-                                    // Down
-                                    emulator.pressButton(5, false)
-                                }
-
-                                currentSection
-                                Log.d("RetroGBm", "DPad section ${currentSection} up")
-                            }
-                        }
-                    }
-                }
-
-//                when (event?.action) {
-//                    MotionEvent.ACTION_HOVER_ENTER -> Log.d("RetroGBm", "DButton hover enter")
-//                    MotionEvent.ACTION_HOVER_EXIT -> Log.d("RetroGBm", "DButton hover exit")
-//                }
 
                 return v?.onTouchEvent(event) ?: true
             }
@@ -325,6 +253,16 @@ class MainActivity : AppCompatActivity() {
 
         val buttonSelect = findViewById<ImageButton>(R.id.btnButtonSelect)
         setButtonTouchListener(buttonSelect, 3)
+    }
+
+    fun selectedButton(currentSection: Int): Int? {
+        when (currentSection) {
+            1 -> return 4 // Up
+            3 -> return 6 // Left
+            5 -> return 7 // Right
+            7 -> return 5  // Down
+        }
+        return null
     }
 
     fun subdivideRectInto9(rect: Rect): List<Rect> {
