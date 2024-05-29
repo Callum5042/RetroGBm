@@ -1,83 +1,190 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#161922"
+    android:orientation="vertical"
     tools:context=".MainActivity">
 
     <ImageView
         android:id="@+id/ivEmulator"
         android:layout_width="match_parent"
-        android:layout_height="400dp"
+        android:layout_height="wrap_content"
         android:scaleType="fitStart"
+        android:adjustViewBounds="true"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <ImageButton
-        android:id="@+id/btnDPad"
-        android:layout_width="147dp"
-        android:layout_height="148dp"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="12dp"
-        android:adjustViewBounds="true"
-        android:background="@null"
-        android:scaleType="fitStart"
-        android:src="@drawable/button_dpad"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/ivEmulator" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
 
-    <ImageButton
-        android:id="@+id/btnButtonA"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:layout_marginTop="56dp"
-        android:layout_marginEnd="16dp"
-        android:adjustViewBounds="true"
-        android:background="@null"
-        android:scaleType="fitCenter"
-        android:src="@drawable/button_a"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/ivEmulator" />
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
 
-    <ImageButton
-        android:id="@+id/btnButtonB"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:layout_marginTop="88dp"
-        android:layout_marginEnd="12dp"
-        android:background="@null"
-        android:scaleType="fitCenter"
-        android:src="@drawable/button_b"
-        app:layout_constraintEnd_toStartOf="@+id/btnButtonA"
-        app:layout_constraintTop_toBottomOf="@+id/ivEmulator" />
+            <ImageButton
+                android:id="@+id/btnDPad"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:padding="20dp"
+                android:background="@null"
+                android:scaleType="fitStart"
+                android:src="@drawable/button_dpad" />
 
-    <ImageButton
-        android:id="@+id/btnButtonSelect"
-        android:layout_width="50dp"
-        android:layout_height="20dp"
-        android:layout_marginStart="120dp"
-        android:layout_marginBottom="56dp"
-        android:adjustViewBounds="true"
-        android:background="@null"
-        android:scaleType="fitCenter"
-        android:src="@drawable/startselect_button"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        </RelativeLayout>
 
-    <ImageButton
-        android:id="@+id/btnButtonStart"
-        android:layout_width="50dp"
-        android:layout_height="20dp"
-        android:layout_marginEnd="112dp"
-        android:layout_marginBottom="56dp"
-        android:adjustViewBounds="true"
-        android:background="@null"
-        android:scaleType="fitCenter"
-        android:src="@drawable/startselect_button"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+            <ImageButton
+                android:id="@+id/btnButtonA"
+                android:layout_width="60dp"
+                android:layout_height="0dp"
+                android:layout_marginTop="60dp"
+                android:layout_marginEnd="16dp"
+                android:adjustViewBounds="true"
+                android:background="@null"
+                android:scaleType="fitCenter"
+                android:src="@drawable/button_a"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageButton
+                android:id="@+id/btnButtonB"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_marginTop="30dp"
+                android:layout_marginEnd="20dp"
+                android:background="@null"
+                android:scaleType="fitCenter"
+                android:src="@drawable/button_b"
+                app:layout_constraintEnd_toStartOf="@+id/btnButtonA"
+                app:layout_constraintTop_toTopOf="@+id/btnButtonA" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="bottom|center_horizontal">
+
+        <ImageButton
+            android:id="@+id/btnButtonSelect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:scaleX="0.5"
+            android:scaleY="0.5"
+            android:src="@drawable/startselect_button" />
+
+        <ImageButton
+            android:id="@+id/btnButtonStart"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:scaleType="fitCenter"
+            android:scaleX="0.5"
+            android:scaleY="0.5"
+            android:src="@drawable/startselect_button" />
+
+    </LinearLayout>
+
+<!--    <RelativeLayout-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent"-->
+<!--        android:layout_marginBottom="331dp"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintTop_toTopOf="parent">-->
+
+<!--        <ImageView-->
+<!--            android:id="@+id/ivEmulator"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="400dp"-->
+<!--            android:scaleType="fitStart"-->
+<!--            app:layout_constraintEnd_toEndOf="parent"-->
+<!--            app:layout_constraintStart_toStartOf="parent"-->
+<!--            app:layout_constraintTop_toTopOf="parent" />-->
+
+<!--        <RelativeLayout-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="match_parent">-->
+
+<!--            <ImageButton-->
+<!--                android:id="@+id/btnButtonA"-->
+<!--                android:layout_width="60dp"-->
+<!--                android:layout_height="60dp"-->
+<!--                android:layout_marginTop="56dp"-->
+<!--                android:layout_marginEnd="24dp"-->
+<!--                android:adjustViewBounds="true"-->
+<!--                android:background="@null"-->
+<!--                android:scaleType="fitCenter"-->
+<!--                android:src="@drawable/button_a"-->
+<!--                app:layout_constraintEnd_toEndOf="parent" />-->
+
+<!--            <ImageButton-->
+<!--                android:id="@+id/btnButtonB"-->
+<!--                android:layout_width="60dp"-->
+<!--                android:layout_height="60dp"-->
+<!--                android:layout_marginTop="24dp"-->
+<!--                android:layout_marginEnd="24dp"-->
+<!--                android:background="@null"-->
+<!--                android:scaleType="fitCenter"-->
+<!--                android:src="@drawable/button_b"-->
+<!--                app:layout_constraintEnd_toStartOf="@+id/btnButtonA"-->
+<!--                app:layout_constraintTop_toTopOf="@+id/btnButtonA" />-->
+
+<!--            <ImageButton-->
+<!--                android:id="@+id/btnButtonSelect"-->
+<!--                android:layout_width="50dp"-->
+<!--                android:layout_height="20dp"-->
+<!--                android:layout_marginStart="140dp"-->
+<!--                android:layout_marginBottom="12dp"-->
+<!--                android:adjustViewBounds="true"-->
+<!--                android:background="@null"-->
+<!--                android:scaleType="fitCenter"-->
+<!--                android:src="@drawable/startselect_button"-->
+<!--                app:layout_constraintBottom_toBottomOf="parent"-->
+<!--                app:layout_constraintStart_toStartOf="parent" />-->
+
+<!--            <ImageButton-->
+<!--                android:id="@+id/btnButtonStart"-->
+<!--                android:layout_width="50dp"-->
+<!--                android:layout_height="20dp"-->
+<!--                android:layout_marginEnd="140dp"-->
+<!--                android:layout_marginBottom="12dp"-->
+<!--                android:adjustViewBounds="true"-->
+<!--                android:background="@null"-->
+<!--                android:scaleType="fitCenter"-->
+<!--                android:src="@drawable/startselect_button"-->
+<!--                app:layout_constraintBottom_toBottomOf="parent"-->
+<!--                app:layout_constraintEnd_toEndOf="parent" />-->
+
+<!--            <ImageButton-->
+<!--                android:id="@+id/btnDPad"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_marginStart="68dp"-->
+<!--                android:layout_marginTop="44dp"-->
+<!--                android:adjustViewBounds="true"-->
+<!--                android:background="@null"-->
+<!--                android:scaleType="fitStart"-->
+<!--                android:src="@drawable/button_dpad" />-->
+
+<!--        </RelativeLayout>-->
+
+<!--    </RelativeLayout>-->
+
+</LinearLayout>
