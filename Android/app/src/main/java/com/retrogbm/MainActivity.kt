@@ -191,17 +191,26 @@ class MainActivity : AppCompatActivity() {
                                         if (buttonIndex != null) {
                                             emulator.pressButton(buttonIndex, false)
                                             Log.d("RetroGBm", "DPad section ${buttonIndex} up")
+                                        }
 
-                                            currentSection = i
+                                        currentSection = i
 
-                                            val buttonIndexDown = selectedButton(currentSection)
-                                            if (buttonIndexDown != null) {
-                                                emulator.pressButton(buttonIndexDown, true)
-                                                Log.d("RetroGBm", "DPad section ${buttonIndexDown} down"                                            )
-                                            }
+                                        val buttonIndexDown = selectedButton(currentSection)
+                                        if (buttonIndexDown != null) {
+                                            emulator.pressButton(buttonIndexDown, true)
+                                            Log.d("RetroGBm", "DPad section ${buttonIndexDown} down"                                            )
                                         }
                                     }
                                 }
+                            }
+                        }
+
+                        if (!rect.contains(x!!, y!!)) {
+                            if (currentSection != -1) {
+                                val buttonIndex = selectedButton(currentSection)
+                                emulator.pressButton(buttonIndex!!, false)
+                                Log.d("RetroGBm", "DPad left  ${buttonIndex} up")
+                                currentSection = -1
                             }
                         }
                     }
