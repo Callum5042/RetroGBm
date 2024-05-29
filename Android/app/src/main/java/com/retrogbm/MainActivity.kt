@@ -4,17 +4,20 @@ import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.Rect
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.provider.DocumentsContract
+import android.util.Log
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -84,13 +87,13 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.save_state -> {
-                // Toast.makeText(this, "Save State", Toast.LENGTH_SHORT).show()
-                emulator.saveState(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!!)
+                val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/"
+                emulator.saveState(path)
                 true
             }
             R.id.load_state -> {
-                // Toast.makeText(this, "Load State", Toast.LENGTH_SHORT).show()
-                emulator.loadState(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!!)
+                val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/"
+                emulator.loadState(path)
                 true
             }
             R.id.help -> {
@@ -156,37 +159,143 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-
-        // Show cartridge details
-        val title = emulator.getCartridgeTitle()
-        binding.sampleText.text = title
     }
 
     private fun registerButtons() {
-        val buttonLeft = findViewById<Button>(R.id.btnLeft)
-        val buttonRight = findViewById<Button>(R.id.btnRight)
-        val buttonUp = findViewById<Button>(R.id.btnUp)
-        val buttonDown = findViewById<Button>(R.id.btnDown)
 
-        val buttonA = findViewById<Button>(R.id.btnA)
-        val buttonB = findViewById<Button>(R.id.btnB)
-        val buttonStart = findViewById<Button>(R.id.btnStart)
-        val buttonSelect = findViewById<Button>(R.id.btnSelect)
+        val buttonDPad = findViewById<ImageButton>(R.id.btnDPad)
+        var currentSection = 0
 
-        setButtonTouchListener(buttonLeft, 6)
-        setButtonTouchListener(buttonRight, 7)
-        setButtonTouchListener(buttonUp, 4)
-        setButtonTouchListener(buttonDown, 5)
+        buttonDPad.setOnTouchListener(object: View.OnTouchListener {
+            override fun onTouch(v: View?, event: MotionEvent?): Boolean {
 
+                // Pointer coordinates relative to View
+                val x = event?.x?.toInt()
+                val y = event?.y?.toInt()
+
+                // Rect hitbox and calculate sub-sections
+                val rect: Rect = Rect()
+                buttonDPad.getHitRect(rect)
+                rect.offsetTo(0, 0)
+                val subRects = subdivideRectInto9(rect)
+
+                when (event?.action) {
+                    MotionEvent.ACTION_MOVE -> {
+                        // Check which subsection we are in
+                        for (i in subRects.indices) {
+                            if (subRects[i].contains(x!!, y!!)) {
+                                // We only care about 1, 3, 5, 7
+                                if (i == 1 || i == 3 || i == 5 || i == 7) {
+                                    if (currentSection != i) {
+                                        val buttonIndex = selectedButton(currentSection)
+                                        if (buttonIndex != null) {
+                                            emulator.pressButton(buttonIndex, false)
+                                            Log.d("RetroGBm", "DPad section ${buttonIndex} up")
+                                        }
+
+                                        currentSection = i
+
+                                        val buttonIndexDown = selectedButton(currentSection)
+                                        if (buttonIndexDown != null) {
+                                            emulator.pressButton(buttonIndexDown, true)
+                                            Log.d("RetroGBm", "DPad section ${buttonIndexDown} down"                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!rect.contains(x!!, y!!)) {
+                            if (currentSection != -1) {
+                                val buttonIndex = selectedButton(currentSection)
+                                emulator.pressButton(buttonIndex!!, false)
+                                Log.d("RetroGBm", "DPad left  ${buttonIndex} up")
+                                currentSection = -1
+                            }
+                        }
+                    }
+                    MotionEvent.ACTION_DOWN -> {
+                        // Check which subsection we are in
+                        for (i in subRects.indices) {
+                            if (subRects[i].contains(x!!, y!!)) {
+                                if (i == 1 || i == 3 || i == 5 || i == 7) {
+                                    currentSection = i
+
+                                    val buttonIndex = selectedButton(currentSection)
+                                    if (buttonIndex != null){
+                                        emulator.pressButton(buttonIndex, true)
+                                        Log.d("RetroGBm", "DPad section ${buttonIndex} down")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    MotionEvent.ACTION_UP -> {
+                        // Check which subsection we are in
+                        val subRects = subdivideRectInto9(rect)
+                        for (i in subRects.indices) {
+                            if (subRects[i].contains(x!!, y!!)) {
+                                if (i == 1 || i == 3 || i == 5 || i == 7) {
+                                    val buttonIndex = selectedButton(currentSection)
+                                    if (buttonIndex != null){
+                                        emulator.pressButton(buttonIndex, false)
+                                        Log.d("RetroGBm", "DPad section ${buttonIndex} up")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return v?.onTouchEvent(event) ?: true
+            }
+        })
+
+        val buttonA = findViewById<ImageButton>(R.id.btnButtonA)
         setButtonTouchListener(buttonA, 0)
+
+        val buttonB = findViewById<ImageButton>(R.id.btnButtonB)
         setButtonTouchListener(buttonB, 1)
+
+        val buttonStart = findViewById<ImageButton>(R.id.btnButtonStart)
         setButtonTouchListener(buttonStart, 2)
+
+        val buttonSelect = findViewById<ImageButton>(R.id.btnButtonSelect)
         setButtonTouchListener(buttonSelect, 3)
+    }
+
+    fun selectedButton(currentSection: Int): Int? {
+        when (currentSection) {
+            1 -> return 4 // Up
+            3 -> return 6 // Left
+            5 -> return 7 // Right
+            7 -> return 5  // Down
+        }
+        return null
+    }
+
+    fun subdivideRectInto9(rect: Rect): List<Rect> {
+        val width = rect.width() / 3
+        val height = rect.height() / 3
+        val subRects = mutableListOf<Rect>()
+
+        for (i in 0 until 3) {
+            for (j in 0 until 3) {
+                val left = rect.left + j * width
+                val top = rect.top + i * height
+                val right = left + width
+                val bottom = top + height
+                subRects.add(Rect(left, top, right, bottom))
+            }
+        }
+
+        return subRects
     }
 
     private fun setButtonTouchListener(button: View, btn: Int) {
         button.setOnTouchListener(object : View.OnTouchListener {
             override fun onTouch(view: View?, event: MotionEvent?): Boolean {
+                Log.d("RetroGBm", "A button has been touched indeed")
                 when (event?.action) {
                     MotionEvent.ACTION_DOWN -> {
                         // Handle touch down event
