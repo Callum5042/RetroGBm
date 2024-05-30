@@ -29,6 +29,14 @@ struct EmulatorContext
 	int cycles = 0;
 };
 
+struct SaveStateHeader
+{
+	char identifier[8] = { 'R', 'E', 'T', 'R', 'O', 'G', 'B', 'M' };
+	int version = 1;
+
+	char reserved[50] = {};
+};
+
 class IBus
 {
 public:

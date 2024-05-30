@@ -658,6 +658,9 @@ void Emulator::SaveState(const std::string& filepath)
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
 	std::fstream file(filepath + m_Cartridge->GetCartridgeData().title + ".state", std::ios::binary | std::ios::out);
 
+	SaveStateHeader header;
+	file.write(reinterpret_cast<const char*>(&header), sizeof(SaveStateHeader));
+
 	m_Cpu->SaveState(&file);
 	m_Timer->SaveState(&file);
 	m_Ram->SaveState(&file);
@@ -672,6 +675,20 @@ void Emulator::LoadState(const std::string& filepath)
 {
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
 	std::fstream file(filepath + m_Cartridge->GetCartridgeData().title + ".state", std::ios::binary | std::ios::in);
+
+	SaveStateHeader header;
+	file.read(reinterpret_cast<char*>(&header), sizeof(SaveStateHeader));
+
+	// Only check identifier for version 1 for now. This will allow backwards comapitability for alpha builds
+	// TODO: This should be removed after a certain amount of time. Added '30/05'2024'. Maybe remove in a month
+	if (header.version == 1)
+	{
+		char identifier[8] = { 'R', 'E', 'T', 'R', 'O', 'G', 'B', 'M' };
+		if (!std::equal(std::begin(header.identifier), std::end(header.identifier), std::begin(identifier)))
+		{
+			return;
+		}
+	}
 
 	m_Cpu->LoadState(&file);
 	m_Timer->LoadState(&file);
