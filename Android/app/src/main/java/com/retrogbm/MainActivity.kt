@@ -1,37 +1,34 @@
 package com.retrogbm
 
 import android.app.Activity
+import android.app.AlertDialog
+import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.graphics.Rect
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
-import android.provider.DocumentsContract
 import android.util.Log
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
-import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import com.retrogbm.databinding.ActivityMainBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
-import java.io.File
 import java.nio.IntBuffer
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -75,13 +72,27 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.save_state -> {
-                val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/"
-                emulator.saveState(path)
+                val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+                builder.setMessage("Save state?")
+                    .setPositiveButton("Yes") { dialog, which ->
+                        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/"
+                        emulator.saveState(path)
+                    }
+                    .setNegativeButton("No") { dialog, which -> }
+                    .show()
+
                 true
             }
             R.id.load_state -> {
-                val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/"
-                emulator.loadState(path)
+                val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+                builder.setMessage("Load state?")
+                    .setPositiveButton("Yes") { dialog, which ->
+                        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/"
+                        emulator.loadState(path)
+                    }
+                    .setNegativeButton("No") { dialog, which -> }
+                    .show()
+
                 true
             }
             R.id.help -> {
