@@ -1,43 +1,40 @@
 package com.retrogbm
 
 import android.app.Activity
+import android.app.AlertDialog
+import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.graphics.Rect
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
-import android.provider.DocumentsContract
 import android.util.Log
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
-import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import com.retrogbm.databinding.ActivityMainBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
-import java.io.File
 import java.nio.IntBuffer
+
 
 class MainActivity : AppCompatActivity() {
 
     // Coroutines
     private val emulatorCoroutineScope = CoroutineScope(Dispatchers.Main)
-    private val updateTexturecoroutineScope = CoroutineScope(Dispatchers.Main)
+    private val updateTextureCoroutineScope = CoroutineScope(Dispatchers.Main)
 
     private lateinit var emulatorThread: Job
     private lateinit var updateTextureThread: Job
@@ -58,18 +55,6 @@ class MainActivity : AppCompatActivity() {
 
         image = findViewById(R.id.ivEmulator)
 
-        // Load emulator and rom
-        val documentPath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
-        // val path = "$documentPath/cgb-acid2.gbc"
-        // val path = "$documentPath/Tetris.gb"
-        // val path = "$documentPath/Dr. Mario (World).gb"
-        // val path = "$documentPath/Pokemon Red.gb"
-        // val path = "$documentPath/PokemonGold.gbc"
-        // val path = "$documentPath/Pokemon - Yellow Version.gbc"
-        val path = "$documentPath/Super Mario Land.gb"
-        emulator.loadRom(path, documentPath!!)
-        startEmulation()
-
         // Buttons
         registerButtons()
     }
@@ -87,13 +72,27 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.save_state -> {
-                val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/"
-                emulator.saveState(path)
+                val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+                builder.setMessage("Save state?")
+                    .setPositiveButton("Yes") { dialog, which ->
+                        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/"
+                        emulator.saveState(path)
+                    }
+                    .setNegativeButton("No") { dialog, which -> }
+                    .show()
+
                 true
             }
             R.id.load_state -> {
-                val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/"
-                emulator.loadState(path)
+                val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+                builder.setMessage("Load state?")
+                    .setPositiveButton("Yes") { dialog, which ->
+                        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/"
+                        emulator.loadState(path)
+                    }
+                    .setNegativeButton("No") { dialog, which -> }
+                    .show()
+
                 true
             }
             R.id.help -> {
@@ -121,9 +120,11 @@ class MainActivity : AppCompatActivity() {
 
             val bytes = outputStream.toByteArray()
 
-            emulator.stop()
-            emulatorThread.cancel()
-            updateTextureThread.cancel()
+            if (emulator?.isRunning() == true) {
+                emulator.stop()
+                emulatorThread.cancel()
+                updateTextureThread.cancel()
+            }
 
             emulator.loadRom(bytes, getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!!)
             startEmulation()
@@ -151,7 +152,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Emulator update thread
-        updateTextureThread = updateTexturecoroutineScope.launch(Dispatchers.Default) {
+        updateTextureThread = updateTextureCoroutineScope.launch(Dispatchers.Default) {
             while (emulator.isRunning()) {
                 withContext(Dispatchers.Main) {
                     val pixels = emulator.getVideoBuffer()
