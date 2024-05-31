@@ -37,7 +37,7 @@ class MainActivity : AppCompatActivity() {
 
     // Coroutines
     private val emulatorCoroutineScope = CoroutineScope(Dispatchers.Main)
-    private val updateTexturecoroutineScope = CoroutineScope(Dispatchers.Main)
+    private val updateTextureCoroutineScope = CoroutineScope(Dispatchers.Main)
 
     private lateinit var emulatorThread: Job
     private lateinit var updateTextureThread: Job
@@ -57,18 +57,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         image = findViewById(R.id.ivEmulator)
-
-        // Load emulator and rom
-        val documentPath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
-        // val path = "$documentPath/cgb-acid2.gbc"
-        // val path = "$documentPath/Tetris.gb"
-        // val path = "$documentPath/Dr. Mario (World).gb"
-        // val path = "$documentPath/Pokemon Red.gb"
-        // val path = "$documentPath/PokemonGold.gbc"
-        // val path = "$documentPath/Pokemon - Yellow Version.gbc"
-        val path = "$documentPath/Super Mario Land.gb"
-        emulator.loadRom(path, documentPath!!)
-        startEmulation()
 
         // Buttons
         registerButtons()
@@ -121,9 +109,11 @@ class MainActivity : AppCompatActivity() {
 
             val bytes = outputStream.toByteArray()
 
-            emulator.stop()
-            emulatorThread.cancel()
-            updateTextureThread.cancel()
+            if (emulator?.isRunning() == true) {
+                emulator.stop()
+                emulatorThread.cancel()
+                updateTextureThread.cancel()
+            }
 
             emulator.loadRom(bytes, getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!!)
             startEmulation()
@@ -151,7 +141,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Emulator update thread
-        updateTextureThread = updateTexturecoroutineScope.launch(Dispatchers.Default) {
+        updateTextureThread = updateTextureCoroutineScope.launch(Dispatchers.Default) {
             while (emulator.isRunning()) {
                 withContext(Dispatchers.Main) {
                     val pixels = emulator.getVideoBuffer()
