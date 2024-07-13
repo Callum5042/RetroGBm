@@ -96,7 +96,6 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.help -> {
-                stopEmulator()
                 Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show()
                 true
             }
