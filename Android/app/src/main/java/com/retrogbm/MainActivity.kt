@@ -236,12 +236,10 @@ class MainActivity : AppCompatActivity() {
                         val subRects = subdivideRectInto9(rect)
                         for (i in subRects.indices) {
                             if (subRects[i].contains(x!!, y!!)) {
-                                if (i == 1 || i == 3 || i == 5 || i == 7) {
-                                    val buttonIndex = selectedButton(currentSection)
-                                    if (buttonIndex != null){
-                                        emulator.pressButton(buttonIndex, false)
-                                        Log.d("RetroGBm", "DPad section ${buttonIndex} up")
-                                    }
+                                val buttonIndex = selectedButton(currentSection)
+                                if (buttonIndex != null){
+                                    emulator.pressButton(buttonIndex, false)
+                                    Log.d("RetroGBm", "DPad section ${buttonIndex} up")
                                 }
                             }
                         }
