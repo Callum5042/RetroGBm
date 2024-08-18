@@ -2,16 +2,12 @@ package com.retrogbm
 
 import android.app.Activity
 import android.app.AlertDialog
-import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.Environment
-import android.os.VibrationEffect
-import android.os.Vibrator
 import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.Menu
