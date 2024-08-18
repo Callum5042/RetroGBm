@@ -2,7 +2,6 @@ package com.retrogbm
 
 import android.app.Activity
 import android.app.AlertDialog
-import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Rect
@@ -10,6 +9,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
+import android.view.HapticFeedbackConstants
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
@@ -28,7 +28,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.nio.IntBuffer
-
 
 class MainActivity : AppCompatActivity() {
 
@@ -190,6 +189,7 @@ class MainActivity : AppCompatActivity() {
                                         val buttonIndex = selectedButton(currentSection)
                                         if (buttonIndex != null) {
                                             emulator.pressButton(buttonIndex, false)
+                                            v?.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING)
                                             Log.d("RetroGBm", "DPad section ${buttonIndex} up")
                                         }
 
@@ -198,6 +198,7 @@ class MainActivity : AppCompatActivity() {
                                         val buttonIndexDown = selectedButton(currentSection)
                                         if (buttonIndexDown != null) {
                                             emulator.pressButton(buttonIndexDown, true)
+                                            v?.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY_RELEASE, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING)
                                             Log.d("RetroGBm", "DPad section ${buttonIndexDown} down"                                            )
                                         }
                                     }
@@ -209,6 +210,7 @@ class MainActivity : AppCompatActivity() {
                             if (currentSection != -1) {
                                 val buttonIndex = selectedButton(currentSection)
                                 emulator.pressButton(buttonIndex!!, false)
+                                v?.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY_RELEASE, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING)
                                 Log.d("RetroGBm", "DPad left  ${buttonIndex} up")
                                 currentSection = -1
                             }
@@ -224,6 +226,7 @@ class MainActivity : AppCompatActivity() {
                                     val buttonIndex = selectedButton(currentSection)
                                     if (buttonIndex != null){
                                         emulator.pressButton(buttonIndex, true)
+                                        v?.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING)
                                         Log.d("RetroGBm", "DPad section ${buttonIndex} down")
                                     }
                                 }
@@ -238,6 +241,7 @@ class MainActivity : AppCompatActivity() {
                                 val buttonIndex = selectedButton(currentSection)
                                 if (buttonIndex != null){
                                     emulator.pressButton(buttonIndex, false)
+                                    v?.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY_RELEASE, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING)
                                     Log.d("RetroGBm", "DPad section ${buttonIndex} up")
                                 }
                             }
@@ -299,12 +303,14 @@ class MainActivity : AppCompatActivity() {
                         // Handle touch down event
                         // This is triggered when the user first touches the screen
                         emulator.pressButton(btn, true)
+                        view?.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING)
                         return true
                     }
                     MotionEvent.ACTION_UP -> {
                         // Handle touch up event
                         // This is triggered when the user releases the touch
                         emulator.pressButton(btn, false)
+                        view?.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY_RELEASE, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING)
                         return true
                     }
                     // You can handle other MotionEvent actions as needed
