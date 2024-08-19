@@ -658,7 +658,7 @@ uint16_t Emulator::StackPop16()
 
 bool Emulator::GetSaveStateDateCreated(const std::string& filepath, time_t* dateCreated, double* time_played)
 {
-	std::fstream file(filepath + m_Cartridge->GetCartridgeData().title + ".state", std::ios::binary | std::ios::in);
+	std::fstream file(filepath, std::ios::binary | std::ios::in);
 	if (file.is_open())
 	{
 		SaveStateHeader header;
@@ -688,7 +688,7 @@ void Emulator::SaveState(const std::string& filepath)
 	bool has_date_created = GetSaveStateDateCreated(filepath, &date_created, &time_played);
 
 	// Write to file
-	std::fstream file(filepath + m_Cartridge->GetCartridgeData().title + ".state", std::ios::binary | std::ios::out);
+	std::fstream file(filepath, std::ios::binary | std::ios::out);
 
 	SaveStateHeader header;
 	header.date_created = (has_date_created ? date_created : std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
@@ -717,7 +717,7 @@ void Emulator::SaveState(const std::string& filepath)
 void Emulator::LoadState(const std::string& filepath)
 {
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
-	std::fstream file(filepath + m_Cartridge->GetCartridgeData().title + ".state", std::ios::binary | std::ios::in);
+	std::fstream file(filepath, std::ios::binary | std::ios::in);
 
 	SaveStateHeader header;
 	file.read(reinterpret_cast<char*>(&header), sizeof(SaveStateHeader));

@@ -221,10 +221,10 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			ToggleEmulationPaused();
 			break;
 		case m_MenuEmulationSaveState:
-			m_Application->SaveState();
+			// m_Application->SaveState();
 			break;
 		case m_MenuEmulationLoadState:
-			m_Application->LoadState();
+			// m_Application->LoadState();
 			break;
 
 			// Tools Menu
@@ -276,6 +276,28 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 				}
 			}
 			break;
+	}
+
+	// Handle save state
+	if (menu_id > m_MenuSaveSlot1 && menu_id <= m_MenuSaveSlot1 + 9)
+	{
+		int slot = menu_id - m_MenuSaveSlot1;
+
+		std::string title = m_Application->GetEmulator()->GetCartridge()->GetCartridgeData().title;
+		std::string savestate_path = title + ".slot" + std::to_string(slot) + ".state";
+
+		m_Application->SaveState(savestate_path);
+	}
+
+	// Handle load state
+	if (menu_id > m_MenuLoadSlot1 && menu_id <= m_MenuLoadSlot1 + 9)
+	{
+		int slot = menu_id - m_MenuLoadSlot1;
+
+		std::string title = m_Application->GetEmulator()->GetCartridge()->GetCartridgeData().title;
+		std::string savestate_path = title + ".slot" + std::to_string(slot) + ".state";
+
+		m_Application->LoadState(savestate_path);
 	}
 }
 
@@ -513,11 +535,11 @@ void MainWindow::OnKeyPressed(UINT virtual_key_code)
 	// Save state
 	if (virtual_key_code == VK_F5)
 	{
-		m_Application->SaveState();
+		// m_Application->SaveState();
 	}
 	else if (virtual_key_code == VK_F8)
 	{
-		m_Application->LoadState();
+		// m_Application->LoadState();
 	}
 }
 
