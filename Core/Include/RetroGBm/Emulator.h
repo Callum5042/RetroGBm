@@ -7,6 +7,7 @@
 #include <string>
 #include <fstream>
 #include <mutex>
+#include <ctime>
 
 class Cpu;
 class Ppu;
@@ -34,8 +35,13 @@ struct SaveStateHeader
 	char identifier[8] = { 'R', 'E', 'T', 'R', 'O', 'G', 'B', 'M' };
 	int version = 1;
 
-	char reserved[50] = {};
+	time_t dateCreated = 0;
+	time_t dateModified = 0;
+
+	char reserved[32] = {};
 };
+
+static_assert(sizeof(SaveStateHeader) == 64);
 
 class IBus
 {
@@ -145,4 +151,6 @@ private:
 	std::ofstream m_TraceLog;
 
 	std::string m_BatteryPath;
+
+	bool GetSaveStateDateCreated(const std::string& filepath, time_t* dateCreated);
 };
