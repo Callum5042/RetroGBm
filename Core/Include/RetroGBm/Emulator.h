@@ -8,6 +8,7 @@
 #include <fstream>
 #include <mutex>
 #include <ctime>
+#include <chrono>
 
 class Cpu;
 class Ppu;
@@ -35,10 +36,11 @@ struct SaveStateHeader
 	char identifier[8] = { 'R', 'E', 'T', 'R', 'O', 'G', 'B', 'M' };
 	int version = 1;
 
-	time_t dateCreated = 0;
-	time_t dateModified = 0;
+	time_t date_created = 0;
+	time_t date_modified = 0;
+	double time_played = 0;
 
-	char reserved[32] = {};
+	char reserved[24] = {};
 };
 
 static_assert(sizeof(SaveStateHeader) == 64);
@@ -152,5 +154,6 @@ private:
 
 	std::string m_BatteryPath;
 
-	bool GetSaveStateDateCreated(const std::string& filepath, time_t* dateCreated);
+	bool GetSaveStateDateCreated(const std::string& filepath, time_t* dateCreated, double* time_played);
+	std::chrono::steady_clock::time_point m_SaveStateStartTime;
 };
