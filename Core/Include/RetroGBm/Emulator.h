@@ -38,8 +38,10 @@ struct SaveStateHeader
 	time_t dateCreated = 0;
 	time_t dateModified = 0;
 
-	char reserved[34] = {};
+	char reserved[32] = {};
 };
+
+static_assert(sizeof(SaveStateHeader) == 64);
 
 class IBus
 {
