@@ -287,6 +287,8 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		std::string savestate_path = title + ".slot" + std::to_string(slot) + ".state";
 
 		m_Application->SaveState(savestate_path);
+
+		UpdateSaveStateDetails();
 	}
 
 	// Handle load state
@@ -383,65 +385,70 @@ void MainWindow::OpenDialog()
 		}
 
 		// Show savestate details
-		std::string title = m_Application->GetEmulator()->GetCartridge()->GetCartridgeData().title;
+		UpdateSaveStateDetails();
+	}
+}
 
-		for (int i = 1; i <= 9; ++i)
+void MainWindow::UpdateSaveStateDetails()
+{
+	std::string title = m_Application->GetEmulator()->GetCartridge()->GetCartridgeData().title;
+
+	for (int i = 1; i <= 9; ++i)
+	{
+		std::string savestate_path = title + ".slot" + std::to_string(i) + ".state";
+		std::ifstream file(savestate_path, std::ios::binary | std::ios::in);
+		if (file.is_open())
 		{
-			std::string savestate_path = title + ".slot" + std::to_string(i) + ".state";
-			std::ifstream file(savestate_path, std::ios::binary | std::ios::in);
-			if (file.is_open())
+			SaveStateHeader header;
+			file.read(reinterpret_cast<char*>(&header), sizeof(SaveStateHeader));
+
+			if (header.version == 1)
 			{
-				SaveStateHeader header;
-				file.read(reinterpret_cast<char*>(&header), sizeof(SaveStateHeader));
-
-				if (header.version == 1)
+				char identifier[8] = { 'R', 'E', 'T', 'R', 'O', 'G', 'B', 'M' };
+				if (!std::equal(std::begin(header.identifier), std::end(header.identifier), std::begin(identifier)))
 				{
-					char identifier[8] = { 'R', 'E', 'T', 'R', 'O', 'G', 'B', 'M' };
-					if (!std::equal(std::begin(header.identifier), std::end(header.identifier), std::begin(identifier)))
-					{
-						continue;
-					}
-
-					// Date created string
-					//char date_created_str[11]; // Enough space for "yyyy/mm/dd\0"
-					//std::tm* date_created = std::localtime(&header.date_created);
-					//std::strftime(date_created_str, sizeof(date_created_str), "%Y/%m/%d", date_created);
-
-					// Date modified string
-					char date_modified_str[11]; // Enough space for "yyyy/mm/dd\0"
-					std::tm* date_modified = std::localtime(&header.date_modified);
-					std::strftime(date_modified_str, sizeof(date_modified_str), "%Y/%m/%d", date_modified);
-
-					// Time played
-					std::chrono::duration<double> time_played(header.time_played);
-					auto duration_in_hours = std::chrono::duration_cast<std::chrono::hours>(time_played);
-					auto duration_in_minutes = std::chrono::duration_cast<std::chrono::minutes>(time_played);
-
-					std::wstringstream ss;
-					ss << L"Slot " << std::to_wstring(i) << L" - ";
-
-					// Date modified
-					ss << date_modified_str << " - ";
-
-					// Hours
-					if (duration_in_hours.count() != 0)
-					{
-						ss << duration_in_hours.count();
-						if (duration_in_minutes.count() != 0)
-						{
-							ss << (60 / duration_in_minutes.count());
-						}
-
-						ss << " hours";
-					}
-					else
-					{
-						ss << duration_in_minutes.count() << " minutes";
-					}
-
-					ModifyMenu(m_SaveSlotMenuItem, m_MenuSaveSlot1 + i, MF_STRING, m_MenuSaveSlot1 + i, ss.str().c_str());
-					ModifyMenu(m_LoadSlotMenuItem, m_MenuLoadSlot1 + i, MF_STRING, m_MenuLoadSlot1 + i, ss.str().c_str());
+					continue;
 				}
+
+				// Date created string
+				//char date_created_str[11]; // Enough space for "yyyy/mm/dd\0"
+				//std::tm* date_created = std::localtime(&header.date_created);
+				//std::strftime(date_created_str, sizeof(date_created_str), "%Y/%m/%d", date_created);
+
+				// Date modified string
+				char date_modified_str[11]; // Enough space for "yyyy/mm/dd\0"
+				std::tm* date_modified = std::localtime(&header.date_modified);
+				std::strftime(date_modified_str, sizeof(date_modified_str), "%Y/%m/%d", date_modified);
+
+				// Time played
+				std::chrono::duration<double> time_played(header.time_played);
+				auto duration_in_hours = std::chrono::duration_cast<std::chrono::hours>(time_played);
+				auto duration_in_minutes = std::chrono::duration_cast<std::chrono::minutes>(time_played);
+
+				std::wstringstream ss;
+				ss << L"Slot " << std::to_wstring(i) << L" - ";
+
+				// Date modified
+				ss << date_modified_str << " - ";
+
+				// Hours
+				if (duration_in_hours.count() != 0)
+				{
+					ss << duration_in_hours.count();
+					if (duration_in_minutes.count() != 0)
+					{
+						ss << (60 / duration_in_minutes.count());
+					}
+
+					ss << " hours";
+				}
+				else
+				{
+					ss << duration_in_minutes.count() << " minutes";
+				}
+
+				ModifyMenu(m_SaveSlotMenuItem, m_MenuSaveSlot1 + i, MF_STRING, m_MenuSaveSlot1 + i, ss.str().c_str());
+				ModifyMenu(m_LoadSlotMenuItem, m_MenuLoadSlot1 + i, MF_STRING, m_MenuLoadSlot1 + i, ss.str().c_str());
 			}
 		}
 	}

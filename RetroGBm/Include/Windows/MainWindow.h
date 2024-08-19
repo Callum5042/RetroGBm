@@ -104,4 +104,6 @@ private:
 	void HandleKeyboardEvent(UINT msg, WPARAM wParam, LPARAM lParam);
 	void HandleKey(bool state, WORD scancode);
 	void OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+	void UpdateSaveStateDetails();
 };

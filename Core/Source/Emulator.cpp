@@ -729,7 +729,7 @@ void Emulator::LoadState(const std::string& filepath)
 		char identifier[8] = { 'R', 'E', 'T', 'R', 'O', 'G', 'B', 'M' };
 		if (!std::equal(std::begin(header.identifier), std::end(header.identifier), std::begin(identifier)))
 		{
-			return;
+			return;  
 		}
 	}
 
