@@ -197,18 +197,18 @@ void Application::ReleaseCartridgeInfoWindow()
 	m_CartridgeInfoWindow.release();
 }
 
-void Application::SaveState()
+void Application::SaveState(const std::string& path)
 {
 	if (m_Emulator->IsRunning())
 	{
-		m_Emulator->SaveState("");
+		m_Emulator->SaveState(path);
 	}
 }
 
-void Application::LoadState()
+void Application::LoadState(const std::string& path)
 {
 	if (m_Emulator->IsRunning())
 	{
-		m_Emulator->LoadState("");
+		m_Emulator->LoadState(path);
 	}
 }

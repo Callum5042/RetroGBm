@@ -44,8 +44,8 @@ public:
 	inline MainWindow* GetMainWindow() const { return m_MainWindow.get(); }
 	inline CartridgeInfoWindow* GetCartridgeInfoWindow() const { return m_CartridgeInfoWindow.get(); }
 
-	void SaveState();
-	void LoadState();
+	void SaveState(const std::string& path);
+	void LoadState(const std::string& path);
 	
 	// Tools Windows
 	std::unique_ptr<CpuRegisterWindow> CpuRegistersWindow = nullptr;

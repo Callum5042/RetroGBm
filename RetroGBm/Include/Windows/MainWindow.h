@@ -78,6 +78,12 @@ private:
 	static const UINT m_MenuEmulationSaveState = 302;
 	static const UINT m_MenuEmulationLoadState = 303;
 
+	HMENU m_SaveSlotMenuItem = NULL;
+	static const UINT m_MenuSaveSlot1 = 2100;
+
+	HMENU m_LoadSlotMenuItem = NULL;
+	static const UINT m_MenuLoadSlot1 = 3100;
+
 	// Status bar
 	void CreateStatusBar();
 	void ComputeStatusBarSections();
@@ -98,4 +104,6 @@ private:
 	void HandleKeyboardEvent(UINT msg, WPARAM wParam, LPARAM lParam);
 	void HandleKey(bool state, WORD scancode);
 	void OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+	void UpdateSaveStateDetails();
 };
