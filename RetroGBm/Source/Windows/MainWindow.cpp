@@ -13,6 +13,7 @@
 #include <vector>
 #include <shobjidl.h>
 #include <iostream>
+#include <filesystem>
 
 namespace
 {
@@ -299,7 +300,10 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		std::string title = m_Application->GetEmulator()->GetCartridge()->GetCartridgeData().title;
 		std::string savestate_path = title + ".slot" + std::to_string(slot) + ".state";
 
-		m_Application->LoadState(savestate_path);
+		if (std::filesystem::exists(savestate_path))
+		{
+			m_Application->LoadState(savestate_path);
+		}
 	}
 }
 
