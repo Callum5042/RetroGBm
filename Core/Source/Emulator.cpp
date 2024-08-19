@@ -653,12 +653,41 @@ uint16_t Emulator::StackPop16()
 	return (hi << 8) | lo;
 }
 
+bool Emulator::GetSaveStateDateCreated(const std::string& filepath, time_t* dateCreated)
+{
+	std::fstream file(filepath + m_Cartridge->GetCartridgeData().title + ".state", std::ios::binary | std::ios::in);
+	if (file.is_open())
+	{
+		SaveStateHeader header;
+		file.read(reinterpret_cast<char*>(&header), sizeof(SaveStateHeader));
+
+		if (header.dateCreated == 0)
+		{
+			return false;
+		}
+
+		*dateCreated = header.dateCreated;
+		return true;
+	}
+
+	return false;
+}
+
 void Emulator::SaveState(const std::string& filepath)
 {
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
+
+	// Read header when saving to get the current details
+	time_t date_created = 0;
+	bool has_date_created = GetSaveStateDateCreated(filepath, &date_created);
+
+	// Write to file
 	std::fstream file(filepath + m_Cartridge->GetCartridgeData().title + ".state", std::ios::binary | std::ios::out);
 
 	SaveStateHeader header;
+	header.dateCreated = (has_date_created ? date_created : std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+	header.dateModified = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
 	file.write(reinterpret_cast<const char*>(&header), sizeof(SaveStateHeader));
 
 	m_Cpu->SaveState(&file);
