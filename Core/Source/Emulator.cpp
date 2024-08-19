@@ -731,26 +731,6 @@ void Emulator::LoadState(const std::string& filepath)
 		{
 			return;
 		}
-
-		// Date created string
-		//char date_created_str[11]; // Enough space for "yyyy/mm/dd\0"
-		//std::tm* date_created = std::localtime(&header.date_created);
-		//std::strftime(date_created_str, sizeof(date_created_str), "%Y/%m/%d", date_created);
-
-		//// Date modified string
-		//char date_modified_str[11]; // Enough space for "yyyy/mm/dd\0"
-		//std::tm* date_modified = std::localtime(&header.date_modified);
-		//std::strftime(date_modified_str, sizeof(date_modified_str), "%Y/%m/%d", date_modified);
-
-		//// Time played
-		//std::chrono::duration<double> time_played(header.time_played);
-		//auto duration_in_hours = std::chrono::duration_cast<std::chrono::hours>(time_played);
-		//auto duration_in_minutes = std::chrono::duration_cast<std::chrono::minutes>(time_played);
-
-		//std::stringstream ss;
-		//ss << duration_in_hours.count() << ":" << duration_in_minutes.count();
-
-		//std::string time_played_string = ss.str();
 	}
 
 	m_Cpu->LoadState(&file);
