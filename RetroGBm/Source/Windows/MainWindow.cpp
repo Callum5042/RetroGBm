@@ -7,6 +7,7 @@
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Joypad.h>
 #include <RetroGBm/Cartridge/BaseCartridge.h>
+#include <RetroGBm/SaveStateHeader.h>
 
 #include <format>
 #include <string>
