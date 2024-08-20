@@ -83,14 +83,21 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.load_state -> {
-                val builder: AlertDialog.Builder = AlertDialog.Builder(this)
-                builder.setMessage("Load state?")
-                    .setPositiveButton("Yes") { dialog, which ->
-                        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/"
-                        emulator.loadState(path)
-                    }
-                    .setNegativeButton("No") { dialog, which -> }
-                    .show()
+//                val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+//                builder.setMessage("Load state?")
+//                    .setPositiveButton("Yes") { dialog, which ->
+////                        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/"
+////                        emulator.loadState(path)
+//
+//                        val myIntent = Intent(this, SaveStateActivity::class.java)
+//                        startActivity(myIntent)
+//
+//                    }
+//                    .setNegativeButton("No") { dialog, which -> }
+//                    .show()
+
+                val myIntent = Intent(this, SaveStateActivity::class.java)
+                startActivity(myIntent)
 
                 true
             }
