@@ -18,6 +18,7 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.retrogbm.databinding.ActivityMainBinding
@@ -41,6 +42,7 @@ class MainActivity : AppCompatActivity() {
     // UI components
     private lateinit var binding: ActivityMainBinding
     private lateinit var image: ImageView
+    private lateinit var resultLauncher: ActivityResultLauncher<Intent>
 
     // Emulator components
     private var emulator: EmulatorWrapper = EmulatorWrapper()
@@ -56,6 +58,19 @@ class MainActivity : AppCompatActivity() {
 
         // Buttons
         registerButtons()
+
+        // Intent ting
+        resultLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val data: Intent? = result.data
+                val resultValue = data?.getIntExtra("Slot", -1)
+                // Do something with the result
+
+                Toast.makeText(this, "Result: $resultValue", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -96,8 +111,13 @@ class MainActivity : AppCompatActivity() {
 //                    .setNegativeButton("No") { dialog, which -> }
 //                    .show()
 
-                val myIntent = Intent(this, SaveStateActivity::class.java)
-                startActivity(myIntent)
+//                val myIntent = Intent(this, SaveStateActivity::class.java)
+//                startActivityForResult(myIntent, 1)
+
+
+
+                val intent = Intent(this, SaveStateActivity::class.java)
+                resultLauncher.launch(intent)
 
                 true
             }

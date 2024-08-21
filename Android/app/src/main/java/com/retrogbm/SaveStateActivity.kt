@@ -1,8 +1,11 @@
 package com.retrogbm
 
+import android.app.Activity
 import android.app.AlertDialog
+import android.content.Intent
 import android.os.Bundle
 import android.os.Environment
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.Text
@@ -27,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -60,10 +64,15 @@ data class SaveStateData(val slot: Int, val dateModified: String, val timePlayed
 @Composable
 fun SaveStateSlotCard(data: SaveStateData) {
 
-    val showDialog = remember { mutableStateOf(false) }
+    val context = LocalContext.current as Activity
 
     Surface(onClick = {
-            showDialog.value = true
+            val resultIntent = Intent().apply {
+                putExtra("Slot", data.slot)
+            }
+
+            context.setResult(Activity.RESULT_OK, resultIntent)
+            context.finish()
         }
     ) {
         Row(modifier = Modifier.padding(all = 20.dp)) {
@@ -72,51 +81,6 @@ fun SaveStateSlotCard(data: SaveStateData) {
                 fontSize = 20.sp
             )
         }
-    }
-
-    if (showDialog.value) {
-
-//        AlertDialog(
-//            onDismissRequest = {
-//
-//            },
-//            confirmButton = {
-//
-//            }
-//        )
-
-        AlertDialog(
-            onDismissRequest = {
-                // Hide the dialog when dismissed
-                showDialog.value = false
-            },
-            title = {
-                Text(text = "Save Slot Information")
-            },
-            text = {
-                Text(text = "Do you want to load this save slot?")
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        // Handle confirm action
-                        showDialog.value = false
-                    }
-                ) {
-                    Text("Load")
-                }
-            },
-            dismissButton = {
-                Button(
-                    onClick = {
-                        // Handle dismiss action
-                        showDialog.value = false
-                    }
-                ) {
-                    Text("Cancel")
-                }
-            }
-        )
     }
 }
 
