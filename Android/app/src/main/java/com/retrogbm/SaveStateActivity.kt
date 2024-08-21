@@ -35,6 +35,98 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.io.File
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import java.util.Locale
+
+// Structure to hold the parsed header data
+data class SaveStateHeader(
+    val identifier: String,
+    val version: Int,
+    val dateCreated: Long,
+    val dateModified: Long,
+    val timePlayed: Double,
+    val reserved: ByteArray)
+
+fun readSaveStateHeader(file: File): SaveStateHeader {
+
+    // Read the entire file into a byte array
+    val bytes = file.readBytes()
+
+    // Create a ByteBuffer with the file's data
+    val buffer = ByteBuffer.wrap(bytes)
+    buffer.order(ByteOrder.LITTLE_ENDIAN)  // Match C++'s typical default
+
+    // Read the identifier (8 bytes)
+    val identifierBytes = ByteArray(8)
+    buffer.get(identifierBytes)
+    val identifier = String(identifierBytes)
+
+    // Read the version (4 bytes)
+    val version = buffer.int
+
+    // Read the date_created (8 bytes)
+    val dateCreated = buffer.long
+
+    // Read the date_modified (8 bytes)
+    val dateModified = buffer.long
+
+    // Read the time_played (8 bytes, double)
+    val timePlayed = buffer.double
+
+    // Read the reserved space (28 bytes)
+    val reserved = ByteArray(28)
+    buffer.get(reserved)
+
+    return SaveStateHeader(
+        identifier = identifier,
+        version = version,
+        dateCreated = dateCreated,
+        dateModified = dateModified,
+        timePlayed = timePlayed,
+        reserved = reserved
+    )
+}
+
+fun formatDateModified(dateModified: Long): String {
+    // Convert seconds since epoch to Instant
+    val instant = Instant.ofEpochSecond(dateModified)
+
+    // Convert Instant to local date (assuming system's default time zone)
+    val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
+
+    // Format the date as "yyyy/MM/dd"
+    val formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.ENGLISH)
+
+    return localDate.format(formatter)
+}
+
+fun formatTimePlayed(timePlayed: Double): String {
+    // Convert timePlayed from seconds to Duration
+    val duration = java.time.Duration.ofMillis((timePlayed * 1000).toLong())
+
+    // Calculate hours and minutes
+    val hours = duration.toHours()
+    val minutes = duration.minus(hours, ChronoUnit.HOURS).toMinutes()
+
+    val sb = StringBuilder()
+
+    if (hours != 0L) {
+        sb.append(hours)
+        if (minutes != 0L) {
+            sb.append(" hours ")
+            sb.append(minutes)
+        }
+    } else {
+        sb.append(minutes).append(" minutes")
+    }
+
+    return sb.toString()
+}
 
 class SaveStateActivity : ComponentActivity() {
 
@@ -62,7 +154,15 @@ class SaveStateActivity : ComponentActivity() {
                 continue
             }
 
-            medata.add(SaveStateData(i, "2024/08/21", "24 hours", statetype))
+            val data = readSaveStateHeader(file)
+
+            // Format the date modified
+            val dateModifiedStr = formatDateModified(data.dateModified)
+
+            // Format the time played
+            val timePlayedStr = formatTimePlayed(data.timePlayed)
+
+            medata.add(SaveStateData(i, dateModifiedStr, timePlayedStr, statetype))
         }
 
         setContent {
