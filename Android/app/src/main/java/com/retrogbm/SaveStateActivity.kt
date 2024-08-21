@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.Text
@@ -33,17 +34,36 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.io.File
 
 class SaveStateActivity : ComponentActivity() {
+
+    private var statetype: Int = -1
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val romPath = intent.getStringExtra("RomTitle")
+        statetype = intent.getIntExtra("StateType", -1)
+
+        val type = if (statetype == 1) "Save" else "Load"
+        // Toast.makeText(this, "Type $type", Toast.LENGTH_SHORT).show()
+
         val medata = mutableListOf<SaveStateData>()
-        medata.add(SaveStateData(1, "2024/08/20", "26.4 hours"))
-        medata.add(SaveStateData(2, "2023/07/24", "12.5 hours"))
-        medata.add(SaveStateData(3, "2023/07/24", "2.2 hours"))
-        medata.add(SaveStateData(4, "2023/07/24", "452.3 hours"))
-        medata.add(SaveStateData(5, "2023/07/24", "52.2 hours"))
+
+        // Using the rom title try fetch 1-9 save-state files
+        for (i in 1..9) {
+
+            val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/" + "${romPath}.slot${i}.state"
+            var file = File(path)
+
+            if (!file.exists()) {
+                medata.add(SaveStateData(i, "", "", statetype))
+                continue
+            }
+
+            medata.add(SaveStateData(i, "2024/08/21", "24 hours", statetype))
+        }
 
         setContent {
             LazyColumn(
@@ -51,7 +71,7 @@ class SaveStateActivity : ComponentActivity() {
             ) {
                 items(count = medata.size) { index ->
                     val item = medata[index]
-                    SaveStateSlotCard(SaveStateData(item.slot, item.dateModified, item.timePlayed))
+                    SaveStateSlotCard(SaveStateData(item.slot, item.dateModified, item.timePlayed, statetype))
                     HorizontalDivider(color = Color.Black)
                 }
             }
@@ -59,7 +79,7 @@ class SaveStateActivity : ComponentActivity() {
     }
 }
 
-data class SaveStateData(val slot: Int, val dateModified: String, val timePlayed: String)
+data class SaveStateData(val slot: Int, val dateModified: String, val timePlayed: String, val type: Int)
 
 @Composable
 fun SaveStateSlotCard(data: SaveStateData) {
@@ -69,6 +89,7 @@ fun SaveStateSlotCard(data: SaveStateData) {
     Surface(onClick = {
             val resultIntent = Intent().apply {
                 putExtra("Slot", data.slot)
+                putExtra("StateType", data.type)
             }
 
             context.setResult(Activity.RESULT_OK, resultIntent)
@@ -77,7 +98,12 @@ fun SaveStateSlotCard(data: SaveStateData) {
     ) {
         Row(modifier = Modifier.padding(all = 20.dp)) {
             Text(
-                "Slot ${data.slot} - ${data.dateModified} - ${data.timePlayed}",
+                if (data.dateModified.isEmpty() && data.timePlayed.isEmpty()) {
+                    "Slot ${data.slot} - Empty"
+                } else{
+                    "Slot ${data.slot} - ${data.dateModified} - ${data.timePlayed}"
+                },
+
                 fontSize = 20.sp
             )
         }
@@ -88,6 +114,6 @@ fun SaveStateSlotCard(data: SaveStateData) {
 @Composable
 fun PreviewMessageCard() {
     SaveStateSlotCard(
-        data = SaveStateData(1, "2024/08/20", "26.4 hours")
+        data = SaveStateData(1, "2024/08/20", "26.4 hours", 0)
     )
 }
