@@ -69,6 +69,9 @@
     <ClInclude Include="Include\RetroGBm\Apu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Include\RetroGBm\SaveStateHeader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Cpu.cpp">

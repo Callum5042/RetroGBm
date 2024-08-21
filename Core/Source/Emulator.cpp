@@ -17,6 +17,7 @@
 #include "RetroGBm/Ppu.h"
 #include "RetroGBm/Apu.h"
 #include "RetroGBm/HighTimer.h"
+#include "RetroGBm/SaveStateHeader.h"
 
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 #include "RetroGBm/Cartridge/CartridgeMBC3.h"

@@ -31,20 +31,6 @@ struct EmulatorContext
 	int cycles = 0;
 };
 
-struct SaveStateHeader
-{
-	char identifier[8] = { 'R', 'E', 'T', 'R', 'O', 'G', 'B', 'M' };
-	int version = 1;
-
-	time_t date_created = 0;
-	time_t date_modified = 0;
-	double time_played = 0;
-
-	char reserved[24] = {};
-};
-
-static_assert(sizeof(SaveStateHeader) == 64);
-
 class IBus
 {
 public:

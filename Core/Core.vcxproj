@@ -35,6 +35,7 @@
     <ClInclude Include="Include\RetroGBm\Joypad.h" />
     <ClInclude Include="Include\RetroGBm\Pch.h" />
     <ClInclude Include="Include\RetroGBm\Ram.h" />
+    <ClInclude Include="Include\RetroGBm\SaveStateHeader.h" />
     <ClInclude Include="Include\RetroGBm\Timer.h" />
   </ItemGroup>
   <ItemGroup>

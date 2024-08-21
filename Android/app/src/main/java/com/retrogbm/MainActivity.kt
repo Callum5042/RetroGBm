@@ -18,6 +18,7 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.retrogbm.databinding.ActivityMainBinding
@@ -41,10 +42,13 @@ class MainActivity : AppCompatActivity() {
     // UI components
     private lateinit var binding: ActivityMainBinding
     private lateinit var image: ImageView
+    private lateinit var resultLauncher: ActivityResultLauncher<Intent>
 
     // Emulator components
     private var emulator: EmulatorWrapper = EmulatorWrapper()
     private val bitmap: Bitmap = Bitmap.createBitmap(160, 144, Bitmap.Config.ARGB_8888)
+
+    private var romName: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,6 +60,34 @@ class MainActivity : AppCompatActivity() {
 
         // Buttons
         registerButtons()
+
+        // Intent ting
+        resultLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val data: Intent? = result.data
+                val slot = data?.getIntExtra("Slot", -1)
+                val stateType = data?.getIntExtra("StateType", 0)
+                // Do something with the result
+
+                if (stateType == 1) {
+                    // Toast.makeText(this, "Save: $resultValue", Toast.LENGTH_LONG).show()
+
+                    val romTitle = emulator.getCartridgeTitle()
+                    val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/" + "${romTitle}.slot${slot}.state"
+
+                    // Save that fucker
+                    emulator.saveState(path)
+
+                } else if (stateType == 2) {
+                    val romTitle = emulator.getCartridgeTitle()
+                    val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/" + "${romTitle}.slot${slot}.state"
+
+                    emulator.loadState(path)
+                }
+            }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -71,26 +103,47 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.save_state -> {
-                val builder: AlertDialog.Builder = AlertDialog.Builder(this)
-                builder.setMessage("Save state?")
-                    .setPositiveButton("Yes") { dialog, which ->
-                        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/"
-                        emulator.saveState(path)
-                    }
-                    .setNegativeButton("No") { dialog, which -> }
-                    .show()
+//                val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+//                builder.setMessage("Save state?")
+//                    .setPositiveButton("Yes") { dialog, which ->
+//                        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/"
+//                        emulator.saveState(path)
+//                    }
+//                    .setNegativeButton("No") { dialog, which -> }
+//                    .show()
+
+                if (!romName.isNullOrEmpty()){
+                    val intent = Intent(this, SaveStateActivity::class.java)
+                    intent.putExtra("RomTitle", romName)
+                    intent.putExtra("StateType", 1)
+                    resultLauncher.launch(intent)
+                }
 
                 true
             }
             R.id.load_state -> {
-                val builder: AlertDialog.Builder = AlertDialog.Builder(this)
-                builder.setMessage("Load state?")
-                    .setPositiveButton("Yes") { dialog, which ->
-                        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/"
-                        emulator.loadState(path)
-                    }
-                    .setNegativeButton("No") { dialog, which -> }
-                    .show()
+//                val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+//                builder.setMessage("Load state?")
+//                    .setPositiveButton("Yes") { dialog, which ->
+////                        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/"
+////                        emulator.loadState(path)
+//
+//                        val myIntent = Intent(this, SaveStateActivity::class.java)
+//                        startActivity(myIntent)
+//
+//                    }
+//                    .setNegativeButton("No") { dialog, which -> }
+//                    .show()
+
+//                val myIntent = Intent(this, SaveStateActivity::class.java)
+//                startActivityForResult(myIntent, 1)
+
+                if (!romName.isNullOrEmpty()){
+                    val intent = Intent(this, SaveStateActivity::class.java)
+                    intent.putExtra("RomTitle", romName)
+                    intent.putExtra("StateType", 2)
+                    resultLauncher.launch(intent)
+                }
 
                 true
             }
@@ -126,6 +179,8 @@ class MainActivity : AppCompatActivity() {
 
             emulator.loadRom(bytes, getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!!)
             startEmulation()
+
+            romName = emulator.getCartridgeTitle()
         }
     }
 

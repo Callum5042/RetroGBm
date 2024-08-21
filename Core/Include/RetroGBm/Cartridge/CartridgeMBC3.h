@@ -24,8 +24,8 @@ public:
 	uint8_t Read(uint16_t address) override;
 	void Write(uint16_t address, uint8_t value) override;
 
-	void SaveState(std::fstream* file);
-	void LoadState(std::fstream* file);
+	void SaveState(std::fstream* file) override;
+	void LoadState(std::fstream* file) override;
 
 	void TickRTC();
 	void SetRTC(uint8_t seconds, uint8_t minutes, uint8_t hours, uint16_t days);
