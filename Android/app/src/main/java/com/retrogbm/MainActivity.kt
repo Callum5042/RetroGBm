@@ -71,31 +71,8 @@ class MainActivity : AppCompatActivity() {
         // Buttons
         registerButtons()
 
-        // Show profile
-        lateinit var profile: ProfileData
-        val gson = GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").create();
-
-        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/" + "profile.json"
-        val file = File(path)
-        if (file.exists()) {
-            try {
-                // Load from JSON
-                val json = file.readText()
-                profile = gson.fromJson(json, ProfileData::class.java)
-            } catch (e: Exception) {
-                // println("Unable to load JSON")
-            }
-        } else {
-            // If we don't have a profile.json file, then we must create a new one
-            file.createNewFile()
-
-            // And create new profile
-            profile = ProfileData(gameData = mutableListOf())
-
-            val json = gson.toJson(profile)
-            file.writeText(json)
-        }
-
+        // Show profile - TODO: Implement an UI to show the details in a ROM list
+        // loadProfileData()
 
         // Intent ting
         resultLauncher = registerForActivityResult(
@@ -107,20 +84,15 @@ class MainActivity : AppCompatActivity() {
                 val stateType = data?.getIntExtra("StateType", 0)
                 // Do something with the result
 
+                val romTitle = emulator.getCartridgeTitle()
+                val saveStatePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/" + "${romTitle}.slot${slot}.state"
+
                 if (stateType == 1) {
                     // Toast.makeText(this, "Save: $resultValue", Toast.LENGTH_LONG).show()
-
-                    val romTitle = emulator.getCartridgeTitle()
-                    val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/" + "${romTitle}.slot${slot}.state"
-
-                    // Save that fucker
-                    emulator.saveState(path)
+                    emulator.saveState(saveStatePath)
 
                 } else if (stateType == 2) {
-                    val romTitle = emulator.getCartridgeTitle()
-                    val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/" + "${romTitle}.slot${slot}.state"
-
-                    emulator.loadState(path)
+                    emulator.loadState(saveStatePath)
                 }
             }
         }

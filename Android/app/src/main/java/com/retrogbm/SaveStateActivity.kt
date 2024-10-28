@@ -16,6 +16,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -196,7 +197,10 @@ fun SaveStateSlotCard(data: SaveStateData) {
             context.finish()
         }
     ) {
-        Row(modifier = Modifier.padding(all = 20.dp)) {
+        Row(modifier = Modifier
+            .fillMaxWidth()
+            .padding(all = 20.dp)
+        ) {
             Text(
                 if (data.dateModified.isEmpty() && data.timePlayed.isEmpty()) {
                     "Slot ${data.slot} - Empty"
