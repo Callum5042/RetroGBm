@@ -148,6 +148,22 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
+            R.id.quick_save -> {
+                val romTitle = emulator.getCartridgeTitle()
+                val saveStatePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/" + "${romTitle}.slot_quick.state"
+                emulator.saveState(saveStatePath)
+
+                Toast.makeText(this, "State Saved", Toast.LENGTH_SHORT).show()
+                return true
+            }
+            R.id.quick_load -> {
+                val romTitle = emulator.getCartridgeTitle()
+                val saveStatePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/" + "${romTitle}.slot_quick.state"
+                emulator.loadState(saveStatePath)
+
+                Toast.makeText(this, "State Loaded", Toast.LENGTH_SHORT).show()
+                return true
+            }
             R.id.load_rom -> {
                 loadRom()
                 true
