@@ -48,6 +48,14 @@ class EmulatorWrapper {
         loadState(emulatorPtr, path)
     }
 
+    fun pause() {
+        pause(emulatorPtr)
+    }
+
+    fun resume() {
+        resume(emulatorPtr)
+    }
+
     private external fun createEmulator(): Long
     private external fun loadRom(emulatorPtr: Long, path: String)
     private external fun loadRomFromByteArray(emulatorPtr: Long, data: ByteArray)
@@ -64,4 +72,7 @@ class EmulatorWrapper {
     private external fun loadState(emulatorPtr: Long, path: String)
 
     private external fun setBatteryPath(emulatorPtr: Long, path: String)
+
+    private external fun pause(emulatorPtr: Long)
+    private external fun resume(emulatorPtr: Long)
 }
