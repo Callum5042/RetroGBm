@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">RetroGBm</string>
+    <string name="quick_save">Quick Save</string>
+    <string name="quick_load">Quick Load</string>
+    <string name="load_rom">Load ROM</string>
+    <string name="save_state">Save State</string>
+    <string name="load_state">Load State</string>
+    <string name="settings">Settings</string>
 </resources>
