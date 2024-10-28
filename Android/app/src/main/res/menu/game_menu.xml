@@ -1,20 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/quick_save"
+        android:icon="@drawable/baseline_save_24"
+        android:title="@string/quick_save"
+        android:iconTint="@color/white"
+        app:showAsAction="ifRoom" />
+    <item android:id="@+id/quick_load"
+        android:icon="@drawable/baseline_history_24"
+        android:title="@string/quick_load"
+        app:showAsAction="ifRoom" />
     <item android:id="@+id/load_rom"
         android:icon="@drawable/ic_launcher_background"
-        android:title="Load ROM"
+        android:title="@string/load_rom"
         app:showAsAction="never" />
     <item android:id="@+id/save_state"
         android:icon="@drawable/ic_launcher_background"
-        android:title="Save State"
+        android:title="@string/save_state"
         app:showAsAction="never" />
     <item android:id="@+id/load_state"
         android:icon="@drawable/ic_launcher_background"
-        android:title="Load State"
+        android:title="@string/load_state"
         app:showAsAction="never" />
     <item android:id="@+id/help"
         android:icon="@drawable/ic_launcher_background"
-        android:title="Settings"
+        android:title="@string/settings"
         app:showAsAction="never" />
 </menu>
