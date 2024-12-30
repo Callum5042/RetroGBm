@@ -10,9 +10,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -24,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import com.retrogbm.ui.theme.RetroGBmTheme
 import java.io.File
 import java.util.Date
@@ -43,10 +47,15 @@ class HomeActivity : ComponentActivity() {
         val previewData = convertFilesToGameData(files)
         val data = ProfileRomData(previewData)
 
-        enableEdgeToEdge()
+        // enableEdgeToEdge()
+
         setContent {
-            RetroGBmTheme {
-                List(data = data)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize() // Ensure system bars are handled properly
+                    .padding(top = 0.dp)  // Adjust padding if needed
+            ) {
+                List(data = ProfileRomData(previewData)) // Use your composable here
             }
         }
     }
