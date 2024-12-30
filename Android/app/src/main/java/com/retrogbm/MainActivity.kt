@@ -18,6 +18,7 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -74,6 +75,12 @@ class MainActivity : AppCompatActivity() {
         // Show profile - TODO: Implement an UI to show the details in a ROM list
         // loadProfileData()
 
+        val title = intent.getStringExtra("ROM_TITLE")
+        if (!title.isNullOrEmpty()) {
+            val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/ROMS/" + title
+            LoadRom(Uri.fromFile(File(path)))
+        }
+
         // Intent ting
         resultLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
@@ -85,7 +92,8 @@ class MainActivity : AppCompatActivity() {
                 // Do something with the result
 
                 val romTitle = emulator.getCartridgeTitle()
-                val saveStatePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/" + "${romTitle}.slot${slot}.state"
+                val saveStatePath =
+                    getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/ROMS/" + "${romTitle}.slot${slot}.state"
 
                 if (stateType == 1) {
                     // Toast.makeText(this, "Save: $resultValue", Toast.LENGTH_LONG).show()
@@ -224,62 +232,74 @@ class MainActivity : AppCompatActivity() {
     private val openDocumentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val uri: Uri? = result.data?.data
-            val inputStream = contentResolver.openInputStream(uri!!)
-            val outputStream = ByteArrayOutputStream()
-            inputStream?.use { stream ->
-                val buffer = ByteArray(1024)
-                var length: Int
-
-                while (stream.read(buffer).also { length = it } != -1) {
-                    outputStream.write(buffer, 0, length)
-                }
+            try {
+                LoadRom(uri)
             }
-
-            val bytes = outputStream.toByteArray()
-
-            if (emulator.isRunning()) {
-                emulator.stop()
-                emulatorThread.cancel()
-                updateTextureThread.cancel()
-
-                // Update the total time
-                val profileData = loadProfileData()
-                val profileGameData = profileData.gameData.find { p -> p.name == romName }
-
-                val diffInMillis = Date().time - timeStarted.time
-                val timeDifference = TimeUnit.MILLISECONDS.toMinutes(diffInMillis)
-
-                profileGameData!!.totalPlayTimeMinutes += timeDifference.toInt()
-
-                saveProfileData(profileData)
+            catch (e: Exception){
+                Log.d("RetroGBm", e.message.toString())
             }
+        }
+    }
 
-            emulator.loadRom(bytes, getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!!)
-            startEmulation()
+    private fun LoadRom(uri: Uri?) {
+        val inputStream = contentResolver.openInputStream(uri!!)
+        val outputStream = ByteArrayOutputStream()
+        inputStream?.use { stream ->
+            val buffer = ByteArray(1024)
+            var length: Int
 
-            romName = emulator.getCartridgeTitle()
+            while (stream.read(buffer).also { length = it } != -1) {
+                outputStream.write(buffer, 0, length)
+            }
+        }
 
-            // Update the profile
+        val bytes = outputStream.toByteArray()
+
+        if (emulator.isRunning()) {
+            emulator.stop()
+            emulatorThread.cancel()
+            updateTextureThread.cancel()
+
+            // Update the total time
             val profileData = loadProfileData()
+            val profileGameData = profileData.gameData.find { p -> p.name == romName }
 
-            // Find the game data
-            var profileGameData = profileData.gameData.find { p -> p.name == romName }
-            if (profileGameData == null) {
-                profileGameData = ProfileGameData(
-                    name = romName!!,
-                    checksum = calculateFileChecksum(bytes),
-                    lastPlayed = null,
-                    totalPlayTimeMinutes = 0
-                )
+            val diffInMillis = Date().time - timeStarted.time
+            val timeDifference = TimeUnit.MILLISECONDS.toMinutes(diffInMillis)
 
-                profileData.gameData.add(profileGameData)
-            }
-
-            timeStarted = Date()
-            profileGameData.lastPlayed = Date()
+            profileGameData!!.totalPlayTimeMinutes += timeDifference.toInt()
 
             saveProfileData(profileData)
         }
+
+        emulator.loadRom(
+            bytes,
+            getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!!
+        )
+        startEmulation()
+
+        romName = emulator.getCartridgeTitle()
+
+        // Update the profile
+        val profileData = loadProfileData()
+
+        // Find the game data
+        var profileGameData = profileData.gameData.find { p -> p.name == romName }
+        if (profileGameData == null) {
+            profileGameData = ProfileGameData(
+                name = romName!!,
+                checksum = calculateFileChecksum(bytes),
+                lastPlayed = null,
+                totalPlayTimeMinutes = 0
+            )
+
+            profileData.gameData.add(profileGameData)
+        }
+
+        timeStarted = Date()
+        profileGameData.lastPlayed = Date()
+
+        saveProfileData(profileData)
     }
 
     private fun loadProfileData(): ProfileData {

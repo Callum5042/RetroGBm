@@ -1,5 +1,7 @@
 package com.retrogbm
 
+import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Environment
@@ -7,6 +9,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,12 +25,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import com.google.gson.GsonBuilder
+import com.retrogbm.profile.ProfileData
 import com.retrogbm.ui.theme.RetroGBmTheme
 import java.io.File
 import java.util.Date
@@ -45,9 +51,10 @@ class HomeActivity : ComponentActivity() {
         }
 
         val previewData = convertFilesToGameData(files)
+        val profileData = loadProfileData()
+
         val data = ProfileRomData(previewData)
 
-        // enableEdgeToEdge()
 
         setContent {
             Column(
@@ -65,7 +72,7 @@ class HomeActivity : ComponentActivity() {
             // For this example, we'll just use the file name as the game title
             // Assume `lastPlayed` is the current date, and `timeSpent` is some arbitrary value like 120
             ProfileRomGameData(
-                title = fileName.removeSuffix(".gb").removeSuffix(".gbc"), // Remove file extension for the title
+                title = fileName,//.removeSuffix(".gb").removeSuffix(".gbc"), // Remove file extension for the title
                 lastPlayed = Date(), // Current date
                 totalPlayTimeMinutes = 120 // Arbitrary time spent (you can change this logic as needed)
             )
@@ -92,6 +99,35 @@ class HomeActivity : ComponentActivity() {
         }
 
         return filteredFiles
+    }
+
+    private fun loadProfileData(): ProfileData {
+        // Update the profile
+        lateinit var profile: ProfileData
+        val gson = GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").create();
+
+        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/" + "profile.json"
+        val file = File(path)
+        if (file.exists()) {
+            try {
+                // Load from JSON
+                val json = file.readText()
+                profile = gson.fromJson(json, ProfileData::class.java)
+            } catch (e: Exception) {
+                // println("Unable to load JSON")
+            }
+        } else {
+            // If we don't have a profile.json file, then we must create a new one
+            file.createNewFile()
+
+            // And create new profile
+            profile = ProfileData(gameData = mutableListOf())
+
+            val json = gson.toJson(profile)
+            file.writeText(json)
+        }
+
+        return profile
     }
 }
 
@@ -123,13 +159,20 @@ fun List(data: ProfileRomData) {
 
 @Composable
 fun RomInfoCard(title: String, time: String, date: String) {
+
+    val context = LocalContext.current as Activity
+
     Column {
         Text(
             text = title,
             modifier = Modifier.fillMaxWidth()
         )
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 0.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 0.dp).clickable {
+                val intent = Intent(context, MainActivity::class.java)
+                intent.putExtra("ROM_TITLE", title) // Optional: Pass data
+                context.startActivity(intent)
+            },
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
