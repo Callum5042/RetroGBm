@@ -1,6 +1,8 @@
 package com.retrogbm
 
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Environment
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,48 +22,67 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.retrogbm.ui.theme.RetroGBmTheme
 import java.io.File
 import java.util.Date
+
 
 class HomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Locate and log ROM files in internal storage
-        val romFiles = findRomFilesInInternalStorage("Documents/ROMS")
-        romFiles.forEach { fileName ->
-            Log.d("ROMFiles", "Found ROM: $fileName")
+        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/ROMS"
+        val files = listFilesInDirectory(path)
+
+        files.forEach{ file ->
+            Log.d("ROMFiles", "File: ${file}")
         }
+
+        val previewData = convertFilesToGameData(files)
+        val data = ProfileRomData(previewData)
 
         enableEdgeToEdge()
         setContent {
             RetroGBmTheme {
-                RomInfoCard(
-                    title = "Android",
-                    time = "13 minutes",
-                    date = "1/1/2001"
-                )
+                List(data = data)
             }
         }
     }
 
-    private fun findRomFilesInInternalStorage(folderName: String): List<String> {
-        // Locate the folder inside the app's internal storage
-        val folder = File(filesDir, folderName)
+    private fun convertFilesToGameData(files: List<String>) : MutableList<ProfileRomGameData> {
+        return files.map { fileName ->
+            // For this example, we'll just use the file name as the game title
+            // Assume `lastPlayed` is the current date, and `timeSpent` is some arbitrary value like 120
+            ProfileRomGameData(
+                title = fileName.removeSuffix(".gb").removeSuffix(".gbc"), // Remove file extension for the title
+                lastPlayed = Date(), // Current date
+                totalPlayTimeMinutes = 120 // Arbitrary time spent (you can change this logic as needed)
+            )
+        }.toMutableList()
+    }
 
-        Log.d("RetoGBm", "Folder name: ${folder.path}")
+    private fun listFilesInDirectory(directoryPath: String) : List<String> {
+        val filteredFiles = mutableListOf<String>()
 
-        // Check if the folder exists and is a directory
-        if (!folder.exists() || !folder.isDirectory) {
-            Log.w("ROMFiles", "The folder $folderName does not exist.")
-            return emptyList()
+        val directory = File(directoryPath)
+        if (directory.exists() && directory.isDirectory) {
+            val files = directory.listFiles()
+            if (files != null) {
+                for (file in files) {
+                    if (file.isFile && (file.name.endsWith(".gb") || file.name.endsWith(".gbc"))) {
+                        filteredFiles.add(file.name)
+                    }
+                }
+            } else {
+                Log.d("ROMFiles", "The directory is empty or an error occurred.")
+            }
+        } else {
+            Log.d("ROMFiles", "The specified path is not a valid directory.")
         }
 
-        // Filter files ending with .gb or .gbc
-        return folder.listFiles { file ->
-            file.isFile && (file.extension.equals("gb", ignoreCase = true) || file.extension.equals("gbc", ignoreCase = true))
-        }?.map { it.name } ?: emptyList()
+        return filteredFiles
     }
 }
 
