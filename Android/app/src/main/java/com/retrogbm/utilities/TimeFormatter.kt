@@ -19,6 +19,7 @@ class TimeFormatter {
         return when {
             hours >= 2 && minutes > 0 -> "$hours hours $minutes minutes"
             hours >= 2 -> "$hours hours"
+            minutes == 0L -> "Less than a minute"
             else -> "$minutes minutes"
         }
     }
