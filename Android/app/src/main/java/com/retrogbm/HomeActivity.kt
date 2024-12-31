@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -85,7 +86,9 @@ class HomeActivity : ComponentActivity() {
             val previewRomData = ProfileRomData(previewData)
 
             setContent {
-                Content(previewRomData)
+                RetroGBmTheme {
+                    Content(previewRomData)
+                }
             }
         }
     }
@@ -214,13 +217,18 @@ fun List(data: ProfileRomData) {
         modifier = Modifier
             .fillMaxSize()
             .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(0.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(data.gameData) { gameData ->
             RomInfoCard(
                 title = gameData.title,
                 time = gameData.totalPlayTimeMinutes,
                 date = gameData.lastPlayed
+            )
+            HorizontalDivider(
+                color = Color.Gray, // Color of the border
+                thickness = 1.dp,   // Thickness of the border
+                modifier = Modifier.padding(vertical = 0.dp)
             )
         }
     }
@@ -232,7 +240,13 @@ fun RomInfoCard(title: String, time: String, date: String) {
     val context = LocalContext.current
 
     Column(
-        modifier = Modifier.padding(horizontal = 0.dp)
+        modifier = Modifier
+            .padding(horizontal = 0.dp)
+            .clickable {
+                val intent = Intent(context, MainActivity::class.java)
+                intent.putExtra("ROM_TITLE", title)
+                context.startActivity(intent)
+            }
     ) {
         Text(
             text = title,
@@ -241,12 +255,7 @@ fun RomInfoCard(title: String, time: String, date: String) {
         )
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    val intent = Intent(context, MainActivity::class.java)
-                    intent.putExtra("ROM_TITLE", title)
-                    context.startActivity(intent)
-                },
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
