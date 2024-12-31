@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -67,13 +69,19 @@ class HomeActivity : ComponentActivity() {
                 }
             }
 
+            val previewRomData = ProfileRomData(previewData)
+
             setContent {
                 Column(
                     modifier = Modifier
                         .fillMaxSize() // Ensure system bars are handled properly
                         .padding(top = 0.dp)  // Adjust padding if needed
                 ) {
-                    List(data = ProfileRomData(previewData)) // Use your composable here
+                    if (previewRomData.gameData.isEmpty()) {
+                        NoRomFound()
+                    } else {
+                        List(data = previewRomData)
+                    }
                 }
             }
         }
@@ -180,6 +188,30 @@ fun RomInfoCard(title: String, time: String, date: String) {
                 fontSize = 12.sp
             )
         }
+    }
+}
+
+@Composable
+fun NoRomFound() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = "No ROMS found in directory",
+            modifier = Modifier
+                .align(Alignment.Center),
+            color = Color.DarkGray
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun NoRomFoundPreview() {
+    RetroGBmTheme {
+        NoRomFound()
     }
 }
 
