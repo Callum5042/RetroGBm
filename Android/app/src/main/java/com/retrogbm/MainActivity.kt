@@ -1,13 +1,14 @@
 package com.retrogbm
 
 import android.app.Activity
-import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.provider.OpenableColumns
 import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.Menu
@@ -18,13 +19,10 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.Toast
-import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import com.google.gson.GsonBuilder
 import com.retrogbm.databinding.ActivityMainBinding
-import com.retrogbm.profile.ProfileData
 import com.retrogbm.profile.ProfileGameData
 import com.retrogbm.profile.ProfileRepository
 import kotlinx.coroutines.CoroutineScope
@@ -38,7 +36,6 @@ import java.nio.IntBuffer
 import java.security.MessageDigest
 import java.util.Date
 import java.util.concurrent.TimeUnit
-import kotlin.time.Duration.Companion.minutes
 
 class MainActivity : AppCompatActivity() {
 
@@ -85,6 +82,14 @@ class MainActivity : AppCompatActivity() {
             LoadRom(Uri.fromFile(File(path)), title)
         }
 
+        // Load the ROM from the ACTION_OPEN_DOCUMENT intent
+        val romUriString = intent?.getStringExtra("ROM_URI")
+        if (!romUriString.isNullOrEmpty()) {
+            val romUri = romUriString.let { Uri.parse(it) }
+            val romFileName = getFileName(this, romUri)
+            LoadRom(romUri, romFileName!!)
+        }
+
         // Intent ting
         resultLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
@@ -107,6 +112,15 @@ class MainActivity : AppCompatActivity() {
                     emulator.loadState(saveStatePath)
                 }
             }
+        }
+    }
+
+    private fun getFileName(context: Context, uri: Uri): String? {
+        val cursor = context.contentResolver.query(uri, null, null, null, null)
+        return cursor?.use {
+            val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            it.moveToFirst()
+            it.getString(nameIndex)
         }
     }
 
@@ -195,22 +209,6 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.load_state -> {
-//                val builder: AlertDialog.Builder = AlertDialog.Builder(this)
-//                builder.setMessage("Load state?")
-//                    .setPositiveButton("Yes") { dialog, which ->
-////                        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/"
-////                        emulator.loadState(path)
-//
-//                        val myIntent = Intent(this, SaveStateActivity::class.java)
-//                        startActivity(myIntent)
-//
-//                    }
-//                    .setNegativeButton("No") { dialog, which -> }
-//                    .show()
-
-//                val myIntent = Intent(this, SaveStateActivity::class.java)
-//                startActivityForResult(myIntent, 1)
-
                 if (!romName.isNullOrEmpty()){
                     val intent = Intent(this, SaveStateActivity::class.java)
                     intent.putExtra("RomTitle", romName)

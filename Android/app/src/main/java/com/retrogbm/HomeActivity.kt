@@ -5,17 +5,30 @@ import android.os.Bundle
 import android.os.Environment
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FileOpen
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,17 +85,7 @@ class HomeActivity : ComponentActivity() {
             val previewRomData = ProfileRomData(previewData)
 
             setContent {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize() // Ensure system bars are handled properly
-                        .padding(top = 0.dp)  // Adjust padding if needed
-                ) {
-                    if (previewRomData.gameData.isEmpty()) {
-                        NoRomFound()
-                    } else {
-                        List(data = previewRomData)
-                    }
-                }
+                Content(previewRomData)
             }
         }
     }
@@ -141,11 +144,77 @@ data class ProfileRomData(
     val gameData: MutableList<ProfileRomGameData>
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun Content(previewRomData: ProfileRomData) {
+
+    val context = LocalContext.current
+
+    // Launcher for the ACTION_OPEN_DOCUMENT intent
+    val openDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+        onResult = { uri ->
+            val intent = Intent(context, MainActivity::class.java)
+            intent.putExtra("ROM_URI", uri.toString())
+            context.startActivity(intent)
+        }
+    )
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                ),
+                title = {
+                    Text("RetroGBm")
+                },
+                actions = {
+                    IconButton(onClick = {
+                        openDocumentLauncher.launch(arrayOf("*/*"))
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.FileOpen,
+                            contentDescription = "Load ROM"
+                        )
+                    }
+                    IconButton(onClick = { /* do something */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Menu,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                },
+            )
+        },
+    ) { innerPadding ->
+        BodyContent(previewRomData, innerPadding)
+    }
+}
+
+@Composable
+fun BodyContent(previewRomData: ProfileRomData, innerPadding: PaddingValues) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize() // Ensure system bars are handled properly
+            .padding(innerPadding)  // Adjust padding if needed
+    ) {
+        if (previewRomData.gameData.isEmpty()) {
+            NoRomFound()
+        } else {
+            List(data = previewRomData)
+        }
+    }
+}
+
 @Composable
 fun List(data: ProfileRomData) {
     androidx.compose.foundation.lazy.LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(8.dp) // Adds spacing between items
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         items(data.gameData) { gameData ->
             RomInfoCard(
@@ -162,17 +231,22 @@ fun RomInfoCard(title: String, time: String, date: String) {
 
     val context = LocalContext.current
 
-    Column {
+    Column(
+        modifier = Modifier.padding(horizontal = 0.dp)
+    ) {
         Text(
             text = title,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
         )
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 0.dp).clickable {
-                val intent = Intent(context, MainActivity::class.java)
-                intent.putExtra("ROM_TITLE", title)
-                context.startActivity(intent)
-            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    val intent = Intent(context, MainActivity::class.java)
+                    intent.putExtra("ROM_TITLE", title)
+                    context.startActivity(intent)
+                },
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
@@ -209,23 +283,15 @@ fun NoRomFound() {
 
 @Preview(showBackground = true)
 @Composable
-fun NoRomFoundPreview() {
-    RetroGBmTheme {
-        NoRomFound()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
 fun RomInfoCardPreview() {
     RetroGBmTheme {
-        RomInfoCard("Pokemon - Crystal Version (UE) (V1.1) [C][!]", "13 minutes", "14/03/2024")
+        RomInfoCard("Pokemon - Crystal Version (UE) (V1.1) [C][!].gbc", "13 minutes", "14/03/2024")
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun ListPreview() {
+fun BodyContentHasRomsPreview() {
     RetroGBmTheme {
         val previewData = ProfileRomData(
             gameData = mutableListOf(
@@ -234,6 +300,19 @@ fun ListPreview() {
                 ProfileRomGameData("Super Mario", "04/12/2021", "95 minutes")
             )
         )
-        List(data = previewData)
+
+        Content(previewData)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun BodyContentNoRomsPreview() {
+    RetroGBmTheme {
+        val previewData = ProfileRomData(
+            gameData = mutableListOf()
+        )
+
+        Content(previewData)
     }
 }
