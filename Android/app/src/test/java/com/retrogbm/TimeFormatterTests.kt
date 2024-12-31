@@ -78,4 +78,16 @@ class TimeFormatterTests {
         // Assert
         assertEquals("2 hours 30 minutes", result)
     }
+
+    @Test
+    fun formatTimePlayed_0minutes_FormatsWithLessThanAMinute() {
+        // Arrange
+        val timeFormatter = TimeFormatter()
+
+        // Act
+        val result = timeFormatter.formatTimePlayed(0.minutes)
+
+        // Assert
+        assertEquals("Less than a minute", result)
+    }
 }
