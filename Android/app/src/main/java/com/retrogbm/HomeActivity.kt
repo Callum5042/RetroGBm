@@ -1,6 +1,5 @@
 package com.retrogbm
 
-import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.os.Environment
@@ -23,21 +22,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.gson.GsonBuilder
-import com.retrogbm.profile.ProfileData
 import com.retrogbm.profile.ProfileRepository
 import com.retrogbm.ui.theme.RetroGBmTheme
 import com.retrogbm.utilities.TimeFormatter
 import java.io.File
 import java.text.SimpleDateFormat
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
 import kotlin.time.Duration.Companion.minutes
-
 
 class HomeActivity : ComponentActivity() {
 
@@ -89,9 +81,8 @@ class HomeActivity : ComponentActivity() {
 
     private fun convertFilesToGameData(files: List<String>) : MutableList<ProfileRomGameData> {
         return files.map { fileName ->
-            // For this example, we'll just use the file name as the game title
             ProfileRomGameData(
-                title = fileName,//.removeSuffix(".gb").removeSuffix(".gbc"), // Remove file extension for the title
+                title = fileName,
                 lastPlayed = "Never Played",
                 totalPlayTimeMinutes = "No Time Played"
             )
@@ -161,7 +152,7 @@ fun List(data: ProfileRomData) {
 @Composable
 fun RomInfoCard(title: String, time: String, date: String) {
 
-    val context = LocalContext.current as Activity
+    val context = LocalContext.current
 
     Column {
         Text(
@@ -171,7 +162,7 @@ fun RomInfoCard(title: String, time: String, date: String) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 0.dp).clickable {
                 val intent = Intent(context, MainActivity::class.java)
-                intent.putExtra("ROM_TITLE", title) // Optional: Pass data
+                intent.putExtra("ROM_TITLE", title)
                 context.startActivity(intent)
             },
             horizontalArrangement = Arrangement.SpaceBetween
@@ -206,9 +197,9 @@ fun ListPreview() {
     RetroGBmTheme {
         val previewData = ProfileRomData(
             gameData = mutableListOf(
-                ProfileRomGameData("Pokemon Red", "04/12/2023", "120"),
-                ProfileRomGameData("Legend of Zelda", "04/05/2019", "200"),
-                ProfileRomGameData("Super Mario", "04/12/2021", "95")
+                ProfileRomGameData("Pokemon Red", "04/12/2023", "2 hours"),
+                ProfileRomGameData("Legend of Zelda", "04/05/2019", "2 hours 20 minutes"),
+                ProfileRomGameData("Super Mario", "04/12/2021", "95 minutes")
             )
         )
         List(data = previewData)
