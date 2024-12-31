@@ -26,6 +26,7 @@ import com.google.gson.GsonBuilder
 import com.retrogbm.databinding.ActivityMainBinding
 import com.retrogbm.profile.ProfileData
 import com.retrogbm.profile.ProfileGameData
+import com.retrogbm.profile.ProfileRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -58,8 +59,13 @@ class MainActivity : AppCompatActivity() {
     private val bitmap: Bitmap = Bitmap.createBitmap(160, 144, Bitmap.Config.ARGB_8888)
 
     private var romName: String? = null
+    private var fileName: String? = null
 
     private lateinit var timeStarted: Date
+
+    // Dependency
+    private val profileRepository = ProfileRepository()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,13 +78,11 @@ class MainActivity : AppCompatActivity() {
         // Buttons
         registerButtons()
 
-        // Show profile - TODO: Implement an UI to show the details in a ROM list
-        // loadProfileData()
-
+        // Load the ROM from the intent set by the home page
         val title = intent.getStringExtra("ROM_TITLE")
         if (!title.isNullOrEmpty()) {
             val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/ROMS/" + title
-            LoadRom(Uri.fromFile(File(path)))
+            LoadRom(Uri.fromFile(File(path)), title)
         }
 
         // Intent ting
@@ -119,15 +123,19 @@ class MainActivity : AppCompatActivity() {
 
         // Update the total time
         if (emulator.isRunning()) {
-            val profileData = loadProfileData()
+
+            val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
+            val path = absolutePath?.let { "$it/profile.json" } ?: "profile.json"
+
+            val profileData = profileRepository.loadProfileData(path)
             val profileGameData = profileData.gameData.find { p -> p.name == romName }
 
             val diffInMillis = Date().time - timeStarted.time
             val timeDifference = TimeUnit.MILLISECONDS.toMinutes(diffInMillis)
 
             profileGameData!!.totalPlayTimeMinutes += timeDifference.toInt()
-
-            saveProfileData(profileData)
+            profileGameData?.fileName = fileName!!
+            profileRepository.saveProfileData(path, profileData)
 
             wasStopped = true
         }
@@ -177,15 +185,6 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.save_state -> {
-//                val builder: AlertDialog.Builder = AlertDialog.Builder(this)
-//                builder.setMessage("Save state?")
-//                    .setPositiveButton("Yes") { dialog, which ->
-//                        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/"
-//                        emulator.saveState(path)
-//                    }
-//                    .setNegativeButton("No") { dialog, which -> }
-//                    .show()
-
                 if (!romName.isNullOrEmpty()){
                     val intent = Intent(this, SaveStateActivity::class.java)
                     intent.putExtra("RomTitle", romName)
@@ -233,7 +232,7 @@ class MainActivity : AppCompatActivity() {
         if (result.resultCode == Activity.RESULT_OK) {
             val uri: Uri? = result.data?.data
             try {
-                LoadRom(uri)
+                LoadRom(uri, "hmmm")
             }
             catch (e: Exception){
                 Log.d("RetroGBm", e.message.toString())
@@ -241,7 +240,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun LoadRom(uri: Uri?) {
+    private fun LoadRom(uri: Uri?, fileName: String) {
         val inputStream = contentResolver.openInputStream(uri!!)
         val outputStream = ByteArrayOutputStream()
         inputStream?.use { stream ->
@@ -255,33 +254,33 @@ class MainActivity : AppCompatActivity() {
 
         val bytes = outputStream.toByteArray()
 
+        val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
+        val path = absolutePath?.let { "$it/profile.json" } ?: "profile.json"
+
         if (emulator.isRunning()) {
             emulator.stop()
             emulatorThread.cancel()
             updateTextureThread.cancel()
 
             // Update the total time
-            val profileData = loadProfileData()
+            val profileData = profileRepository.loadProfileData(path)
             val profileGameData = profileData.gameData.find { p -> p.name == romName }
 
             val diffInMillis = Date().time - timeStarted.time
             val timeDifference = TimeUnit.MILLISECONDS.toMinutes(diffInMillis)
 
+            profileGameData?.fileName = fileName
             profileGameData!!.totalPlayTimeMinutes += timeDifference.toInt()
-
-            saveProfileData(profileData)
+            profileRepository.saveProfileData(path, profileData)
         }
 
-        emulator.loadRom(
-            bytes,
-            getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!!
-        )
+        emulator.loadRom(bytes, absolutePath!!)
         startEmulation()
 
         romName = emulator.getCartridgeTitle()
 
         // Update the profile
-        val profileData = loadProfileData()
+        val profileData = profileRepository.loadProfileData(path)
 
         // Find the game data
         var profileGameData = profileData.gameData.find { p -> p.name == romName }
@@ -290,7 +289,8 @@ class MainActivity : AppCompatActivity() {
                 name = romName!!,
                 checksum = calculateFileChecksum(bytes),
                 lastPlayed = null,
-                totalPlayTimeMinutes = 0
+                totalPlayTimeMinutes = 0,
+                fileName = fileName
             )
 
             profileData.gameData.add(profileGameData)
@@ -298,54 +298,11 @@ class MainActivity : AppCompatActivity() {
 
         timeStarted = Date()
         profileGameData.lastPlayed = Date()
+        profileGameData.fileName = fileName
 
-        saveProfileData(profileData)
-    }
+        profileRepository.saveProfileData(path, profileData)
 
-    private fun loadProfileData(): ProfileData {
-        // Update the profile
-        lateinit var profile: ProfileData
-        val gson = GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").create();
-
-        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/" + "profile.json"
-        val file = File(path)
-        if (file.exists()) {
-            try {
-                // Load from JSON
-                val json = file.readText()
-                profile = gson.fromJson(json, ProfileData::class.java)
-            } catch (e: Exception) {
-                // println("Unable to load JSON")
-            }
-        } else {
-            // If we don't have a profile.json file, then we must create a new one
-            file.createNewFile()
-
-            // And create new profile
-            profile = ProfileData(gameData = mutableListOf())
-
-            val json = gson.toJson(profile)
-            file.writeText(json)
-        }
-
-        return profile
-    }
-
-    private fun saveProfileData(profile: ProfileData) {
-        val gson = GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").create();
-        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/" + "profile.json"
-
-        val file = File(path)
-        if (file.exists()) {
-            try {
-
-                val json = gson.toJson(profile)
-                file.writeText(json)
-
-            } catch (e: Exception) {
-                // println("Unable to load JSON")
-            }
-        }
+        this.fileName = fileName
     }
 
     private fun calculateFileChecksum(bytes: ByteArray, algorithm: String = "SHA-256"): String {

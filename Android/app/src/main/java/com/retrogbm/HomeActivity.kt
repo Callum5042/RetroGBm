@@ -2,25 +2,19 @@ package com.retrogbm
 
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -29,40 +23,66 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import androidx.core.view.WindowCompat
 import com.google.gson.GsonBuilder
 import com.retrogbm.profile.ProfileData
+import com.retrogbm.profile.ProfileRepository
 import com.retrogbm.ui.theme.RetroGBmTheme
+import com.retrogbm.utilities.TimeFormatter
 import java.io.File
+import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Date
+import java.util.Locale
+import kotlin.time.Duration.Companion.minutes
 
 
 class HomeActivity : ComponentActivity() {
+
+    // Dependency
+    private val profileRepository = ProfileRepository()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/ROMS"
-        val files = listFilesInDirectory(path)
+        // Path variables
+        val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
+        val profilePath = absolutePath?.let { "$it/profile.json" } ?: "profile.json"
+        val romPath = absolutePath?.let { "$it/ROMS" }
 
-        files.forEach{ file ->
-            Log.d("ROMFiles", "File: ${file}")
-        }
+        // Load the ROMS
+        if (romPath.isNullOrEmpty()) {
+            Log.i("ROMFiles", "ROM Path is empty")
+        } else {
+            val files = listFilesInDirectory(romPath)
+            val profileData = profileRepository.loadProfileData(profilePath)
 
-        val previewData = convertFilesToGameData(files)
-        val profileData = loadProfileData()
+            files.forEach{ file ->
+                Log.i("ROMFiles", "File: $file")
+            }
 
-        val data = ProfileRomData(previewData)
+            val previewData = convertFilesToGameData(files)
+            val previewMap = previewData.associateBy { it.title }
 
+            profileData.gameData.forEach { gameData ->
+                previewMap[gameData.fileName]?.let { previewGameData ->
+                    if (gameData.lastPlayed != null) {
+                        previewGameData.lastPlayed = formatDateModified(gameData.lastPlayed!!)
+                        previewGameData.totalPlayTimeMinutes = formatTimePlayed(gameData.totalPlayTimeMinutes.toDouble())
+                    }
+                }
+            }
 
-        setContent {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize() // Ensure system bars are handled properly
-                    .padding(top = 0.dp)  // Adjust padding if needed
-            ) {
-                List(data = ProfileRomData(previewData)) // Use your composable here
+            setContent {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize() // Ensure system bars are handled properly
+                        .padding(top = 0.dp)  // Adjust padding if needed
+                ) {
+                    List(data = ProfileRomData(previewData)) // Use your composable here
+                }
             }
         }
     }
@@ -70,11 +90,10 @@ class HomeActivity : ComponentActivity() {
     private fun convertFilesToGameData(files: List<String>) : MutableList<ProfileRomGameData> {
         return files.map { fileName ->
             // For this example, we'll just use the file name as the game title
-            // Assume `lastPlayed` is the current date, and `timeSpent` is some arbitrary value like 120
             ProfileRomGameData(
                 title = fileName,//.removeSuffix(".gb").removeSuffix(".gbc"), // Remove file extension for the title
-                lastPlayed = Date(), // Current date
-                totalPlayTimeMinutes = 120 // Arbitrary time spent (you can change this logic as needed)
+                lastPlayed = "Never Played",
+                totalPlayTimeMinutes = "No Time Played"
             )
         }.toMutableList()
     }
@@ -101,40 +120,22 @@ class HomeActivity : ComponentActivity() {
         return filteredFiles
     }
 
-    private fun loadProfileData(): ProfileData {
-        // Update the profile
-        lateinit var profile: ProfileData
-        val gson = GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").create();
+    private fun formatDateModified(dateModified: Date): String {
+        // Format the date as "yyyy/MM/dd"
+        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH)
+        return formatter.format(dateModified)
+    }
 
-        val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/" + "profile.json"
-        val file = File(path)
-        if (file.exists()) {
-            try {
-                // Load from JSON
-                val json = file.readText()
-                profile = gson.fromJson(json, ProfileData::class.java)
-            } catch (e: Exception) {
-                // println("Unable to load JSON")
-            }
-        } else {
-            // If we don't have a profile.json file, then we must create a new one
-            file.createNewFile()
-
-            // And create new profile
-            profile = ProfileData(gameData = mutableListOf())
-
-            val json = gson.toJson(profile)
-            file.writeText(json)
-        }
-
-        return profile
+    private fun formatTimePlayed(timePlayed: Double): String {
+        val timeFormatter = TimeFormatter()
+        return timeFormatter.formatTimePlayed(timePlayed.minutes)
     }
 }
 
 data class ProfileRomGameData(
     var title: String,
-    var lastPlayed: Date?,
-    var totalPlayTimeMinutes: Int
+    var lastPlayed: String,
+    var totalPlayTimeMinutes: String
 )
 
 data class ProfileRomData(
@@ -150,8 +151,8 @@ fun List(data: ProfileRomData) {
         items(data.gameData) { gameData ->
             RomInfoCard(
                 title = gameData.title,
-                time = "${gameData.totalPlayTimeMinutes} minutes",
-                date = gameData.lastPlayed?.toString() ?: "Never played"
+                time = gameData.totalPlayTimeMinutes,
+                date = gameData.lastPlayed
             )
         }
     }
@@ -205,9 +206,9 @@ fun ListPreview() {
     RetroGBmTheme {
         val previewData = ProfileRomData(
             gameData = mutableListOf(
-                ProfileRomGameData("Pokemon Red", Date(), 120),
-                ProfileRomGameData("Legend of Zelda", null, 200),
-                ProfileRomGameData("Super Mario", Date(), 95)
+                ProfileRomGameData("Pokemon Red", "04/12/2023", "120"),
+                ProfileRomGameData("Legend of Zelda", "04/05/2019", "200"),
+                ProfileRomGameData("Super Mario", "04/12/2021", "95")
             )
         )
         List(data = previewData)
