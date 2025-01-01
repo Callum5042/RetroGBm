@@ -297,12 +297,11 @@ class MainActivity : AppCompatActivity() {
         emulator.loadRom(bytes, batteryFilePath)
         startEmulation()
 
-        romName = emulator.getCartridgeTitle()
-
         // Update the profile
         val profileData = profileRepository.loadProfileData(profilePath)
 
         // Find the game data
+        romName = emulator.getCartridgeTitle()
         var profileGameData = profileData.gameData.find { p -> p.name == romName }
         if (profileGameData == null) {
             profileGameData = ProfileGameData(
