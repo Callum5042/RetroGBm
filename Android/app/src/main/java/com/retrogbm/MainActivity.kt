@@ -23,6 +23,7 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.retrogbm.databinding.ActivityMainBinding
 import com.retrogbm.profile.ProfileGameData
 import com.retrogbm.profile.ProfileRepository
@@ -105,7 +106,9 @@ class MainActivity : AppCompatActivity() {
                 val stateType = data?.getIntExtra("StateType", 0)
 
                 val saveStateType = if (stateType == 1) SaveStateType.Save else SaveStateType.Load
-                handleSaveState("slot$slot", saveStateType)
+                lifecycleScope.launch(Dispatchers.IO) {
+                    handleSaveState("slot$slot", saveStateType)
+                }
             }
         }
     }
