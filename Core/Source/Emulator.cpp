@@ -175,7 +175,7 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	}
 
 	// Store current savestate start time
-	m_SaveStateStartTime = std::chrono::high_resolution_clock::now();
+	m_CurrentTimeStamp = std::chrono::high_resolution_clock::now();
 
 	m_Running = true;
 	return true;
@@ -705,9 +705,18 @@ void Emulator::SaveState(const std::string& filepath)
 	header.date_created = (has_date_created ? date_created : std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
 	header.date_modified = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
-	// Update time played
+	// Determine the timestamp
 	auto current_time = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> duration = (current_time - m_SaveStateStartTime);
+	auto timestamp = m_CurrentTimeStamp;
+
+	auto timestamp_iterator = m_StateTimestamps.find(filepath);
+	if (timestamp_iterator != m_StateTimestamps.end())
+	{
+		timestamp = timestamp_iterator->second;
+	}
+
+	// Update time played
+	std::chrono::duration<double> duration = (current_time - timestamp);
 	header.time_played = time_played + duration.count();
 
 	file.write(reinterpret_cast<const char*>(&header), sizeof(SaveStateHeader));
@@ -721,8 +730,8 @@ void Emulator::SaveState(const std::string& filepath)
 	m_Ppu->SaveState(&file);
 	m_Dma->SaveState(&file);
 
-	// Store current savestate start time
-	m_SaveStateStartTime = std::chrono::high_resolution_clock::now();
+	// Store timestamp data
+	m_StateTimestamps[filepath] = std::chrono::high_resolution_clock::now();
 }
 
 void Emulator::LoadState(const std::string& filepath)
@@ -740,7 +749,7 @@ void Emulator::LoadState(const std::string& filepath)
 		char identifier[8] = { 'R', 'E', 'T', 'R', 'O', 'G', 'B', 'M' };
 		if (!std::equal(std::begin(header.identifier), std::end(header.identifier), std::begin(identifier)))
 		{
-			return;  
+			return;
 		}
 	}
 
@@ -754,7 +763,13 @@ void Emulator::LoadState(const std::string& filepath)
 	m_Dma->LoadState(&file);
 
 	// Store current savestate start time
-	m_SaveStateStartTime = std::chrono::high_resolution_clock::now();
+	m_CurrentTimeStamp = std::chrono::high_resolution_clock::now();
+
+	auto timestamp_iterator = m_StateTimestamps.find(filepath);
+	if (timestamp_iterator != m_StateTimestamps.end())
+	{
+		timestamp_iterator->second = std::chrono::high_resolution_clock::now();
+	}
 }
 
 void* Emulator::GetVideoBuffer()

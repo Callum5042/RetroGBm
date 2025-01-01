@@ -9,6 +9,7 @@
 #include <mutex>
 #include <ctime>
 #include <chrono>
+#include <map>
 
 class Cpu;
 class Ppu;
@@ -141,5 +142,8 @@ private:
 	std::string m_BatteryPath;
 
 	bool GetSaveStateDateCreated(const std::string& filepath, time_t* dateCreated, double* time_played);
-	std::chrono::steady_clock::time_point m_SaveStateStartTime;
+
+	// Save state timestamps
+	std::chrono::steady_clock::time_point m_CurrentTimeStamp;
+	std::map<std::string, std::chrono::steady_clock::time_point> m_StateTimestamps;
 };
