@@ -32,6 +32,11 @@ class ProfileRepository {
     fun saveProfileData(path: String, profile: ProfileData) {
         val file = File(path)
 
+        if (file.exists()) {
+            file.setReadable(true)
+            file.setWritable(true)
+        }
+
         try {
             val json = gson.toJson(profile)
             file.writeText(json)
