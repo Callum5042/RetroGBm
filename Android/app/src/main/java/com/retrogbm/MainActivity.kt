@@ -98,25 +98,29 @@ class MainActivity : AppCompatActivity() {
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
+                // Get intent data
                 val data: Intent? = result.data
                 val slot = data?.getIntExtra("Slot", -1)
                 val stateType = data?.getIntExtra("StateType", 0)
 
-                val romTitle = emulator.getCartridgeTitle()
-                val saveStatePath = absolutePath?.let { "$it/SaveStates/$romTitle.slot$slot.state" } ?: "$romTitle.slot$slot.state"
+                // Create path
+                val saveStatePath = absolutePath?.let { "$it/SaveStates/$fileName/slot$slot.state" } ?: "slot$slot.state"
 
                 // Make the missing directories
-                val saveStateFolder = absolutePath?.let { "$it/SaveStates/" }
+                val saveStateFolder = absolutePath?.let { "$it/SaveStates/$fileName/" }
                 val folder = File(saveStateFolder!!)
                 if (!folder.exists()) {
                     folder.mkdirs()
+                    Log.i("SaveState", "Created folder $saveStateFolder")
                 }
 
                 // Save or load
                 if (stateType == 1) {
                     emulator.saveState(saveStatePath)
+                    Log.i("SaveState", "State saved to $saveStatePath")
                 } else if (stateType == 2) {
                     emulator.loadState(saveStatePath)
+                    Log.i("SaveState", "State loaded from $saveStatePath")
                 }
             }
         }
@@ -208,7 +212,7 @@ class MainActivity : AppCompatActivity() {
             R.id.save_state -> {
                 if (!romName.isNullOrEmpty()){
                     val intent = Intent(this, SaveStateActivity::class.java)
-                    intent.putExtra("RomTitle", romName)
+                    intent.putExtra("RomFileName", fileName)
                     intent.putExtra("StateType", 1)
                     resultLauncher.launch(intent)
                 }
@@ -218,7 +222,7 @@ class MainActivity : AppCompatActivity() {
             R.id.load_state -> {
                 if (!romName.isNullOrEmpty()){
                     val intent = Intent(this, SaveStateActivity::class.java)
-                    intent.putExtra("RomTitle", romName)
+                    intent.putExtra("RomFileName", fileName)
                     intent.putExtra("StateType", 2)
                     resultLauncher.launch(intent)
                 }
