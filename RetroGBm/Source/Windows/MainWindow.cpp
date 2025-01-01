@@ -429,7 +429,6 @@ void MainWindow::UpdateSaveStateDetails()
 				std::chrono::duration<double> time_played(header.time_played);
 				auto duration_in_hours = std::chrono::duration_cast<std::chrono::hours>(time_played);
 				auto duration_in_minutes = std::chrono::duration_cast<std::chrono::minutes>(time_played);
-				auto duration_in_seconds = std::chrono::duration_cast<std::chrono::seconds>(time_played);
 
 				std::wstringstream ss;
 				ss << L"Slot " << std::to_wstring(i) << L" - ";
@@ -438,7 +437,7 @@ void MainWindow::UpdateSaveStateDetails()
 				ss << date_modified_str << " - ";
 
 				// Hours
-				/*if (duration_in_hours.count() != 0)
+				if (duration_in_hours.count() != 0)
 				{
 					ss << duration_in_hours.count();
 					if (duration_in_minutes.count() != 0)
@@ -451,9 +450,7 @@ void MainWindow::UpdateSaveStateDetails()
 				else
 				{
 					ss << duration_in_minutes.count() << " minutes";
-				}*/
-
-				ss << "Seconds " << duration_in_seconds.count();
+				}
 
 				ModifyMenu(m_SaveSlotMenuItem, m_MenuSaveSlot1 + i, MF_STRING, m_MenuSaveSlot1 + i, ss.str().c_str());
 				ModifyMenu(m_LoadSlotMenuItem, m_MenuLoadSlot1 + i, MF_STRING, m_MenuLoadSlot1 + i, ss.str().c_str());
