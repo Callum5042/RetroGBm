@@ -83,7 +83,7 @@ class MainActivity : AppCompatActivity() {
         val title = intent.getStringExtra("ROM_TITLE")
         if (!title.isNullOrEmpty()) {
             val path = absolutePath!! + "/ROMS/" + title
-            LoadRom(Uri.fromFile(File(path)), title)
+            loadRom(Uri.fromFile(File(path)), title)
         }
 
         // Load the ROM from the ACTION_OPEN_DOCUMENT intent
@@ -91,7 +91,7 @@ class MainActivity : AppCompatActivity() {
         if (!romUriString.isNullOrEmpty()) {
             val romUri = romUriString.let { Uri.parse(it) }
             val romFileName = getFileName(this, romUri)
-            LoadRom(romUri, romFileName!!)
+            loadRom(romUri, romFileName!!)
         }
 
         // SaveState intent result
@@ -242,7 +242,7 @@ class MainActivity : AppCompatActivity() {
         if (result.resultCode == Activity.RESULT_OK) {
             val uri: Uri? = result.data?.data
             try {
-                LoadRom(uri, "hmmm")
+                loadRom(uri, "hmmm")
             }
             catch (e: Exception){
                 Log.d("RetroGBm", e.message.toString())
@@ -250,7 +250,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun LoadRom(uri: Uri?, fileName: String) {
+    private fun loadRom(uri: Uri?, fileName: String) {
         val inputStream = contentResolver.openInputStream(uri!!)
         val outputStream = ByteArrayOutputStream()
         inputStream?.use { stream ->
@@ -284,9 +284,17 @@ class MainActivity : AppCompatActivity() {
             profileRepository.saveProfileData(profilePath, profileData)
         }
 
-        // TODO: This path should be looked at to set the battery path a bit more gracefully
-        // absolutePath?.let { "$it/" }!!
-        emulator.loadRom(bytes, absolutePath!!)
+        // Set battery path and possible create the folder
+        val batteryPath = absolutePath?.let { "$it/RomData" }!!
+        val batteryPathFolder = File(batteryPath)
+        if (!batteryPathFolder.exists()) {
+            batteryPathFolder.mkdirs()
+            Log.i("LoadROM", "Created folder $batteryPath")
+        }
+
+        // Load ROM
+        val batteryFilePath = batteryPath.let { "$it/$fileName.save" }
+        emulator.loadRom(bytes, batteryFilePath)
         startEmulation()
 
         romName = emulator.getCartridgeTitle()

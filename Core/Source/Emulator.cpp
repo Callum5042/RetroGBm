@@ -110,7 +110,12 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	if (m_Cartridge->HasBattery())
 	{
 		{
-			std::string filename = m_BatteryPath + m_Cartridge->GetCartridgeData().title + ".save";
+			std::string filename = m_Cartridge->GetCartridgeData().title + ".save";
+			if (!m_BatteryPath.empty())
+			{
+				filename = m_BatteryPath;
+			}
+
 			std::ifstream battery(filename, std::ios::in | std::ios::binary);
 
 			// Discard is currently required it will break current battery saves if removed
@@ -141,7 +146,12 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 		// Set write
 		m_Cartridge->SetWriteRamCallback([&]
 		{
-			std::string filename = m_BatteryPath + m_Cartridge->GetCartridgeData().title + ".save";
+			std::string filename = m_Cartridge->GetCartridgeData().title + ".save";
+			if (!m_BatteryPath.empty())
+			{
+				filename = m_BatteryPath;
+			}
+
 			std::ofstream battery(filename, std::ios::out | std::ios::binary);
 
 			uint8_t discard = 0;
