@@ -26,6 +26,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.retrogbm.databinding.ActivityMainBinding
 import com.retrogbm.profile.ProfileGameData
 import com.retrogbm.profile.ProfileRepository
+import com.retrogbm.utilities.SaveStateType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -103,26 +104,32 @@ class MainActivity : AppCompatActivity() {
                 val slot = data?.getIntExtra("Slot", -1)
                 val stateType = data?.getIntExtra("StateType", 0)
 
-                // Create path
-                val saveStatePath = absolutePath?.let { "$it/SaveStates/$fileName/slot$slot.state" } ?: "slot$slot.state"
-
-                // Make the missing directories
-                val saveStateFolder = absolutePath?.let { "$it/SaveStates/$fileName/" }
-                val folder = File(saveStateFolder!!)
-                if (!folder.exists()) {
-                    folder.mkdirs()
-                    Log.i("SaveState", "Created folder $saveStateFolder")
-                }
-
-                // Save or load
-                if (stateType == 1) {
-                    emulator.saveState(saveStatePath)
-                    Log.i("SaveState", "State saved to $saveStatePath")
-                } else if (stateType == 2) {
-                    emulator.loadState(saveStatePath)
-                    Log.i("SaveState", "State loaded from $saveStatePath")
-                }
+                val saveStateType = if (stateType == 1) SaveStateType.Save else SaveStateType.Load
+                handleSaveState("slot$slot", saveStateType)
             }
+        }
+    }
+
+    private fun handleSaveState(slotName: String, stateType: SaveStateType) {
+        // Create path
+        val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
+        val saveStatePath = absolutePath?.let { "$it/SaveStates/$fileName/$slotName.state" } ?: "$slotName.state"
+
+        // Make the missing directories
+        val saveStateFolder = absolutePath?.let { "$it/SaveStates/$fileName/" }
+        val folder = File(saveStateFolder!!)
+        if (!folder.exists()) {
+            folder.mkdirs()
+            Log.i("SaveState", "Created folder $saveStateFolder")
+        }
+
+        // Save or load
+        if (stateType == SaveStateType.Save) {
+            emulator.saveState(saveStatePath)
+            Log.i("SaveState", "State saved to $saveStatePath")
+        } else if (stateType == SaveStateType.Load) {
+            emulator.loadState(saveStatePath)
+            Log.i("SaveState", "State loaded from $saveStatePath")
         }
     }
 
@@ -190,18 +197,12 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.quick_save -> {
-                val romTitle = emulator.getCartridgeTitle()
-                val saveStatePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/" + "${romTitle}.slot_quick.state"
-                emulator.saveState(saveStatePath)
-
+                handleSaveState("quick", SaveStateType.Save)
                 Toast.makeText(this, "State Saved", Toast.LENGTH_SHORT).show()
                 return true
             }
             R.id.quick_load -> {
-                val romTitle = emulator.getCartridgeTitle()
-                val saveStatePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/" + "${romTitle}.slot_quick.state"
-                emulator.loadState(saveStatePath)
-
+                handleSaveState("quick", SaveStateType.Load)
                 Toast.makeText(this, "State Loaded", Toast.LENGTH_SHORT).show()
                 return true
             }
