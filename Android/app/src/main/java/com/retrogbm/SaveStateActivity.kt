@@ -124,7 +124,7 @@ class SaveStateActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         // Get passed value
-        val romPath = intent.getStringExtra("RomTitle")
+        val romFileName = intent.getStringExtra("RomFileName")
         stateType = intent.getIntExtra("StateType", -1)
 
         // Values
@@ -134,7 +134,7 @@ class SaveStateActivity : ComponentActivity() {
         val saveStateData = mutableListOf<SaveStateData>()
         for (i in 1..9) {
 
-            val path = absolutePath?.let { "$it/SaveStates/$romPath.slot$i.state" }
+            val path = absolutePath?.let { "$it/SaveStates/$romFileName/slot$i.state" }
             val file = File(path!!)
 
             if (!file.exists()) {
