@@ -1,6 +1,7 @@
 package com.retrogbm
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -72,13 +73,15 @@ class MainActivity : AppCompatActivity() {
 
         image = findViewById(R.id.ivEmulator)
 
+        val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
+
         // Buttons
         registerButtons()
 
         // Load the ROM from the intent set by the home page
         val title = intent.getStringExtra("ROM_TITLE")
         if (!title.isNullOrEmpty()) {
-            val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/ROMS/" + title
+            val path = absolutePath!! + "/ROMS/" + title
             LoadRom(Uri.fromFile(File(path)), title)
         }
 
@@ -90,7 +93,7 @@ class MainActivity : AppCompatActivity() {
             LoadRom(romUri, romFileName!!)
         }
 
-        // Intent ting
+        // SaveState intent result
         resultLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
@@ -98,16 +101,20 @@ class MainActivity : AppCompatActivity() {
                 val data: Intent? = result.data
                 val slot = data?.getIntExtra("Slot", -1)
                 val stateType = data?.getIntExtra("StateType", 0)
-                // Do something with the result
 
                 val romTitle = emulator.getCartridgeTitle()
-                val saveStatePath =
-                    getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath!! + "/ROMS/" + "${romTitle}.slot${slot}.state"
+                val saveStatePath = absolutePath?.let { "$it/SaveStates/$romTitle.slot$slot.state" } ?: "$romTitle.slot$slot.state"
 
+                // Make the missing directories
+                val saveStateFolder = absolutePath?.let { "$it/SaveStates/" }
+                val folder = File(saveStateFolder!!)
+                if (!folder.exists()) {
+                    folder.mkdirs()
+                }
+
+                // Save or load
                 if (stateType == 1) {
-                    // Toast.makeText(this, "Save: $resultValue", Toast.LENGTH_LONG).show()
                     emulator.saveState(saveStatePath)
-
                 } else if (stateType == 2) {
                     emulator.loadState(saveStatePath)
                 }
@@ -253,7 +260,7 @@ class MainActivity : AppCompatActivity() {
         val bytes = outputStream.toByteArray()
 
         val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
-        val path = absolutePath?.let { "$it/profile.json" } ?: "profile.json"
+        val profilePath = absolutePath?.let { "$it/profile.json" } ?: "profile.json"
 
         if (emulator.isRunning()) {
             emulator.stop()
@@ -261,7 +268,7 @@ class MainActivity : AppCompatActivity() {
             updateTextureThread.cancel()
 
             // Update the total time
-            val profileData = profileRepository.loadProfileData(path)
+            val profileData = profileRepository.loadProfileData(profilePath)
             val profileGameData = profileData.gameData.find { p -> p.name == romName }
 
             val diffInMillis = Date().time - timeStarted.time
@@ -269,16 +276,18 @@ class MainActivity : AppCompatActivity() {
 
             profileGameData?.fileName = fileName
             profileGameData!!.totalPlayTimeMinutes += timeDifference.toInt()
-            profileRepository.saveProfileData(path, profileData)
+            profileRepository.saveProfileData(profilePath, profileData)
         }
 
+        // TODO: This path should be looked at to set the battery path a bit more gracefully
+        // absolutePath?.let { "$it/" }!!
         emulator.loadRom(bytes, absolutePath!!)
         startEmulation()
 
         romName = emulator.getCartridgeTitle()
 
         // Update the profile
-        val profileData = profileRepository.loadProfileData(path)
+        val profileData = profileRepository.loadProfileData(profilePath)
 
         // Find the game data
         var profileGameData = profileData.gameData.find { p -> p.name == romName }
@@ -298,7 +307,13 @@ class MainActivity : AppCompatActivity() {
         profileGameData.lastPlayed = Date()
         profileGameData.fileName = fileName
 
-        profileRepository.saveProfileData(path, profileData)
+        // Attempt to save the last played to the profile
+        try {
+            profileRepository.saveProfileData(profilePath, profileData)
+        } catch (e: Exception) {
+            Log.w("MainActivity", "Unable to update profile")
+            Toast.makeText(this, "Unable to update the profile", Toast.LENGTH_LONG).show()
+        }
 
         this.fileName = fileName
     }
