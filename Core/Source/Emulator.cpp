@@ -707,7 +707,6 @@ void Emulator::SaveState(const std::string& filepath)
 
 	// Determine the timestamp
 	auto current_time = std::chrono::high_resolution_clock::now();
-
 	auto timestamp = m_CurrentTimeStamp;
 
 	auto timestamp_iterator = m_StateTimestamps.find(filepath);
