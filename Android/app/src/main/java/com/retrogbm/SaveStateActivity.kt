@@ -9,27 +9,43 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.compose.rememberNavController
 import com.retrogbm.ui.theme.RetroGBmTheme
+import com.retrogbm.utilities.TimeFormatter
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+import kotlin.time.Duration.Companion.minutes
 
 // Structure to hold the parsed header data
 data class SaveStateHeader(
@@ -81,39 +97,14 @@ fun readSaveStateHeader(file: File): SaveStateHeader {
 }
 
 fun formatDateModified(dateModified: Long): String {
-    // Convert seconds since epoch to Instant
-    val instant = Instant.ofEpochSecond(dateModified)
-
-    // Convert Instant to local date (assuming system's default time zone)
-    val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
-
     // Format the date as "yyyy/MM/dd"
-    val formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.ENGLISH)
-
-    return localDate.format(formatter)
+    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH)
+    return formatter.format(dateModified)
 }
 
 fun formatTimePlayed(timePlayed: Double): String {
-    // Convert timePlayed from seconds to Duration
-    val duration = java.time.Duration.ofMillis((timePlayed * 1000).toLong())
-
-    // Calculate hours and minutes
-    val hours = duration.toHours()
-    val minutes = duration.minus(hours, ChronoUnit.HOURS).toMinutes()
-
-    val sb = StringBuilder()
-
-    if (hours != 0L) {
-        sb.append(hours)
-        if (minutes != 0L) {
-            sb.append(" hours ")
-            sb.append(minutes)
-        }
-    } else {
-        sb.append(minutes).append(" minutes")
-    }
-
-    return sb.toString()
+    val timeFormatter = TimeFormatter()
+    return timeFormatter.formatTimePlayed(timePlayed.minutes)
 }
 
 class SaveStateActivity : ComponentActivity() {
@@ -163,8 +154,57 @@ class SaveStateActivity : ComponentActivity() {
 
 data class SaveStateData(val slot: Int, val dateModified: String, val timePlayed: String, val type: Int)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Content(saveStateData: MutableList<SaveStateData>, saveStateType: Int) {
+
+    // TODO: Once everything is on Jetpack Compose, this then might work...
+    // val navController = rememberNavController()
+    val context = LocalContext.current as? Activity
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                ),
+                title = {
+                    Text("RetroGBm")
+                },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        context?.finish()
+                    }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* do something */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Menu,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                },
+            )
+        },
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize() // Ensure system bars are handled properly
+                .padding(innerPadding)  // Adjust padding if needed
+        ) {
+            ListContent(saveStateData, saveStateType)
+        }
+    }
+}
+
+@Composable
+fun ListContent(saveStateData: MutableList<SaveStateData>, saveStateType: Int) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -190,11 +230,9 @@ fun SaveStateSlotCard(data: SaveStateData) {
 
     val context = LocalContext.current as? Activity
 
-    val str = if (data.dateModified.isEmpty() && data.timePlayed.isEmpty()) {
-        "Slot ${data.slot} - Empty"
-    } else{
-        "Slot ${data.slot} - ${data.dateModified} - ${data.timePlayed}"
-    }
+    val title = "Slot ${data.slot}"
+    val time = data.timePlayed
+    val date = data.dateModified
 
     Column(
         modifier = Modifier
@@ -209,11 +247,28 @@ fun SaveStateSlotCard(data: SaveStateData) {
             }
     ) {
         Text(
-            text = str,
+            text = title,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp)
         )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = time,
+                modifier = Modifier,
+                color = Color.DarkGray,
+                fontSize = 12.sp
+            )
+            Text(
+                text = date,
+                modifier = Modifier,
+                color = Color.DarkGray,
+                fontSize = 12.sp
+            )
+        }
     }
 }
 
@@ -221,7 +276,7 @@ fun SaveStateSlotCard(data: SaveStateData) {
 @Composable
 fun PreviewContent() {
     val saveStateData = mutableListOf(
-        SaveStateData(1, "04/12/2023", "26.4 hours", 0),
+        SaveStateData(1, "04/12/2023", "2 hours 15 minutes", 0),
         SaveStateData(2, "04/05/2019", "26.4 hours", 0),
         SaveStateData(3, "04/12/2021", "26.4 hours", 0)
     )
