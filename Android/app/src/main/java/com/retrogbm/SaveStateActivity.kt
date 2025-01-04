@@ -13,14 +13,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.rememberNavController
 import com.retrogbm.ui.theme.RetroGBmTheme
 import java.io.File
 import java.nio.ByteBuffer
@@ -163,24 +174,62 @@ class SaveStateActivity : ComponentActivity() {
 
 data class SaveStateData(val slot: Int, val dateModified: String, val timePlayed: String, val type: Int)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Content(saveStateData: MutableList<SaveStateData>, saveStateType: Int) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(count = saveStateData.size) { index ->
-            val item = saveStateData[index]
-            SaveStateSlotCard(
-                SaveStateData(item.slot, item.dateModified, item.timePlayed, saveStateType)
+
+    // TODO: Once everything is on Jetpack Compose, this then might work...
+    // val navController = rememberNavController()
+    val context = LocalContext.current as? Activity
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                ),
+                title = {
+                    Text("RetroGBm")
+                },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        context?.finish()
+                    }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* do something */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Menu,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                },
             )
-            HorizontalDivider(
-                color = Color.Gray, // Color of the border
-                thickness = 1.dp,   // Thickness of the border
-                modifier = Modifier.padding(vertical = 0.dp)
-            )
+        },
+    ) { innerPadding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(count = saveStateData.size) { index ->
+                val item = saveStateData[index]
+                SaveStateSlotCard(
+                    SaveStateData(item.slot, item.dateModified, item.timePlayed, saveStateType)
+                )
+                HorizontalDivider(
+                    color = Color.Gray, // Color of the border
+                    thickness = 1.dp,   // Thickness of the border
+                    modifier = Modifier.padding(vertical = 0.dp)
+                )
+            }
         }
     }
 }
