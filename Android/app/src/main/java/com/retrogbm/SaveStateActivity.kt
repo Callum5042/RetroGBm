@@ -45,7 +45,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 // Structure to hold the parsed header data
 data class SaveStateHeader(
@@ -97,14 +99,18 @@ fun readSaveStateHeader(file: File): SaveStateHeader {
 }
 
 fun formatDateModified(dateModified: Long): String {
+    // Convert seconds since epoch to Instant
+    val instant = Instant.ofEpochSecond(dateModified)
+    // Convert Instant to local date (assuming system's default time zone)
+    val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
     // Format the date as "yyyy/MM/dd"
-    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH)
-    return formatter.format(dateModified)
+    val formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.ENGLISH)
+    return localDate.format(formatter)
 }
 
 fun formatTimePlayed(timePlayed: Double): String {
     val timeFormatter = TimeFormatter()
-    return timeFormatter.formatTimePlayed(timePlayed.minutes)
+    return timeFormatter.formatTimePlayed(timePlayed.seconds)
 }
 
 class SaveStateActivity : ComponentActivity() {
