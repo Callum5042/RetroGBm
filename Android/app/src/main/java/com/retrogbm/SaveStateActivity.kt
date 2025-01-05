@@ -229,6 +229,8 @@ fun ListContent(saveStateData: MutableList<SaveStateData>, saveStateType: Int) {
 fun SaveStateSlotCard(data: SaveStateData) {
 
     val context = LocalContext.current as? Activity
+    val titleColor = MaterialTheme.colorScheme.onSurface
+    val subtitleColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
 
     val title = "Slot ${data.slot}"
     val time = data.timePlayed
@@ -249,7 +251,8 @@ fun SaveStateSlotCard(data: SaveStateData) {
         Text(
             text = title,
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(),
+            color = titleColor
         )
         Row(
             modifier = Modifier
@@ -259,13 +262,13 @@ fun SaveStateSlotCard(data: SaveStateData) {
             Text(
                 text = time,
                 modifier = Modifier,
-                color = Color.DarkGray,
+                color = subtitleColor,
                 fontSize = 12.sp
             )
             Text(
                 text = date,
                 modifier = Modifier,
-                color = Color.DarkGray,
+                color = subtitleColor,
                 fontSize = 12.sp
             )
         }
