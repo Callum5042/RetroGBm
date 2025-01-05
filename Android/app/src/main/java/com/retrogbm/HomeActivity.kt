@@ -239,6 +239,8 @@ fun List(data: ProfileRomData) {
 fun RomInfoCard(title: String, time: String, date: String) {
 
     val context = LocalContext.current
+    val titleColor = MaterialTheme.colorScheme.onSurface
+    val subtitleColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
 
     Column(
         modifier = Modifier
@@ -252,7 +254,8 @@ fun RomInfoCard(title: String, time: String, date: String) {
         Text(
             text = title,
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(),
+            color = titleColor
         )
         Row(
             modifier = Modifier
@@ -262,13 +265,13 @@ fun RomInfoCard(title: String, time: String, date: String) {
             Text(
                 text = time,
                 modifier = Modifier,
-                color = Color.DarkGray,
+                color = subtitleColor,
                 fontSize = 12.sp
             )
             Text(
                 text = date,
                 modifier = Modifier,
-                color = Color.DarkGray,
+                color = subtitleColor,
                 fontSize = 12.sp
             )
         }
