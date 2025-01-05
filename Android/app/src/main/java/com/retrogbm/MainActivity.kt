@@ -245,7 +245,8 @@ class MainActivity : AppCompatActivity() {
         if (result.resultCode == Activity.RESULT_OK) {
             val uri: Uri? = result.data?.data
             try {
-                loadRom(uri, "hmmm")
+                val filename = getFileName(this, uri!!)
+                loadRom(uri, filename!!)
             }
             catch (e: Exception){
                 Log.d("RetroGBm", e.message.toString())
