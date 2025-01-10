@@ -43,6 +43,19 @@ class TimeFormatterTests {
         assertEquals("119 minutes", result)
     }
 
+
+    @Test
+    fun formatTimePlayed_120minutes_FormatsWithOnlyHours() {
+        // Arrange
+        val timeFormatter = TimeFormatter()
+
+        // Act
+        val result = timeFormatter.formatTimePlayed(120.minutes)
+
+        // Assert
+        assertEquals("2 hours", result)
+    }
+
     @Test
     fun formatTimePlayed_1hours_FormatsWithMinutesNoHours() {
         // Arrange
@@ -68,7 +81,7 @@ class TimeFormatterTests {
     }
 
     @Test
-    fun formatTimePlayed_2hours30minutes_FormatsWithMinutesNoHours() {
+    fun formatTimePlayed_2hours30minutes_FormatsWithMinutesAndHours() {
         // Arrange
         val timeFormatter = TimeFormatter()
 
