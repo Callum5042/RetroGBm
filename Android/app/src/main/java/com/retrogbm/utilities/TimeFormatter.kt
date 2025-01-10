@@ -11,14 +11,14 @@ class TimeFormatter {
         val hours = timePlayed.inWholeHours
         var minutes = timePlayed.inWholeMinutes
 
-        if (minutes > 120) {
+        if (minutes >= 120L) {
             minutes = timePlayed.minus(timePlayed.inWholeHours.hours).inWholeMinutes
         }
 
         // Format
         return when {
-            hours >= 2 && minutes > 0 -> "$hours hours $minutes minutes"
-            hours >= 2 -> "$hours hours"
+            hours >= 2L && minutes > 0L -> "$hours hours $minutes minutes"
+            hours >= 2L -> "$hours hours"
             minutes == 0L -> "Less than a minute"
             else -> "$minutes minutes"
         }
