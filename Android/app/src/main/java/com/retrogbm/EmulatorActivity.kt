@@ -283,53 +283,55 @@ fun Controls(emulator: EmulatorWrapper) {
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight() // Ensure the Box fills the height of the Row
+                    .fillMaxHeight()
                     .padding(10.dp)
             ) {
+                // States to store the dimensions of the D-Pad
+                var centerX by remember { mutableStateOf(0f) }
+                var centerY by remember { mutableStateOf(0f) }
 
-                // Create element height in pixel state
-                var columnHeightPx by remember {
-                    mutableFloatStateOf(0f)
-                }
-
-                var columnWidthPx by remember {
-                    mutableFloatStateOf(0f)
-                }
+                // State to track the currently active button
+                var activeButton by remember { mutableStateOf<JoypadButton?>(null) }
 
                 Image(
                     painter = painterResource(R.drawable.button_dpad),
                     contentDescription = null,
                     modifier = Modifier
-                        .aspectRatio(1f) // Ensures it stays square
+                        .aspectRatio(1f)
                         .align(Alignment.Center)
                         .onGloballyPositioned { coordinates ->
-                            // Set column height using the LayoutCoordinates
-                            columnHeightPx = coordinates.positionInParent().x + (coordinates.size.width / 2)
-                            columnWidthPx = coordinates.positionInParent().y + (coordinates.size.height / 2)
-                            // columnHeightPx = coordinates.size.height.toFloat()
-                            // columnWidthPx = coordinates.size.width.toFloat()
+                            centerX = coordinates.size.width / 2f
+                            centerY = coordinates.size.height / 2f
                         }
                         .pointerInteropFilter { event ->
-                            val centerX = columnHeightPx
-                            val centerY = columnWidthPx
                             val x = event.x
                             val y = event.y
 
                             when (event.action) {
-                                MotionEvent.ACTION_DOWN -> {
-                                    val button = detectDirection(x, y, centerX, centerY)
-                                    if (button != null) {
-                                        emulator.pressButton(button, true)
+                                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                                    val newButton = detectDirection(x, y, centerX, centerY)
+                                    if (newButton != activeButton) {
+                                        // Deactivate the previous button
+                                        activeButton?.let { emulator.pressButton(it, false) }
+
+                                        // Activate the new button
+                                        newButton?.let { emulator.pressButton(it, true) }
+
+                                        // Update the active button state
+                                        activeButton = newButton
                                     }
                                     true
                                 }
+
                                 MotionEvent.ACTION_UP -> {
-                                    val button = detectDirection(x, y, centerX, centerY)
-                                    if (button != null) {
-                                        emulator.pressButton(button, false)
+                                    // Deactivate the current button on release
+                                    activeButton?.let {
+                                        emulator.pressButton(it, false)
                                     }
+                                    activeButton = null
                                     true
                                 }
+
                                 else -> false
                             }
                         },
