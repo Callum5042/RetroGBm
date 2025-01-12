@@ -2,6 +2,7 @@ package com.retrogbm
 
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -46,23 +47,32 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.privacysandbox.tools.core.model.Type
 import com.retrogbm.ui.theme.RetroGBmTheme
@@ -249,6 +259,17 @@ fun Viewport(emulator: EmulatorWrapper) {
     )
 }
 
+// Helper function to detect direction
+private fun detectDirection(x: Float, y: Float, centerX: Float, centerY: Float): JoypadButton? {
+    return when {
+        x < centerX * 0.5 -> JoypadButton.Left // Left side
+        x > centerX * 1.5 -> JoypadButton.Right // Right side
+        y < centerY * 0.5 -> JoypadButton.Up // Top side
+        y > centerY * 1.5 -> JoypadButton.Down // Bottom side
+        else -> null // Center or undefined region
+    }
+}
+
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun Controls(emulator: EmulatorWrapper) {
@@ -265,12 +286,53 @@ fun Controls(emulator: EmulatorWrapper) {
                     .fillMaxHeight() // Ensure the Box fills the height of the Row
                     .padding(10.dp)
             ) {
+
+                // Create element height in pixel state
+                var columnHeightPx by remember {
+                    mutableFloatStateOf(0f)
+                }
+
+                var columnWidthPx by remember {
+                    mutableFloatStateOf(0f)
+                }
+
                 Image(
                     painter = painterResource(R.drawable.button_dpad),
                     contentDescription = null,
                     modifier = Modifier
                         .aspectRatio(1f) // Ensures it stays square
-                        .align(Alignment.Center),
+                        .align(Alignment.Center)
+                        .onGloballyPositioned { coordinates ->
+                            // Set column height using the LayoutCoordinates
+                            columnHeightPx = coordinates.positionInParent().x + (coordinates.size.width / 2)
+                            columnWidthPx = coordinates.positionInParent().y + (coordinates.size.height / 2)
+                            // columnHeightPx = coordinates.size.height.toFloat()
+                            // columnWidthPx = coordinates.size.width.toFloat()
+                        }
+                        .pointerInteropFilter { event ->
+                            val centerX = columnHeightPx
+                            val centerY = columnWidthPx
+                            val x = event.x
+                            val y = event.y
+
+                            when (event.action) {
+                                MotionEvent.ACTION_DOWN -> {
+                                    val button = detectDirection(x, y, centerX, centerY)
+                                    if (button != null) {
+                                        emulator.pressButton(button, true)
+                                    }
+                                    true
+                                }
+                                MotionEvent.ACTION_UP -> {
+                                    val button = detectDirection(x, y, centerX, centerY)
+                                    if (button != null) {
+                                        emulator.pressButton(button, false)
+                                    }
+                                    true
+                                }
+                                else -> false
+                            }
+                        },
                     contentScale = ContentScale.Fit
                 )
             }
