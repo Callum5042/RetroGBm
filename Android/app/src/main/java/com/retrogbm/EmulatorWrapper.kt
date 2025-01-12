@@ -1,5 +1,16 @@
 package com.retrogbm
 
+enum class JoypadButton(val buttonCode: Int) {
+    A(0),
+    B(1),
+    Start(2),
+    Select(3),
+    Up(4),
+    Down(5),
+    Left(6),
+    Right(7)
+}
+
 class EmulatorWrapper {
 
     private var emulatorPtr: Long = 0
@@ -22,6 +33,10 @@ class EmulatorWrapper {
 
     fun getVideoBuffer(): IntArray {
         return getVideoBuffer(emulatorPtr)
+    }
+
+    fun pressButton(button: JoypadButton, state: Boolean) {
+        pressButton(emulatorPtr, button.buttonCode, state)
     }
 
     fun pressButton(button: Int, state: Boolean) {

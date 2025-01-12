@@ -6,6 +6,8 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
+import android.view.HapticFeedbackConstants
+import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -13,6 +15,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +35,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,15 +49,22 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.privacysandbox.tools.core.model.Type
 import com.retrogbm.ui.theme.RetroGBmTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -193,6 +205,7 @@ fun EmulatorScreen(innerPadding: PaddingValues, emulator: EmulatorWrapper) {
     ) {
         Column {
             Viewport(emulator)
+            Controls(emulator)
         }
     }
 }
@@ -234,4 +247,148 @@ fun Viewport(emulator: EmulatorWrapper) {
             .fillMaxWidth(),
         contentScale = ContentScale.FillWidth
     )
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+fun Controls(emulator: EmulatorWrapper) {
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Max)
+        ) {
+            // D-Pad
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight() // Ensure the Box fills the height of the Row
+                    .padding(10.dp)
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.button_dpad),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .aspectRatio(1f) // Ensures it stays square
+                        .align(Alignment.Center),
+                    contentScale = ContentScale.Fit
+                )
+            }
+
+            // A/B Buttons
+            Box(
+                modifier = Modifier
+                    .weight(1f) // Take up available space
+                    .fillMaxHeight() // Fill the vertical space
+            ) {
+                // A Button
+                Image(
+                    painter = painterResource(R.drawable.button_a),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.Center) // Align A button to the left center
+                        .offset(x = 30.dp, y = (-15).dp)
+                        .pointerInteropFilter {
+                            when (it.action) {
+                                MotionEvent.ACTION_DOWN -> {
+                                    emulator.pressButton(JoypadButton.A, true)
+                                    true
+                                }
+                                MotionEvent.ACTION_UP -> {
+                                    emulator.pressButton(JoypadButton.A, false)
+                                    true
+                                }
+                                else -> false
+                            }
+                        },
+                    contentScale = ContentScale.Fit
+                )
+
+                // B Button
+                Image(
+                    painter = painterResource(R.drawable.button_b),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.Center) // Align B button to the right center
+                        .offset(x = (-30).dp, y = 15.dp) // Offset to create spacing (half of button width)
+                        .pointerInteropFilter {
+                            when (it.action) {
+                                MotionEvent.ACTION_DOWN -> {
+                                    emulator.pressButton(JoypadButton.B, true)
+                                    true
+                                }
+                                MotionEvent.ACTION_UP -> {
+                                    emulator.pressButton(JoypadButton.B, false)
+                                    true
+                                }
+                                else -> false
+                            }
+                        },
+                    contentScale = ContentScale.Fit
+                )
+            }
+        }
+
+        // Start/Select Buttons
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Row(modifier = Modifier.align(Alignment.BottomCenter)) {
+
+                val hapticFeedback = LocalHapticFeedback.current
+
+                Image(
+                    painter = painterResource(R.drawable.startselect_button),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .size(40.dp)
+                        .pointerInteropFilter {
+                            when (it.action) {
+                                MotionEvent.ACTION_DOWN -> {
+                                    emulator.pressButton(JoypadButton.Select, true)
+                                    true
+                                }
+                                MotionEvent.ACTION_UP -> {
+                                    emulator.pressButton(JoypadButton.Select, false)
+                                    true
+                                }
+                                else -> false
+                            }
+                        }
+                )
+
+                Image(
+                    painter = painterResource(R.drawable.startselect_button),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .size(40.dp)
+                        .pointerInteropFilter {
+                            when (it.action) {
+                                MotionEvent.ACTION_DOWN -> {
+                                    emulator.pressButton(JoypadButton.Start, true)
+                                    true
+                                }
+                                MotionEvent.ACTION_UP -> {
+                                    emulator.pressButton(JoypadButton.Start, false)
+                                    true
+                                }
+                                else -> false
+                            }
+                        }
+                )
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ControlScreenPreview() {
+    RetroGBmTheme {
+        // Controls()
+    }
 }
