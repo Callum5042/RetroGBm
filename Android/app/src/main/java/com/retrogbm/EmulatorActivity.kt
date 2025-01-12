@@ -242,12 +242,12 @@ fun Viewport(emulator: EmulatorWrapper) {
 }
 
 // Helper function to detect direction
-private fun detectDirection(x: Float, y: Float, centerX: Float, centerY: Float): JoypadButton? {
+private fun detectDirection(x: Float, y: Float, centerX: Float, centerY: Float): JoyPadButton? {
     return when {
-        x < centerX * 0.5 -> JoypadButton.Left // Left side
-        x > centerX * 1.5 -> JoypadButton.Right // Right side
-        y < centerY * 0.5 -> JoypadButton.Up // Top side
-        y > centerY * 1.5 -> JoypadButton.Down // Bottom side
+        x < centerX * 0.5 -> JoyPadButton.Left // Left side
+        x > centerX * 1.5 -> JoyPadButton.Right // Right side
+        y < centerY * 0.5 -> JoyPadButton.Up // Top side
+        y > centerY * 1.5 -> JoyPadButton.Down // Bottom side
         else -> null // Center or undefined region
     }
 }
@@ -273,7 +273,7 @@ fun Controls(emulator: EmulatorWrapper) {
                 var centerY by remember { mutableFloatStateOf(0f) }
 
                 // State to track the currently active button
-                var activeButton by remember { mutableStateOf<JoypadButton?>(null) }
+                var activeButton by remember { mutableStateOf<JoyPadButton?>(null) }
 
                 Image(
                     painter = painterResource(R.drawable.button_dpad),
@@ -337,11 +337,11 @@ fun Controls(emulator: EmulatorWrapper) {
                         .pointerInteropFilter {
                             when (it.action) {
                                 MotionEvent.ACTION_DOWN -> {
-                                    emulator.pressButton(JoypadButton.A, true)
+                                    emulator.pressButton(JoyPadButton.A, true)
                                     true
                                 }
                                 MotionEvent.ACTION_UP -> {
-                                    emulator.pressButton(JoypadButton.A, false)
+                                    emulator.pressButton(JoyPadButton.A, false)
                                     true
                                 }
                                 else -> false
@@ -360,11 +360,11 @@ fun Controls(emulator: EmulatorWrapper) {
                         .pointerInteropFilter {
                             when (it.action) {
                                 MotionEvent.ACTION_DOWN -> {
-                                    emulator.pressButton(JoypadButton.B, true)
+                                    emulator.pressButton(JoyPadButton.B, true)
                                     true
                                 }
                                 MotionEvent.ACTION_UP -> {
-                                    emulator.pressButton(JoypadButton.B, false)
+                                    emulator.pressButton(JoyPadButton.B, false)
                                     true
                                 }
                                 else -> false
@@ -393,12 +393,12 @@ fun Controls(emulator: EmulatorWrapper) {
                         .pointerInteropFilter {
                             when (it.action) {
                                 MotionEvent.ACTION_DOWN -> {
-                                    emulator.pressButton(JoypadButton.Select, true)
+                                    emulator.pressButton(JoyPadButton.Select, true)
                                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                     true
                                 }
                                 MotionEvent.ACTION_UP -> {
-                                    emulator.pressButton(JoypadButton.Select, false)
+                                    emulator.pressButton(JoyPadButton.Select, false)
                                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                     true
                                 }
@@ -417,11 +417,11 @@ fun Controls(emulator: EmulatorWrapper) {
                         .pointerInteropFilter {
                             when (it.action) {
                                 MotionEvent.ACTION_DOWN -> {
-                                    emulator.pressButton(JoypadButton.Start, true)
+                                    emulator.pressButton(JoyPadButton.Start, true)
                                     true
                                 }
                                 MotionEvent.ACTION_UP -> {
-                                    emulator.pressButton(JoypadButton.Start, false)
+                                    emulator.pressButton(JoyPadButton.Start, false)
                                     true
                                 }
                                 else -> false
@@ -435,8 +435,8 @@ fun Controls(emulator: EmulatorWrapper) {
 
 @Preview(showBackground = true)
 @Composable
-fun ControlScreenPreview() {
+fun ContentPreview() {
     RetroGBmTheme {
-        // Controls()
+        Content(EmulatorWrapper())
     }
 }
