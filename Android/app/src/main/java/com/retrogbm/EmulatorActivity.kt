@@ -2,29 +2,21 @@ package com.retrogbm
 
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
-import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,7 +28,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -55,26 +46,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.pointer.PointerEvent
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInParent
-import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.privacysandbox.tools.core.model.Type
 import com.retrogbm.ui.theme.RetroGBmTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -287,8 +269,8 @@ fun Controls(emulator: EmulatorWrapper) {
                     .padding(10.dp)
             ) {
                 // States to store the dimensions of the D-Pad
-                var centerX by remember { mutableStateOf(0f) }
-                var centerY by remember { mutableStateOf(0f) }
+                var centerX by remember { mutableFloatStateOf(0f) }
+                var centerY by remember { mutableFloatStateOf(0f) }
 
                 // State to track the currently active button
                 var activeButton by remember { mutableStateOf<JoypadButton?>(null) }
@@ -412,10 +394,12 @@ fun Controls(emulator: EmulatorWrapper) {
                             when (it.action) {
                                 MotionEvent.ACTION_DOWN -> {
                                     emulator.pressButton(JoypadButton.Select, true)
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                     true
                                 }
                                 MotionEvent.ACTION_UP -> {
                                     emulator.pressButton(JoypadButton.Select, false)
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                     true
                                 }
                                 else -> false
