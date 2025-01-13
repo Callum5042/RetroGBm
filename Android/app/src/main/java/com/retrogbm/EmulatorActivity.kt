@@ -28,6 +28,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -55,6 +58,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.retrogbm.ui.theme.RetroGBmTheme
@@ -141,7 +145,6 @@ class EmulatorActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Content(emulator: EmulatorWrapper) {
 
@@ -159,35 +162,102 @@ fun Content(emulator: EmulatorWrapper) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.primary,
-                ),
-                title = {
-                    Text("RetroGBm")
-                },
-                actions = {
-                    IconButton(onClick = {
-                        openDocumentLauncher.launch(arrayOf("*/*"))
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.FileOpen,
-                            contentDescription = "Load ROM"
-                        )
-                    }
-                    IconButton(onClick = { /* do something */ }) {
-                        Icon(
-                            imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
-                        )
-                    }
-                },
+            AppTopBar(
+                onQuickSave = { println("Quick Save clicked") },
+                onQuickLoad = { println("Quick Load clicked") },
+                onLoadRom = { println("Load ROM clicked") },
+                onSaveState = { println("Save State clicked") },
+                onLoadState = { println("Load State clicked") },
+                onHelp = { println("Help clicked") }
             )
-        },
+        }
     ) { innerPadding ->
         EmulatorScreen(innerPadding, emulator)
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppTopBar(
+    onQuickSave: () -> Unit,
+    onQuickLoad: () -> Unit,
+    onLoadRom: () -> Unit,
+    onSaveState: () -> Unit,
+    onLoadState: () -> Unit,
+    onHelp: () -> Unit
+) {
+    var showMenu by remember { mutableStateOf(false) }
+
+    TopAppBar(
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            titleContentColor = MaterialTheme.colorScheme.primary,
+        ),
+        title = { Text("RetroGBm") },
+        actions = {
+            // Quick Save
+            IconButton(onClick = onQuickSave) {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_save_24),
+                    contentDescription = stringResource(id = R.string.quick_save)
+                )
+            }
+            // Quick Load
+            IconButton(onClick = onQuickLoad) {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_history_24),
+                    contentDescription = stringResource(id = R.string.quick_load)
+                )
+            }
+            // Load ROM
+            IconButton(onClick = onLoadRom) {
+                Icon(
+                    imageVector = Icons.Filled.FileOpen,
+                    contentDescription = stringResource(id = R.string.load_rom)
+                )
+            }
+
+            // Menu
+            Box {
+                // Overflow Menu
+                IconButton(onClick = { showMenu = !showMenu }) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = "More Options"
+                    )
+                }
+
+                // Dropdown menu
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false },
+
+                    ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(id = R.string.save_state)) },
+                        onClick = {
+                            showMenu = false
+                            onSaveState()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(id = R.string.load_state)) },
+                        onClick = {
+                            showMenu = false
+                            onLoadState()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(id = R.string.settings)) },
+                        onClick = {
+                            showMenu = false
+                            onHelp()
+                        }
+                    )
+                }
+            }
+        }
+    )
 }
 
 @Composable
