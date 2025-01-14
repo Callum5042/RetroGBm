@@ -34,6 +34,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.retrogbm.ui.theme.RetroGBmTheme
+import com.retrogbm.utilities.SaveStateType
 import com.retrogbm.utilities.TimeFormatter
 import java.io.File
 import java.nio.ByteBuffer
@@ -110,14 +111,14 @@ fun formatTimePlayed(timePlayed: Double): String {
 
 class SaveStateActivity : ComponentActivity() {
 
-    private var stateType: Int = -1
+    private var stateType: SaveStateType = SaveStateType.Save
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // Get passed value
         val romFileName = intent.getStringExtra("RomFileName")
-        stateType = intent.getIntExtra("StateType", -1)
+        stateType = intent.getSerializableExtra("StateType") as SaveStateType
 
         // Values
         val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
@@ -153,11 +154,11 @@ class SaveStateActivity : ComponentActivity() {
     }
 }
 
-data class SaveStateData(val slot: Int, val dateModified: String, val timePlayed: String, val type: Int)
+data class SaveStateData(val slot: Int, val dateModified: String, val timePlayed: String, val type: SaveStateType)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Content(saveStateData: MutableList<SaveStateData>, saveStateType: Int) {
+fun Content(saveStateData: MutableList<SaveStateData>, saveStateType: SaveStateType) {
 
     // TODO: Once everything is on Jetpack Compose, this then might work...
     // val navController = rememberNavController()
@@ -205,7 +206,7 @@ fun Content(saveStateData: MutableList<SaveStateData>, saveStateType: Int) {
 }
 
 @Composable
-fun ListContent(saveStateData: MutableList<SaveStateData>, saveStateType: Int) {
+fun ListContent(saveStateData: MutableList<SaveStateData>, saveStateType: SaveStateType) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -242,7 +243,7 @@ fun SaveStateSlotCard(data: SaveStateData) {
             .padding(horizontal = 0.dp)
             .clickable {
                 val resultIntent = Intent().apply {
-                    putExtra("Slot", data.slot)
+                    putExtra("Slot", "slot${data.slot}")
                     putExtra("StateType", data.type)
                 }
                 context?.setResult(Activity.RESULT_OK, resultIntent)
@@ -280,13 +281,13 @@ fun SaveStateSlotCard(data: SaveStateData) {
 @Composable
 fun PreviewContent() {
     val saveStateData = mutableListOf(
-        SaveStateData(1, "04/12/2023", "2 hours 15 minutes", 0),
-        SaveStateData(2, "04/05/2019", "26.4 hours", 0),
-        SaveStateData(3, "04/12/2021", "26.4 hours", 0)
+        SaveStateData(1, "04/12/2023", "2 hours 15 minutes", SaveStateType.Save),
+        SaveStateData(2, "04/05/2019", "26.4 hours", SaveStateType.Save),
+        SaveStateData(3, "04/12/2021", "26.4 hours", SaveStateType.Save)
     )
 
     RetroGBmTheme {
-        Content(saveStateData, 0)
+        Content(saveStateData, SaveStateType.Save)
     }
 }
 
@@ -295,7 +296,7 @@ fun PreviewContent() {
 fun PreviewMessageCard() {
     RetroGBmTheme {
         SaveStateSlotCard(
-            data = SaveStateData(1, "2024/08/20", "26.4 hours", 0)
+            data = SaveStateData(1, "2024/08/20", "26.4 hours", SaveStateType.Save)
         )
     }
 }

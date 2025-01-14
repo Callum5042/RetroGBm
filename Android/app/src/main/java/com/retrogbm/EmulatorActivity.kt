@@ -1,12 +1,16 @@
 package com.retrogbm
 
+import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.provider.OpenableColumns
 import android.util.Log
 import android.view.MotionEvent
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -49,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -62,6 +67,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.retrogbm.ui.theme.RetroGBmTheme
+import com.retrogbm.utilities.SaveStateType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -72,6 +78,8 @@ import java.io.File
 import java.nio.IntBuffer
 
 class EmulatorActivity : ComponentActivity() {
+
+    private lateinit var fileName: String
 
     // Emulator components
     private var emulator: EmulatorWrapper = EmulatorWrapper()
@@ -93,7 +101,7 @@ class EmulatorActivity : ComponentActivity() {
 
         setContent {
             RetroGBmTheme {
-                Content(emulator)
+                Content(emulator, fileName)
             }
         }
     }
@@ -113,6 +121,9 @@ class EmulatorActivity : ComponentActivity() {
         // Load ROM
         val batteryFilePath = batteryPath.let { "$it/$fileName.save" }
         emulator.loadRom(bytes, batteryFilePath)
+
+        // Store fileName
+        this.fileName = fileName // getFileName(this, uri).let { "unknown" }
 
         // Emulator background thread
         emulatorThread = emulatorCoroutineScope.launch(Dispatchers.Default) {
@@ -137,6 +148,15 @@ class EmulatorActivity : ComponentActivity() {
         return outputStream.toByteArray()
     }
 
+//    private fun getFileName(context: Context, uri: Uri): String? {
+//        val cursor = context.contentResolver.query(uri, null, null, null, null)
+//        return cursor?.use {
+//            val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+//            it.moveToFirst()
+//            it.getString(nameIndex)
+//        }
+//    }
+
     companion object {
         // Used to load the 'retrogbm' library on application startup.
         init {
@@ -145,10 +165,40 @@ class EmulatorActivity : ComponentActivity() {
     }
 }
 
+private fun handleSaveState(emulator: EmulatorWrapper,
+                            absolutePath: String,
+                            fileName: String,
+                            slotName: String,
+                            stateType: SaveStateType) {
+    // Create path
+    val saveStatePath = absolutePath.let { "$it/SaveStates/$fileName/$slotName.state" }
+
+    // Make the missing directories
+    val saveStateFolder = absolutePath.let { "$it/SaveStates/$fileName/" }
+    val folder = File(saveStateFolder)
+    if (!folder.exists()) {
+        folder.mkdirs()
+        Log.i("SaveState", "Created folder $saveStateFolder")
+    }
+
+    // Save or load
+    if (stateType == SaveStateType.Save) {
+        emulator.saveState(saveStatePath)
+        Log.i("SaveState", "State saved to $saveStatePath")
+    } else if (stateType == SaveStateType.Load) {
+        emulator.loadState(saveStatePath)
+        Log.i("SaveState", "State loaded from $saveStatePath")
+    }
+}
+
 @Composable
-fun Content(emulator: EmulatorWrapper) {
+fun Content(emulator: EmulatorWrapper, fileName: String) {
 
     val context = LocalContext.current
+
+    // Paths
+    val slotName = "quick"
+    val absolutePath = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
 
     // Launcher for the ACTION_OPEN_DOCUMENT intent
     val openDocumentLauncher = rememberLauncherForActivityResult(
@@ -160,15 +210,49 @@ fun Content(emulator: EmulatorWrapper) {
         }
     )
 
+    // Save state intent
+    val saveStateLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // Retrieve data from the result Intent
+            val slot = result.data?.getStringExtra("Slot") ?: "Unknown"
+            val stateType = result.data?.getSerializableExtra("StateType") as SaveStateType
+
+            handleSaveState(emulator, absolutePath!!, fileName, slot, stateType)
+            Toast.makeText(context, "State Saved", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     Scaffold(
         topBar = {
             AppTopBar(
-                onQuickSave = { println("Quick Save clicked") },
-                onQuickLoad = { println("Quick Load clicked") },
-                onLoadRom = { println("Load ROM clicked") },
-                onSaveState = { println("Save State clicked") },
-                onLoadState = { println("Load State clicked") },
-                onHelp = { println("Help clicked") }
+                onQuickSave = {
+                    handleSaveState(emulator, absolutePath!!, fileName, slotName, SaveStateType.Save)
+                    Toast.makeText(context, "State Saved", Toast.LENGTH_SHORT).show()
+                },
+                onQuickLoad = {
+                    handleSaveState(emulator, absolutePath!!, fileName, slotName, SaveStateType.Load)
+                    Toast.makeText(context, "State Loaded", Toast.LENGTH_SHORT).show()
+                },
+                onLoadRom = {
+                    println("Load ROM clicked")
+                },
+                onSaveState = {
+                    val intent = Intent(context, SaveStateActivity::class.java)
+                    intent.putExtra("RomFileName", fileName)
+                    intent.putExtra("StateType", SaveStateType.Save)
+                    saveStateLauncher.launch(intent)
+                },
+                onLoadState = {
+                    val intent = Intent(context, SaveStateActivity::class.java)
+                    intent.putExtra("RomFileName", fileName)
+                    intent.putExtra("StateType", SaveStateType.Load)
+                    saveStateLauncher.launch(intent)
+                },
+                onHelp = {
+                    Toast.makeText(context, "Options Clicked", Toast.LENGTH_SHORT).show()
+                }
             )
         }
     ) { innerPadding ->
@@ -507,6 +591,6 @@ fun Controls(emulator: EmulatorWrapper) {
 @Composable
 fun ContentPreview() {
     RetroGBmTheme {
-        Content(EmulatorWrapper())
+        Content(EmulatorWrapper(), "test.gbc")
     }
 }
