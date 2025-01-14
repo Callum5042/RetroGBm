@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -332,7 +333,7 @@ fun Content(emulator: EmulatorWrapper, fileName: String) {
 
                 activity.finish()
                 val intent = Intent(activity, activity::class.java).apply {
-                    putExtra("ROM_URI", uri.toString())
+                    putExtra("ROM_TITLE", uri.toString())
                     addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
 
@@ -381,6 +382,23 @@ fun Content(emulator: EmulatorWrapper, fileName: String) {
                     intent.putExtra("StateType", SaveStateType.Load)
                     saveStateLauncher.launch(intent)
                 },
+                onRestart = {
+                    val currentActivity = context as? Activity
+                    currentActivity?.let { activity ->
+
+                        if (emulator.isRunning()) {
+                            emulator.stop()
+                        }
+
+                        activity.finish()
+                        val intent = Intent(activity, activity::class.java).apply {
+                            putExtra("ROM_TITLE", fileName)
+                            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+
+                        activity.startActivity(intent)
+                    }
+                },
                 onHelp = {
                     Toast.makeText(context, "Options Clicked", Toast.LENGTH_SHORT).show()
                 }
@@ -399,6 +417,7 @@ fun AppTopBar(
     onLoadRom: () -> Unit,
     onSaveState: () -> Unit,
     onLoadState: () -> Unit,
+    onRestart: () -> Unit,
     onHelp: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -462,6 +481,14 @@ fun AppTopBar(
                         onClick = {
                             showMenu = false
                             onLoadState()
+                        }
+                    )
+                    HorizontalDivider()
+                    DropdownMenuItem(
+                        text = { Text("Restart") },
+                        onClick = {
+                            showMenu = false
+                            onRestart()
                         }
                     )
                     DropdownMenuItem(
