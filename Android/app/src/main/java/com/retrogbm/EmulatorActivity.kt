@@ -31,7 +31,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileOpen
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -53,7 +52,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -66,6 +64,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.ProcessLifecycleOwner
+import com.retrogbm.profile.ProfileGameData
+import com.retrogbm.profile.ProfileRepository
 import com.retrogbm.ui.theme.RetroGBmTheme
 import com.retrogbm.utilities.SaveStateType
 import kotlinx.coroutines.CoroutineScope
@@ -77,12 +81,15 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.IntBuffer
+import java.security.MessageDigest
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
 class EmulatorActivity : ComponentActivity() {
 
     private lateinit var fileName: String
+    private lateinit var timeStarted: Date
+    private lateinit var checksum: String
 
     // Emulator components
     private var emulator: EmulatorWrapper = EmulatorWrapper()
@@ -90,6 +97,8 @@ class EmulatorActivity : ComponentActivity() {
     // Coroutines
     private val emulatorCoroutineScope = CoroutineScope(Dispatchers.Main)
     private lateinit var emulatorThread: Job
+
+    private lateinit var lifecycleObserver: LifecycleObserver
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -110,6 +119,40 @@ class EmulatorActivity : ComponentActivity() {
             loadRom(romUri, romFileName!!)
         }
 
+        // Observe the app lifecycle
+        var wasStopped = false
+        this.lifecycleObserver = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_PAUSE -> {
+                    if (emulator.isRunning()) {
+                        emulator.pause()
+                    }
+                }
+                Lifecycle.Event.ON_RESUME -> {
+                    if (emulator.isRunning()) {
+                        emulator.resume()
+                    }
+
+                    if (wasStopped) this.timeStarted = Date()
+                }
+                Lifecycle.Event.ON_STOP -> {
+                    wasStopped = true
+                    try {
+                        updateProfile()
+                    } catch (e: Exception) {
+                        Log.w("EmulatorActivity", "Unable to update profile")
+                        Toast.makeText(this, "Unable to update the profile", Toast.LENGTH_LONG).show()
+                    }
+                }
+                Lifecycle.Event.ON_DESTROY -> {
+                    println("App is being destroyed")
+                }
+                else -> {}
+            }
+        }
+
+        ProcessLifecycleOwner.get().lifecycle.addObserver(this.lifecycleObserver)
+
         setContent {
             RetroGBmTheme {
                 Content(emulator, fileName)
@@ -125,8 +168,59 @@ class EmulatorActivity : ComponentActivity() {
             emulatorThread.cancel()
             emulatorCoroutineScope.cancel()
         }
+
+        // Attempt to save the last played to the profile
+        try {
+            updateProfile()
+        } catch (e: Exception) {
+            Log.w("EmulatorActivity", "Unable to update profile")
+            Toast.makeText(this, "Unable to update the profile", Toast.LENGTH_LONG).show()
+        }
+
+        ProcessLifecycleOwner.get().lifecycle.removeObserver(this.lifecycleObserver)
     }
 
+    private fun updateProfile() {
+
+        val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
+        val profilePath = absolutePath?.let { "$it/profile.json" } ?: "profile.json"
+
+        // Update the total time
+        val profileRepository = ProfileRepository()
+        val profileData = profileRepository.loadProfileData(profilePath)
+
+        var profileGameData = profileData.gameData.find { p -> p.fileName == this.fileName }
+        if (profileGameData == null) {
+            profileGameData = ProfileGameData(
+                name = this.fileName,
+                checksum = this.checksum,
+                lastPlayed = null,
+                totalPlayTimeMinutes = 0,
+                fileName = fileName
+            )
+
+            profileData.gameData.add(profileGameData)
+        }
+
+        // Calculate play time
+        val diffInMillis = Date().time - timeStarted.time
+        val timeDifference = TimeUnit.MILLISECONDS.toMinutes(diffInMillis)
+
+        profileGameData.lastPlayed = timeStarted
+        profileGameData.totalPlayTimeMinutes += timeDifference.toInt()
+
+        // Attempt to save the last played to the profile
+        profileRepository.saveProfileData(profilePath, profileData)
+    }
+
+    private fun calculateFileChecksum(bytes: ByteArray, algorithm: String = "SHA-256"): String {
+        // Initialize MessageDigest with the chosen algorithm (SHA-256 by default)
+        val messageDigest = MessageDigest.getInstance(algorithm)
+        messageDigest.update(bytes)
+
+        // Calculate the checksum and format as hexadecimal
+        return messageDigest.digest().joinToString("") { "%02x".format(it) }
+    }
 
     private fun loadRom(uri: Uri?, fileName: String) {
         val bytes = getRomBytes(uri!!)
@@ -145,7 +239,9 @@ class EmulatorActivity : ComponentActivity() {
         emulator.loadRom(bytes, batteryFilePath)
 
         // Store fileName
-        this.fileName = fileName // getFileName(this, uri).let { "unknown" }
+        this.fileName = fileName
+        this.timeStarted = Date()
+        this.checksum = calculateFileChecksum(bytes)
 
         // Emulator background thread
         emulatorThread = emulatorCoroutineScope.launch(Dispatchers.Default) {
