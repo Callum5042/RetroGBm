@@ -71,11 +71,14 @@ import com.retrogbm.utilities.SaveStateType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.IntBuffer
+import java.util.Date
+import java.util.concurrent.TimeUnit
 
 class EmulatorActivity : ComponentActivity() {
 
@@ -113,6 +116,17 @@ class EmulatorActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        if (emulator.isRunning()) {
+            emulator.stop()
+            emulatorThread.cancel()
+            emulatorCoroutineScope.cancel()
+        }
+    }
+
 
     private fun loadRom(uri: Uri?, fileName: String) {
         val bytes = getRomBytes(uri!!)
@@ -212,9 +226,21 @@ fun Content(emulator: EmulatorWrapper, fileName: String) {
     val openDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
         onResult = { uri ->
-            val intent = Intent(context, EmulatorActivity::class.java)
-            intent.putExtra("ROM_URI", uri.toString())
-            context.startActivity(intent)
+            val currentActivity = context as? Activity
+            currentActivity?.let { activity ->
+
+                if (emulator.isRunning()) {
+                    emulator.stop()
+                }
+
+                activity.finish()
+                val intent = Intent(activity, activity::class.java).apply {
+                    putExtra("ROM_URI", uri.toString())
+                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+
+                activity.startActivity(intent)
+            }
         }
     )
 
@@ -355,7 +381,9 @@ fun AppTopBar(
 @Composable
 fun EmulatorScreen(innerPadding: PaddingValues, emulator: EmulatorWrapper) {
     Box(
-        modifier = Modifier.fillMaxHeight().padding(innerPadding)
+        modifier = Modifier
+            .fillMaxHeight()
+            .padding(innerPadding)
     ) {
         Column {
             Viewport(emulator)
@@ -502,10 +530,12 @@ fun Controls(emulator: EmulatorWrapper) {
                                     emulator.pressButton(JoyPadButton.A, true)
                                     true
                                 }
+
                                 MotionEvent.ACTION_UP -> {
                                     emulator.pressButton(JoyPadButton.A, false)
                                     true
                                 }
+
                                 else -> false
                             }
                         },
@@ -518,17 +548,22 @@ fun Controls(emulator: EmulatorWrapper) {
                     contentDescription = null,
                     modifier = Modifier
                         .align(Alignment.Center) // Align B button to the right center
-                        .offset(x = (-30).dp, y = 15.dp) // Offset to create spacing (half of button width)
+                        .offset(
+                            x = (-30).dp,
+                            y = 15.dp
+                        ) // Offset to create spacing (half of button width)
                         .pointerInteropFilter {
                             when (it.action) {
                                 MotionEvent.ACTION_DOWN -> {
                                     emulator.pressButton(JoyPadButton.B, true)
                                     true
                                 }
+
                                 MotionEvent.ACTION_UP -> {
                                     emulator.pressButton(JoyPadButton.B, false)
                                     true
                                 }
+
                                 else -> false
                             }
                         },
@@ -559,11 +594,13 @@ fun Controls(emulator: EmulatorWrapper) {
                                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                     true
                                 }
+
                                 MotionEvent.ACTION_UP -> {
                                     emulator.pressButton(JoyPadButton.Select, false)
                                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                     true
                                 }
+
                                 else -> false
                             }
                         }
@@ -582,10 +619,12 @@ fun Controls(emulator: EmulatorWrapper) {
                                     emulator.pressButton(JoyPadButton.Start, true)
                                     true
                                 }
+
                                 MotionEvent.ACTION_UP -> {
                                     emulator.pressButton(JoyPadButton.Start, false)
                                     true
                                 }
+
                                 else -> false
                             }
                         }
