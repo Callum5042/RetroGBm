@@ -99,6 +99,14 @@ class EmulatorActivity : ComponentActivity() {
             loadRom(Uri.fromFile(File(path)), title)
         }
 
+        // Load the ROM from the ACTION_OPEN_DOCUMENT intent
+        val romUriString = intent?.getStringExtra("ROM_URI")
+        if (!romUriString.isNullOrEmpty()) {
+            val romUri = romUriString.let { Uri.parse(it) }
+            val romFileName = getFileName(this, romUri)
+            loadRom(romUri, romFileName!!)
+        }
+
         setContent {
             RetroGBmTheme {
                 Content(emulator, fileName)
@@ -148,14 +156,14 @@ class EmulatorActivity : ComponentActivity() {
         return outputStream.toByteArray()
     }
 
-//    private fun getFileName(context: Context, uri: Uri): String? {
-//        val cursor = context.contentResolver.query(uri, null, null, null, null)
-//        return cursor?.use {
-//            val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-//            it.moveToFirst()
-//            it.getString(nameIndex)
-//        }
-//    }
+    private fun getFileName(context: Context, uri: Uri): String? {
+        val cursor = context.contentResolver.query(uri, null, null, null, null)
+        return cursor?.use {
+            val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            it.moveToFirst()
+            it.getString(nameIndex)
+        }
+    }
 
     companion object {
         // Used to load the 'retrogbm' library on application startup.
@@ -204,7 +212,7 @@ fun Content(emulator: EmulatorWrapper, fileName: String) {
     val openDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
         onResult = { uri ->
-            val intent = Intent(context, MainActivity::class.java)
+            val intent = Intent(context, EmulatorActivity::class.java)
             intent.putExtra("ROM_URI", uri.toString())
             context.startActivity(intent)
         }
@@ -236,7 +244,7 @@ fun Content(emulator: EmulatorWrapper, fileName: String) {
                     Toast.makeText(context, "State Loaded", Toast.LENGTH_SHORT).show()
                 },
                 onLoadRom = {
-                    println("Load ROM clicked")
+                    openDocumentLauncher.launch(arrayOf("*/*"))
                 },
                 onSaveState = {
                     val intent = Intent(context, SaveStateActivity::class.java)
