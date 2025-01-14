@@ -541,6 +541,9 @@ private fun detectDirection(x: Float, y: Float, centerX: Float, centerY: Float):
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun Controls(emulator: EmulatorWrapper) {
+
+    val hapticFeedback = LocalHapticFeedback.current
+
     Column {
         Row(
             modifier = Modifier
@@ -587,6 +590,8 @@ fun Controls(emulator: EmulatorWrapper) {
 
                                         // Update the active button state
                                         activeButton = newButton
+
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                     }
                                     true
                                 }
@@ -595,6 +600,7 @@ fun Controls(emulator: EmulatorWrapper) {
                                     // Deactivate the current button on release
                                     activeButton?.let {
                                         emulator.pressButton(it, false)
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                     }
                                     activeButton = null
                                     true
@@ -624,11 +630,13 @@ fun Controls(emulator: EmulatorWrapper) {
                             when (it.action) {
                                 MotionEvent.ACTION_DOWN -> {
                                     emulator.pressButton(JoyPadButton.A, true)
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                     true
                                 }
 
                                 MotionEvent.ACTION_UP -> {
                                     emulator.pressButton(JoyPadButton.A, false)
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                     true
                                 }
 
@@ -652,11 +660,13 @@ fun Controls(emulator: EmulatorWrapper) {
                             when (it.action) {
                                 MotionEvent.ACTION_DOWN -> {
                                     emulator.pressButton(JoyPadButton.B, true)
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                     true
                                 }
 
                                 MotionEvent.ACTION_UP -> {
                                     emulator.pressButton(JoyPadButton.B, false)
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                     true
                                 }
 
@@ -673,9 +683,6 @@ fun Controls(emulator: EmulatorWrapper) {
             modifier = Modifier.fillMaxSize()
         ) {
             Row(modifier = Modifier.align(Alignment.BottomCenter)) {
-
-                val hapticFeedback = LocalHapticFeedback.current
-
                 Image(
                     painter = painterResource(R.drawable.startselect_button),
                     contentDescription = null,
@@ -713,11 +720,13 @@ fun Controls(emulator: EmulatorWrapper) {
                             when (it.action) {
                                 MotionEvent.ACTION_DOWN -> {
                                     emulator.pressButton(JoyPadButton.Start, true)
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                     true
                                 }
 
                                 MotionEvent.ACTION_UP -> {
                                     emulator.pressButton(JoyPadButton.Start, false)
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                     true
                                 }
 
