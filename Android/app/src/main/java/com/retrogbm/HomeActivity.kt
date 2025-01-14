@@ -158,7 +158,7 @@ fun Content(previewRomData: ProfileRomData) {
     val openDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
         onResult = { uri ->
-            val intent = Intent(context, MainActivity::class.java)
+            val intent = Intent(context, EmulatorActivity::class.java)
             intent.putExtra("ROM_URI", uri.toString())
             context.startActivity(intent)
         }
@@ -246,7 +246,7 @@ fun RomInfoCard(title: String, time: String, date: String) {
         modifier = Modifier
             .padding(horizontal = 0.dp)
             .clickable {
-                val intent = Intent(context, MainActivity::class.java)
+                val intent = Intent(context, EmulatorActivity::class.java)
                 intent.putExtra("ROM_TITLE", title)
                 context.startActivity(intent)
             }
