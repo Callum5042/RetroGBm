@@ -359,6 +359,7 @@ fun Content(emulator: EmulatorWrapper, fileName: String) {
     Scaffold(
         topBar = {
             AppTopBar(
+                emulator,
                 onQuickSave = {
                     handleSaveState(emulator, absolutePath!!, fileName, slotName, SaveStateType.Save)
                     Toast.makeText(context, "State Saved", Toast.LENGTH_SHORT).show()
@@ -412,6 +413,7 @@ fun Content(emulator: EmulatorWrapper, fileName: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppTopBar(
+    emulator: EmulatorWrapper,
     onQuickSave: () -> Unit,
     onQuickLoad: () -> Unit,
     onLoadRom: () -> Unit,
@@ -445,13 +447,6 @@ fun AppTopBar(
                     contentDescription = stringResource(id = R.string.quick_load)
                 )
             }
-            // Load ROM
-            IconButton(onClick = onLoadRom) {
-                Icon(
-                    imageVector = Icons.Filled.FileOpen,
-                    contentDescription = stringResource(id = R.string.load_rom)
-                )
-            }
 
             // Menu
             Box {
@@ -463,12 +458,22 @@ fun AppTopBar(
                     )
                 }
 
+                var isPaused by remember { mutableStateOf(false) }
+
                 // Dropdown menu
                 DropdownMenu(
                     expanded = showMenu,
                     onDismissRequest = { showMenu = false },
 
                     ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(id = R.string.load_rom)) },
+                        onClick = {
+                            showMenu = false
+                            onLoadRom()
+                        }
+                    )
+                    HorizontalDivider()
                     DropdownMenuItem(
                         text = { Text(stringResource(id = R.string.save_state)) },
                         onClick = {
@@ -485,12 +490,31 @@ fun AppTopBar(
                     )
                     HorizontalDivider()
                     DropdownMenuItem(
+                        text = { Text("Pause") },
+                        enabled = !isPaused,
+                        onClick = {
+                            showMenu = false
+                            emulator.pause()
+                            isPaused = true
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Resume") },
+                        enabled = isPaused,
+                        onClick = {
+                            showMenu = false
+                            emulator.resume()
+                            isPaused = false
+                        }
+                    )
+                    DropdownMenuItem(
                         text = { Text("Restart") },
                         onClick = {
                             showMenu = false
                             onRestart()
                         }
                     )
+                    HorizontalDivider()
                     DropdownMenuItem(
                         text = { Text(stringResource(id = R.string.settings)) },
                         onClick = {
