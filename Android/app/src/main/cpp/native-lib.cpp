@@ -169,4 +169,14 @@ extern "C"
             emulator->Pause(false);
         }
     }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_EmulatorWrapper_setEmulationSpeedMultiplier(JNIEnv *env, jobject thiz, jlong emulator_ptr, jfloat speed)
+    {
+        Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+        if (emulator != nullptr)
+        {
+            emulator->SetEmulationSpeedMultipler(speed);
+        }
+    }
 }

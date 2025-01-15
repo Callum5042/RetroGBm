@@ -43,6 +43,10 @@ class EmulatorWrapper {
         pressButton(emulatorPtr, button, state)
     }
 
+    fun setEmulationSpeed(speedMultiplier: Float) {
+        setEmulationSpeedMultiplier(emulatorPtr, speedMultiplier)
+    }
+
     fun getCartridgeTitle(): String {
         return cartridgeGetTitle(emulatorPtr)
     }
@@ -90,4 +94,5 @@ class EmulatorWrapper {
 
     private external fun pause(emulatorPtr: Long)
     private external fun resume(emulatorPtr: Long)
+    private external fun setEmulationSpeedMultiplier(emulatorPtr: Long, speedMultiplier: Float)
 }
