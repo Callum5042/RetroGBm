@@ -683,18 +683,30 @@ void Ppu::LimitFrameRate()
 		m_TimeElapsed += 1.0f;
 	}
 
-	// Limit framerate to match target rate
-	if (m_Timer.DeltaTime() < m_TargetFrameTime)
+	// VPS lock
+	double frame_goal = (m_TargetFrameTime * m_SpeedMultipler);
+	double excution_time_seconds = m_Timer.DeltaTime();
+	if (excution_time_seconds < frame_goal)
 	{
-//#ifdef _WIN32
-//		m_Timer.Stop();
-//		const std::chrono::duration<double, std::milli> elapsed(m_TargetFrameTime - m_Timer.DeltaTime());
-//		std::this_thread::sleep_for(elapsed);
-//		m_Timer.Start();
-//#else
-		using namespace std::chrono_literals;
-		std::this_thread::sleep_for(16ms * m_SpeedMultipler);
-//#endif
+		m_Timer.Stop();
+
+		// Calculate current execution time in seconds
+		double elapsed_seconds = (frame_goal - excution_time_seconds);
+
+		// Specify the wait time
+		auto wait_time = std::chrono::duration<double, std::milli>(elapsed_seconds * 1000.0f);
+
+		// Record the start time
+		auto start_time = std::chrono::high_resolution_clock::now();
+
+		// Busy-wait until the required time has passed
+		while (std::chrono::high_resolution_clock::now() - start_time < wait_time)
+		{
+			// Do nothing
+			std::this_thread::yield();
+		}
+
+		m_Timer.Start();
 	}
 }
 
