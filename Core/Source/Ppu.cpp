@@ -686,15 +686,15 @@ void Ppu::LimitFrameRate()
 	// Limit framerate to match target rate
 	if (m_Timer.DeltaTime() < m_TargetFrameTime)
 	{
-#ifdef _WIN32
-		m_Timer.Stop();
-		const std::chrono::duration<double, std::milli> elapsed(m_TargetFrameTime - m_Timer.DeltaTime());
-		std::this_thread::sleep_for(elapsed);
-		m_Timer.Start();
-#else
+//#ifdef _WIN32
+//		m_Timer.Stop();
+//		const std::chrono::duration<double, std::milli> elapsed(m_TargetFrameTime - m_Timer.DeltaTime());
+//		std::this_thread::sleep_for(elapsed);
+//		m_Timer.Start();
+//#else
 		using namespace std::chrono_literals;
-		std::this_thread::sleep_for(16ms);
-#endif
+		std::this_thread::sleep_for(16ms * m_SpeedMultipler);
+//#endif
 	}
 }
 
@@ -716,4 +716,9 @@ void Ppu::LoadState(std::fstream* file)
 	file->read(reinterpret_cast<char*>(m_Context.video_ram.data()), videoram_size * sizeof(uint8_t));
 
 	file->read(reinterpret_cast<char*>(&m_VramBank), sizeof(m_VramBank));
+}
+
+void Ppu::SetSpeedMultipler(float speed)
+{
+	m_SpeedMultipler = speed;
 }

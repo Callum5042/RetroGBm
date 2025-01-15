@@ -786,3 +786,8 @@ void Emulator::SetBatteryPath(const std::string& path)
 {
 	m_BatteryPath = path;
 }
+
+void Emulator::SetEmulationSpeedMultipler(float multipler)
+{
+	m_Ppu->SetSpeedMultipler(multipler);
+}
