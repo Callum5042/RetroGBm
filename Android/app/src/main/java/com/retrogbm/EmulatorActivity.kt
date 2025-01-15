@@ -30,8 +30,11 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -423,6 +426,7 @@ fun AppTopBar(
     onHelp: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    var emulationSpeed by remember { mutableFloatStateOf(1.0f) }
 
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
@@ -445,6 +449,16 @@ fun AppTopBar(
                 Icon(
                     painter = painterResource(id = R.drawable.baseline_history_24),
                     contentDescription = stringResource(id = R.string.quick_load)
+                )
+            }
+            // Emulation speed
+            IconButton(onClick = {
+                emulationSpeed = if (emulationSpeed == 1.0f) { 0.5f } else { 1.0f }
+                emulator.setEmulationSpeed(emulationSpeed)
+            }) {
+                Icon(
+                    imageVector = if (emulationSpeed == 1.0f) { Icons.Filled.PlayArrow } else { Icons.Filled.FastForward },
+                    contentDescription = "Emulation Speed"
                 )
             }
 

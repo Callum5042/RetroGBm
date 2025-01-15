@@ -103,6 +103,8 @@ public:
 	void Init();
 	void Tick();
 
+	void SetSpeedMultipler(float speed);
+
 	// OAM
 	void WriteOam(uint16_t address, uint8_t value);
 	uint8_t ReadOam(uint16_t address);
@@ -164,6 +166,8 @@ private:
 
 	int m_FrameCount = 0;
 	float m_TimeElapsed = 0.0f;
+
+	float m_SpeedMultipler = 1.0f;
 
 	// Bank
 	uint8_t m_VramBank = 0;

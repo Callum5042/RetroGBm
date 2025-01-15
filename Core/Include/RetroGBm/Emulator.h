@@ -65,6 +65,8 @@ public:
 	void Pause(bool pause);
 	inline bool IsPaused() const { return m_Paused; }
 
+	void SetEmulationSpeedMultipler(float multipler);
+
 	uint8_t GetOpCode() const;
 	inline EmulatorContext* GetContext() { return &m_Context; }
 
