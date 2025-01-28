@@ -90,6 +90,24 @@ void Apu::IncrementApuTimer(bool doublespeed)
 				}
 			}
 		}
+
+		// Wave Channel
+		if ((m_Context.audio_master & 0x4) == 0x4)
+		{
+			// Get the channel 3 peroid
+			uint16_t channel3_peroid = ((m_Context.channel3_perioidhigh & 0x7) << 8) | (m_Context.channel3_perioidlow);
+			int sample_interval = 2097152 / (2048 - channel3_peroid);
+
+			m_Channel3SampleCount++;
+			if (m_Channel3SampleCount >= sample_interval)
+			{
+				m_Channel3SampleCount = 0;
+
+				// Read sample
+				uint8_t sample = m_WavePatternRam[m_WaveRamIndex];
+				m_WaveRamIndex = (m_WaveRamIndex + 1) % 16;
+			}
+		}
 	}
 }
 
@@ -431,7 +449,7 @@ uint8_t Apu::Read(uint16_t address)
 		return m_Context.channel4_control | 0xBF;
 	}
 
-	// Write wave pattern RAM
+	// Read wave pattern RAM
 	if (address >= 0xFF30 && address <= 0xFF3F)
 	{
 		return m_WavePatternRam[address - 0xFF30];
