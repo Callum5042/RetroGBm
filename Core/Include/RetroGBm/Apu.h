@@ -68,11 +68,26 @@ private:
 
 	void IncrementApuTimer(bool doublespeed);
 
-	std::vector<uint8_t> m_WavePatternRam;
-
 	// Length timer
 	uint8_t m_LengthCounter1 = 0;
 	uint8_t m_LengthCounter2 = 0;
 	uint8_t m_LengthCounter3 = 0;
 	uint8_t m_LengthCounter4 = 0;
+
+	bool m_LengthCounter1Enabled = false;
+	bool m_LengthCounter2Enabled = false;
+	bool m_LengthCounter3Enabled = false;
+	bool m_LengthCounter4Enabled = false;
+
+	// Channel 1 things
+	int m_Channel1_Period = 0;
+	int m_Channel1_EnvelopeTimer = 0;
+	int m_Channel1_Volume = 0;
+
+	// Wave RAM things
+	std::vector<uint8_t> m_WavePatternRam;
+	int m_WaveRamIndex = 0;
+	bool m_IsWaveRamAccessed = false;
+
+	int m_Channel3SampleCount = 0;
 };

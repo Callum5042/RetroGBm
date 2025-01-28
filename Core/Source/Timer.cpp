@@ -84,7 +84,7 @@ uint8_t Timer::Read(uint16_t address)
 		case 0xFF06:
 			return m_Context.tma;
 		case 0xFF07:
-			return m_Context.tac;
+			return (m_Context.tac | 0xF8);
 	}
 
 	return 0xFF;

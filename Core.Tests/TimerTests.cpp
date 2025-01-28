@@ -139,5 +139,18 @@ namespace CoreTests
 			Assert::AreEqual(static_cast<int>(timer.GetContext()->tma), static_cast<int>(timer.GetContext()->tima));
 			Assert::AreEqual(static_cast<int>(InterruptFlag::Timer) | 0xE0, static_cast<int>(mockCpu.GetInterruptFlags()));
 		}
+
+		TEST_METHOD(Read_ReadTac_PadLast5Bits)
+		{
+			// Arrange
+			Timer timer(nullptr);
+			timer.Init();
+
+			// Act
+			uint8_t result = timer.Read(0xFF07);
+
+			// Assert
+			Assert::AreEqual(0xF8, static_cast<int>(result));
+		}
 	};
 }

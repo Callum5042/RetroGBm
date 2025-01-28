@@ -338,13 +338,13 @@ void Emulator::Cycle(int machine_cycles)
 				if (n & 1)
 				{
 					m_Ppu->Tick();
-					m_Apu->Tick(this->IsDoubleSpeedMode());
+					m_Apu->Tick(true);
 				}
 			}
 			else
 			{
 				m_Ppu->Tick();
-				m_Apu->Tick(this->IsDoubleSpeedMode());
+				m_Apu->Tick(false);
 			}
 		}
 
