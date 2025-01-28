@@ -57,6 +57,9 @@
     <ClCompile Include="MockCartridge.cpp">
       <Filter>Source Files\Mocks</Filter>
     </ClCompile>
+    <ClCompile Include="ApuTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MockCartridge.h">

@@ -166,6 +166,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ApuTests.cpp" />
     <ClCompile Include="BaseCartridgeTests.cpp" />
     <ClCompile Include="CartridgeMBC1Tests.cpp" />
     <ClCompile Include="CartridgeMBC3Tests.cpp" />

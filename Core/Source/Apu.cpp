@@ -44,11 +44,10 @@ void Apu::IncrementApuTimer(bool doublespeed)
 				if (m_LengthCounter1 != 0 && m_LengthCounter1Enabled)
 				{
 					m_LengthCounter1--;
-				}
-
-				if (m_LengthCounter1 == 0)
-				{
-					m_Context.audio_master &= ~0x1;
+					if (m_LengthCounter1 == 0)
+					{
+						m_Context.audio_master &= ~0x1;
+					}
 				}
 			}
 
@@ -58,11 +57,36 @@ void Apu::IncrementApuTimer(bool doublespeed)
 				if (m_LengthCounter2 != 0 && m_LengthCounter2Enabled)
 				{
 					m_LengthCounter2--;
+					if (m_LengthCounter2 == 0)
+					{
+						m_Context.audio_master &= ~0x2;
+					}
 				}
+			}
 
-				if (m_LengthCounter2 == 0)
+			// Channel 3
+			if ((m_Context.audio_master & 0x4) == 0x4)
+			{
+				if (m_LengthCounter3 != 0 && m_LengthCounter3Enabled)
 				{
-					m_Context.audio_master &= ~0x2;
+					m_LengthCounter3--;
+					if (m_LengthCounter3 == 0)
+					{
+						m_Context.audio_master &= ~0x4;
+					}
+				}
+			}
+
+			// Channel 4
+			if ((m_Context.audio_master & 0x8) == 0x8)
+			{
+				if (m_LengthCounter4 != 0 && m_LengthCounter4Enabled)
+				{
+					m_LengthCounter4--;
+					if (m_LengthCounter4 == 0)
+					{
+						m_Context.audio_master &= ~0x8;
+					}
 				}
 			}
 		}
@@ -71,7 +95,7 @@ void Apu::IncrementApuTimer(bool doublespeed)
 
 void Apu::Write(uint16_t address, uint8_t value)
 {
-	// std::cout << "Write APU: 0x" << std::hex << address << '\n';
+	std::cout << "Write APU: 0x" << std::hex << address << " - Value: 0x" << std::hex << (int)value << '\n';
 
 	// Ignores writes to register if APU is off unless its the master control register 'NR52'
 	if (!this->IsAudioOn() && address != 0xFF26)
@@ -141,6 +165,12 @@ void Apu::Write(uint16_t address, uint8_t value)
 	else if (address == 0xFF12) // NR12
 	{
 		m_Context.channel1_volume = value;
+
+		bool dac_disabled_flag = (m_Context.channel1_volume & 0xF8) == 0;
+		if (dac_disabled_flag)
+		{
+			m_Context.audio_master &= ~0x1;
+		}
 	}
 	else if (address == 0xFF13) // NR13
 	{
@@ -211,58 +241,89 @@ void Apu::Write(uint16_t address, uint8_t value)
 	}
 
 	// Channel 3
-	if (address == 0xFF1A)
+	if (address == 0xFF1A) // NR30
 	{
 		m_Context.channel3_dac_enable = value;
+
+		if ((m_Context.channel3_dac_enable & 0x80) != 0x80)
+		{
+			m_Context.audio_master &= ~0x4;
+		}
 	}
-	else if (address == 0xFF1B)
+	else if (address == 0xFF1B) // NR31
 	{
 		m_Context.channel3_length = value;
 		m_LengthCounter3 = 63 - (value & 0x3F);
 	}
-	else if (address == 0xFF1C)
+	else if (address == 0xFF1C) // NR32
 	{
 		m_Context.channel3_output_level = value;
 	}
-	else if (address == 0xFF1D)
+	else if (address == 0xFF1D) // NR33
 	{
 		m_Context.channel3_perioidlow = value;
 	}
-	else if (address == 0xFF1E)
+	else if (address == 0xFF1E) // NR34
 	{
 		m_Context.channel3_perioidhigh = value;
 
-		bool dac_enabled_flag = (m_Context.channel3_dac_enable & 0x80) == 0x80;
-		bool enable_channel_flag = (value & 0x80) == 0x80;
-		if (enable_channel_flag && dac_enabled_flag)
+		bool trigger = (value & 0x80) == 0x80;
+		m_LengthCounter3Enabled = (value & 0x40) == 0x40;
+
+		if (trigger)
 		{
-			// m_Context.audio_master |= 0x4;
+			// Enable channel
+			bool dac_enabled_flag = (m_Context.channel3_dac_enable & 0x80) != 0;
+			if (dac_enabled_flag)
+			{
+				m_Context.audio_master |= 0x4;
+			}
+
+			// Reset length
+			if (m_Context.channel3_length == 0)
+			{
+				m_Context.channel3_length = 64;
+				m_LengthCounter3 = 64;
+			}
 		}
 	}
 
 	// Channel 4
-	if (address == 0xFF20)
+	if (address == 0xFF20)  // NR41
 	{
 		m_Context.channel4_length = value;
 		m_LengthCounter4 = 63 - (value & 0x3F);
 	}
-	else if (address == 0xFF21)
+	else if (address == 0xFF21) // NR42
 	{
 		m_Context.channel4_volume = value;
 	}
-	else if (address == 0xFF22)
+	else if (address == 0xFF22) // NR43
 	{
 		m_Context.channel4_frequency = value;
 	}
-	else if (address == 0xFF23)
+	else if (address == 0xFF23) // NR44
 	{
 		m_Context.channel4_control = value;
 
-		bool dac_enabled_flag = (m_Context.channel4_volume & 0xF8) != 0;
-		bool enable_channel_flag = (value & 0x80) == 0x80;
-		if (enable_channel_flag && dac_enabled_flag)
+		bool trigger = (value & 0x80) == 0x80;
+		m_LengthCounter3Enabled = (value & 0x40) == 0x40;
+
+		if (trigger)
 		{
-			// m_Context.audio_master |= 0x8;
+			// Enable channel
+			bool dac_enabled_flag = (m_Context.channel4_volume & 0xF8) != 0;
+			if (dac_enabled_flag)
+			{
+				m_Context.audio_master |= 0x8;
+			}
+
+			// Reset length
+			if (m_Context.channel4_length == 0)
+			{
+				m_Context.channel4_length = 64;
+				m_LengthCounter4 = 64;
+			}
 		}
 	}
 
@@ -275,7 +336,7 @@ void Apu::Write(uint16_t address, uint8_t value)
 
 uint8_t Apu::Read(uint16_t address)
 {
-	// std::cout << "Read APU: 0x" << std::hex << address << '\n';
+	std::cout << "Read APU: 0x" << std::hex << address << '\n';
 
 	if (address == 0xFF26)
 	{

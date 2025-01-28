@@ -78,4 +78,6 @@ private:
 
 	bool m_LengthCounter1Enabled = false;
 	bool m_LengthCounter2Enabled = false;
+	bool m_LengthCounter3Enabled = false;
+	bool m_LengthCounter4Enabled = false;
 };
