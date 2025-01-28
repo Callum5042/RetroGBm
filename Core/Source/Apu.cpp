@@ -25,23 +25,27 @@ void Apu::Tick(bool doublespeed)
 void Apu::IncrementApuTimer(bool doublespeed)
 {
 	// Bit 5 in doublespeed mode, otherwise bit 4
-	uint8_t bitmask = doublespeed ? 0x32 : 0x16;
+	uint16_t bitmask = doublespeed ? 0x20 : 0x10;
 
 	bool old_apu_bitset = m_ApuBitset;
-	m_ApuBitset = ((m_Timer->GetContext()->div & bitmask) == bitmask);
+	m_ApuBitset = (((m_Timer->GetContext()->div >> 8) & bitmask) == bitmask);
 
 	// Increment APU timer if the bit has gone from a 1 to a 0
 	if (old_apu_bitset && !m_ApuBitset)
 	{
 		m_ApuDiv++;
 
-		// Channel 1
-		if ((m_ApuDiv % 2) == 0)
+		// Length Counters
+		if ((m_ApuDiv % 2) != 0)
 		{
 			// Channel 1
-			if (m_LengthCounter1 != 0)
+			if ((m_Context.audio_master & 0x1) == 0x1)
 			{
-				m_LengthCounter1--;
+				if (m_LengthCounter1 != 0 && m_LengthCounter1Enabled)
+				{
+					m_LengthCounter1--;
+				}
+
 				if (m_LengthCounter1 == 0)
 				{
 					m_Context.audio_master &= ~0x1;
@@ -49,32 +53,16 @@ void Apu::IncrementApuTimer(bool doublespeed)
 			}
 
 			// Channel 2
-			if (m_LengthCounter2 != 0)
+			if ((m_Context.audio_master & 0x2) == 0x2)
 			{
-				m_LengthCounter2--;
+				if (m_LengthCounter2 != 0 && m_LengthCounter2Enabled)
+				{
+					m_LengthCounter2--;
+				}
+
 				if (m_LengthCounter2 == 0)
 				{
 					m_Context.audio_master &= ~0x2;
-				}
-			}
-
-			// Channel 3
-			if (m_LengthCounter3 != 0)
-			{
-				m_LengthCounter3--;
-				if (m_LengthCounter3 == 0)
-				{
-					m_Context.audio_master &= ~0x4;
-				}
-			}
-
-			// Channel 4
-			if (m_LengthCounter4 != 0)
-			{
-				m_LengthCounter4--;
-				if (m_LengthCounter4 == 0)
-				{
-					m_Context.audio_master &= ~0x8;
 				}
 			}
 		}
@@ -145,54 +133,80 @@ void Apu::Write(uint16_t address, uint8_t value)
 	{
 		m_Context.channel1_sweep = value;
 	}
-	else if (address == 0xFF11)
+	else if (address == 0xFF11) // NR11
 	{
 		m_Context.channel1_length = value;
 		m_LengthCounter1 = 63 - (value & 0x3F);
 	}
-	else if (address == 0xFF12)
+	else if (address == 0xFF12) // NR12
 	{
 		m_Context.channel1_volume = value;
 	}
-	else if (address == 0xFF13)
+	else if (address == 0xFF13) // NR13
 	{
 		m_Context.channel1_periodlow = value;
 	}
-	else if (address == 0xFF14)
+	else if (address == 0xFF14) // NR14
 	{
 		m_Context.channel1_periodhigh = value;
 
-		bool dac_enabled_flag = (m_Context.channel1_volume & 0xF8) != 0;
-		bool enable_channel_flag = (value & 0x80) == 0x80;
-		if (enable_channel_flag && dac_enabled_flag)
+		bool trigger = (value & 0x80) == 0x80;
+		m_LengthCounter1Enabled = (value & 0x40) == 0x40;
+
+		if (trigger)
 		{
-			// m_Context.audio_master |= 0x1;
+			// Enable channel
+			bool dac_enabled_flag = (m_Context.channel1_volume & 0xF8) != 0;
+			if (dac_enabled_flag)
+			{
+				m_Context.audio_master |= 0x1;
+			}
+
+			// Reset length
+			if (m_Context.channel1_length == 0)
+			{
+				m_Context.channel1_length = 64;
+				m_LengthCounter1 = 64;
+			}
 		}
 	}
 
 	// Channel 2
-	if (address == 0xFF16)
+	if (address == 0xFF16) // NR21
 	{
 		m_Context.channel2_length = value;
 		m_LengthCounter2 = 63 - (value & 0x3F);
 	}
-	else if (address == 0xFF17)
+	else if (address == 0xFF17) // NR22
 	{
 		m_Context.channel2_volume = value;
 	}
-	else if (address == 0xFF18)
+	else if (address == 0xFF18) // NR23
 	{
 		m_Context.channel2_periodlow = value;
 	}
-	else if (address == 0xFF19)
+	else if (address == 0xFF19) // NR24
 	{
 		m_Context.channel2_periodhigh = value;
 
-		bool dac_enabled_flag = (m_Context.channel2_volume & 0xF8) != 0;
-		bool enable_channel_flag = (value & 0x80) == 0x80;
-		if (enable_channel_flag && dac_enabled_flag)
+		bool trigger = (value & 0x80) == 0x80;
+		m_LengthCounter2Enabled = (value & 0x40) == 0x40;
+
+		if (trigger)
 		{
-			// m_Context.audio_master |= 0x2;
+			// Enable channel
+			bool dac_enabled_flag = (m_Context.channel2_volume & 0xF8) != 0;
+			if (dac_enabled_flag)
+			{
+				m_Context.audio_master |= 0x2;
+			}
+
+			// Reset length
+			if (m_Context.channel2_length == 0)
+			{
+				m_Context.channel2_length = 64;
+				m_LengthCounter2 = 64;
+			}
 		}
 	}
 

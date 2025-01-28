@@ -75,4 +75,7 @@ private:
 	uint8_t m_LengthCounter2 = 0;
 	uint8_t m_LengthCounter3 = 0;
 	uint8_t m_LengthCounter4 = 0;
+
+	bool m_LengthCounter1Enabled = false;
+	bool m_LengthCounter2Enabled = false;
 };
