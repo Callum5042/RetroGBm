@@ -79,6 +79,11 @@ private:
 	bool m_LengthCounter3Enabled = false;
 	bool m_LengthCounter4Enabled = false;
 
+	// Channel 1 things
+	int m_Channel1_Period = 0;
+	int m_Channel1_EnvelopeTimer = 0;
+	int m_Channel1_Volume = 0;
+
 	// Wave RAM things
 	std::vector<uint8_t> m_WavePatternRam;
 	int m_WaveRamIndex = 0;

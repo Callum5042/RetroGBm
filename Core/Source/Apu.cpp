@@ -91,6 +91,12 @@ void Apu::IncrementApuTimer(bool doublespeed)
 			}
 		}
 
+		// Sweep (channel 1)
+		if ((m_Context.audio_master & 0x1) == 0x1)
+		{
+
+		}
+
 		// Wave Channel
 		if ((m_Context.audio_master & 0x4) == 0x4)
 		{
@@ -113,7 +119,7 @@ void Apu::IncrementApuTimer(bool doublespeed)
 
 void Apu::Write(uint16_t address, uint8_t value)
 {
-	std::cout << "Write APU: 0x" << std::hex << address << " - Value: 0x" << std::hex << (int)value << '\n';
+	// std::cout << "Write APU: 0x" << std::hex << address << " - Value: 0x" << std::hex << (int)value << '\n';
 
 	// Ignores writes to register if APU is off unless its the master control register 'NR52'
 	if (!this->IsAudioOn() && address != 0xFF26)
@@ -216,6 +222,18 @@ void Apu::Write(uint16_t address, uint8_t value)
 				m_Context.channel1_length = 64;
 				m_LengthCounter1 = 64;
 			}
+
+			// Set period
+			m_Channel1_Period = ((m_Context.channel1_periodhigh & 0x7) << 8) | (m_Context.channel1_periodlow);
+
+			// Reset envelope timer
+			m_Channel1_EnvelopeTimer = 0;
+
+			// Volume is set to contents of NR12 initial volume.
+			m_Channel1_Volume = m_Context.channel1_volume & 0xF0;
+
+			// TODO:
+			// Sweep does several things.
 		}
 	}
 
@@ -354,7 +372,7 @@ void Apu::Write(uint16_t address, uint8_t value)
 
 uint8_t Apu::Read(uint16_t address)
 {
-	std::cout << "Read APU: 0x" << std::hex << address << '\n';
+	// std::cout << "Read APU: 0x" << std::hex << address << '\n';
 
 	if (address == 0xFF26)
 	{
