@@ -327,6 +327,10 @@ void Emulator::Tick()
 
 void Emulator::Cycle(int machine_cycles)
 {
+	// This is powered mainly by the CPU - so when the CPU does something like access the bus it will trigger the bus cycle
+	// Bus will run at 1.05 MHz
+	// CPU will run at 4.20 MHz
+
 	for (int i = 0; i < machine_cycles; ++i)
 	{
 		for (int n = 0; n < 4; ++n)
