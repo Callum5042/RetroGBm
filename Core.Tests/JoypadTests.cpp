@@ -1,4 +1,5 @@
 #include "CppUnitTest.h"
+#include "MockCartridge.h"
 
 #include <RetroGBm/Joypad.h>
 #include <RetroGBm/Cpu.h>
@@ -13,7 +14,8 @@ namespace CoreTests
 		TEST_METHOD(SetJoypad_KeyPressed_RequestInterrupt)
 		{
 			// Arrange
-			Cpu mockCpu;
+			MockCartridge mockCartridge;
+			Cpu mockCpu(&mockCartridge);
 
 			Joypad joypad(&mockCpu);
 			joypad.SetJoypad(JoypadButton::A, false);
@@ -29,7 +31,8 @@ namespace CoreTests
 		TEST_METHOD(SetJoypad_KeyNotPressed_DoNotRequestInterrupt)
 		{
 			// Arrange
-			Cpu mockCpu;
+			MockCartridge mockCartridge;
+			Cpu mockCpu(&mockCartridge);
 
 			Joypad joypad(&mockCpu);
 			joypad.SetJoypad(JoypadButton::A, false);
@@ -45,7 +48,8 @@ namespace CoreTests
 		TEST_METHOD(GamepadGetOutput_KeyIsPressed_OutputIsEquals)
 		{
 			// Arrange
-			Cpu mockCpu;
+			MockCartridge mockCartridge;
+			Cpu mockCpu(&mockCartridge);
 
 			Joypad joypad(&mockCpu);
 			joypad.Write(0x10);

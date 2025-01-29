@@ -64,5 +64,90 @@ namespace CoreTests
 			// Assert
 			Assert::IsFalse(result);
 		}
+
+		TEST_METHOD(Write_StatRegisterIgnoresLower3Bits_StatIsF8)
+		{
+			// Arrange
+			MockCartridge cartridge;
+			Display display(&cartridge);
+			display.Init();
+
+			const_cast<DisplayContext*>(display.GetContext())->stat = 0;
+
+			// Act
+			display.Write(0xFF41, 0xFF);
+
+			// Assert
+			int result = const_cast<DisplayContext*>(display.GetContext())->stat;
+			Assert::AreEqual(0xF8, result);
+		}
+
+		TEST_METHOD(Read_StatRegister_AlwaysSetLastBit)
+		{
+			// Arrange
+			MockCartridge cartridge;
+			Display display(&cartridge);
+			display.Init();
+
+			const_cast<DisplayContext*>(display.GetContext())->stat = 0;
+
+			// Act
+			int result = display.Read(0xFF41);
+
+			// Assert
+			Assert::AreEqual(0x80, result);
+		}
+
+		TEST_METHOD(Read_StatRegister_DoesNotOverwriteFirst3Bits)
+		{
+			// Arrange
+			MockCartridge cartridge;
+			Display display(&cartridge);
+			display.Init();
+
+			const_cast<DisplayContext*>(display.GetContext())->stat = 0b111;
+
+			// Act
+			display.Write(0xFF41, 0b1000);
+
+			// Assert
+			int result = const_cast<DisplayContext*>(display.GetContext())->stat;
+			Assert::AreEqual(0x8F, result);
+		}
+
+		TEST_METHOD(Write_LyRegister_IgnoreWrites)
+		{
+			// Arrange
+			MockCartridge cartridge;
+			Display display(&cartridge);
+			display.Init();
+
+			const_cast<DisplayContext*>(display.GetContext())->ly = 0;
+
+			// Act
+			display.Write(0xFF44, 0xFF);
+
+			// Assert
+			int result = const_cast<DisplayContext*>(display.GetContext())->ly;
+			Assert::AreEqual(0, result);
+		}
+
+		TEST_METHOD(Write_LcdcRegister_TurnsLcdOff_ResetsLyRegister)
+		{
+			// Arrange
+			MockCartridge cartridge;
+			Display display(&cartridge);
+			display.Init();
+
+			const_cast<DisplayContext*>(display.GetContext())->lcdc = 0;
+			const_cast<DisplayContext*>(display.GetContext())->ly = 50;
+
+			// Act
+			display.Write(0xFF40, 0);
+
+			// Assert
+			int result = const_cast<DisplayContext*>(display.GetContext())->ly;
+			Assert::AreEqual(0, result);
+		}
 	};
 }
