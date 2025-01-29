@@ -3,6 +3,7 @@
 #include "RetroGBm/Cpu.h"
 #include "RetroGBm/Emulator.h"
 #include "RetroGBm/Dma.h"
+#include "RetroGBm/Ppu.h"
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 
 #include <iostream>
@@ -137,6 +138,13 @@ void Display::Write(uint16_t address, uint8_t value)
 	{
 		case 0xFF40:
 			m_Context.lcdc = value;
+
+			if (!IsLcdEnabled())
+			{
+				m_Context.ly = 0;
+				m_Context.stat &= 0x7C;
+			}
+
 			return;
 		case 0xFF41:
 			m_Context.stat = value;
@@ -148,7 +156,7 @@ void Display::Write(uint16_t address, uint8_t value)
 			m_Context.scx = value;
 			return;
 		case 0xFF44:
-			m_Context.ly = value;
+			// Ignore writes to LY
 			return;
 		case 0xFF45:
 			m_Context.lyc = value;

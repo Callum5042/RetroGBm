@@ -22,7 +22,8 @@ void Timer::Init()
 
 void Timer::Tick()
 {
-	// Increment div every tick
+	// Increment div every tick (The actual visible part of DIV exposed in the register increments at 64 m-cycles or 256 t-cycles)
+	// The DIV register will increment at 16,384 Hz or 32,768 Hz while on double speed (CGB).
 	m_Context.div++;
 
 	// Detect falling edge
