@@ -250,6 +250,11 @@ void Emulator::Tick()
 
 	m_CurrentOpCode = opcode;
 
+	/*if (current_pc == 0x0048 || current_pc == 0x00bb)
+	{
+		int tmp = 1;
+	}*/
+
 	// Execute
 	if (!m_Halted)
 	{

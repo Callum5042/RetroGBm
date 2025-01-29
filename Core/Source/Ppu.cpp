@@ -37,15 +37,20 @@ void Ppu::Init()
 
 void Ppu::Tick()
 {
+	// Each dot increment is synced to the CPU to increase at roughly the same rate (4.194 MHz)
+	// Meaning the dot should increase 4 times per M-cycles or 1 per T-cycle
+	// This is not affected by double speed and should only increase 2 per M-cycle for double speed
+
 	if (!m_Display->IsLcdEnabled())
 	{
+		m_Context.dot_ticks = 0;
 		return;
 	}
 
 	m_Context.dot_ticks++;
 
 	switch (m_Display->GetLcdMode())
-	{
+	{ 
 		case LcdMode::OAM:
 			UpdateOam();
 			break;
