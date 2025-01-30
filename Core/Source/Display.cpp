@@ -302,6 +302,8 @@ void Display::Write(uint16_t address, uint8_t value)
 		m_BackgroundPaletteIndex = value;
 		m_AutoIncrementBackgroundAddress = (value >> 7) & 0x1;
 		m_BackgroundPaletteAddress = value & 0x3F;
+
+		m_BackgroundPaletteData = m_BackgroundColourPalettes[m_BackgroundPaletteAddress];
 		return;
 	}
 	else if (address == 0xFF69)
@@ -321,6 +323,8 @@ void Display::Write(uint16_t address, uint8_t value)
 		m_ObjectPaletteIndex = value;
 		m_AutoIncrementObjectAddress = (value >> 7) & 0x1;
 		m_ObjectPaletteAddress = value & 0x3F;
+
+		m_ObjectPaletteData = m_ObjectColourPalettes[m_ObjectPaletteAddress];
 		return;
 	}
 	else if (address == 0xFF6B)
@@ -330,6 +334,7 @@ void Display::Write(uint16_t address, uint8_t value)
 		if (m_AutoIncrementObjectAddress)
 		{
 			m_ObjectPaletteAddress++;
+			m_ObjectPaletteIndex = m_ObjectPaletteAddress;
 		}
 
 		return;
