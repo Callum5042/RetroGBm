@@ -115,11 +115,11 @@ uint8_t Display::Read(uint16_t address)
 		case 0xFF68:
 			return m_BackgroundPaletteIndex;
 		case 0xFF69:
-			return m_BackgroundPaletteData;
+			return m_BackgroundColourPalettes[m_BackgroundPaletteAddress];
 		case 0xFF6A:
 			return m_ObjectPaletteIndex;
 		case 0xFF6B:
-			return m_ObjectPaletteData;
+			return m_ObjectColourPalettes[m_ObjectPaletteAddress];
 		default:
 			return 0xFF;
 	}
@@ -306,7 +306,6 @@ void Display::Write(uint16_t address, uint8_t value)
 	}
 	else if (address == 0xFF69)
 	{
-		m_BackgroundPaletteData = value;
 		m_BackgroundColourPalettes[m_BackgroundPaletteAddress] = value;
 		if (m_AutoIncrementBackgroundAddress)
 		{
@@ -325,11 +324,11 @@ void Display::Write(uint16_t address, uint8_t value)
 	}
 	else if (address == 0xFF6B)
 	{
-		m_ObjectPaletteData = value;
 		m_ObjectColourPalettes[m_ObjectPaletteAddress] = value;
 		if (m_AutoIncrementObjectAddress)
 		{
 			m_ObjectPaletteAddress++;
+			m_ObjectPaletteIndex = m_ObjectPaletteAddress;
 		}
 
 		return;
