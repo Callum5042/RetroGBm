@@ -84,7 +84,14 @@ uint8_t Display::Read(uint16_t address)
 		case 0xFF40:
 			return m_Context.lcdc;
 		case 0xFF41:
+		{
+			if (!IsLcdEnabled())
+			{
+				return (m_Context.stat & 0xFC) | 0x80;
+			}
+
 			return m_Context.stat | 0x80;
+		}
 		case 0xFF42:
 			return m_Context.scy;
 		case 0xFF43:
@@ -135,8 +142,7 @@ void Display::Write(uint16_t address, uint8_t value)
 			if (!IsLcdEnabled())
 			{
 				m_Context.ly = 0;
-				// m_Context.stat &= 0x7C;
-				this->SetLcdMode(LcdMode::OAM);
+				m_Context.stat = 0x85;
 			}
 
 			return;
