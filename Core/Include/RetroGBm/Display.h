@@ -128,12 +128,10 @@ private:
 
 	// CGB Palettes
 	uint8_t m_BackgroundPaletteIndex = 0;
-	uint8_t m_BackgroundPaletteData = 0;
 	bool m_AutoIncrementBackgroundAddress = false;
 	uint8_t m_BackgroundPaletteAddress = 0;
 
 	uint8_t m_ObjectPaletteIndex = 0;
-	uint8_t m_ObjectPaletteData = 0;
 	bool m_AutoIncrementObjectAddress = false;
 	uint8_t m_ObjectPaletteAddress = 0;
 	std::vector<uint8_t> m_ObjectColourPalettes;
