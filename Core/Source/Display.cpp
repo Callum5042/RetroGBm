@@ -142,7 +142,8 @@ void Display::Write(uint16_t address, uint8_t value)
 			if (!IsLcdEnabled())
 			{
 				m_Context.ly = 0;
-				m_Context.stat = 0x85;
+				this->SetLcdMode(LcdMode::OAM);
+				m_Context.stat |= 0x80;
 			}
 
 			return;
