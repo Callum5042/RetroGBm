@@ -406,7 +406,9 @@ void MainWindow::OpenDialog()
 		m_Application->LoadRom(path);
 		EnableMenuItem(m_ToolsMenuItem, m_MenuToolsCartridgeInfo, MF_ENABLED);
 
-		this->SetStatusBarTitle(m_Application->GetEmulator()->GetCartridge()->GetCartridgeData().title);
+		std::string filename = std::filesystem::path(m_FilePath).filename().string();
+
+		this->SetStatusBarTitle(filename);
 		this->SetStatusBarState("Playing");
 
 		// Reload cartridge info
