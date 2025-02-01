@@ -522,7 +522,7 @@ void Ppu::FetchWindowTileId()
 
 				// Divide by 8
 				uint8_t position_x = (m_Context.pipeline.fetch_x - m_Display->m_Context.wx + 7) & 0xFF;
-				uint8_t position_y = m_Context.window_line_counter & 0xFF; // (m_Display->m_Context.ly - m_Display->m_Context.wy) & 0xFF;
+				uint8_t position_y = m_Context.window_line_counter & 0xFF;
 
 				uint16_t address = base_address + (position_x / 8) + (position_y / 8) * 32;
 
@@ -611,7 +611,6 @@ void Ppu::PushPixelToVideoBuffer()
 		if (m_Context.pipeline.fetch_window)
 		{
 			m_Display->SetVideoBufferPixel(m_Context.pipeline.pushed_x, m_Display->GetContext()->ly, pixel_data);
-			// m_Context.video_buffer[m_Context.pipeline.pushed_x + (m_Display->m_Context.ly * m_Display->ScreenResolutionX)] = pixel_data;
 			m_Context.pipeline.pushed_x++;
 		}
 		else
@@ -619,7 +618,6 @@ void Ppu::PushPixelToVideoBuffer()
 			if (m_Context.pipeline.line_x >= (m_Display->m_Context.scx % 8))
 			{
 				m_Display->SetVideoBufferPixel(m_Context.pipeline.pushed_x, m_Display->GetContext()->ly, pixel_data);
-				// m_Context.video_buffer[m_Context.pipeline.pushed_x + (m_Display->m_Context.ly * m_Display->ScreenResolutionX)] = pixel_data;
 				m_Context.pipeline.pushed_x++;
 			}
 		}
