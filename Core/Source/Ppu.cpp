@@ -10,12 +10,6 @@
 #include <algorithm>
 #include <chrono>
 #include <thread>
-#include <iostream>
-
-namespace
-{
-	static int clock_timer = 0;
-}
 
 Ppu::Ppu()
 {
@@ -31,15 +25,11 @@ Ppu::Ppu(IBus* bus, Cpu* cpu, Display* display, BaseCartridge* cartridge) : m_Bu
 
 void Ppu::Init()
 {
-
 	m_Context.video_ram.resize(16384);
 	std::fill(m_Context.video_ram.begin(), m_Context.video_ram.end(), 0x0);
 
 	m_Display->Init();
-
-	LcdMode old_mode = m_Display->GetLcdMode();
 	m_Display->SetLcdMode(LcdMode::OAM);
-	// std::cout << "LCD Mode changed from (" << (int)old_mode << ") to (" << (int)m_Display->GetLcdMode() << ") - dots: " << m_Context.dot_ticks << '\n';
 
 	m_Timer.Start();
 }
@@ -57,7 +47,6 @@ void Ppu::Tick()
 	}
 
 	m_Context.dot_ticks++;
-	clock_timer++;
 
 	switch (m_Display->GetLcdMode())
 	{
@@ -124,10 +113,7 @@ void Ppu::UpdateOam()
 	if (m_Context.dot_ticks >= 80)
 	{
 		m_Context.pipeline = PipelineContext();
-
-		LcdMode old_mode = m_Display->GetLcdMode();
 		m_Display->SetLcdMode(LcdMode::PixelTransfer);
-		// std::cout << "LCD Mode changed from (" << (int)old_mode << ") to (" << (int)m_Display->GetLcdMode() << ") - dots: " << m_Context.dot_ticks << '\n';
 	}
 
 	// Search and order OAMA per line
@@ -169,10 +155,7 @@ void Ppu::PixelTransfer()
 	// if (m_Context.dot_ticks >= 172 + 80)
 	if (m_Context.pipeline.pushed_x >= m_Display->ScreenResolutionX)
 	{
-		LcdMode old_mode = m_Display->GetLcdMode();
 		m_Display->SetLcdMode(LcdMode::HBlank);
-		// std::cout << "LCD Mode changed from (" << (int)old_mode << ") to (" << (int)m_Display->GetLcdMode() << ") - dots: " << m_Context.dot_ticks << '\n';
-
 		if (m_Display->IsStatInterruptHBlank())
 		{
 			m_Cpu->RequestInterrupt(InterruptFlag::STAT);
@@ -243,10 +226,7 @@ void Ppu::HBlank()
 		// Enter VBlank if all the scanlines have been drawn
 		if (m_Display->m_Context.ly >= m_Display->ScreenResolutionY)
 		{
-			LcdMode old_mode = m_Display->GetLcdMode();
 			m_Display->SetLcdMode(LcdMode::VBlank);
-			//std::cout << "LCD Mode changed from (" << (int)old_mode << ") to (" << (int)m_Display->GetLcdMode() << ") - dots: " << m_Context.dot_ticks << '\n';
-
 			m_Cpu->RequestInterrupt(InterruptFlag::VBlank);
 
 			if (m_Display->IsStatInterruptVBlank())
@@ -256,9 +236,7 @@ void Ppu::HBlank()
 		}
 		else
 		{
-			LcdMode old_mode = m_Display->GetLcdMode();
 			m_Display->SetLcdMode(LcdMode::OAM);
-			//std::cout << "LCD Mode changed from (" << (int)old_mode << ") to (" << (int)m_Display->GetLcdMode() << ") - dots: " << m_Context.dot_ticks << '\n';
 
 			if (m_Display->IsStatInterruptOAM())
 			{
@@ -275,24 +253,12 @@ void Ppu::PipelineProcess()
 {
 	static bool fetch_pixel = true;
 
-	/*if (m_Context.pipeline.pipeline_state == FetchState::Push)
+	if (fetch_pixel)
 	{
 		PixelFetcher();
 	}
-	else*/
-	{
-		if (fetch_pixel)
-		{
-			PixelFetcher();
-			fetch_pixel = false;
-		}
-		else
-		{
-			fetch_pixel = true;
-		}
 
-		fetch_pixel = !fetch_pixel;
-	}
+	fetch_pixel = !fetch_pixel;
 
 	if (m_Context.pipeline.pipeline_state == FetchState::Push)
 	{
