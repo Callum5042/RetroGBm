@@ -119,6 +119,8 @@ void Ppu::UpdateOam()
 	// Search and order OAMA per line
 	if (m_Context.dot_ticks == 1)
 	{
+		m_WindowY = m_Display->GetContext()->wy;
+
 		m_Context.objects_per_line.clear();
 
 		// Find all objects on the current scan line
@@ -150,6 +152,8 @@ void Ppu::UpdateOam()
 
 void Ppu::PixelTransfer()
 {
+	// This whole thing is 1 M-cycle too fast
+
 	PipelineProcess();
 
 	if (m_Context.pipeline.pushed_x >= m_Display->ScreenResolutionX)
@@ -284,7 +288,7 @@ void Ppu::IncrementLY()
 	}
 
 	// Internal window line is used for the window tiles Y offset and only incremented when the window is visible
-	if (m_Display->IsWindowVisible() && (m_Display->m_Context.ly > m_Display->m_Context.wy) && (m_Display->m_Context.ly <= m_Display->m_Context.wy + m_Display->ScreenResolutionY))
+	if (m_Display->IsWindowVisible() && (m_Display->m_Context.ly > m_WindowY) && (m_Display->m_Context.ly <= m_WindowY + m_Display->ScreenResolutionY))
 	{
 		m_Context.window_line_counter++;
 	}
@@ -518,6 +522,19 @@ void Ppu::FetchWindowTileId()
 		{
 			if (IsWindowInView(m_Context.pipeline.fetch_x))
 			{
+				// FLUSH PIPELINE THING
+				if (!m_Context.pipeline.fetch_window)
+				{
+					// Set fetch to window and destroy pipeline
+					m_Context.pipeline.fetch_window = true;
+					m_Context.pipeline.pipeline_state = FetchState::Tile;
+
+					m_Context.pipeline.fifo_x -= static_cast<int>(m_Context.pipeline.pixel_queue.size());
+					m_Context.pipeline.fetch_x -= static_cast<int>(m_Context.pipeline.pixel_queue.size());
+
+					m_Context.pipeline.pixel_queue.clear();
+				}
+
 				uint16_t base_address = m_Display->GetWindowTileBaseAddress();
 
 				// Divide by 8
@@ -543,8 +560,12 @@ void Ppu::FetchWindowTileId()
 				m_Context.pipeline.background_window_attribute.flip_x = static_cast<bool>((attribute >> 5) & 0x1);
 				m_Context.pipeline.background_window_attribute.flip_y = static_cast<bool>((attribute >> 6) & 0x1);
 				m_Context.pipeline.background_window_attribute.priority = static_cast<bool>((attribute >> 7) & 0x1);
+
+				return;
 			}
 		}
+
+		m_Context.pipeline.fetch_window = false;
 	}
 }
 
@@ -576,26 +597,6 @@ void Ppu::FetchObjectTileId()
 
 void Ppu::PushPixelToVideoBuffer()
 {
-	// Check if we're fetching a window tile
-	if (m_Display->IsWindowVisible() && IsWindowInView(m_Context.pipeline.pushed_x))
-	{
-		if (!m_Context.pipeline.fetch_window)
-		{
-			// Set fetch to window and destroy pipeline
-			m_Context.pipeline.fetch_window = true;
-			m_Context.pipeline.pipeline_state = FetchState::Tile;
-
-			m_Context.pipeline.fifo_x = m_Context.pipeline.line_x;
-			m_Context.pipeline.fetch_x = m_Context.pipeline.line_x;
-
-			m_Context.pipeline.pixel_queue.clear();
-		}
-	}
-	else
-	{
-		m_Context.pipeline.fetch_window = false;
-	}
-
 	if (m_Context.pipeline.pixel_queue.size() > 8)
 	{
 		uint32_t pixel_data = (m_Context.pipeline.pixel_queue.front());
@@ -631,9 +632,9 @@ bool Ppu::IsWindowInView(int pixel_x)
 	const int ScreenResolutionX = 160;
 	const int ScreenResolutionY = 144;
 
-	if (m_Display->m_Context.ly >= m_Display->m_Context.wy && m_Display->m_Context.ly < m_Display->m_Context.wy + ScreenResolutionY)
+	if (m_Display->m_Context.ly >= m_WindowY && m_Display->m_Context.ly < m_WindowY + ScreenResolutionY)
 	{
-		if ((pixel_x >= m_Display->m_Context.wx - 7) && (pixel_x < m_Display->m_Context.wx + ScreenResolutionX - 7))
+		if ((pixel_x >= m_Display->m_Context.wx - 7) && (pixel_x <= m_Display->m_Context.wx + ScreenResolutionX - 7))
 		{
 			return true;
 		}

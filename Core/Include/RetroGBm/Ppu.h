@@ -170,4 +170,7 @@ private:
 
 	// Bank
 	uint8_t m_VramBank = 0;
+
+	// WY Register cannot change mid scanline
+	int m_WindowY = 0;
 };
