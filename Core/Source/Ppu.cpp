@@ -10,6 +10,12 @@
 #include <algorithm>
 #include <chrono>
 #include <thread>
+#include <iostream>
+
+namespace
+{
+	static int clock_timer = 0;
+}
 
 Ppu::Ppu()
 {
@@ -30,7 +36,10 @@ void Ppu::Init()
 	std::fill(m_Context.video_ram.begin(), m_Context.video_ram.end(), 0x0);
 
 	m_Display->Init();
+
+	LcdMode old_mode = m_Display->GetLcdMode();
 	m_Display->SetLcdMode(LcdMode::OAM);
+	// std::cout << "LCD Mode changed from (" << (int)old_mode << ") to (" << (int)m_Display->GetLcdMode() << ") - dots: " << m_Context.dot_ticks << '\n';
 
 	m_Timer.Start();
 }
@@ -48,9 +57,10 @@ void Ppu::Tick()
 	}
 
 	m_Context.dot_ticks++;
+	clock_timer++;
 
 	switch (m_Display->GetLcdMode())
-	{ 
+	{
 		case LcdMode::OAM:
 			UpdateOam();
 			break;
@@ -114,7 +124,10 @@ void Ppu::UpdateOam()
 	if (m_Context.dot_ticks >= 80)
 	{
 		m_Context.pipeline = PipelineContext();
+
+		LcdMode old_mode = m_Display->GetLcdMode();
 		m_Display->SetLcdMode(LcdMode::PixelTransfer);
+		// std::cout << "LCD Mode changed from (" << (int)old_mode << ") to (" << (int)m_Display->GetLcdMode() << ") - dots: " << m_Context.dot_ticks << '\n';
 	}
 
 	// Search and order OAMA per line
@@ -153,10 +166,13 @@ void Ppu::PixelTransfer()
 {
 	PipelineProcess();
 
-	// Process pixels until we finish the line
+	// if (m_Context.dot_ticks >= 172 + 80)
 	if (m_Context.pipeline.pushed_x >= m_Display->ScreenResolutionX)
 	{
+		LcdMode old_mode = m_Display->GetLcdMode();
 		m_Display->SetLcdMode(LcdMode::HBlank);
+		// std::cout << "LCD Mode changed from (" << (int)old_mode << ") to (" << (int)m_Display->GetLcdMode() << ") - dots: " << m_Context.dot_ticks << '\n';
+
 		if (m_Display->IsStatInterruptHBlank())
 		{
 			m_Cpu->RequestInterrupt(InterruptFlag::STAT);
@@ -198,7 +214,10 @@ void Ppu::VBlank()
 
 			LimitFrameRate();
 
+			LcdMode old_mode = m_Display->GetLcdMode();
 			m_Display->SetLcdMode(LcdMode::OAM);
+			// std::cout << "LCD Mode changed from (" << (int)old_mode << ") to (" << (int)m_Display->GetLcdMode() << ") - dots: " << m_Context.dot_ticks << '\n';
+
 			if (m_Display->IsStatInterruptOAM())
 			{
 				m_Cpu->RequestInterrupt(InterruptFlag::STAT);
@@ -219,13 +238,15 @@ void Ppu::HBlank()
 {
 	if (m_Context.dot_ticks >= m_DotTicksPerLine)
 	{
-		m_Context.dot_ticks = 0;
 		IncrementLY();
 
 		// Enter VBlank if all the scanlines have been drawn
 		if (m_Display->m_Context.ly >= m_Display->ScreenResolutionY)
 		{
+			LcdMode old_mode = m_Display->GetLcdMode();
 			m_Display->SetLcdMode(LcdMode::VBlank);
+			//std::cout << "LCD Mode changed from (" << (int)old_mode << ") to (" << (int)m_Display->GetLcdMode() << ") - dots: " << m_Context.dot_ticks << '\n';
+
 			m_Cpu->RequestInterrupt(InterruptFlag::VBlank);
 
 			if (m_Display->IsStatInterruptVBlank())
@@ -235,19 +256,45 @@ void Ppu::HBlank()
 		}
 		else
 		{
+			LcdMode old_mode = m_Display->GetLcdMode();
 			m_Display->SetLcdMode(LcdMode::OAM);
+			//std::cout << "LCD Mode changed from (" << (int)old_mode << ") to (" << (int)m_Display->GetLcdMode() << ") - dots: " << m_Context.dot_ticks << '\n';
 
 			if (m_Display->IsStatInterruptOAM())
 			{
 				m_Cpu->RequestInterrupt(InterruptFlag::STAT);
 			}
 		}
+
+
+		m_Context.dot_ticks = 0;
 	}
 }
 
 void Ppu::PipelineProcess()
 {
-	if ((m_Context.dot_ticks & 1))
+	static bool fetch_pixel = true;
+
+	/*if (m_Context.pipeline.pipeline_state == FetchState::Push)
+	{
+		PixelFetcher();
+	}
+	else*/
+	{
+		if (fetch_pixel)
+		{
+			PixelFetcher();
+			fetch_pixel = false;
+		}
+		else
+		{
+			fetch_pixel = true;
+		}
+
+		fetch_pixel = !fetch_pixel;
+	}
+
+	if (m_Context.pipeline.pipeline_state == FetchState::Push)
 	{
 		PixelFetcher();
 	}
@@ -374,7 +421,7 @@ bool Ppu::PipelineAddPixel()
 		// uint32_t colour = m_Display->m_Context.background_palette[palette_index];
 		uint8_t palette = m_Context.pipeline.background_window_attribute.colour_palette;
 		uint32_t colour = m_Display->GetColourFromBackgroundPalette(palette, palette_index);
-		
+
 		if (m_Display->IsObjectEnabled())
 		{
 			bool background_transparent = (palette_index == 0);
@@ -578,7 +625,6 @@ void Ppu::PushPixelToVideoBuffer()
 		{
 			// Set fetch to window and destroy pipeline
 			m_Context.pipeline.fetch_window = true;
-			m_Context.dot_ticks = 0;
 			m_Context.pipeline.pipeline_state = FetchState::Tile;
 
 			m_Context.pipeline.fifo_x = m_Context.pipeline.line_x;
