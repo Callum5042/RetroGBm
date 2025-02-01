@@ -25,7 +25,6 @@ Ppu::Ppu(IBus* bus, Cpu* cpu, Display* display, BaseCartridge* cartridge) : m_Bu
 
 void Ppu::Init()
 {
-
 	m_Context.video_ram.resize(16384);
 	std::fill(m_Context.video_ram.begin(), m_Context.video_ram.end(), 0x0);
 
@@ -50,7 +49,7 @@ void Ppu::Tick()
 	m_Context.dot_ticks++;
 
 	switch (m_Display->GetLcdMode())
-	{ 
+	{
 		case LcdMode::OAM:
 			UpdateOam();
 			break;
@@ -153,7 +152,6 @@ void Ppu::PixelTransfer()
 {
 	PipelineProcess();
 
-	// Process pixels until we finish the line
 	if (m_Context.pipeline.pushed_x >= m_Display->ScreenResolutionX)
 	{
 		m_Display->SetLcdMode(LcdMode::HBlank);
@@ -197,8 +195,8 @@ void Ppu::VBlank()
 			IncrementLY();
 
 			LimitFrameRate();
-
 			m_Display->SetLcdMode(LcdMode::OAM);
+
 			if (m_Display->IsStatInterruptOAM())
 			{
 				m_Cpu->RequestInterrupt(InterruptFlag::STAT);
@@ -219,7 +217,6 @@ void Ppu::HBlank()
 {
 	if (m_Context.dot_ticks >= m_DotTicksPerLine)
 	{
-		m_Context.dot_ticks = 0;
 		IncrementLY();
 
 		// Enter VBlank if all the scanlines have been drawn
@@ -242,14 +239,28 @@ void Ppu::HBlank()
 				m_Cpu->RequestInterrupt(InterruptFlag::STAT);
 			}
 		}
+
+
+		m_Context.dot_ticks = 0;
 	}
 }
 
 void Ppu::PipelineProcess()
 {
-	if ((m_Context.dot_ticks & 1))
+	static bool fetch_pixel = true;
+
+	if (m_Context.pipeline.pipeline_state == FetchState::Idle)
 	{
 		PixelFetcher();
+	}
+	else
+	{
+		if (fetch_pixel)
+		{
+			PixelFetcher();
+		}
+
+		fetch_pixel = !fetch_pixel;
 	}
 
 	PushPixelToVideoBuffer();
@@ -374,7 +385,7 @@ bool Ppu::PipelineAddPixel()
 		// uint32_t colour = m_Display->m_Context.background_palette[palette_index];
 		uint8_t palette = m_Context.pipeline.background_window_attribute.colour_palette;
 		uint32_t colour = m_Display->GetColourFromBackgroundPalette(palette, palette_index);
-		
+
 		if (m_Display->IsObjectEnabled())
 		{
 			bool background_transparent = (palette_index == 0);
@@ -458,12 +469,6 @@ void Ppu::PixelFetcher()
 
 		case FetchState::Idle:
 		{
-			m_Context.pipeline.pipeline_state = FetchState::Push;
-			break;
-		}
-
-		case FetchState::Push:
-		{
 			if (PipelineAddPixel())
 			{
 				m_Context.pipeline.pipeline_state = FetchState::Tile;
@@ -517,7 +522,7 @@ void Ppu::FetchWindowTileId()
 
 				// Divide by 8
 				uint8_t position_x = (m_Context.pipeline.fetch_x - m_Display->m_Context.wx + 7) & 0xFF;
-				uint8_t position_y = m_Context.window_line_counter & 0xFF; // (m_Display->m_Context.ly - m_Display->m_Context.wy) & 0xFF;
+				uint8_t position_y = m_Context.window_line_counter & 0xFF;
 
 				uint16_t address = base_address + (position_x / 8) + (position_y / 8) * 32;
 
@@ -578,7 +583,6 @@ void Ppu::PushPixelToVideoBuffer()
 		{
 			// Set fetch to window and destroy pipeline
 			m_Context.pipeline.fetch_window = true;
-			m_Context.dot_ticks = 0;
 			m_Context.pipeline.pipeline_state = FetchState::Tile;
 
 			m_Context.pipeline.fifo_x = m_Context.pipeline.line_x;
@@ -607,7 +611,6 @@ void Ppu::PushPixelToVideoBuffer()
 		if (m_Context.pipeline.fetch_window)
 		{
 			m_Display->SetVideoBufferPixel(m_Context.pipeline.pushed_x, m_Display->GetContext()->ly, pixel_data);
-			// m_Context.video_buffer[m_Context.pipeline.pushed_x + (m_Display->m_Context.ly * m_Display->ScreenResolutionX)] = pixel_data;
 			m_Context.pipeline.pushed_x++;
 		}
 		else
@@ -615,7 +618,6 @@ void Ppu::PushPixelToVideoBuffer()
 			if (m_Context.pipeline.line_x >= (m_Display->m_Context.scx % 8))
 			{
 				m_Display->SetVideoBufferPixel(m_Context.pipeline.pushed_x, m_Display->GetContext()->ly, pixel_data);
-				// m_Context.video_buffer[m_Context.pipeline.pushed_x + (m_Display->m_Context.ly * m_Display->ScreenResolutionX)] = pixel_data;
 				m_Context.pipeline.pushed_x++;
 			}
 		}

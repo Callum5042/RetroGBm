@@ -164,7 +164,7 @@ namespace CoreTests
 			int result = display.Read(0xFF41);
 
 			// Assert
-			Assert::AreEqual(0, result);
+			Assert::AreEqual(0x80, result);
 		}
 	};
 }
