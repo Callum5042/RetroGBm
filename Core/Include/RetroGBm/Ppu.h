@@ -18,7 +18,6 @@ enum class FetchState
 	TileDataLow,
 	TileDataHigh,
 	Idle,
-	Push,
 };
 
 enum class FetchTileByte

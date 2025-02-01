@@ -152,7 +152,6 @@ void Ppu::PixelTransfer()
 {
 	PipelineProcess();
 
-	// if (m_Context.dot_ticks >= 172 + 80)
 	if (m_Context.pipeline.pushed_x >= m_Display->ScreenResolutionX)
 	{
 		m_Display->SetLcdMode(LcdMode::HBlank);
@@ -196,10 +195,7 @@ void Ppu::VBlank()
 			IncrementLY();
 
 			LimitFrameRate();
-
-			LcdMode old_mode = m_Display->GetLcdMode();
 			m_Display->SetLcdMode(LcdMode::OAM);
-			// std::cout << "LCD Mode changed from (" << (int)old_mode << ") to (" << (int)m_Display->GetLcdMode() << ") - dots: " << m_Context.dot_ticks << '\n';
 
 			if (m_Display->IsStatInterruptOAM())
 			{
@@ -253,16 +249,18 @@ void Ppu::PipelineProcess()
 {
 	static bool fetch_pixel = true;
 
-	if (fetch_pixel)
+	if (m_Context.pipeline.pipeline_state == FetchState::Idle)
 	{
 		PixelFetcher();
 	}
-
-	fetch_pixel = !fetch_pixel;
-
-	if (m_Context.pipeline.pipeline_state == FetchState::Push)
+	else
 	{
-		PixelFetcher();
+		if (fetch_pixel)
+		{
+			PixelFetcher();
+		}
+
+		fetch_pixel = !fetch_pixel;
 	}
 
 	PushPixelToVideoBuffer();
@@ -470,12 +468,6 @@ void Ppu::PixelFetcher()
 		}
 
 		case FetchState::Idle:
-		{
-			m_Context.pipeline.pipeline_state = FetchState::Push;
-			break;
-		}
-
-		case FetchState::Push:
 		{
 			if (PipelineAddPixel())
 			{
