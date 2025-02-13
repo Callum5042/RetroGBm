@@ -60,6 +60,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -598,10 +600,10 @@ fun Viewport(emulator: EmulatorWrapper) {
 // Helper function to detect direction
 private fun detectDirection(x: Float, y: Float, centerX: Float, centerY: Float): JoyPadButton? {
     return when {
-        x < centerX * 0.5 -> JoyPadButton.Left // Left side
-        x > centerX * 1.5 -> JoyPadButton.Right // Right side
-        y < centerY * 0.5 -> JoyPadButton.Up // Top side
-        y > centerY * 1.5 -> JoyPadButton.Down // Bottom side
+        x < centerX * 0.8 -> JoyPadButton.Left // Left side
+        x > centerX * 1.2 -> JoyPadButton.Right // Right side
+        y < centerY * 0.8 -> JoyPadButton.Up // Top side
+        y > centerY * 1.2 -> JoyPadButton.Down // Bottom side
         else -> null // Center or undefined region
     }
 }
@@ -694,21 +696,18 @@ fun Controls(emulator: EmulatorWrapper) {
                     modifier = Modifier
                         .align(Alignment.Center) // Align A button to the left center
                         .offset(x = 30.dp, y = (-15).dp)
-                        .pointerInteropFilter {
-                            when (it.action) {
-                                MotionEvent.ACTION_DOWN -> {
-                                    emulator.pressButton(JoyPadButton.A, true)
-                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    true
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val event = awaitPointerEvent()
+                                    if (event.type == PointerEventType.Press) {
+                                        emulator.pressButton(JoyPadButton.A, true)
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    } else if (event.type == PointerEventType.Release) {
+                                        emulator.pressButton(JoyPadButton.A, false)
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    }
                                 }
-
-                                MotionEvent.ACTION_UP -> {
-                                    emulator.pressButton(JoyPadButton.A, false)
-                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    true
-                                }
-
-                                else -> false
                             }
                         },
                     contentScale = ContentScale.Fit
@@ -724,21 +723,18 @@ fun Controls(emulator: EmulatorWrapper) {
                             x = (-30).dp,
                             y = 15.dp
                         ) // Offset to create spacing (half of button width)
-                        .pointerInteropFilter {
-                            when (it.action) {
-                                MotionEvent.ACTION_DOWN -> {
-                                    emulator.pressButton(JoyPadButton.B, true)
-                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    true
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val event = awaitPointerEvent()
+                                    if (event.type == PointerEventType.Press) {
+                                        emulator.pressButton(JoyPadButton.B, true)
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    } else if (event.type == PointerEventType.Release) {
+                                        emulator.pressButton(JoyPadButton.B, false)
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    }
                                 }
-
-                                MotionEvent.ACTION_UP -> {
-                                    emulator.pressButton(JoyPadButton.B, false)
-                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    true
-                                }
-
-                                else -> false
                             }
                         },
                     contentScale = ContentScale.Fit
@@ -758,23 +754,20 @@ fun Controls(emulator: EmulatorWrapper) {
                     modifier = Modifier
                         .padding(10.dp)
                         .size(40.dp)
-                        .pointerInteropFilter {
-                            when (it.action) {
-                                MotionEvent.ACTION_DOWN -> {
-                                    emulator.pressButton(JoyPadButton.Select, true)
-                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    true
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val event = awaitPointerEvent()
+                                    if (event.type == PointerEventType.Press) {
+                                        emulator.pressButton(JoyPadButton.Select, true)
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    } else if (event.type == PointerEventType.Release) {
+                                        emulator.pressButton(JoyPadButton.Select, false)
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    }
                                 }
-
-                                MotionEvent.ACTION_UP -> {
-                                    emulator.pressButton(JoyPadButton.Select, false)
-                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    true
-                                }
-
-                                else -> false
                             }
-                        }
+                        },
                 )
 
                 Image(
@@ -784,23 +777,20 @@ fun Controls(emulator: EmulatorWrapper) {
                     modifier = Modifier
                         .padding(10.dp)
                         .size(40.dp)
-                        .pointerInteropFilter {
-                            when (it.action) {
-                                MotionEvent.ACTION_DOWN -> {
-                                    emulator.pressButton(JoyPadButton.Start, true)
-                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    true
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val event = awaitPointerEvent()
+                                    if (event.type == PointerEventType.Press) {
+                                        emulator.pressButton(JoyPadButton.Start, true)
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    } else if (event.type == PointerEventType.Release) {
+                                        emulator.pressButton(JoyPadButton.Start, false)
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    }
                                 }
-
-                                MotionEvent.ACTION_UP -> {
-                                    emulator.pressButton(JoyPadButton.Start, false)
-                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    true
-                                }
-
-                                else -> false
                             }
-                        }
+                        },
                 )
             }
         }
