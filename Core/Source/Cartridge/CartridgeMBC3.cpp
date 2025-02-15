@@ -15,15 +15,6 @@ CartridgeMBC3::CartridgeMBC3(CartridgeDataV2 cartridge_data) : BaseCartridge(car
 	std::fill(m_RtcRegisters.begin(), m_RtcRegisters.end(), 0x0);
 
 	m_RealTimeClockTimer.Start();
-
-	/*auto currentTime = std::chrono::system_clock::now();
-	std::time_t currentTime_t = std::chrono::system_clock::to_time_t(currentTime);
-	std::tm currentTime_tm = *std::localtime(&currentTime_t);
-
-	m_RtcSeconds = currentTime_tm.tm_sec;
-	m_RtcMinutes = currentTime_tm.tm_min;
-	m_RtcHours = currentTime_tm.tm_hour;
-	m_RtcDays = currentTime_tm.tm_wday;*/
 }
 
 uint8_t CartridgeMBC3::Read(uint16_t address)
@@ -186,8 +177,8 @@ void CartridgeMBC3::SetRTC(uint8_t seconds, uint8_t minutes, uint8_t hours, uint
 	m_RtcRegisters[2] = hours;
 	m_RtcRegisters[3] = days & 0xFF;
 
-	m_RtcRegisters[4] &= ~0x100;
-	m_RtcRegisters[4] |= (days & 0x100);
+	m_RtcRegisters[4] &= ~0x1;
+	m_RtcRegisters[4] |= ((days >> 8) & 0x1);
 }
 
 void CartridgeMBC3::TickRTC()
