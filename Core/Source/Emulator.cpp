@@ -138,6 +138,43 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 				mbc3->m_RtcRegisters.resize(5);
 				battery.read(reinterpret_cast<char*>(mbc3->m_RtcRegisters.data()), mbc3->m_RtcRegisters.size() * sizeof(uint8_t));
 				battery.read(reinterpret_cast<char*>(&mbc3->m_RtcData), sizeof(mbc3->m_RtcData));
+
+				std::time_t saved_time = 0;
+				battery.read(reinterpret_cast<char*>(&saved_time), sizeof(saved_time));
+
+				auto currentTime = std::chrono::system_clock::now();
+				std::time_t currentTime_t = std::chrono::system_clock::to_time_t(currentTime) - saved_time;
+				std::tm currentTime_tm = *std::gmtime(&currentTime_t);
+
+				int seconds = mbc3->m_RtcData.m_RtcSeconds + currentTime_tm.tm_sec;
+				int minutes = mbc3->m_RtcData.m_RtcMinutes + currentTime_tm.tm_min;
+				int hours = mbc3->m_RtcData.m_RtcHours + currentTime_tm.tm_hour;
+				int days = mbc3->m_RtcData.m_RtcDays + currentTime_tm.tm_yday;
+
+				if (seconds >= 60)
+				{
+					seconds = 0;
+					minutes++;
+				}
+
+				if (minutes >= 60)
+				{
+					minutes = 0;
+					hours++;
+				}
+
+				if (hours >= 24)
+				{
+					hours = 0;
+					days++;
+				}
+
+				mbc3->m_RtcData.m_RtcSeconds = seconds;
+				mbc3->m_RtcData.m_RtcMinutes = minutes;
+				mbc3->m_RtcData.m_RtcHours = hours;
+				mbc3->m_RtcData.m_RtcDays = days;
+
+				mbc3->SetRTC(seconds, minutes, hours, days);
 			}
 
 			battery.close();
@@ -168,6 +205,11 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 				battery.write(reinterpret_cast<const char*>(&rtc_size), sizeof(rtc_size));
 				battery.write(reinterpret_cast<const char*>(mbc3->m_RtcRegisters.data()), mbc3->m_RtcRegisters.size() * sizeof(uint8_t));
 				battery.write(reinterpret_cast<const char*>(&mbc3->m_RtcData), sizeof(mbc3->m_RtcData));
+
+				auto currentTime = std::chrono::system_clock::now();
+				std::time_t currentTime_t = std::chrono::system_clock::to_time_t(currentTime);
+
+				battery.write(reinterpret_cast<const char*>(&currentTime_t), sizeof(currentTime_t));
 			}
 
 			battery.close();
