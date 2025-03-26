@@ -22,6 +22,8 @@
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 #include "RetroGBm/Cartridge/CartridgeMBC3.h"
 
+#include "RetroGBm/Logger.h"
+
 using namespace std::chrono_literals;
 
 Emulator* Emulator::Instance = nullptr;
@@ -85,6 +87,8 @@ bool Emulator::LoadRom(const std::string& path)
 
 bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 {
+	Logger::Info("Attempting to load ROM data");
+
 	// Allocate memory
 	m_Cartridge = LoadCartridgeFromMemory(filedata);
 	m_Cpu = std::make_unique<Cpu>(m_Cartridge.get());
@@ -220,6 +224,8 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	m_CurrentTimeStamp = std::chrono::high_resolution_clock::now();
 
 	m_Running = true;
+
+	Logger::Info("ROM loaded successfully");
 	return true;
 }
 
