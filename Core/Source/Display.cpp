@@ -5,9 +5,10 @@
 #include "RetroGBm/Dma.h"
 #include "RetroGBm/Ppu.h"
 #include "RetroGBm/Cartridge/BaseCartridge.h"
+#include "RetroGBm/Logger.h"
 
-#include <iostream>
 #include <cstdint>
+#include <sstream>
 
 namespace
 {
@@ -341,7 +342,9 @@ void Display::Write(uint16_t address, uint8_t value)
 		return;
 	}
 
-	std::cout << "Unsupport DisplayWrite: 0x{:x}" << address << '\n';
+	std::stringstream ss;
+	ss << "Unsupported DisplayWrite: 0x" << std::hex << address;
+	Logger::Warning(ss.str());
 }
 
 bool Display::IsLcdEnabled()

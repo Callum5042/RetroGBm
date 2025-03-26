@@ -2,7 +2,6 @@
 #include <thread>
 #include <exception>
 
-#include <iostream>
 #include <format>
 #include <string>
 #include <algorithm>
@@ -12,6 +11,7 @@
 
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Joypad.h>
+#include <RetroGBm/Logger.h>
 
 Application* Application::Instance = nullptr;
 
@@ -33,23 +33,17 @@ int Application::Start()
 {
 	try
 	{
+		Logger::Initialise(LOG_INFO);
+		Logger::Info("RetroGBm starting");
+
 		Init();
 		Run();
 	}
 	catch (const std::exception& e)
 	{
-		HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
-
-		// Get currently console window attributes
-		CONSOLE_SCREEN_BUFFER_INFO console_info;
-		GetConsoleScreenBufferInfo(console_handle, &console_info);
-
-		// Set to red and print error
-		SetConsoleTextAttribute(console_handle, FOREGROUND_INTENSITY | FOREGROUND_RED);
-		std::cerr << std::format("Fatal error (0x{:x}): {}", m_Emulator->GetOpCode(), e.what()) << '\n';
-
-		// Reset attributes
-		SetConsoleTextAttribute(console_handle, console_info.wAttributes);
+		// Log the error
+		uint8_t opcode = (m_Emulator != nullptr ? m_Emulator->GetOpCode() : 0);
+		Logger::Critical(std::format("Fatal error (0x{:x}): {}", opcode, e.what()));
 
 		// Display error window
 		MessageBoxA(NULL, e.what(), "Error", MB_OK);
@@ -57,6 +51,7 @@ int Application::Start()
 		return -1;
 	}
 
+	Logger::Info("RetroGBm closed");
 	return 0;
 }
 
@@ -64,6 +59,8 @@ void Application::LoadRom(const std::string& file)
 {
 	StopEmulator();
 	bool tracelog = m_Emulator->IsTraceLogEnabled();
+
+	Logger::Info("Loading ROM file: " + file);
 
 	m_Emulator = std::make_unique<Emulator>();
 	m_Emulator->ToggleTraceLog(tracelog);
@@ -82,6 +79,8 @@ void Application::LoadRom(const std::string& file)
 		catch (const std::exception& ex)
 		{
 			m_Emulator->Stop();
+
+			Logger::Critical(std::format("Fatal error (0x{:x}): {}", m_Emulator->GetOpCode(), ex.what()));
 			MessageBoxA(NULL, ex.what(), "Error", MB_OK | MB_ICONERROR);
 		}
 	});
@@ -95,6 +94,8 @@ void Application::StopEmulator()
 	{
 		m_EmulatorThread.join();
 	}
+
+	Logger::Info("Emulator stopped");
 }
 
 void Application::Run()

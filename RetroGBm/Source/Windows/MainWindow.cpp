@@ -13,7 +13,6 @@
 #include <string>
 #include <vector>
 #include <shobjidl.h>
-#include <iostream>
 #include <filesystem>
 
 namespace

@@ -22,6 +22,8 @@
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 #include "RetroGBm/Cartridge/CartridgeMBC3.h"
 
+#include "RetroGBm/Logger.h"
+
 using namespace std::chrono_literals;
 
 Emulator* Emulator::Instance = nullptr;
@@ -85,6 +87,8 @@ bool Emulator::LoadRom(const std::string& path)
 
 bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 {
+	Logger::Info("Attempting to load ROM data");
+
 	// Allocate memory
 	m_Cartridge = LoadCartridgeFromMemory(filedata);
 	m_Cpu = std::make_unique<Cpu>(m_Cartridge.get());
@@ -220,6 +224,8 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	m_CurrentTimeStamp = std::chrono::high_resolution_clock::now();
 
 	m_Running = true;
+
+	Logger::Info("ROM loaded successfully");
 	return true;
 }
 
@@ -472,7 +478,10 @@ uint8_t Emulator::ReadIO(uint16_t address)
 		return m_Ram->GetWorkRamBank();
 	}
 
-	std::cout << "Unsupported ReadIO 0x" << std::hex << address << '\n';
+	std::stringstream ss;
+	ss << "Unsupported ReadIO: 0x" << std::hex << address;
+	Logger::Warning(ss.str());
+
 	return 0xFF;
 }
 
@@ -558,7 +567,9 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 		return;
 	}
 
-	std::cout << "Unsupported WriteIO 0x" << std::hex << address << '\n';
+	std::stringstream ss;
+	ss << "Unsupported WriteIO: 0x" << std::hex << address;
+	Logger::Warning(ss.str());
 }
 
 uint8_t Emulator::ReadBus(uint16_t address)
@@ -620,7 +631,10 @@ uint8_t Emulator::ReadBus(uint16_t address)
 		return m_Cpu->GetInterruptEnable();
 	}
 
-	std::cout << "Unsupported ReadBus: 0x{:x}" << address << '\n';
+	std::stringstream ss;
+	ss << "Unsupported ReadBus: 0x" << std::hex << address;
+	Logger::Warning(ss.str());
+
 	return 0xFF;
 }
 
@@ -690,7 +704,9 @@ void Emulator::WriteBus(uint16_t address, uint8_t value)
 		return;
 	}
 
-	std::cout << "Unsupported WriteBus: 0x" << address << '\n';
+	std::stringstream ss;
+	ss << "Unsupported WriteBus: 0x" << std::hex << address;
+	Logger::Warning(ss.str());
 }
 
 void Emulator::StackPush(uint8_t data)
@@ -742,6 +758,8 @@ bool Emulator::GetSaveStateDateCreated(const std::string& filepath, time_t* date
 
 void Emulator::SaveState(const std::string& filepath)
 {
+	Logger::Info("Saving state to " + filepath);
+
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
 
 	// Read header when saving to get the current details
@@ -787,6 +805,8 @@ void Emulator::SaveState(const std::string& filepath)
 
 void Emulator::LoadState(const std::string& filepath)
 {
+	Logger::Info("Loading state from " + filepath);
+
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
 	std::fstream file(filepath, std::ios::binary | std::ios::in);
 
@@ -835,10 +855,12 @@ int Emulator::GetVideoPitch()
 
 void Emulator::SetBatteryPath(const std::string& path)
 {
+	Logger::Info("Battery path set " + path);
 	m_BatteryPath = path;
 }
 
 void Emulator::SetEmulationSpeedMultipler(float multipler)
 {
+	Logger::Info("Emulation speed changed to " + std::to_string(multipler));
 	m_Ppu->SetSpeedMultipler(multipler);
 }

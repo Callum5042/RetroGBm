@@ -19,7 +19,129 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="External\spdlog\async.h" />
+    <ClInclude Include="External\spdlog\async_logger-inl.h" />
+    <ClInclude Include="External\spdlog\async_logger.h" />
+    <ClInclude Include="External\spdlog\cfg\argv.h" />
+    <ClInclude Include="External\spdlog\cfg\env.h" />
+    <ClInclude Include="External\spdlog\cfg\helpers-inl.h" />
+    <ClInclude Include="External\spdlog\cfg\helpers.h" />
+    <ClInclude Include="External\spdlog\common-inl.h" />
+    <ClInclude Include="External\spdlog\common.h" />
+    <ClInclude Include="External\spdlog\details\backtracer-inl.h" />
+    <ClInclude Include="External\spdlog\details\backtracer.h" />
+    <ClInclude Include="External\spdlog\details\circular_q.h" />
+    <ClInclude Include="External\spdlog\details\console_globals.h" />
+    <ClInclude Include="External\spdlog\details\file_helper-inl.h" />
+    <ClInclude Include="External\spdlog\details\file_helper.h" />
+    <ClInclude Include="External\spdlog\details\fmt_helper.h" />
+    <ClInclude Include="External\spdlog\details\log_msg-inl.h" />
+    <ClInclude Include="External\spdlog\details\log_msg.h" />
+    <ClInclude Include="External\spdlog\details\log_msg_buffer-inl.h" />
+    <ClInclude Include="External\spdlog\details\log_msg_buffer.h" />
+    <ClInclude Include="External\spdlog\details\mpmc_blocking_q.h" />
+    <ClInclude Include="External\spdlog\details\null_mutex.h" />
+    <ClInclude Include="External\spdlog\details\os-inl.h" />
+    <ClInclude Include="External\spdlog\details\os.h" />
+    <ClInclude Include="External\spdlog\details\periodic_worker-inl.h" />
+    <ClInclude Include="External\spdlog\details\periodic_worker.h" />
+    <ClInclude Include="External\spdlog\details\registry-inl.h" />
+    <ClInclude Include="External\spdlog\details\registry.h" />
+    <ClInclude Include="External\spdlog\details\synchronous_factory.h" />
+    <ClInclude Include="External\spdlog\details\tcp_client-windows.h" />
+    <ClInclude Include="External\spdlog\details\tcp_client.h" />
+    <ClInclude Include="External\spdlog\details\thread_pool-inl.h" />
+    <ClInclude Include="External\spdlog\details\thread_pool.h" />
+    <ClInclude Include="External\spdlog\details\udp_client-windows.h" />
+    <ClInclude Include="External\spdlog\details\udp_client.h" />
+    <ClInclude Include="External\spdlog\details\windows_include.h" />
+    <ClInclude Include="External\spdlog\fmt\bin_to_hex.h" />
+    <ClInclude Include="External\spdlog\fmt\bundled\args.h" />
+    <ClInclude Include="External\spdlog\fmt\bundled\base.h" />
+    <ClInclude Include="External\spdlog\fmt\bundled\chrono.h" />
+    <ClInclude Include="External\spdlog\fmt\bundled\color.h" />
+    <ClInclude Include="External\spdlog\fmt\bundled\compile.h" />
+    <ClInclude Include="External\spdlog\fmt\bundled\core.h" />
+    <ClInclude Include="External\spdlog\fmt\bundled\format-inl.h" />
+    <ClInclude Include="External\spdlog\fmt\bundled\format.h" />
+    <ClInclude Include="External\spdlog\fmt\bundled\os.h" />
+    <ClInclude Include="External\spdlog\fmt\bundled\ostream.h" />
+    <ClInclude Include="External\spdlog\fmt\bundled\printf.h" />
+    <ClInclude Include="External\spdlog\fmt\bundled\ranges.h" />
+    <ClInclude Include="External\spdlog\fmt\bundled\std.h" />
+    <ClInclude Include="External\spdlog\fmt\bundled\xchar.h" />
+    <ClInclude Include="External\spdlog\fmt\chrono.h" />
+    <ClInclude Include="External\spdlog\fmt\compile.h" />
+    <ClInclude Include="External\spdlog\fmt\fmt.h" />
+    <ClInclude Include="External\spdlog\fmt\ostr.h" />
+    <ClInclude Include="External\spdlog\fmt\ranges.h" />
+    <ClInclude Include="External\spdlog\fmt\std.h" />
+    <ClInclude Include="External\spdlog\fmt\xchar.h" />
+    <ClInclude Include="External\spdlog\formatter.h" />
+    <ClInclude Include="External\spdlog\fwd.h" />
+    <ClInclude Include="External\spdlog\logger-inl.h" />
+    <ClInclude Include="External\spdlog\logger.h" />
+    <ClInclude Include="External\spdlog\mdc.h" />
+    <ClInclude Include="External\spdlog\pattern_formatter-inl.h" />
+    <ClInclude Include="External\spdlog\pattern_formatter.h" />
+    <ClInclude Include="External\spdlog\sinks\android_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\ansicolor_sink-inl.h" />
+    <ClInclude Include="External\spdlog\sinks\ansicolor_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\base_sink-inl.h" />
+    <ClInclude Include="External\spdlog\sinks\base_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\basic_file_sink-inl.h" />
+    <ClInclude Include="External\spdlog\sinks\basic_file_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\callback_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\daily_file_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\dist_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\dup_filter_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\hourly_file_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\kafka_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\mongo_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\msvc_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\null_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\ostream_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\qt_sinks.h" />
+    <ClInclude Include="External\spdlog\sinks\ringbuffer_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\rotating_file_sink-inl.h" />
+    <ClInclude Include="External\spdlog\sinks\rotating_file_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\sink-inl.h" />
+    <ClInclude Include="External\spdlog\sinks\sink.h" />
+    <ClInclude Include="External\spdlog\sinks\stdout_color_sinks-inl.h" />
+    <ClInclude Include="External\spdlog\sinks\stdout_color_sinks.h" />
+    <ClInclude Include="External\spdlog\sinks\stdout_sinks-inl.h" />
+    <ClInclude Include="External\spdlog\sinks\stdout_sinks.h" />
+    <ClInclude Include="External\spdlog\sinks\syslog_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\systemd_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\tcp_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\udp_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\wincolor_sink-inl.h" />
+    <ClInclude Include="External\spdlog\sinks\wincolor_sink.h" />
+    <ClInclude Include="External\spdlog\sinks\win_eventlog_sink.h" />
+    <ClInclude Include="External\spdlog\spdlog-inl.h" />
+    <ClInclude Include="External\spdlog\spdlog.h" />
+    <ClInclude Include="External\spdlog\stopwatch.h" />
+    <ClInclude Include="External\spdlog\tweakme.h" />
+    <ClInclude Include="External\spdlog\version.h" />
     <ClInclude Include="Include\RetroGBm\Apu.h" />
+    <ClInclude Include="Include\RetroGBm\External\spdlog\async.h" />
+    <ClInclude Include="Include\RetroGBm\External\spdlog\async_logger-inl.h" />
+    <ClInclude Include="Include\RetroGBm\External\spdlog\async_logger.h" />
+    <ClInclude Include="Include\RetroGBm\External\spdlog\common-inl.h" />
+    <ClInclude Include="Include\RetroGBm\External\spdlog\common.h" />
+    <ClInclude Include="Include\RetroGBm\External\spdlog\formatter.h" />
+    <ClInclude Include="Include\RetroGBm\External\spdlog\fwd.h" />
+    <ClInclude Include="Include\RetroGBm\External\spdlog\logger-inl.h" />
+    <ClInclude Include="Include\RetroGBm\External\spdlog\logger.h" />
+    <ClInclude Include="Include\RetroGBm\External\spdlog\mdc.h" />
+    <ClInclude Include="Include\RetroGBm\External\spdlog\pattern_formatter-inl.h" />
+    <ClInclude Include="Include\RetroGBm\External\spdlog\pattern_formatter.h" />
+    <ClInclude Include="Include\RetroGBm\External\spdlog\spdlog-inl.h" />
+    <ClInclude Include="Include\RetroGBm\External\spdlog\spdlog.h" />
+    <ClInclude Include="Include\RetroGBm\External\spdlog\stopwatch.h" />
+    <ClInclude Include="Include\RetroGBm\External\spdlog\tweakme.h" />
+    <ClInclude Include="Include\RetroGBm\External\spdlog\version.h" />
+    <ClInclude Include="Include\RetroGBm\Logger.h" />
     <ClInclude Include="Include\RetroGBm\Ppu.h" />
     <ClInclude Include="Include\RetroGBm\Cartridge\BaseCartridge.h" />
     <ClInclude Include="Include\RetroGBm\Cartridge\CartridgeMBC1.h" />
@@ -54,6 +176,7 @@
     <ClCompile Include="Source\Emulator.cpp" />
     <ClCompile Include="Source\Instructions.cpp" />
     <ClCompile Include="Source\HighTimer.cpp" />
+    <ClCompile Include="Source\Logger.cpp" />
     <ClCompile Include="Source\Pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">RetroGBm/Pch.h</PrecompiledHeaderFile>
@@ -165,7 +288,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>RetroGBm/Pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Include;$(ProjectDir)External</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -186,7 +309,7 @@
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Include;$(ProjectDir)External</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>

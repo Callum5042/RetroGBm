@@ -1,7 +1,6 @@
 #include "RetroGBm/Pch.h"
 #include "RetroGBm/Ram.h"
-#include <algorithm>
-#include <iostream>
+#include "RetroGBm/Logger.h"
 
 Ram::Ram()
 {
@@ -27,7 +26,10 @@ uint8_t Ram::ReadWorkRam(uint16_t address)
 	}
 	else
 	{
-		std::cout << "Unsupported ReadWorkRam: 0x" << address << '\n';
+		std::stringstream ss;
+		ss << "Unsupported ReadWorkRam: 0x" << address;
+		Logger::Warning(ss.str());
+
 		return 0xFF;
 	}
 }
@@ -45,7 +47,9 @@ void Ram::WriteWorkRam(uint16_t address, uint8_t value)
 	}
 	else
 	{
-		std::cout << "Unsupported ReadWorkRam: 0x" << address << '\n';
+		std::stringstream ss;
+		ss << "Unsupported WriteWorkRam: 0x" << address;
+		Logger::Warning(ss.str());
 	}
 }
 
