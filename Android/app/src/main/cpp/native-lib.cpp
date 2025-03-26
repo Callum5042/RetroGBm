@@ -137,7 +137,14 @@ extern "C"
         Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
         if (emulator != nullptr)
         {
-            emulator->LoadState(env->GetStringUTFChars(path, nullptr));
+            try
+            {
+                emulator->LoadState(env->GetStringUTFChars(path, nullptr));
+            }
+            catch (const std::exception& ex)
+            {
+                env->ThrowNew(env->FindClass("java/lang/RuntimeException"), ex.what());
+            }
         }
     }
 

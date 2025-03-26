@@ -12,7 +12,9 @@ struct SaveStateHeader
 	int64_t date_modified = 0;
 	double time_played = 0;
 
-	char reserved[28] = {};
+	uint8_t checksum[16];
+
+	char reserved[12] = {};
 };
 
 #pragma pack(pop)

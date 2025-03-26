@@ -210,6 +210,13 @@ void Application::LoadState(const std::string& path)
 {
 	if (m_Emulator->IsRunning())
 	{
-		m_Emulator->LoadState(path);
+		try
+		{
+			m_Emulator->LoadState(path);
+		}
+		catch (const std::exception& ex)
+		{
+			MessageBoxA(NULL, ex.what(), "Error", MB_OK | MB_ICONERROR);
+		}
 	}
 }
