@@ -6,6 +6,7 @@
 #include <RetroGBm/Cartridge/BaseCartridge.h>
 #include <RetroGBm/Ppu.h>
 #include <RetroGBm/Joypad.h>
+#include <RetroGBm/Logger.h>
 
 extern "C"
 {
@@ -178,5 +179,10 @@ extern "C"
         {
             emulator->SetEmulationSpeedMultipler(speed);
         }
+    }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_LoggerWrapper_initializeLogger(JNIEnv *env, jobject thiz) {
+        Logger::Initialise(LogLevel::LOG_INFO);
     }
 }

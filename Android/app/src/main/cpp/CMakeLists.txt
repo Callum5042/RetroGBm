@@ -13,8 +13,10 @@ project("retrogbm")
 
 set(EmulatorCoreIncDir "D:/Sources/RetroGBm/Core/Include")
 set(EmulatorCoreSrcDir "D:/Sources/RetroGBm/Core/Source")
+set(EmulatorCoreExternalIncDir "D:/Sources/RetroGBm/Core/External")
 
 include_directories(${EmulatorCoreIncDir})
+include_directories(${EmulatorCoreExternalIncDir})
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
@@ -49,6 +51,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         ${EmulatorCoreSrcDir}/Timer.cpp
         ${EmulatorCoreSrcDir}/HighTimer.cpp
         ${EmulatorCoreSrcDir}/Apu.cpp
+        ${EmulatorCoreSrcDir}/Logger.cpp
 )
 
 # Specifies libraries CMake should link to your target library. You

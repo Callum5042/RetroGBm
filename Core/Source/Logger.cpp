@@ -5,6 +5,7 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/android_sink.h"
 
 std::shared_ptr<spdlog::logger> Logger::sm_ConsoleLogger = nullptr;
 std::shared_ptr<spdlog::logger> Logger::sm_FileLogger = nullptr;
@@ -33,6 +34,7 @@ void Logger::Initialise(LogLevel level)
 {
 	spdlog::set_pattern("%^[%H:%M:%S.%e] [thread %t] %l: %v%$");
 
+#ifdef _WIN32
 	if (!spdlog::get("console"))
 	{
 		sm_ConsoleLogger = spdlog::stdout_color_mt("console");
@@ -44,6 +46,13 @@ void Logger::Initialise(LogLevel level)
 		sm_FileLogger = spdlog::basic_logger_mt("file", "errorlog.txt");
 		sm_FileLogger->set_level(spdlog::level::err);
 	}
+#elif __ANDROID__
+	if (!spdlog::get("android"))
+	{
+		sm_ConsoleLogger = spdlog::android_logger_mt("android", "RetroGBm");
+		sm_ConsoleLogger->set_level(GetSpdLogLevel(level));
+	}
+#endif
 }
 
 void Logger::Info(const std::string& message)
