@@ -84,7 +84,6 @@ void Logger::Error(const std::string& message)
 	if (sm_ConsoleLogger != nullptr)
 	{
 		sm_ConsoleLogger->error(message);
-		sm_ConsoleLogger->error(message);
 	}
 	else
 	{

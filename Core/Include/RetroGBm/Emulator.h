@@ -148,4 +148,7 @@ private:
 	// Save state timestamps
 	std::chrono::steady_clock::time_point m_CurrentTimeStamp;
 	std::map<std::string, std::chrono::steady_clock::time_point> m_StateTimestamps;
+
+	// File Checksum
+	std::vector<uint8_t> m_FileChecksum;
 };

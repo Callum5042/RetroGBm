@@ -2,7 +2,7 @@
 #include "RetroGBm/Emulator.h"
 #include "RetroGBm/Cpu.h"
 
-#include <iostream>
+#include <algorithm>
 #include <vector>
 #include <thread>
 #include <mutex>
@@ -23,6 +23,14 @@
 #include "RetroGBm/Cartridge/CartridgeMBC3.h"
 
 #include "RetroGBm/Logger.h"
+
+#include "RetroGBm/md5.h"
+
+namespace Chocobo1
+{
+	// Use these!!
+	// MD5();
+}
 
 using namespace std::chrono_literals;
 
@@ -224,6 +232,12 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	m_CurrentTimeStamp = std::chrono::high_resolution_clock::now();
 
 	m_Running = true;
+
+	// Calculate the MD5 checksum
+	Chocobo1::MD5 md5;
+	md5.addData(filedata);
+	m_FileChecksum = md5.toVector();
+
 
 	Logger::Info("ROM loaded successfully");
 	return true;
@@ -788,6 +802,9 @@ void Emulator::SaveState(const std::string& filepath)
 	std::chrono::duration<double> duration = (current_time - timestamp);
 	header.time_played = time_played + duration.count();
 
+	// Set file checksum used for validation
+	std::copy(m_FileChecksum.begin(), m_FileChecksum.begin() + sizeof(header.checksum), header.checksum);
+
 	file.write(reinterpret_cast<const char*>(&header), sizeof(SaveStateHeader));
 
 	m_Cpu->SaveState(&file);
@@ -814,15 +831,20 @@ void Emulator::LoadState(const std::string& filepath)
 	file.read(reinterpret_cast<char*>(&header), sizeof(SaveStateHeader));
 
 	// Only check identifier for version 1 for now. This will allow backwards comapitability for alpha builds
-	// TODO: This should be removed after a certain amount of time. Added '30/05'2024'. Maybe remove in a month
-	if (header.version == 1)
+	char identifier[8] = { 'R', 'E', 'T', 'R', 'O', 'G', 'B', 'M' };
+	if (!std::equal(std::begin(header.identifier), std::end(header.identifier), std::begin(identifier)))
 	{
-		char identifier[8] = { 'R', 'E', 'T', 'R', 'O', 'G', 'B', 'M' };
-		if (!std::equal(std::begin(header.identifier), std::end(header.identifier), std::begin(identifier)))
-		{
-			return;
-		}
+		Logger::Error("Unable to load savestate: Invalid identifier");
+		throw std::runtime_error("Unable to load savestate: Invalid identifier");
 	}
+
+	// Check the checksum
+	if (!std::equal(std::begin(header.checksum), std::end(header.checksum), std::begin(m_FileChecksum)))
+	{
+		Logger::Error("Unable to load savestate: Invalid checksum");
+		throw std::runtime_error("Unable to load savestate: Invalid checksum");
+	}
+
 
 	m_Cpu->LoadState(&file);
 	m_Timer->LoadState(&file);

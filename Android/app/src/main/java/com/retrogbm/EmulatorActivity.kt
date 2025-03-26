@@ -1,6 +1,7 @@
 package com.retrogbm
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -31,17 +32,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FastForward
-import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -296,7 +294,8 @@ private fun handleSaveState(emulator: EmulatorWrapper,
                             absolutePath: String,
                             fileName: String,
                             slotName: String,
-                            stateType: SaveStateType) {
+                            stateType: SaveStateType,
+                            context: Context) {
     // Create path
     val saveStatePath = absolutePath.let { "$it/SaveStates/$fileName/$slotName.state" }
 
@@ -310,8 +309,21 @@ private fun handleSaveState(emulator: EmulatorWrapper,
 
     // Save or load
     if (stateType == SaveStateType.Save) {
-        emulator.saveState(saveStatePath)
-        Log.i("SaveState", "State saved to $saveStatePath")
+        try {
+            emulator.saveState(saveStatePath)
+            Log.i("SaveState", "State saved to $saveStatePath")
+        }
+        catch (ex: Exception) {
+
+            val builder = AlertDialog.Builder(context)
+            builder
+                .setMessage("I am the message")
+                .setTitle("I am the title")
+
+            val dialog = builder.create()
+            dialog.show()
+
+        }
     } else if (stateType == SaveStateType.Load) {
         emulator.loadState(saveStatePath)
         Log.i("SaveState", "State loaded from $saveStatePath")
@@ -358,7 +370,7 @@ fun Content(emulator: EmulatorWrapper, fileName: String) {
             val slot = result.data?.getStringExtra("Slot") ?: "Unknown"
             val stateType = result.data?.getSerializableExtra("StateType") as SaveStateType
 
-            handleSaveState(emulator, absolutePath!!, fileName, slot, stateType)
+            handleSaveState(emulator, absolutePath!!, fileName, slot, stateType, context)
             Toast.makeText(context, "State Saved", Toast.LENGTH_SHORT).show()
         }
     }
@@ -368,11 +380,11 @@ fun Content(emulator: EmulatorWrapper, fileName: String) {
             AppTopBar(
                 emulator,
                 onQuickSave = {
-                    handleSaveState(emulator, absolutePath!!, fileName, slotName, SaveStateType.Save)
+                    handleSaveState(emulator, absolutePath!!, fileName, slotName, SaveStateType.Save, context)
                     Toast.makeText(context, "State Saved", Toast.LENGTH_SHORT).show()
                 },
                 onQuickLoad = {
-                    handleSaveState(emulator, absolutePath!!, fileName, slotName, SaveStateType.Load)
+                    handleSaveState(emulator, absolutePath!!, fileName, slotName, SaveStateType.Load, context)
                     Toast.makeText(context, "State Loaded", Toast.LENGTH_SHORT).show()
                 },
                 onLoadRom = {
