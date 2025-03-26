@@ -185,4 +185,24 @@ extern "C"
     Java_com_retrogbm_LoggerWrapper_initializeLogger(JNIEnv *env, jobject thiz) {
         Logger::Initialise(LogLevel::LOG_INFO);
     }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_LoggerWrapper_info(JNIEnv *env, jobject thi, jstring message) {
+        Logger::Info(env->GetStringUTFChars(message, nullptr));
+    }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_LoggerWrapper_waring(JNIEnv *env, jobject thi, jstring message) {
+        Logger::Warning(env->GetStringUTFChars(message, nullptr));
+    }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_LoggerWrapper_error(JNIEnv *env, jobject thi, jstring message) {
+        Logger::Error(env->GetStringUTFChars(message, nullptr));
+    }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_LoggerWrapper_critical(JNIEnv *env, jobject thi, jstring message) {
+        Logger::Critical(env->GetStringUTFChars(message, nullptr));
+    }
 }

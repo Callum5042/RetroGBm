@@ -343,7 +343,7 @@ void Display::Write(uint16_t address, uint8_t value)
 	}
 
 	std::stringstream ss;
-	ss << "Unsupported DisplayWrite: 0x{:x}" << address;
+	ss << "Unsupported DisplayWrite: 0x" << std::hex << address;
 	Logger::Warning(ss.str());
 }
 

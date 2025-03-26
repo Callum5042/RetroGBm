@@ -479,7 +479,7 @@ uint8_t Emulator::ReadIO(uint16_t address)
 	}
 
 	std::stringstream ss;
-	ss << "Unsupported ReadIO: 0x{:x}" << address;
+	ss << "Unsupported ReadIO: 0x" << std::hex << address;
 	Logger::Warning(ss.str());
 
 	return 0xFF;
@@ -568,7 +568,7 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	}
 
 	std::stringstream ss;
-	ss << "Unsupported WriteIO: 0x{:x}" << address;
+	ss << "Unsupported WriteIO: 0x" << std::hex << address;
 	Logger::Warning(ss.str());
 }
 
@@ -632,7 +632,7 @@ uint8_t Emulator::ReadBus(uint16_t address)
 	}
 
 	std::stringstream ss;
-	ss << "Unsupported ReadBus: 0x{:x}" << address << '\n';
+	ss << "Unsupported ReadBus: 0x" << std::hex << address;
 	Logger::Warning(ss.str());
 
 	return 0xFF;
@@ -705,7 +705,7 @@ void Emulator::WriteBus(uint16_t address, uint8_t value)
 	}
 
 	std::stringstream ss;
-	ss << "Unsupported WriteBus: 0x{:x}" << address;
+	ss << "Unsupported WriteBus: 0x" << std::hex << address;
 	Logger::Warning(ss.str());
 }
 

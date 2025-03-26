@@ -233,6 +233,8 @@ class EmulatorActivity : ComponentActivity() {
         val bytes = getRomBytes(uri!!)
         val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
 
+        LoggerWrapper().info("Loading ROM file: $absolutePath/$fileName")
+
         // Set battery path and possible create the folder
         val batteryPath = absolutePath?.let { "$it/RomData" }!!
         val batteryPathFolder = File(batteryPath)
