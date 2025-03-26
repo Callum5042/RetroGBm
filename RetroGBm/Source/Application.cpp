@@ -2,7 +2,6 @@
 #include <thread>
 #include <exception>
 
-#include <iostream>
 #include <format>
 #include <string>
 #include <algorithm>
@@ -43,7 +42,8 @@ int Application::Start()
 	catch (const std::exception& e)
 	{
 		// Log the error
-		Logger::Error(std::format("Fatal error (0x{:x}): {}", m_Emulator->GetOpCode(), e.what()));
+		uint8_t opcode = (m_Emulator != nullptr ? m_Emulator->GetOpCode() : 0);
+		Logger::Critical(std::format("Fatal error (0x{:x}): {}", opcode, e.what()));
 
 		// Display error window
 		MessageBoxA(NULL, e.what(), "Error", MB_OK);
@@ -79,6 +79,8 @@ void Application::LoadRom(const std::string& file)
 		catch (const std::exception& ex)
 		{
 			m_Emulator->Stop();
+
+			Logger::Critical(std::format("Fatal error (0x{:x}): {}", m_Emulator->GetOpCode(), ex.what()));
 			MessageBoxA(NULL, ex.what(), "Error", MB_OK | MB_ICONERROR);
 		}
 	});
@@ -92,6 +94,8 @@ void Application::StopEmulator()
 	{
 		m_EmulatorThread.join();
 	}
+
+	Logger::Info("Emulator stopped");
 }
 
 void Application::Run()

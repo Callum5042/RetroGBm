@@ -227,8 +227,6 @@ void CartridgeMBC3::TickRTC()
 	m_RealTimeClockTimer.Tick();
 	if (m_RealTimeClockTimer.TotalTime() > 1.0f)
 	{
-		// std::cout << "Time: " << std::dec << (int)m_RtcHours << ":" << (int)m_RtcMinutes << ":" << (int)m_RtcSeconds << '\n';
-
 		// Seconds
 		m_RtcData.m_RtcSeconds++;
 
