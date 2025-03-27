@@ -14,7 +14,6 @@ import android.view.MotionEvent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -355,7 +354,7 @@ fun Content(emulator: EmulatorWrapper, fileName: String) {
 
                 activity.finish()
                 val intent = Intent(activity, activity::class.java).apply {
-                    putExtra("ROM_TITLE", uri.toString())
+                    putExtra("ROM_URI", uri.toString())
                     addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
 
@@ -382,7 +381,7 @@ fun Content(emulator: EmulatorWrapper, fileName: String) {
     var backButtonPressCount by remember { mutableIntStateOf(0) }
 
     BackHandler {
-        backButtonPressCount++;
+        backButtonPressCount++
 
         if (backButtonPressCount == 2) {
             activity?.finish()
