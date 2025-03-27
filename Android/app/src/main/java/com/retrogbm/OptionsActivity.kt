@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -95,7 +96,6 @@ fun Content() {
 fun ListContent() {
     LazyColumn {
         item { OptionsCard("Clear Profile") }
-        item { OptionsCard("Clear Profile 2") }
     }
 }
 
@@ -105,13 +105,14 @@ fun OptionsCard(name: String) {
 
     Column(
         modifier = Modifier
-            .padding(horizontal = 0.dp)
             .clickable {
             }
     ) {
         Text(
             text = name,
+            fontSize = 12.sp,
             modifier = Modifier
+                .padding(vertical = 12.dp)
                 .fillMaxWidth(),
             color = titleColor
         )

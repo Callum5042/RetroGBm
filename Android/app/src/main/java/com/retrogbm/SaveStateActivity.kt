@@ -204,8 +204,6 @@ fun ListContent(saveStateData: MutableList<SaveStateData>, saveStateType: SaveSt
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(count = saveStateData.size) { index ->
             val item = saveStateData[index]

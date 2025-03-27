@@ -248,9 +248,7 @@ fun BodyContent(previewRomData: ProfileRomData, innerPadding: PaddingValues) {
 fun List(data: ProfileRomData) {
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .fillMaxSize(),
     ) {
         items(data.gameData) { gameData ->
             RomInfoCard(
