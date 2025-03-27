@@ -13,6 +13,8 @@ import android.util.Log
 import android.view.MotionEvent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -48,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -372,6 +375,19 @@ fun Content(emulator: EmulatorWrapper, fileName: String) {
 
             handleSaveState(emulator, absolutePath!!, fileName, slot, stateType, context)
             Toast.makeText(context, "State Saved", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val activity = LocalContext.current as? Activity
+    var backButtonPressCount by remember { mutableIntStateOf(0) }
+
+    BackHandler {
+        backButtonPressCount++;
+
+        if (backButtonPressCount == 2) {
+            activity?.finish()
+        } else {
+            Toast.makeText(context, "Press Again To Quit", Toast.LENGTH_SHORT).show()
         }
     }
 
