@@ -419,6 +419,14 @@ fun Content(emulator: EmulatorWrapper, fileName: String) {
                         activity.startActivity(intent)
                     }
                 },
+                onStop = {
+                    if (emulator.isRunning()) {
+                        emulator.stop()
+                    }
+
+                    val intent = Intent(context, HomeActivity::class.java)
+                    context.startActivity(intent)
+                },
                 onHelp = {
                     Toast.makeText(context, "Options Clicked", Toast.LENGTH_SHORT).show()
                 }
@@ -439,6 +447,7 @@ fun AppTopBar(
     onSaveState: () -> Unit,
     onLoadState: () -> Unit,
     onRestart: () -> Unit,
+    onStop: () -> Unit,
     onHelp: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -542,6 +551,13 @@ fun AppTopBar(
                         onClick = {
                             showMenu = false
                             onRestart()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Stop") },
+                        onClick = {
+                            showMenu = false
+                            onStop()
                         }
                     )
                     HorizontalDivider()
