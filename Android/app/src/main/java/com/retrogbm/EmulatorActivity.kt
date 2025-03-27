@@ -442,8 +442,9 @@ fun Content(emulator: EmulatorWrapper, fileName: String) {
                     val intent = Intent(context, HomeActivity::class.java)
                     context.startActivity(intent)
                 },
-                onHelp = {
-                    Toast.makeText(context, "Options Clicked", Toast.LENGTH_SHORT).show()
+                onOptions = {
+                    val intent = Intent(context, OptionsActivity::class.java)
+                    context.startActivity(intent)
                 }
             )
         }
@@ -463,7 +464,7 @@ fun AppTopBar(
     onLoadState: () -> Unit,
     onRestart: () -> Unit,
     onStop: () -> Unit,
-    onHelp: () -> Unit
+    onOptions: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var emulationSpeed by remember { mutableFloatStateOf(1.0f) }
@@ -580,7 +581,7 @@ fun AppTopBar(
                         text = { Text(stringResource(id = R.string.settings)) },
                         onClick = {
                             showMenu = false
-                            onHelp()
+                            onOptions()
                         }
                     )
                 }

@@ -23,6 +23,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -33,10 +35,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -155,6 +162,8 @@ fun Content(previewRomData: ProfileRomData) {
 
     val context = LocalContext.current
 
+    var showMenu by remember { mutableStateOf(false) }
+
     // Launcher for the ACTION_OPEN_DOCUMENT intent
     val openDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
@@ -186,11 +195,31 @@ fun Content(previewRomData: ProfileRomData) {
                             contentDescription = "Load ROM"
                         )
                     }
-                    IconButton(onClick = { /* do something */ }) {
-                        Icon(
-                            imageVector = Icons.Filled.MoreVert,
-                            contentDescription = "Localized description"
-                        )
+                    // Menu
+                    Box {
+                        // Overflow Menu
+                        IconButton(onClick = { showMenu = !showMenu }) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = "More Options"
+                            )
+                        }
+
+                        // Dropdown menu
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(id = R.string.settings)) },
+                                onClick = {
+                                    showMenu = false
+
+                                    val intent = Intent(context, OptionsActivity::class.java)
+                                    context.startActivity(intent)
+                                }
+                            )
+                        }
                     }
                 },
             )
@@ -219,9 +248,7 @@ fun BodyContent(previewRomData: ProfileRomData, innerPadding: PaddingValues) {
 fun List(data: ProfileRomData) {
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .fillMaxSize(),
     ) {
         items(data.gameData) { gameData ->
             RomInfoCard(
