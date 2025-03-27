@@ -185,15 +185,7 @@ fun Content(saveStateData: MutableList<SaveStateData>, saveStateType: SaveStateT
                             contentDescription = "Localized description"
                         )
                     }
-                },
-                actions = {
-                    IconButton(onClick = { /* do something */ }) {
-                        Icon(
-                            imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
-                        )
-                    }
-                },
+                }
             )
         },
     ) { innerPadding ->
