@@ -75,6 +75,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.ProcessLifecycleOwner
+import com.retrogbm.options.OptionData
+import com.retrogbm.options.OptionRepository
 import com.retrogbm.profile.ProfileGameData
 import com.retrogbm.profile.ProfileRepository
 import com.retrogbm.ui.theme.RetroGBmTheme
@@ -107,6 +109,8 @@ class EmulatorActivity : ComponentActivity() {
 
     private lateinit var lifecycleObserver: LifecycleObserver
 
+    public lateinit var options: OptionData
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -125,6 +129,14 @@ class EmulatorActivity : ComponentActivity() {
             val romFileName = getFileName(this, romUri)
             loadRom(romUri, romFileName!!)
         }
+
+        // Load options
+        val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
+        val optionsPath = absolutePath?.let { "$it/options.json" } ?: "options.json"
+
+        val optionRepository = OptionRepository()
+        options = optionRepository.loadOptions(optionsPath)
+
 
         // Observe the app lifecycle
         var wasStopped = false
@@ -469,6 +481,9 @@ fun AppTopBar(
     var showMenu by remember { mutableStateOf(false) }
     var emulationSpeed by remember { mutableFloatStateOf(1.0f) }
 
+    val activity = LocalContext.current as? EmulatorActivity
+
+
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = Color.Black,
@@ -494,7 +509,7 @@ fun AppTopBar(
             }
             // Emulation speed
             IconButton(onClick = {
-                emulationSpeed = if (emulationSpeed == 1.0f) { 0.5f } else { 1.0f }
+                emulationSpeed = if (emulationSpeed == 1.0f) { 1.0f / activity!!.options.emulationMultiplier } else { 1.0f }
                 emulator.setEmulationSpeed(emulationSpeed)
             }) {
                 Icon(
