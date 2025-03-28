@@ -284,11 +284,13 @@ fun RomInfoCard(title: String, time: String, date: String) {
         Text(
             text = title,
             modifier = Modifier
+                .padding(horizontal = 8.dp)
                 .fillMaxWidth(),
             color = titleColor
         )
         Row(
             modifier = Modifier
+                .padding(horizontal = 8.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
