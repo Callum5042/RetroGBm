@@ -4,23 +4,37 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.os.Environment
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -35,17 +49,26 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import com.retrogbm.ui.theme.RetroGBmTheme
 import com.retrogbm.utilities.SaveStateType
 import com.retrogbm.utilities.TimeFormatter
@@ -135,9 +158,9 @@ class SaveStateActivity : ComponentActivity() {
 
         // Values
         val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
-        val path = absolutePath?.let { "$it/SaveStates/$romFileName/" }
+        val saveStatePath = absolutePath?.let { "$it/SaveStates/$romFileName/" }
 
-        val folder = path?.let { File(it) }
+        val folder = saveStatePath?.let { File(it) }
         val files = folder?.listFiles()
 
         val saveStateData = mutableListOf<SaveStateData>()
@@ -153,30 +176,27 @@ class SaveStateActivity : ComponentActivity() {
             saveStateData.add(SaveStateData(file.nameWithoutExtension, dateModifiedStr, timePlayedStr, stateType))
         }
 
-//        for (i in 1..9) {
-//
-//            val path = absolutePath?.let { "$it/SaveStates/$romFileName/slot$i.state" }
-//            val file = File(path!!)
-//
-//            if (!file.exists()) {
-//                saveStateData.add(SaveStateData("slot$i", "", "", stateType))
-//                continue
-//            }
-//
-//            val data = readSaveStateHeader(file)
-//
-//            // Format the date modified
-//            val dateModifiedStr = formatDateModified(data.dateModified)
-//
-//            // Format the time played
-//            val timePlayedStr = formatTimePlayed(data.timePlayed)
-//
-//            saveStateData.add(SaveStateData("slot$i", dateModifiedStr, timePlayedStr, stateType))
-//        }
-
         setContent {
             RetroGBmTheme {
-                Content(saveStateData, saveStateType = stateType)
+                Content(
+                    saveStateData,
+                    saveStateType = stateType,
+                    onUpdate = { oldPath, path ->
+                        val file = File("$saveStatePath/$oldPath.state")
+                        val newFile = File("$saveStatePath/$path.state")
+                        val result = file.renameTo(newFile)
+
+                        if (result) {
+                            Log.i("Retro", "Renamed SaveState")
+
+                        } else {
+                            Log.i("Retro", "Renamed SaveState FAILED")
+                        }
+                    },
+                    onDelete = { path ->
+
+                    }
+                )
             }
         }
     }
@@ -217,7 +237,13 @@ fun InputDialog(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Content(saveStateData: MutableList<SaveStateData>, saveStateType: SaveStateType) {
+fun Content(
+    saveStateData: MutableList<SaveStateData>, saveStateType: SaveStateType,
+    onUpdate: (oldPath: String, path: String) -> Unit,
+    onDelete: (path: String) -> Unit
+) {
+
+    val saveStates = remember { saveStateData.toMutableStateList() }
 
     // TODO: Once everything is on Jetpack Compose, this then might work...
     // val navController = rememberNavController()
@@ -266,7 +292,27 @@ fun Content(saveStateData: MutableList<SaveStateData>, saveStateType: SaveStateT
                 .fillMaxSize() // Ensure system bars are handled properly
                 .padding(innerPadding)  // Adjust padding if needed
         ) {
-            ListContent(saveStateData, saveStateType)
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                items(count = saveStates.size) { index ->
+                    val item = saveStates[index]
+                    SaveStateSlotCard(
+                        SaveStateData(item.slot, item.dateModified, item.timePlayed, saveStateType),
+                        onUpdate = { oldPath, path ->
+                            saveStates[index] = saveStates[index].copy(slot = path)
+                            onUpdate(oldPath, path)
+                        },
+                        onDelete
+                    )
+                    HorizontalDivider(
+                        color = Color.Gray, // Color of the border
+                        thickness = 1.dp,   // Thickness of the border
+                        modifier = Modifier.padding(vertical = 0.dp)
+                    )
+                }
+            }
 
             if (showDialog) {
                 InputDialog(
@@ -276,7 +322,7 @@ fun Content(saveStateData: MutableList<SaveStateData>, saveStateType: SaveStateT
                         userInput = it
                         showDialog = false
 
-                        saveStateData.add(
+                        saveStates.add(
                             SaveStateData(
                             slot = it,
                             "Never Played",
@@ -290,29 +336,9 @@ fun Content(saveStateData: MutableList<SaveStateData>, saveStateType: SaveStateT
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ListContent(saveStateData: MutableList<SaveStateData>, saveStateType: SaveStateType) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
-        items(count = saveStateData.size) { index ->
-            val item = saveStateData[index]
-            SaveStateSlotCard(
-                SaveStateData(item.slot, item.dateModified, item.timePlayed, saveStateType)
-            )
-            HorizontalDivider(
-                color = Color.Gray, // Color of the border
-                thickness = 1.dp,   // Thickness of the border
-                modifier = Modifier.padding(vertical = 0.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun SaveStateSlotCard(data: SaveStateData) {
-
+fun SaveStateSlotCard(data: SaveStateData, onUpdate: (oldPath: String, path: String) -> Unit, onDelete: (path: String) -> Unit) {
     val context = LocalContext.current as? Activity
     val titleColor = MaterialTheme.colorScheme.onSurface
     val subtitleColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
@@ -321,65 +347,125 @@ fun SaveStateSlotCard(data: SaveStateData) {
     val time = data.timePlayed
     val date = data.dateModified
 
-    Column(
-        modifier = Modifier
-            .padding(horizontal = 0.dp)
-            .clickable {
-                val resultIntent = Intent().apply {
-                    putExtra("Slot", data.slot)
-                    putExtra("StateType", data.type)
-                }
-                context?.setResult(Activity.RESULT_OK, resultIntent)
-                context?.finish()
+    var showContextMenu by remember { mutableStateOf(false) }
+    var showUpdateDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    if (showUpdateDialog) {
+        InputDialog(
+            title = "Update SaveState Slot",
+            onDismiss = { showUpdateDialog = false },
+            onConfirm = {
+                showUpdateDialog = false
+                onUpdate(data.slot, it)
             }
-    ) {
-        Text(
-            text = title,
-            modifier = Modifier
-                .fillMaxWidth(),
-            color = titleColor
         )
-        Row(
+    }
+
+    Box(
+        modifier = Modifier.fillMaxWidth(), // Ensure full width to help with positioning
+        contentAlignment = Alignment.BottomEnd // Aligns the menu to the bottom-right
+    ) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(horizontal = 0.dp)
+                .combinedClickable(
+                    onClick = {
+                        val resultIntent = Intent().apply {
+                            putExtra("Slot", data.slot)
+                            putExtra("StateType", data.type)
+                        }
+                        context?.setResult(Activity.RESULT_OK, resultIntent)
+                        context?.finish()
+                    },
+                    onLongClick = {
+                        showContextMenu = true
+                    }
+                )
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onLongPress = {
+                            showContextMenu = true
+                        }
+                    )
+                }
         ) {
             Text(
-                text = time,
-                modifier = Modifier,
-                color = subtitleColor,
-                fontSize = 12.sp
+                text = title,
+                modifier = Modifier.fillMaxWidth(),
+                color = titleColor
             )
-            Text(
-                text = date,
-                modifier = Modifier,
-                color = subtitleColor,
-                fontSize = 12.sp
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = time,
+                    color = subtitleColor,
+                    fontSize = 12.sp
+                )
+                Text(
+                    text = date,
+                    color = subtitleColor,
+                    fontSize = 12.sp
+                )
+            }
+        }
+
+        if (showContextMenu) {
+            Box(
+                modifier = Modifier.padding(8.dp),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                DropdownMenu(
+                    expanded = showContextMenu,
+                    onDismissRequest = { showContextMenu = false },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Update") },
+                        leadingIcon = { Icon(Icons.Filled.Edit, null) },
+                        onClick = {
+                            showContextMenu = false
+                            showUpdateDialog = true
+                        }
+                    )
+                    HorizontalDivider()
+                    DropdownMenuItem(
+                        text = { Text("Delete") },
+                        leadingIcon = { Icon(Icons.Filled.DeleteForever, null) },
+                        onClick = {
+                            showContextMenu = false
+                            showDeleteDialog = true
+                        }
+                    )
+                }
+            }
         }
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewContent() {
-    val saveStateData = mutableListOf(
-        SaveStateData("Slot 1", "04/12/2023", "2 hours 15 minutes", SaveStateType.Save),
-        SaveStateData("Slot 2", "04/05/2019", "26.4 hours", SaveStateType.Save),
-        SaveStateData("Slot 3", "04/12/2021", "26.4 hours", SaveStateType.Save)
-    )
+//@Preview(showBackground = true)
+//@Composable
+//fun PreviewContent() {
+//    val saveStateData = mutableListOf(
+//        SaveStateData("Slot 1", "04/12/2023", "2 hours 15 minutes", SaveStateType.Save),
+//        SaveStateData("Slot 2", "04/05/2019", "26.4 hours", SaveStateType.Save),
+//        SaveStateData("Slot 3", "04/12/2021", "26.4 hours", SaveStateType.Save)
+//    )
+//
+//    RetroGBmTheme {
+//        Content(saveStateData, SaveStateType.Save)
+//    }
+//}
 
-    RetroGBmTheme {
-        Content(saveStateData, SaveStateType.Save)
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewMessageCard() {
-    RetroGBmTheme {
-        SaveStateSlotCard(
-            data = SaveStateData("Slot 1", "2024/08/20", "26.4 hours", SaveStateType.Save)
-        )
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun PreviewMessageCard() {
+//    RetroGBmTheme {
+//        SaveStateSlotCard(
+//            data = SaveStateData("Slot 1", "2024/08/20", "26.4 hours", SaveStateType.Save)
+//        )
+//    }
+//}
