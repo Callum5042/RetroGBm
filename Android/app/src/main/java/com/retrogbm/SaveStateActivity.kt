@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Dangerous
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Edit
@@ -194,7 +195,8 @@ class SaveStateActivity : ComponentActivity() {
                         }
                     },
                     onDelete = { path ->
-
+                        val file = File("$saveStatePath/$path.state")
+                        file.delete()
                     }
                 )
             }
@@ -304,7 +306,10 @@ fun Content(
                             saveStates[index] = saveStates[index].copy(slot = path)
                             onUpdate(oldPath, path)
                         },
-                        onDelete
+                        onDelete = {
+                            saveStates.remove(item)
+                            onDelete(it)
+                        }
                     )
                     HorizontalDivider(
                         color = Color.Gray, // Color of the border
@@ -358,6 +363,35 @@ fun SaveStateSlotCard(data: SaveStateData, onUpdate: (oldPath: String, path: Str
             onConfirm = {
                 showUpdateDialog = false
                 onUpdate(data.slot, it)
+            }
+        )
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteDialog = false
+            },
+//            icon = {
+//                Icon(Icons.Filled.Dangerous, null)
+//            },
+            title = { Text("Delete Save State") },
+            text = {
+                Text("This action is irreversible and cannot be undone.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDelete(title)
+                }) {
+                    Text("Confirm")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showDeleteDialog = false
+                }) {
+                    Text("Cancel")
+                }
             }
         )
     }
