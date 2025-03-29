@@ -416,13 +416,6 @@ fun SaveStateSlotCard(data: SaveStateData, onUpdate: (oldPath: String, path: Str
                         showContextMenu = true
                     }
                 )
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onLongPress = {
-                            showContextMenu = true
-                        }
-                    )
-                }
         ) {
             Text(
                 text = title,
