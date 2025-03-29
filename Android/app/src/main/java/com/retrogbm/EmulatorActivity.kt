@@ -385,7 +385,9 @@ fun Content(emulator: EmulatorWrapper, fileName: String) {
             val stateType = result.data?.getSerializableExtra("StateType") as SaveStateType
 
             handleSaveState(emulator, absolutePath!!, fileName, slot, stateType, context)
-            Toast.makeText(context, "State Saved", Toast.LENGTH_SHORT).show()
+
+            val toastText = if (stateType == SaveStateType.Save) "State Saved" else "State Loaded"
+            Toast.makeText(context, toastText, Toast.LENGTH_SHORT).show()
         }
     }
 
