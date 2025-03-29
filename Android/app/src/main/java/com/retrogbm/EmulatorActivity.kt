@@ -33,8 +33,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FastForward
+import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -536,9 +541,9 @@ fun AppTopBar(
                 DropdownMenu(
                     expanded = showMenu,
                     onDismissRequest = { showMenu = false },
-
                     ) {
                     DropdownMenuItem(
+                        leadingIcon = { Icon(Icons.Filled.FileOpen, null) },
                         text = { Text(stringResource(id = R.string.load_rom)) },
                         onClick = {
                             showMenu = false
@@ -548,6 +553,12 @@ fun AppTopBar(
                     HorizontalDivider()
                     DropdownMenuItem(
                         text = { Text(stringResource(id = R.string.save_state)) },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(id = R.drawable.baseline_save_24),
+                                contentDescription = stringResource(id = R.string.quick_save)
+                            )
+                        },
                         onClick = {
                             showMenu = false
                             onSaveState()
@@ -555,6 +566,12 @@ fun AppTopBar(
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(id = R.string.load_state)) },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(id = R.drawable.baseline_history_24),
+                                contentDescription = stringResource(id = R.string.quick_load)
+                            )
+                        },
                         onClick = {
                             showMenu = false
                             onLoadState()
@@ -563,6 +580,7 @@ fun AppTopBar(
                     HorizontalDivider()
                     DropdownMenuItem(
                         text = { Text("Pause") },
+                        leadingIcon = { Icon(Icons.Filled.Pause, null) },
                         enabled = !isPaused,
                         onClick = {
                             showMenu = false
@@ -572,6 +590,7 @@ fun AppTopBar(
                     )
                     DropdownMenuItem(
                         text = { Text("Resume") },
+                        leadingIcon = { Icon(Icons.Filled.PlayArrow, null) },
                         enabled = isPaused,
                         onClick = {
                             showMenu = false
@@ -581,6 +600,7 @@ fun AppTopBar(
                     )
                     DropdownMenuItem(
                         text = { Text("Restart") },
+                        leadingIcon = { Icon(Icons.Filled.RestartAlt, null) },
                         onClick = {
                             showMenu = false
                             onRestart()
@@ -588,6 +608,7 @@ fun AppTopBar(
                     )
                     DropdownMenuItem(
                         text = { Text("Stop") },
+                        leadingIcon = { Icon(Icons.Filled.Stop, null) },
                         onClick = {
                             showMenu = false
                             onStop()
@@ -596,6 +617,7 @@ fun AppTopBar(
                     HorizontalDivider()
                     DropdownMenuItem(
                         text = { Text(stringResource(id = R.string.settings)) },
+                        leadingIcon = { Icon(Icons.Filled.Settings, null) },
                         onClick = {
                             showMenu = false
                             onOptions()
