@@ -16,20 +16,33 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -122,19 +135,13 @@ class SaveStateActivity : ComponentActivity() {
 
         // Values
         val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
+        val path = absolutePath?.let { "$it/SaveStates/$romFileName/" }
 
-        // Using the rom title try fetch 1-9 save-state files
+        val folder = path?.let { File(it) }
+        val files = folder?.listFiles()
+
         val saveStateData = mutableListOf<SaveStateData>()
-        for (i in 1..9) {
-
-            val path = absolutePath?.let { "$it/SaveStates/$romFileName/slot$i.state" }
-            val file = File(path!!)
-
-            if (!file.exists()) {
-                saveStateData.add(SaveStateData(i, "", "", stateType))
-                continue
-            }
-
+        files?.forEach { file ->
             val data = readSaveStateHeader(file)
 
             // Format the date modified
@@ -143,8 +150,29 @@ class SaveStateActivity : ComponentActivity() {
             // Format the time played
             val timePlayedStr = formatTimePlayed(data.timePlayed)
 
-            saveStateData.add(SaveStateData(i, dateModifiedStr, timePlayedStr, stateType))
+            saveStateData.add(SaveStateData(file.nameWithoutExtension, dateModifiedStr, timePlayedStr, stateType))
         }
+
+//        for (i in 1..9) {
+//
+//            val path = absolutePath?.let { "$it/SaveStates/$romFileName/slot$i.state" }
+//            val file = File(path!!)
+//
+//            if (!file.exists()) {
+//                saveStateData.add(SaveStateData("slot$i", "", "", stateType))
+//                continue
+//            }
+//
+//            val data = readSaveStateHeader(file)
+//
+//            // Format the date modified
+//            val dateModifiedStr = formatDateModified(data.dateModified)
+//
+//            // Format the time played
+//            val timePlayedStr = formatTimePlayed(data.timePlayed)
+//
+//            saveStateData.add(SaveStateData("slot$i", dateModifiedStr, timePlayedStr, stateType))
+//        }
 
         setContent {
             RetroGBmTheme {
@@ -154,7 +182,38 @@ class SaveStateActivity : ComponentActivity() {
     }
 }
 
-data class SaveStateData(val slot: Int, val dateModified: String, val timePlayed: String, val type: SaveStateType)
+data class SaveStateData(val slot: String, val dateModified: String, val timePlayed: String, val type: SaveStateType)
+
+@Composable
+fun InputDialog(
+    title: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var text by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                label = { Text("Input") }
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(text) }) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -163,6 +222,9 @@ fun Content(saveStateData: MutableList<SaveStateData>, saveStateType: SaveStateT
     // TODO: Once everything is on Jetpack Compose, this then might work...
     // val navController = rememberNavController()
     val context = LocalContext.current as? Activity
+
+    var showDialog by remember { mutableStateOf(false) }
+    var userInput by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -185,6 +247,16 @@ fun Content(saveStateData: MutableList<SaveStateData>, saveStateType: SaveStateT
                             contentDescription = "Localized description"
                         )
                     }
+                },
+                actions = {
+                    IconButton(enabled = saveStateType == SaveStateType.Save, onClick = {
+                        showDialog = true
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = stringResource(id = R.string.quick_save)
+                        )
+                    }
                 }
             )
         },
@@ -195,6 +267,25 @@ fun Content(saveStateData: MutableList<SaveStateData>, saveStateType: SaveStateT
                 .padding(innerPadding)  // Adjust padding if needed
         ) {
             ListContent(saveStateData, saveStateType)
+
+            if (showDialog) {
+                InputDialog(
+                    title = "Add SaveState Slot",
+                    onDismiss = { showDialog = false },
+                    onConfirm = {
+                        userInput = it
+                        showDialog = false
+
+                        saveStateData.add(
+                            SaveStateData(
+                            slot = it,
+                            "Never Played",
+                            "No Time Played",
+                            saveStateType)
+                        )
+                    }
+                )
+            }
         }
     }
 }
@@ -226,7 +317,7 @@ fun SaveStateSlotCard(data: SaveStateData) {
     val titleColor = MaterialTheme.colorScheme.onSurface
     val subtitleColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
 
-    val title = "Slot ${data.slot}"
+    val title = data.slot
     val time = data.timePlayed
     val date = data.dateModified
 
@@ -235,7 +326,7 @@ fun SaveStateSlotCard(data: SaveStateData) {
             .padding(horizontal = 0.dp)
             .clickable {
                 val resultIntent = Intent().apply {
-                    putExtra("Slot", "slot${data.slot}")
+                    putExtra("Slot", data.slot)
                     putExtra("StateType", data.type)
                 }
                 context?.setResult(Activity.RESULT_OK, resultIntent)
@@ -273,9 +364,9 @@ fun SaveStateSlotCard(data: SaveStateData) {
 @Composable
 fun PreviewContent() {
     val saveStateData = mutableListOf(
-        SaveStateData(1, "04/12/2023", "2 hours 15 minutes", SaveStateType.Save),
-        SaveStateData(2, "04/05/2019", "26.4 hours", SaveStateType.Save),
-        SaveStateData(3, "04/12/2021", "26.4 hours", SaveStateType.Save)
+        SaveStateData("Slot 1", "04/12/2023", "2 hours 15 minutes", SaveStateType.Save),
+        SaveStateData("Slot 2", "04/05/2019", "26.4 hours", SaveStateType.Save),
+        SaveStateData("Slot 3", "04/12/2021", "26.4 hours", SaveStateType.Save)
     )
 
     RetroGBmTheme {
@@ -288,7 +379,7 @@ fun PreviewContent() {
 fun PreviewMessageCard() {
     RetroGBmTheme {
         SaveStateSlotCard(
-            data = SaveStateData(1, "2024/08/20", "26.4 hours", SaveStateType.Save)
+            data = SaveStateData("Slot 1", "2024/08/20", "26.4 hours", SaveStateType.Save)
         )
     }
 }
