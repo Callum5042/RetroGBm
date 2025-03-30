@@ -327,25 +327,23 @@ private fun handleSaveState(emulator: EmulatorWrapper,
     }
 
     // Save or load
-    if (stateType == SaveStateType.Save) {
-        try {
+    try {
+        if (stateType == SaveStateType.Save) {
             emulator.saveState(saveStatePath)
             Log.i("SaveState", "State saved to $saveStatePath")
+        } else if (stateType == SaveStateType.Load) {
+            emulator.loadState(saveStatePath)
+            Log.i("SaveState", "State loaded from $saveStatePath")
         }
-        catch (ex: Exception) {
+    }
+    catch (ex: Exception) {
+        val builder = AlertDialog.Builder(context)
+        builder
+            .setMessage(ex.message)
+            .setTitle("Error")
 
-            val builder = AlertDialog.Builder(context)
-            builder
-                .setMessage("I am the message")
-                .setTitle("I am the title")
-
-            val dialog = builder.create()
-            dialog.show()
-
-        }
-    } else if (stateType == SaveStateType.Load) {
-        emulator.loadState(saveStatePath)
-        Log.i("SaveState", "State loaded from $saveStatePath")
+        val dialog = builder.create()
+        dialog.show()
     }
 }
 
