@@ -142,7 +142,6 @@ class EmulatorActivity : ComponentActivity() {
         val optionRepository = OptionRepository()
         options = optionRepository.loadOptions(optionsPath)
 
-
         // Observe the app lifecycle
         var wasStopped = false
         this.lifecycleObserver = LifecycleEventObserver { _, event ->
@@ -162,14 +161,17 @@ class EmulatorActivity : ComponentActivity() {
                 Lifecycle.Event.ON_STOP -> {
                     wasStopped = true
                     try {
+                        handleSaveState(emulator, absolutePath!!, fileName, "AutoSave", SaveStateType.Save, this)
                         updateProfile()
+
+                        Log.w("EmulatorActivity", "Activity Stopped")
                     } catch (e: Exception) {
                         Log.w("EmulatorActivity", "Unable to update profile")
                         Toast.makeText(this, "Unable to update the profile", Toast.LENGTH_LONG).show()
                     }
                 }
                 Lifecycle.Event.ON_DESTROY -> {
-                    println("App is being destroyed")
+                    Log.w("EmulatorActivity", "Activity Destroyed")
                 }
                 else -> {}
             }
@@ -186,6 +188,10 @@ class EmulatorActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+
+        val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
+        handleSaveState(emulator, absolutePath!!, fileName, "AutoSave", SaveStateType.Save, this)
+        Log.w("RetroGBm", "AutoSaved Successfully")
 
         if (emulator.isRunning()) {
             emulator.stop()
