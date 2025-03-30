@@ -25,7 +25,7 @@ class OptionRepository {
                 throw e
             }
         } else {
-            return OptionData(2.0f)
+            return OptionData("", "",2.0f)
         }
     }
 
@@ -47,7 +47,7 @@ class OptionRepository {
     }
 
     private fun createNewProfile(file: File): OptionData {
-        val options = OptionData(2.0f)
+        val options = OptionData("","", 2.0f)
 
         try {
             // Create new file and write profile
