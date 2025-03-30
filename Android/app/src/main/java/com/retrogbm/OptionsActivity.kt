@@ -59,6 +59,9 @@ class OptionsActivity : ComponentActivity() {
         val optionRepository = OptionRepository()
         val options = optionRepository.loadOptions(optionsPath)
 
+        options.romDirectory = absolutePath.let { "$it/ROMS" }
+        options.saveStateDirectory = absolutePath.let { "$it/SaveStates" }
+
         setContent {
             RetroGBmTheme {
                 Content(options) {
@@ -115,8 +118,71 @@ fun ListContent(options: OptionData, action: () -> Unit) {
     var sliderPosition by remember { mutableFloatStateOf(options.emulationMultiplier) }
 
     val titleColor = MaterialTheme.colorScheme.onSurface
+    val subtitleColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
 
     LazyColumn {
+        item {
+            Column(
+                modifier = Modifier
+                    .clickable {
+                    }
+            ) {
+                Text(
+                    text = "ROM Directory",
+                    fontSize = 18.sp,
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp, vertical = 12.dp)
+                        .fillMaxWidth(),
+                    color = titleColor
+                )
+                Text(
+                    text = options.romDirectory,
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                        .fillMaxWidth(),
+                    color = subtitleColor,
+                    fontSize = 12.sp
+                )
+            }
+        }
+        item {
+            HorizontalDivider(
+                color = Color.Gray, // Color of the border
+                thickness = 1.dp,   // Thickness of the border
+                modifier = Modifier.padding(vertical = 0.dp)
+            )
+        }
+        item {
+            Column(
+                modifier = Modifier
+                    .clickable {
+                    }
+            ) {
+                Text(
+                    text = "SaveState Directory",
+                    fontSize = 18.sp,
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp, vertical = 12.dp)
+                        .fillMaxWidth(),
+                    color = titleColor
+                )
+                Text(
+                    text = options.saveStateDirectory,
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                        .fillMaxWidth(),
+                    color = subtitleColor,
+                    fontSize = 12.sp
+                )
+            }
+        }
+        item {
+            HorizontalDivider(
+                color = Color.Gray, // Color of the border
+                thickness = 1.dp,   // Thickness of the border
+                modifier = Modifier.padding(vertical = 0.dp)
+            )
+        }
         item {
             Column(
                 modifier = Modifier
@@ -145,7 +211,8 @@ fun ListContent(options: OptionData, action: () -> Unit) {
                     }
                 )
             }
-
+        }
+        item {
             HorizontalDivider(
                 color = Color.Gray, // Color of the border
                 thickness = 1.dp,   // Thickness of the border
@@ -166,13 +233,14 @@ fun ListContent(options: OptionData, action: () -> Unit) {
                         .fillMaxWidth(),
                     color = titleColor
                 )
-
-                HorizontalDivider(
-                    color = Color.Gray, // Color of the border
-                    thickness = 1.dp,   // Thickness of the border
-                    modifier = Modifier.padding(vertical = 0.dp)
-                )
             }
+        }
+        item {
+            HorizontalDivider(
+                color = Color.Gray, // Color of the border
+                thickness = 1.dp,   // Thickness of the border
+                modifier = Modifier.padding(vertical = 0.dp)
+            )
         }
     }
 }
@@ -203,18 +271,18 @@ fun OptionsCard(name: String) {
     )
 }
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewListContent() {
-    RetroGBmTheme {
-        ListContent(options = OptionData(2.0f)) {}
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewOptionsCard() {
-    RetroGBmTheme {
-        OptionsCard("Clear Profile")
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun PreviewListContent() {
+//    RetroGBmTheme {
+//        ListContent(options = OptionData(2.0f)) {}
+//    }
+//}
+//
+//@Preview(showBackground = true)
+//@Composable
+//fun PreviewOptionsCard() {
+//    RetroGBmTheme {
+//        OptionsCard("Clear Profile")
+//    }
+//}
