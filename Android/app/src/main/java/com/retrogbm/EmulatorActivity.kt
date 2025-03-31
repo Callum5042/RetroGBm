@@ -116,6 +116,8 @@ class EmulatorActivity : ComponentActivity() {
 
     public lateinit var options: OptionData
 
+    private var quickSaveSlot: Int = 1
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -179,9 +181,23 @@ class EmulatorActivity : ComponentActivity() {
 
         ProcessLifecycleOwner.get().lifecycle.addObserver(this.lifecycleObserver)
 
+        // Find that last Quick Save number
+        val quickSaveMap = mutableMapOf<Int, Long>()
+
+        for (i in 1..3) {
+            val saveStatePath = absolutePath.let { "$it/SaveStates/$fileName/Quick Save $i.state" }
+            val file = File(saveStatePath)
+            if (file.exists()) {
+                quickSaveMap[i] = readSaveStateHeader(file).dateModified
+            }
+        }
+
+        val sortedByValue = quickSaveMap.toList().sortedBy { it.second }.toMap(LinkedHashMap())
+        val slotNumber = if (sortedByValue.size > 0) sortedByValue.keys.last() else 1
+
         setContent {
             RetroGBmTheme {
-                Content(emulator, fileName)
+                Content(emulator, fileName, slotNumber)
             }
         }
     }
@@ -354,12 +370,13 @@ private fun handleSaveState(emulator: EmulatorWrapper,
 }
 
 @Composable
-fun Content(emulator: EmulatorWrapper, fileName: String) {
+fun Content(emulator: EmulatorWrapper, fileName: String, slotNumber: Int) {
 
     val context = LocalContext.current
 
     // Paths
-    val slotName = "quick"
+    var slotNumber = slotNumber
+    var slotName = "Quick Save $slotNumber"
     val absolutePath = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
 
     // Launcher for the ACTION_OPEN_DOCUMENT intent
@@ -418,6 +435,12 @@ fun Content(emulator: EmulatorWrapper, fileName: String) {
             AppTopBar(
                 emulator,
                 onQuickSave = {
+                    slotNumber++
+                    if (slotNumber > 3) {
+                        slotNumber = 1
+                    }
+
+                    slotName = "Quick Save $slotNumber"
                     handleSaveState(emulator, absolutePath!!, fileName, slotName, SaveStateType.Save, context)
                     Toast.makeText(context, "State Saved", Toast.LENGTH_SHORT).show()
                 },
@@ -890,6 +913,6 @@ fun Controls(emulator: EmulatorWrapper) {
 @Composable
 fun ContentPreview() {
     RetroGBmTheme {
-        Content(EmulatorWrapper(), "test.gbc")
+        Content(EmulatorWrapper(), "test.gbc", 1)
     }
 }
