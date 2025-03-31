@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FileOpen
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -94,9 +95,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileOutputStream
 import java.nio.IntBuffer
 import java.security.MessageDigest
 import java.util.Date
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 class EmulatorActivity : ComponentActivity() {
@@ -491,6 +494,37 @@ fun Content(emulator: EmulatorWrapper, fileName: String, slotNumber: Int) {
                 onOptions = {
                     val intent = Intent(context, OptionsActivity::class.java)
                     context.startActivity(intent)
+                },
+                onScreenshot = {
+                    emulator.pause()
+
+//                    val bitmap = Bitmap.createBitmap(160, 144, Bitmap.Config.ARGB_8888)
+//                    val screenshotPath = absolutePath?.let { "$it/Screenshots" }
+//                    val guid = UUID.randomUUID().toString()
+//                    val file = File("$screenshotPath/$guid")
+
+                    val bitmap = Bitmap.createBitmap(160, 144, Bitmap.Config.ARGB_8888)
+                    val screenshotPath = absolutePath?.let { "$it/Screenshots" }
+                    val guid = UUID.randomUUID().toString()
+
+                    val screenshotFolder = File(screenshotPath!!)
+                    if (!screenshotFolder.exists()) {
+                        screenshotFolder.mkdirs()
+                    }
+
+                    val file = File("$screenshotPath/$guid.png") // Save as PNG
+
+                    val pixels = emulator.getVideoBuffer()
+                    val pixelsBuffer = IntBuffer.wrap(pixels.toList().toIntArray())
+                    bitmap.copyPixelsFromBuffer(pixelsBuffer)
+
+                    FileOutputStream(file).use { out ->
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) // Compress and write
+                    }
+
+                    emulator.resume()
+
+                    Toast.makeText(context, "Screenshot Saved", Toast.LENGTH_SHORT).show()
                 }
             )
         }
@@ -510,7 +544,8 @@ fun AppTopBar(
     onLoadState: () -> Unit,
     onRestart: () -> Unit,
     onStop: () -> Unit,
-    onOptions: () -> Unit
+    onOptions: () -> Unit,
+    onScreenshot: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var emulationSpeed by remember { mutableFloatStateOf(1.0f) }
@@ -642,6 +677,14 @@ fun AppTopBar(
                         }
                     )
                     HorizontalDivider()
+                    DropdownMenuItem(
+                        leadingIcon = { Icon(Icons.Filled.Image, null) },
+                        text = { Text("Screenshot") },
+                        onClick = {
+                            showMenu = false
+                            onScreenshot()
+                        }
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(id = R.string.settings)) },
                         leadingIcon = { Icon(Icons.Filled.Settings, null) },
