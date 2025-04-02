@@ -77,12 +77,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
-import com.retrogbm.options.OptionData
-import com.retrogbm.options.OptionRepository
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.retrogbm.profile.ProfileGameData
 import com.retrogbm.profile.ProfileRepository
 import com.retrogbm.ui.theme.RetroGBmTheme
@@ -117,10 +118,6 @@ class EmulatorActivity : ComponentActivity() {
 
     private lateinit var lifecycleObserver: LifecycleObserver
 
-    public lateinit var options: OptionData
-
-    private var quickSaveSlot: Int = 1
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -142,10 +139,6 @@ class EmulatorActivity : ComponentActivity() {
 
         // Load options
         val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
-        val optionsPath = absolutePath?.let { "$it/options.json" } ?: "options.json"
-
-        val optionRepository = OptionRepository()
-        options = optionRepository.loadOptions(optionsPath)
 
         // Observe the app lifecycle
         var wasStopped = false
@@ -373,12 +366,12 @@ private fun handleSaveState(emulator: EmulatorWrapper,
 }
 
 @Composable
-fun Content(emulator: EmulatorWrapper, fileName: String, slotNumber: Int) {
+fun Content(emulator: EmulatorWrapper, fileName: String, slot: Int) {
 
     val context = LocalContext.current
 
     // Paths
-    var slotNumber = slotNumber
+    var slotNumber = slot
     var slotName = "Quick Save $slotNumber"
     val absolutePath = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
 
@@ -410,10 +403,10 @@ fun Content(emulator: EmulatorWrapper, fileName: String, slotNumber: Int) {
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             // Retrieve data from the result Intent
-            val slot = result.data?.getStringExtra("Slot") ?: "Unknown"
+            val slotStr = result.data?.getStringExtra("Slot") ?: "Unknown"
             val stateType = result.data?.getSerializableExtra("StateType") as SaveStateType
 
-            handleSaveState(emulator, absolutePath!!, fileName, slot, stateType, context)
+            handleSaveState(emulator, absolutePath!!, fileName, slotStr, stateType, context)
 
             val toastText = if (stateType == SaveStateType.Save) "State Saved" else "State Loaded"
             Toast.makeText(context, toastText, Toast.LENGTH_SHORT).show()
@@ -498,11 +491,6 @@ fun Content(emulator: EmulatorWrapper, fileName: String, slotNumber: Int) {
                 onScreenshot = {
                     emulator.pause()
 
-//                    val bitmap = Bitmap.createBitmap(160, 144, Bitmap.Config.ARGB_8888)
-//                    val screenshotPath = absolutePath?.let { "$it/Screenshots" }
-//                    val guid = UUID.randomUUID().toString()
-//                    val file = File("$screenshotPath/$guid")
-
                     val bitmap = Bitmap.createBitmap(160, 144, Bitmap.Config.ARGB_8888)
                     val screenshotPath = absolutePath?.let { "$it/Screenshots" }
                     val guid = UUID.randomUUID().toString()
@@ -548,10 +536,25 @@ fun AppTopBar(
     onScreenshot: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
-    var emulationSpeed by remember { mutableFloatStateOf(1.0f) }
 
-    val activity = LocalContext.current as? EmulatorActivity
+    val activity = LocalContext.current as EmulatorActivity
 
+    val sharedPreferences = remember {
+        activity.getSharedPreferences("retrogbm_settings_prefs", Context.MODE_PRIVATE)
+    }
+
+    var emulationSpeed by remember {
+        mutableFloatStateOf(sharedPreferences.getFloat("emulation_speed", 2.0f))
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onResume(owner: LifecycleOwner) {
+                emulationSpeed = sharedPreferences.getFloat("emulation_speed", 2.0f)
+            }
+        })
+    }
 
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
@@ -578,7 +581,7 @@ fun AppTopBar(
             }
             // Emulation speed
             IconButton(onClick = {
-                emulationSpeed = if (emulationSpeed == 1.0f) { 1.0f / activity!!.options.emulationMultiplier } else { 1.0f }
+                emulationSpeed = if (emulationSpeed == 1.0f) { 1.0f / emulationSpeed } else { 1.0f }
                 emulator.setEmulationSpeed(emulationSpeed)
             }) {
                 Icon(
@@ -767,7 +770,25 @@ private fun detectDirection(x: Float, y: Float, centerX: Float, centerY: Float):
 @Composable
 fun Controls(emulator: EmulatorWrapper) {
 
+    val activity = LocalContext.current as EmulatorActivity
     val hapticFeedback = LocalHapticFeedback.current
+
+    val sharedPreferences = remember {
+        activity.getSharedPreferences("retrogbm_settings_prefs", Context.MODE_PRIVATE)
+    }
+
+    var enableHapticFeedback by remember {
+        mutableStateOf(sharedPreferences.getBoolean("haptic_feedback", true))
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onResume(owner: LifecycleOwner) {
+                enableHapticFeedback = sharedPreferences.getBoolean("haptic_feedback", true)
+            }
+        })
+    }
 
     Column {
         Row(
@@ -816,7 +837,9 @@ fun Controls(emulator: EmulatorWrapper) {
                                         // Update the active button state
                                         activeButton = newButton
 
-                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        if (enableHapticFeedback) {
+                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        }
                                     }
                                     true
                                 }
@@ -825,7 +848,10 @@ fun Controls(emulator: EmulatorWrapper) {
                                     // Deactivate the current button on release
                                     activeButton?.let {
                                         emulator.pressButton(it, false)
-                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+
+                                        if (enableHapticFeedback) {
+                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        }
                                     }
                                     activeButton = null
                                     true
@@ -857,10 +883,14 @@ fun Controls(emulator: EmulatorWrapper) {
                                     val event = awaitPointerEvent()
                                     if (event.type == PointerEventType.Press) {
                                         emulator.pressButton(JoyPadButton.A, true)
-                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        if (enableHapticFeedback) {
+                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        }
                                     } else if (event.type == PointerEventType.Release) {
                                         emulator.pressButton(JoyPadButton.A, false)
-                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        if (enableHapticFeedback) {
+                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        }
                                     }
                                 }
                             }
@@ -884,10 +914,14 @@ fun Controls(emulator: EmulatorWrapper) {
                                     val event = awaitPointerEvent()
                                     if (event.type == PointerEventType.Press) {
                                         emulator.pressButton(JoyPadButton.B, true)
-                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        if (enableHapticFeedback) {
+                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        }
                                     } else if (event.type == PointerEventType.Release) {
                                         emulator.pressButton(JoyPadButton.B, false)
-                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        if (enableHapticFeedback) {
+                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        }
                                     }
                                 }
                             }
@@ -915,10 +949,14 @@ fun Controls(emulator: EmulatorWrapper) {
                                     val event = awaitPointerEvent()
                                     if (event.type == PointerEventType.Press) {
                                         emulator.pressButton(JoyPadButton.Select, true)
-                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        if (enableHapticFeedback) {
+                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        }
                                     } else if (event.type == PointerEventType.Release) {
                                         emulator.pressButton(JoyPadButton.Select, false)
-                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        if (enableHapticFeedback) {
+                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        }
                                     }
                                 }
                             }
@@ -938,10 +976,14 @@ fun Controls(emulator: EmulatorWrapper) {
                                     val event = awaitPointerEvent()
                                     if (event.type == PointerEventType.Press) {
                                         emulator.pressButton(JoyPadButton.Start, true)
-                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        if (enableHapticFeedback) {
+                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        }
                                     } else if (event.type == PointerEventType.Release) {
                                         emulator.pressButton(JoyPadButton.Start, false)
-                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        if (enableHapticFeedback) {
+                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        }
                                     }
                                 }
                             }

@@ -1,31 +1,28 @@
 package com.retrogbm
 
 import android.app.Activity
-import android.content.Intent
+import android.content.Context
 import android.os.Bundle
 import android.os.Environment
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RangeSlider
-import androidx.compose.material3.RangeSliderState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
@@ -35,38 +32,25 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.retrogbm.options.OptionData
-import com.retrogbm.options.OptionRepository
 import com.retrogbm.ui.theme.RetroGBmTheme
-import com.retrogbm.utilities.SaveStateType
 
 class OptionsActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
-        val optionsPath = absolutePath?.let { "$it/options.json" } ?: "options.json"
-
-        val optionRepository = OptionRepository()
-        val options = optionRepository.loadOptions(optionsPath)
-
-        options.romDirectory = absolutePath.let { "$it/ROMS" }
-        options.saveStateDirectory = absolutePath.let { "$it/SaveStates" }
-
         setContent {
             RetroGBmTheme {
-                Content(options) {
-                    optionRepository.saveOptions(optionsPath, options)
-                }
+                Content()
             }
         }
     }
@@ -74,9 +58,8 @@ class OptionsActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Content(options: OptionData, action: () -> Unit) {
-
-    val context = LocalContext.current as? Activity
+fun Content() {
+    val context = LocalContext.current as Activity
 
     Scaffold(
         topBar = {
@@ -92,7 +75,7 @@ fun Content(options: OptionData, action: () -> Unit) {
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        context?.finish()
+                        context.finish()
                     }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -105,27 +88,57 @@ fun Content(options: OptionData, action: () -> Unit) {
     ) { innerPadding ->
         Column(
             modifier = Modifier
-                .fillMaxSize() // Ensure system bars are handled properly
-                .padding(innerPadding)  // Adjust padding if needed
+                .fillMaxSize()
+                .padding(innerPadding)
         ) {
-            ListContent(options, action)
+            ListContent()
         }
     }
 }
 
 @Composable
-fun ListContent(options: OptionData, action: () -> Unit) {
-    var sliderPosition by remember { mutableFloatStateOf(options.emulationMultiplier) }
-
+fun ListContent() {
     val titleColor = MaterialTheme.colorScheme.onSurface
     val subtitleColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
 
+    val context = LocalContext.current as Activity
+    val sharedPreferences = remember {
+        context.getSharedPreferences("retrogbm_settings_prefs", Context.MODE_PRIVATE)
+    }
+
+    var emulationSpeed by remember {
+        mutableFloatStateOf(sharedPreferences.getFloat("emulation_speed", 2.0f))
+    }
+
+    var enableHapticFeedback by remember {
+        mutableStateOf(sharedPreferences.getBoolean("haptic_feedback", true))
+    }
+
+    val absolutePath = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
+    val romDirectory = absolutePath.let { "$it/ROMS" }
+    val saveStateDirectory = absolutePath.let { "$it/SaveStates" }
+
     LazyColumn {
+        item {
+            Text(
+                text = "Paths",
+                modifier = Modifier
+                    .padding(horizontal = 8.dp, vertical = 12.dp),
+                color = titleColor,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        item {
+            HorizontalDivider(
+                color = Color.Gray, // Color of the border
+                thickness = 1.dp,   // Thickness of the border
+                modifier = Modifier.padding(vertical = 0.dp)
+            )
+        }
         item {
             Column(
                 modifier = Modifier
-                    .clickable {
-                    }
             ) {
                 Text(
                     text = "ROM Directory",
@@ -136,10 +149,11 @@ fun ListContent(options: OptionData, action: () -> Unit) {
                     color = titleColor
                 )
                 Text(
-                    text = options.romDirectory,
+                    text = romDirectory,
                     modifier = Modifier
                         .padding(horizontal = 8.dp)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                     color = subtitleColor,
                     fontSize = 12.sp
                 )
@@ -155,8 +169,6 @@ fun ListContent(options: OptionData, action: () -> Unit) {
         item {
             Column(
                 modifier = Modifier
-                    .clickable {
-                    }
             ) {
                 Text(
                     text = "SaveState Directory",
@@ -167,10 +179,11 @@ fun ListContent(options: OptionData, action: () -> Unit) {
                     color = titleColor
                 )
                 Text(
-                    text = options.saveStateDirectory,
+                    text = saveStateDirectory,
                     modifier = Modifier
                         .padding(horizontal = 8.dp)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                     color = subtitleColor,
                     fontSize = 12.sp
                 )
@@ -184,16 +197,32 @@ fun ListContent(options: OptionData, action: () -> Unit) {
             )
         }
         item {
+            Text(
+                text = "Emulation",
+                modifier = Modifier
+                    .padding(horizontal = 8.dp, vertical = 12.dp),
+                color = titleColor,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        item {
+            HorizontalDivider(
+                color = Color.Gray, // Color of the border
+                thickness = 1.dp,   // Thickness of the border
+                modifier = Modifier.padding(vertical = 0.dp)
+            )
+        }
+        item {
             Column(
                 modifier = Modifier
-                    .clickable {
-                    }
             ) {
                 Text(
-                    text = "Set Speed Multiplier x$sliderPosition",
+                    text = "Set Speed Multiplier x$emulationSpeed",
                     fontSize = 18.sp,
                     modifier = Modifier
-                        .padding(horizontal = 8.dp)
+                        // .padding(horizontal = 8.dp, vertical = 12.dp)
+                        .padding(8.dp, 12.dp, 8.dp, 0.dp)
                         .fillMaxWidth(),
                     color = titleColor
                 )
@@ -201,13 +230,15 @@ fun ListContent(options: OptionData, action: () -> Unit) {
                 Slider(
                     modifier = Modifier
                         .padding(horizontal = 8.dp),
-                    value = sliderPosition,
+                    value = emulationSpeed,
                     steps = 8,
                     valueRange = 1f..10f,
                     onValueChange = {
-                        sliderPosition =  it.toInt().toFloat()
-                        options.emulationMultiplier = sliderPosition
-                        action()
+                        emulationSpeed =  it.toInt().toFloat()
+                        with (sharedPreferences.edit()) {
+                            putFloat("emulation_speed", emulationSpeed)
+                            apply()
+                        }
                     }
                 )
             }
@@ -221,18 +252,32 @@ fun ListContent(options: OptionData, action: () -> Unit) {
         }
         item {
             Column(
-                modifier = Modifier
-                    .clickable {
-                    }
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "Clear Profile",
-                    fontSize = 18.sp,
+                Row(
                     modifier = Modifier
-                        .padding(horizontal = 8.dp, vertical = 12.dp)
-                        .fillMaxWidth(),
-                    color = titleColor
-                )
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 0.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Enable Haptic Feedback",
+                        fontSize = 18.sp,
+                        color = titleColor
+                    )
+
+                    Switch(
+                        checked = enableHapticFeedback,
+                        onCheckedChange = {
+                            enableHapticFeedback = it
+                            with (sharedPreferences.edit()) {
+                                putBoolean("haptic_feedback", enableHapticFeedback)
+                                apply()
+                            }
+                        }
+                    )
+                }
             }
         }
         item {
@@ -242,33 +287,30 @@ fun ListContent(options: OptionData, action: () -> Unit) {
                 modifier = Modifier.padding(vertical = 0.dp)
             )
         }
+//        item {
+//            Column(
+//                modifier = Modifier
+//                    .clickable {
+//                    }
+//            ) {
+//                Text(
+//                    text = "Clear Profile",
+//                    fontSize = 18.sp,
+//                    modifier = Modifier
+//                        .padding(horizontal = 8.dp, vertical = 12.dp)
+//                        .fillMaxWidth(),
+//                    color = titleColor
+//                )
+//            }
+//        }
+//        item {
+//            HorizontalDivider(
+//                color = Color.Gray, // Color of the border
+//                thickness = 1.dp,   // Thickness of the border
+//                modifier = Modifier.padding(vertical = 0.dp)
+//            )
+//        }
     }
-}
-
-@Composable
-fun OptionsCard(name: String) {
-    val titleColor = MaterialTheme.colorScheme.onSurface
-
-    Column(
-        modifier = Modifier
-            .clickable {
-            }
-    ) {
-        Text(
-            text = name,
-            fontSize = 12.sp,
-            modifier = Modifier
-                .padding(vertical = 12.dp)
-                .fillMaxWidth(),
-            color = titleColor
-        )
-    }
-
-    HorizontalDivider(
-        color = Color.Gray, // Color of the border
-        thickness = 1.dp,   // Thickness of the border
-        modifier = Modifier.padding(vertical = 0.dp)
-    )
 }
 
 //@Preview(showBackground = true)
