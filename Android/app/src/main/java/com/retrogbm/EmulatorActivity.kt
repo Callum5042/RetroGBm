@@ -547,6 +547,10 @@ fun AppTopBar(
         mutableFloatStateOf(sharedPreferences.getFloat("emulation_speed", 2.0f))
     }
 
+    var emulationDoubleSpeed by remember {
+        mutableStateOf(false)
+    }
+
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.addObserver(object : DefaultLifecycleObserver {
@@ -581,11 +585,15 @@ fun AppTopBar(
             }
             // Emulation speed
             IconButton(onClick = {
-                emulationSpeed = if (emulationSpeed == 1.0f) { 1.0f / emulationSpeed } else { 1.0f }
-                emulator.setEmulationSpeed(emulationSpeed)
+                val speed = if (emulationDoubleSpeed) { 1.0f } else { 1.0f / emulationSpeed }
+                emulator.setEmulationSpeed(speed)
+
+                emulationDoubleSpeed = !emulationDoubleSpeed
+
+                Log.d("Hmm", "DoubleSpeed: $emulationDoubleSpeed")
             }) {
                 Icon(
-                    imageVector = if (emulationSpeed == 1.0f) { Icons.Filled.PlayArrow } else { Icons.Filled.FastForward },
+                    imageVector = if (emulationDoubleSpeed) { Icons.Filled.FastForward } else { Icons.Filled.PlayArrow },
                     contentDescription = "Emulation Speed"
                 )
             }
