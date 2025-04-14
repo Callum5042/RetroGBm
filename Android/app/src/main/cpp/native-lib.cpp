@@ -239,7 +239,7 @@ extern "C"
 
 extern "C"
 JNIEXPORT jlong JNICALL
-Java_com_retrogbm_NullSoundOutput_nativeCreate(JNIEnv *env, jobject thiz) {
+Java_com_retrogbm_SoundOutput_nativeCreate(JNIEnv *env, jobject thiz) {
     ISoundOutput* output = new KotlinSoundOutputWrapper(env, thiz);
     return reinterpret_cast<jlong>(output);
 }
