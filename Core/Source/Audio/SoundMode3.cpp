@@ -5,6 +5,7 @@
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 
 #include "RetroGBm/Apu.h"
+#include <exception>
 
 SoundMode3::SoundMode3(SoundContext* context) : SoundModeBase(0xFF1A, 256)
 {
@@ -65,7 +66,7 @@ int SoundMode3::Read(uint16_t address)
         case 0xFF1E:
             return GetNr4() | 0xBF;
         default:
-            throw std::exception("Illegal state");
+            throw std::runtime_error("Invalid Address");
     }
 }
 
@@ -290,7 +291,7 @@ int SoundMode3::GetWaveEntry()
 		case 3:
             return b >> 2;
 		default:
-			throw std::exception("Illegal state");
+            throw std::runtime_error("Invalid Address");
     }
 }
 

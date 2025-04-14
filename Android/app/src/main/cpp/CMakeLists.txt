@@ -34,6 +34,8 @@ include_directories(${EmulatorCoreExternalIncDir})
 add_library(${CMAKE_PROJECT_NAME} SHARED
         # List C/C++ source files with relative paths to this CMakeLists.txt.
         native-lib.cpp
+        KotlinSoundOutputWrapper.cpp
+
         ${EmulatorCoreSrcDir}/Cartridge/BaseCartridge.cpp
         ${EmulatorCoreSrcDir}/Cartridge/CartridgeROM.cpp
         ${EmulatorCoreSrcDir}/Cartridge/CartridgeMBC1.cpp
@@ -52,6 +54,17 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         ${EmulatorCoreSrcDir}/HighTimer.cpp
         ${EmulatorCoreSrcDir}/Apu.cpp
         ${EmulatorCoreSrcDir}/Logger.cpp
+
+        ${EmulatorCoreSrcDir}/Audio/FrequencySweep.cpp
+        ${EmulatorCoreSrcDir}/Audio/LengthCounter.cpp
+        ${EmulatorCoreSrcDir}/Audio/Lfsr.cpp
+        ${EmulatorCoreSrcDir}/Audio/PolynomialCounter.cpp
+        ${EmulatorCoreSrcDir}/Audio/SoundMode1.cpp
+        ${EmulatorCoreSrcDir}/Audio/SoundMode2.cpp
+        ${EmulatorCoreSrcDir}/Audio/SoundMode3.cpp
+        ${EmulatorCoreSrcDir}/Audio/SoundMode4.cpp
+        ${EmulatorCoreSrcDir}/Audio/SoundModeBase.cpp
+        ${EmulatorCoreSrcDir}/Audio/VolumeEnvelope.cpp
 )
 
 # Specifies libraries CMake should link to your target library. You

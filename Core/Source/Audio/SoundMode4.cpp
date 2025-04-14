@@ -5,6 +5,7 @@
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 
 #include "RetroGBm/Apu.h"
+#include <exception>
 
 SoundMode4::SoundMode4(SoundContext* context) : SoundModeBase(0xFF1F, 64)
 {
@@ -140,6 +141,6 @@ int SoundMode4::Read(uint16_t address)
         case 0xFF23:
             return GetNr4() | 0xBF;
         default:
-            throw std::exception("Illegal state");
+            throw std::runtime_error("Illegal state");
     }
 }

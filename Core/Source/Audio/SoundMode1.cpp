@@ -7,6 +7,8 @@
 
 #include "RetroGBm/Apu.h"
 
+#include <exception>
+
 SoundMode1::SoundMode1(SoundContext* context) : SoundModeBase(0xFF10, 64)
 {
     m_Context = context;
@@ -136,7 +138,7 @@ int SoundMode1::GetDuty()
         case 3:
             return 0b01111110;
         default:
-            throw std::exception("Illegal state exception");
+            throw std::runtime_error("Invalid Address");
     }
 }
 
@@ -192,6 +194,6 @@ int SoundMode1::Read(uint16_t address)
         case 0xFF14:
             return GetNr4() | 0xBF;
         default:
-            throw std::exception("Illegal state");
+            throw std::runtime_error("Invalid Address");
     }
 }
