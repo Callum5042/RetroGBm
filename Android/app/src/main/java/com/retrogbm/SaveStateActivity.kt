@@ -8,9 +8,8 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,22 +17,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Dangerous
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.EditNote
-import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,34 +34,27 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldColors
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import com.retrogbm.ui.theme.RetroGBmTheme
 import com.retrogbm.utilities.SaveStateType
 import com.retrogbm.utilities.TimeFormatter
@@ -206,6 +191,7 @@ class SaveStateActivity : ComponentActivity() {
 
 data class SaveStateData(val slot: String, val dateModified: String, val timePlayed: String, val type: SaveStateType)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InputDialog(
     title: String,
@@ -214,23 +200,48 @@ fun InputDialog(
 ) {
     var text by remember { mutableStateOf("") }
 
+    val titleColor = MaterialTheme.colorScheme.onSurface
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
+        containerColor = Color.Black,
+        titleContentColor = Color.White,
         text = {
             OutlinedTextField(
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    focusedBorderColor = Color.White,
+                    focusedLabelColor = Color.White,
+                    cursorColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    unfocusedBorderColor = Color.White,
+                    unfocusedLabelColor = Color.White
+                ),
                 value = text,
                 onValueChange = { text = it },
                 label = { Text("Input") }
             )
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(text) }) {
+            TextButton(
+                colors = ButtonDefaults.textButtonColors(
+                    containerColor = Color.Black,
+                    contentColor = Color.White
+                ),
+                onClick = {
+                    onConfirm(text)
+                }
+            ) {
                 Text("OK")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                colors = ButtonDefaults.textButtonColors(
+                    containerColor = Color.Black,
+                    contentColor = Color.White
+                ),
+                onClick = onDismiss) {
                 Text("Cancel")
             }
         }
@@ -363,7 +374,7 @@ fun SaveStateSlotCard(data: SaveStateData, onUpdate: (oldPath: String, path: Str
             onConfirm = {
                 showUpdateDialog = false
                 onUpdate(data.slot, it)
-            }
+            },
         )
     }
 
@@ -419,7 +430,9 @@ fun SaveStateSlotCard(data: SaveStateData, onUpdate: (oldPath: String, path: Str
         ) {
             Text(
                 text = title,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
                 color = titleColor
             )
             Row(

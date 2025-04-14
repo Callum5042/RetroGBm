@@ -103,6 +103,12 @@ import java.util.Date
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
+class Emulator {
+    companion object {
+        var emulator: EmulatorWrapper = EmulatorWrapper()
+    }
+}
+
 class EmulatorActivity : ComponentActivity() {
 
     private lateinit var fileName: String
@@ -110,7 +116,7 @@ class EmulatorActivity : ComponentActivity() {
     private lateinit var checksum: String
 
     // Emulator components
-    private var emulator: EmulatorWrapper = EmulatorWrapper()
+    private var emulator: EmulatorWrapper = Emulator.emulator
 
     // Coroutines
     private val emulatorCoroutineScope = CoroutineScope(Dispatchers.Main)

@@ -114,6 +114,10 @@ fun ListContent() {
         mutableStateOf(sharedPreferences.getBoolean("haptic_feedback", true))
     }
 
+    var enableSound by remember {
+        mutableStateOf(sharedPreferences.getBoolean("enable_sound", true))
+    }
+
     val absolutePath = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
     val romDirectory = absolutePath.let { "$it/ROMS" }
     val saveStateDirectory = absolutePath.let { "$it/SaveStates" }
@@ -287,6 +291,46 @@ fun ListContent() {
                 modifier = Modifier.padding(vertical = 0.dp)
             )
         }
+        item {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 0.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Enable Sound",
+                        fontSize = 18.sp,
+                        color = titleColor
+                    )
+
+                    Switch(
+                        checked = enableSound,
+                        onCheckedChange = {
+                            enableSound = it
+                            with (sharedPreferences.edit()) {
+                                putBoolean("enable_sound", enableSound)
+                                apply()
+                            }
+
+                            Emulator.emulator.soundOutput.toggleAudio(enableSound)
+                        }
+                    )
+                }
+            }
+        }
+        item {
+            HorizontalDivider(
+                color = Color.Gray, // Color of the border
+                thickness = 1.dp,   // Thickness of the border
+                modifier = Modifier.padding(vertical = 0.dp)
+            )
+        }
+
 //        item {
 //            Column(
 //                modifier = Modifier

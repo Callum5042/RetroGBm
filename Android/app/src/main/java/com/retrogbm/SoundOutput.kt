@@ -6,7 +6,7 @@ import android.media.AudioTrack
 import android.util.Log
 import kotlin.math.sin
 
-class NullSoundOutput {
+class SoundOutput {
     val nativePtr: Long
     private external fun nativeCreate(): Long
 
@@ -26,8 +26,16 @@ class NullSoundOutput {
     }
 
     fun playBufferedSamples(samples: ByteArray) {
-        audioTrack.write(samples, 0, samples.size)
+        if (this.audioOn) {
+            audioTrack.write(samples, 0, samples.size)
+        }
     }
+
+    fun toggleAudio(audioOn: Boolean) {
+        this.audioOn = audioOn
+    }
+
+    private var audioOn = true;
 
     private val audioTrack = AudioTrack(
         AudioManager.STREAM_MUSIC,
