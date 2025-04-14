@@ -123,7 +123,19 @@
     <ClInclude Include="External\spdlog\stopwatch.h" />
     <ClInclude Include="External\spdlog\tweakme.h" />
     <ClInclude Include="External\spdlog\version.h" />
+    <ClInclude Include="Include\RetroGBm\Audio\FrequencySweep.h" />
+    <ClInclude Include="Include\RetroGBm\Audio\ISoundOutput.h" />
+    <ClInclude Include="Include\RetroGBm\Audio\LengthCounter.h" />
+    <ClInclude Include="Include\RetroGBm\Audio\Lfsr.h" />
+    <ClInclude Include="Include\RetroGBm\Audio\PolynomialCounter.h" />
     <ClInclude Include="Include\RetroGBm\Apu.h" />
+    <ClInclude Include="Include\RetroGBm\Audio\SoundMode1.h" />
+    <ClInclude Include="Include\RetroGBm\Audio\SoundMode2.h" />
+    <ClInclude Include="Include\RetroGBm\Audio\SoundMode3.h" />
+    <ClInclude Include="Include\RetroGBm\Audio\SoundMode4.h" />
+    <ClInclude Include="Include\RetroGBm\Audio\SoundModeBase.h" />
+    <ClInclude Include="Include\RetroGBm\Audio\VolumeEnvelope.h" />
+    <ClInclude Include="Include\RetroGBm\Constants.h" />
     <ClInclude Include="Include\RetroGBm\External\spdlog\async.h" />
     <ClInclude Include="Include\RetroGBm\External\spdlog\async_logger-inl.h" />
     <ClInclude Include="Include\RetroGBm\External\spdlog\async_logger.h" />
@@ -164,6 +176,16 @@
   <ItemGroup>
     <ClInclude Include="Include\RetroGBm\Cartridge\CartridgeMBC3.h" />
     <ClCompile Include="Source\Apu.cpp" />
+    <ClCompile Include="Source\Audio\FrequencySweep.cpp" />
+    <ClCompile Include="Source\Audio\LengthCounter.cpp" />
+    <ClCompile Include="Source\Audio\Lfsr.cpp" />
+    <ClCompile Include="Source\Audio\PolynomialCounter.cpp" />
+    <ClCompile Include="Source\Audio\SoundMode1.cpp" />
+    <ClCompile Include="Source\Audio\SoundMode2.cpp" />
+    <ClCompile Include="Source\Audio\SoundMode3.cpp" />
+    <ClCompile Include="Source\Audio\SoundMode4.cpp" />
+    <ClCompile Include="Source\Audio\SoundModeBase.cpp" />
+    <ClCompile Include="Source\Audio\VolumeEnvelope.cpp" />
     <ClCompile Include="Source\Cartridge\BaseCartridge.cpp" />
     <ClCompile Include="Source\Cartridge\CartridgeMBC1.cpp" />
     <ClCompile Include="Source\Cartridge\CartridgeMBC3.cpp" />

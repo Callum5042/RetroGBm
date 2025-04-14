@@ -13,6 +13,8 @@
 #include <RetroGBm/Joypad.h>
 #include <RetroGBm/Logger.h>
 
+#include "Audio/XAudio2Output.h"
+
 Application* Application::Instance = nullptr;
 
 Application::Application()
@@ -62,7 +64,7 @@ void Application::LoadRom(const std::string& file)
 
 	Logger::Info("Loading ROM file: " + file);
 
-	m_Emulator = std::make_unique<Emulator>();
+	m_Emulator = std::make_unique<Emulator>(m_SoundOutput.get());
 	m_Emulator->ToggleTraceLog(tracelog);
 	m_Emulator->LoadRom(file);
 
@@ -100,7 +102,7 @@ void Application::StopEmulator()
 
 void Application::Run()
 {
-	m_Emulator = std::make_unique<Emulator>();
+	m_Emulator = std::make_unique<Emulator>(m_SoundOutput.get());
 
 	// UI runs on main thread
 	while (m_Running)
@@ -159,6 +161,9 @@ void Application::Init()
 
 	// Create windows
 	CreateMainWindow();
+
+	// Initialize audio
+	m_SoundOutput = std::make_unique<XAudio2Output>();
 }
 
 void Application::CreateMainWindow()
