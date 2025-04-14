@@ -26,18 +26,14 @@
 
 #include "RetroGBm/md5.h"
 
-namespace Chocobo1
-{
-	// Use these!!
-	// MD5();
-}
-
 using namespace std::chrono_literals;
 
 Emulator* Emulator::Instance = nullptr;
 
-Emulator::Emulator()
+Emulator::Emulator(ISoundOutput* soundOutput)
 {
+	m_SoundOutput = soundOutput;
+
 	Instance = this;
 
 	// TODO: Do I still need this here?
@@ -49,14 +45,16 @@ Emulator::Emulator()
 
 	m_Ppu = std::make_unique<Ppu>(this, m_Cpu.get(), m_Display.get(), m_Cartridge.get());
 	m_Dma = std::make_unique<Dma>();
-	m_Apu = std::make_unique<Apu>(m_Timer.get());
+	m_Apu = std::make_unique<Apu>(m_SoundOutput);
 
 	m_Context.cpu = m_Cpu.get();
 	m_Context.bus = this;
 }
 
-Emulator::Emulator(std::unique_ptr<BaseCartridge> cartridge)
+Emulator::Emulator(std::unique_ptr<BaseCartridge> cartridge, ISoundOutput* soundOutput)
 {
+	m_SoundOutput = soundOutput;
+
 	Instance = this;
 
 	m_Cartridge = std::move(cartridge);
@@ -67,7 +65,7 @@ Emulator::Emulator(std::unique_ptr<BaseCartridge> cartridge)
 	m_Ppu = std::make_unique<Ppu>();
 	m_Dma = std::make_unique<Dma>();
 	m_Joypad = std::make_unique<Joypad>();
-	m_Apu = std::make_unique<Apu>(m_Timer.get());
+	m_Apu = std::make_unique<Apu>(m_SoundOutput);
 
 	m_Context.cpu = m_Cpu.get();
 	m_Context.bus = this;
@@ -107,7 +105,7 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 
 	m_Ppu = std::make_unique<Ppu>(this, m_Cpu.get(), m_Display.get(), m_Cartridge.get());
 	m_Dma = std::make_unique<Dma>();
-	m_Apu = std::make_unique<Apu>(m_Timer.get());
+	m_Apu = std::make_unique<Apu>(m_SoundOutput);
 
 	m_Context.cpu = m_Cpu.get();
 	m_Context.bus = this;
@@ -116,7 +114,6 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	m_Cpu->Init();
 	m_Timer->Init();
 	m_Ppu->Init();
-	m_Apu->Init();
 
 	// Load RAM if cartridge has a battery
 	if (m_Cartridge->HasBattery())
@@ -409,13 +406,13 @@ void Emulator::Cycle(int machine_cycles)
 				if (n & 1)
 				{
 					m_Ppu->Tick();
-					m_Apu->Tick(true);
+					m_Apu->Tick();
 				}
 			}
 			else
 			{
 				m_Ppu->Tick();
-				m_Apu->Tick(false);
+				m_Apu->Tick();
 			}
 		}
 

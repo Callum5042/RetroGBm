@@ -1,5 +1,6 @@
 #include "CppUnitTest.h"
 #include "MockCartridge.h"
+#include "NullSoundOutput.h"
 
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Instructions.h>
@@ -16,7 +17,8 @@ namespace CoreTests
 		TEST_METHOD(Nop_IncreaseProgramCounter)
 		{
 			// Arrange
-			Emulator emulator;
+			NullSoundOutput sound_output;
+			Emulator emulator(&sound_output);
 			emulator.GetCpu()->ProgramCounter = 0;
 
 			// Act
@@ -29,7 +31,8 @@ namespace CoreTests
 		TEST_METHOD(LoadR8_LoadRegisterIntoRegister)
 		{
 			// Arrange
-			Emulator emulator;
+			NullSoundOutput sound_output;
+			Emulator emulator(&sound_output);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_E, 0x0);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_D, 0x5);
 
@@ -44,7 +47,8 @@ namespace CoreTests
 		TEST_METHOD(AddR8_AddRegisterToRegister)
 		{
 			// Arrange
-			Emulator emulator;
+			NullSoundOutput sound_output;
+			Emulator emulator(&sound_output);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_A, 0x5);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_B, 0x10);
 
@@ -60,7 +64,8 @@ namespace CoreTests
 		TEST_METHOD(AddR8_AddRegisterToRegister_Overflows_SetCarryFlags)
 		{
 			// Arrange
-			Emulator emulator;
+			NullSoundOutput sound_output;
+			Emulator emulator(&sound_output);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_A, 0xFF);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_B, 0xA);
 
@@ -77,7 +82,8 @@ namespace CoreTests
 		TEST_METHOD(AddR8_AddRegisterToRegister_Overflows_SetZeroFlags)
 		{
 			// Arrange
-			Emulator emulator;
+			NullSoundOutput sound_output;
+			Emulator emulator(&sound_output);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_A, 0xFF);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_B, 0x1);
 
@@ -95,7 +101,8 @@ namespace CoreTests
 		TEST_METHOD(AddR8_AddRegisterToRegister_Overflows_SetHalfCarryFlags)
 		{
 			// Arrange
-			Emulator emulator;
+			NullSoundOutput sound_output;
+			Emulator emulator(&sound_output);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_A, 0xF);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_B, 0x1);
 
@@ -114,7 +121,8 @@ namespace CoreTests
 		TEST_METHOD(SubR8_SubRegisterToRegister)
 		{
 			// Arrange
-			Emulator emulator;
+			NullSoundOutput sound_output;
+			Emulator emulator(&sound_output);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_A, 0x15);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_B, 0x5);
 
@@ -130,7 +138,8 @@ namespace CoreTests
 		TEST_METHOD(SubR8_SubRegisterToRegister_ResultIsZero_SetZeroFlag)
 		{
 			// Arrange
-			Emulator emulator;
+			NullSoundOutput sound_output;
+			Emulator emulator(&sound_output);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_A, 0x15);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_B, 0x15);
 
@@ -147,7 +156,8 @@ namespace CoreTests
 		TEST_METHOD(SubR8_SubRegisterToRegister_ResultWillUnderflow_SetCarryFlag)
 		{
 			// Arrange
-			Emulator emulator;
+			NullSoundOutput sound_output;
+			Emulator emulator(&sound_output);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_A, 0x15);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_B, 0x16);
 
@@ -164,7 +174,8 @@ namespace CoreTests
 		TEST_METHOD(SubR8_SubRegisterToRegister_ResultWillUnderflowNibble_SetHalfCarryFlag)
 		{
 			// Arrange
-			Emulator emulator;
+			NullSoundOutput sound_output;
+			Emulator emulator(&sound_output);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_A, 0x10);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_B, 0x1);
 
@@ -181,7 +192,8 @@ namespace CoreTests
 		TEST_METHOD(IncR8_IncrementRegisterBy1_CarryFlagIsIgnored)
 		{
 			// Arrange
-			Emulator emulator;
+			NullSoundOutput sound_output;
+			Emulator emulator(&sound_output);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_B, 0x5);
 			emulator.GetCpu()->SetFlag(CpuFlag::Carry, true);
 
@@ -199,7 +211,8 @@ namespace CoreTests
 		TEST_METHOD(IncR8_ResultsOverflown_SetZeroFlag_IgnoreCarryFlag)
 		{
 			// Arrange
-			Emulator emulator;
+			NullSoundOutput sound_output;
+			Emulator emulator(&sound_output);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_B, 0xFF);
 			emulator.GetCpu()->SetFlag(CpuFlag::Carry, false);
 			emulator.GetCpu()->SetFlag(CpuFlag::Zero, false);
@@ -216,7 +229,8 @@ namespace CoreTests
 		TEST_METHOD(IncR8_ResultsOverflown_UnderflownNibble_SetHalfCarry)
 		{
 			// Arrange
-			Emulator emulator;
+			NullSoundOutput sound_output;
+			Emulator emulator(&sound_output);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_B, 0xF);
 			emulator.GetCpu()->SetFlag(CpuFlag::HalfCarry, false);
 
@@ -231,7 +245,8 @@ namespace CoreTests
 		TEST_METHOD(DecR8_DecrementRegisterBy1_CarryFlagIsIgnored)
 		{
 			// Arrange
-			Emulator emulator;
+			NullSoundOutput sound_output;
+			Emulator emulator(&sound_output);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_B, 0x5);
 			emulator.GetCpu()->SetFlag(CpuFlag::Carry, true);
 
@@ -249,7 +264,8 @@ namespace CoreTests
 		TEST_METHOD(DecR8_DecrementRegisterBy1_ResultIsZero_ZeroFlagIsSet)
 		{
 			// Arrange
-			Emulator emulator;
+			NullSoundOutput sound_output;
+			Emulator emulator(&sound_output);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_B, 0x1);
 
 			// Act
@@ -265,7 +281,8 @@ namespace CoreTests
 		TEST_METHOD(DecR8_DecrementRegisterBy1_ResultUnderflowsNibble_SetHalfCarryFlag)
 		{
 			// Arrange
-			Emulator emulator;
+			NullSoundOutput sound_output;
+			Emulator emulator(&sound_output);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_B, 0x10);
 
 			// Act
@@ -285,7 +302,8 @@ namespace CoreTests
 			cartridge_data.data.resize(0x3FFF);
 			cartridge_data.data[0x33] = 0xA;
 
-			Emulator emulator(std::make_unique<CartridgeROM>(cartridge_data));
+			NullSoundOutput sound_output;
+			Emulator emulator(std::make_unique<CartridgeROM>(cartridge_data), &sound_output);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_D, 0x0);
 			emulator.GetCpu()->ProgramCounter = 0x32;
 
@@ -303,7 +321,8 @@ namespace CoreTests
 			cartridge_data.data.resize(0x3FFF);
 			cartridge_data.data[0x33] = 0xA;
 
-			Emulator emulator(std::make_unique<CartridgeROM>(cartridge_data));
+			NullSoundOutput sound_output;
+			Emulator emulator(std::make_unique<CartridgeROM>(cartridge_data), &sound_output);
 			emulator.GetCpu()->SetRegister(RegisterType16::REG_HL, 0xC000);
 			emulator.GetCpu()->ProgramCounter = 0x32;
 
@@ -319,7 +338,8 @@ namespace CoreTests
 		TEST_METHOD(StoreR8_SetValuePointerToAtBusToBusValue)
 		{
 			// Arrange
-			Emulator emulator;
+			NullSoundOutput sound_output;
+			Emulator emulator(&sound_output);
 			emulator.GetCpu()->SetRegister(RegisterType16::REG_HL, 0xC000);
 			emulator.GetCpu()->SetRegister(RegisterType8::REG_D, 0xA);
 			emulator.GetCpu()->ProgramCounter = 0x32;
@@ -335,7 +355,8 @@ namespace CoreTests
 		TEST_METHOD(Pop16_Pushed16_ShouldPop16_BeSameValue)
 		{
 			// Arrange
-			Emulator emulator;
+			NullSoundOutput sound_output;
+			Emulator emulator(&sound_output);
 			emulator.GetCpu()->ProgramCounter = 0x32;
 
 			emulator.GetCpu()->SetRegister(RegisterType16::REG_BC, 0xAABB);
@@ -357,7 +378,8 @@ namespace CoreTests
 			cartridge_data.data[0x0] = 0xAA;
 			cartridge_data.data[0x1] = 0xBB;
 
-			Emulator emulator(std::make_unique<CartridgeROM>(cartridge_data));
+			NullSoundOutput sound_output;
+			Emulator emulator(std::make_unique<CartridgeROM>(cartridge_data), &sound_output);
 			emulator.GetCpu()->ProgramCounter = 0x32;
 			emulator.GetCpu()->StackPointer = 0x0;
 			emulator.GetCpu()->m_InterruptMasterFlag = false;

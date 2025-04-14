@@ -13,16 +13,21 @@ enum class JoyPadButton(val buttonCode: Int) {
 
 class EmulatorWrapper {
 
+    private lateinit var soundOutput: NullSoundOutput;
     private var emulatorPtr: Long = 0
 
     fun loadRom(path: String, batteryPath: String) {
-        emulatorPtr = createEmulator()
+
+        soundOutput = NullSoundOutput()
+        emulatorPtr = createEmulator(soundOutput.nativePtr)
+
         setBatteryPath(emulatorPtr, batteryPath)
         loadRom(emulatorPtr, path)
     }
 
     fun loadRom(data: ByteArray, path: String) {
-        emulatorPtr = createEmulator()
+        soundOutput = NullSoundOutput()
+        emulatorPtr = createEmulator(soundOutput.nativePtr)
         setBatteryPath(emulatorPtr, path)
         loadRomFromByteArray(emulatorPtr, data)
     }
@@ -75,7 +80,7 @@ class EmulatorWrapper {
         resume(emulatorPtr)
     }
 
-    private external fun createEmulator(): Long
+    private external fun createEmulator(soundOutputPtr: Long): Long
     private external fun loadRom(emulatorPtr: Long, path: String)
     private external fun loadRomFromByteArray(emulatorPtr: Long, data: ByteArray)
     private external fun tick(emulatorPtr: Long)

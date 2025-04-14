@@ -11,6 +11,8 @@
 #include <chrono>
 #include <map>
 
+#include "RetroGBm/Audio/ISoundOutput.h"
+
 class Cpu;
 class Ppu;
 class Ram;
@@ -22,6 +24,8 @@ class Display;
 class IBus;
 class BaseCartridge;
 class Apu;
+
+class ISoundOutput;
 
 struct EmulatorContext
 {
@@ -44,9 +48,11 @@ public:
 
 class Emulator : public IBus
 {
+	ISoundOutput* m_SoundOutput = nullptr;
+
 public:
-	Emulator();
-	Emulator(std::unique_ptr<BaseCartridge> cartridge);
+	Emulator(ISoundOutput* soundOutput);
+	Emulator(std::unique_ptr<BaseCartridge> cartridge, ISoundOutput* soundOutput);
 	virtual ~Emulator();
 
 	static Emulator* Instance;

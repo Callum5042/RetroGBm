@@ -8,12 +8,35 @@
 #include <RetroGBm/Joypad.h>
 #include <RetroGBm/Logger.h>
 
+#include "KotlinSoundOutputWrapper.h"
+
+//class NullSoundOutput : public ISoundOutput
+//{
+//public:
+//    NullSoundOutput() = default;
+//
+//    void Start() override {
+//
+//    }
+//
+//    void Stop() override {
+//
+//    }
+//
+//    void Play(int left, int right) override {
+//
+//    }
+//};
+
 extern "C"
 {
     JNIEXPORT jlong JNICALL
-    Java_com_retrogbm_EmulatorWrapper_createEmulator(JNIEnv *env, jobject thiz)
+    Java_com_retrogbm_EmulatorWrapper_createEmulator(JNIEnv *env, jobject thiz, jlong soundOutputPtr)
     {
-        return reinterpret_cast<jlong>(new Emulator());
+        ISoundOutput* sound_output = reinterpret_cast<ISoundOutput*>(soundOutputPtr);
+
+        // ISoundOutput* sound_output = new NullSoundOutput();
+        return reinterpret_cast<jlong>(new Emulator(sound_output));
     }
 
     JNIEXPORT void JNICALL
@@ -212,4 +235,11 @@ extern "C"
     Java_com_retrogbm_LoggerWrapper_critical(JNIEnv *env, jobject thi, jstring message) {
         Logger::Critical(env->GetStringUTFChars(message, nullptr));
     }
+}
+
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_com_retrogbm_NullSoundOutput_nativeCreate(JNIEnv *env, jobject thiz) {
+    ISoundOutput* output = new KotlinSoundOutputWrapper(env, thiz);
+    return reinterpret_cast<jlong>(output);
 }

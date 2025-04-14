@@ -5,6 +5,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <xaudio2.h>
 
 #include "Windows/MainWindow.h"
 #include "Windows/TileWindow.h"
@@ -16,6 +17,8 @@
 #include "Render/RenderShader.h"
 #include "Render/RenderTarget.h"
 #include "Render/RenderTexture.h"
+
+#include "RetroGBm/Audio/ISoundOutput.h"
 
 class Emulator;
 
@@ -72,4 +75,7 @@ private:
 	// Rendering
 	std::unique_ptr<Render::RenderDevice> m_RenderDevice = nullptr;
 	std::unique_ptr<Render::RenderShader> m_RenderShader = nullptr;
+
+	// Audio
+	std::unique_ptr<ISoundOutput> m_SoundOutput = nullptr;
 };
