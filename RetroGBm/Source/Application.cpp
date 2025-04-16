@@ -5,6 +5,7 @@
 #include <format>
 #include <string>
 #include <algorithm>
+#include <filesystem>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -62,9 +63,15 @@ void Application::LoadRom(const std::string& file)
 	StopEmulator();
 	bool tracelog = m_Emulator->IsTraceLogEnabled();
 
-	Logger::Info("Loading ROM file: " + file);
-
 	m_Emulator = std::make_unique<Emulator>(m_SoundOutput.get());
+
+	std::filesystem::path battery_path = "RomData";
+	std::filesystem::create_directories(battery_path);
+	std::string filename = std::filesystem::path(file).filename().string();
+	battery_path.append(filename + ".save");
+	m_Emulator->SetBatteryPath(battery_path.string());
+
+	Logger::Info("Loading ROM file: " + file);
 	m_Emulator->ToggleTraceLog(tracelog);
 	m_Emulator->LoadRom(file);
 
