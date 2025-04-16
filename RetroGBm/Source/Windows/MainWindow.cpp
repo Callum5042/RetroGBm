@@ -288,10 +288,14 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		int slot = menu_id - m_MenuSaveSlot1;
 
-		std::string title = m_Application->GetEmulator()->GetCartridge()->GetCartridgeData().title;
-		std::string savestate_path = title + ".slot" + std::to_string(slot) + ".state";
+		std::string filename = std::filesystem::path(m_FilePath).filename().string();
 
-		m_Application->SaveState(savestate_path);
+		std::filesystem::path savestate_path = "SaveStates";
+		savestate_path.append(filename);
+
+		std::filesystem::create_directories(savestate_path);
+		savestate_path.append("Save-" + std::to_string(slot) + ".state");
+		m_Application->SaveState(savestate_path.string());
 
 		UpdateSaveStateDetails();
 	}
@@ -301,12 +305,15 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		int slot = menu_id - m_MenuLoadSlot1;
 
-		std::string title = m_Application->GetEmulator()->GetCartridge()->GetCartridgeData().title;
-		std::string savestate_path = title + ".slot" + std::to_string(slot) + ".state";
+		std::string filename = std::filesystem::path(m_FilePath).filename().string();
+
+		std::filesystem::path savestate_path = "SaveStates";
+		savestate_path.append(filename);
 
 		if (std::filesystem::exists(savestate_path))
 		{
-			m_Application->LoadState(savestate_path);
+			savestate_path.append("Save-" + std::to_string(slot) + ".state");
+			m_Application->LoadState(savestate_path.string());
 		}
 	}
 }
@@ -428,7 +435,12 @@ void MainWindow::UpdateSaveStateDetails()
 
 	for (int i = 1; i <= 9; ++i)
 	{
-		std::string savestate_path = title + ".slot" + std::to_string(i) + ".state";
+		std::string filename = std::filesystem::path(m_FilePath).filename().string();
+
+		std::filesystem::path savestate_path = "SaveStates";
+		savestate_path.append(filename);
+		savestate_path.append("Save-" + std::to_string(i) + ".state");
+
 		std::ifstream file(savestate_path, std::ios::binary | std::ios::in);
 		if (file.is_open())
 		{
