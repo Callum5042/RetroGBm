@@ -165,6 +165,7 @@
   <ItemGroup>
     <ClInclude Include="Include\Application.h" />
     <ClInclude Include="Include\Audio\XAudio2Output.h" />
+    <ClInclude Include="Include\json.hpp" />
     <ClInclude Include="Include\ProfileParser.h" />
     <ClInclude Include="Include\simdjson.h" />
     <ClInclude Include="Include\Windows\CartridgeInfoWindow.h" />

@@ -13,3 +13,5 @@ struct ProfileData
 };
 
 std::vector<ProfileData> ParseProfile(const std::filesystem::path& path);
+
+void SaveProfile(const std::filesystem::path& path, const std::vector<ProfileData>& data);

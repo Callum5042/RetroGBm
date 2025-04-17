@@ -6,7 +6,6 @@
 
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Joypad.h>
-#include <RetroGBm/Cartridge/BaseCartridge.h>
 #include <RetroGBm/SaveStateHeader.h>
 
 #include <format>
@@ -14,14 +13,8 @@
 #include <vector>
 #include <shobjidl.h>
 #include <filesystem>
-
 #include <chrono>
 #include <sstream>
-#include <string>
-#include <sstream>
-#include <chrono>
-
-#include "ProfileParser.h"
 
 namespace
 {
@@ -502,11 +495,6 @@ void MainWindow::UpdateSaveStateDetails()
 					continue;
 				}
 
-				// Date created string
-				//char date_created_str[11]; // Enough space for "yyyy/mm/dd\0"
-				//std::tm* date_created = std::localtime(&header.date_created);
-				//std::strftime(date_created_str, sizeof(date_created_str), "%Y/%m/%d", date_created);
-
 				// Date modified string
 				char date_modified_str[11]; // Enough space for "yyyy/mm/dd\0"
 				std::tm* date_modified = std::localtime(&header.date_modified);
@@ -865,8 +853,6 @@ void MainWindow::ComputeStatusBarSections()
 	SendMessage(m_HwndStatusbar, SB_SETPARTS, (WPARAM)edges.size(), (LPARAM)edges.data());
 }
 
-#include <RetroGBm/Logger.h>
-
 void MainWindow::CreateRomListWindow()
 {
 	HINSTANCE hInstance = GetModuleHandle(NULL);
@@ -902,9 +888,6 @@ void MainWindow::CreateRomListWindow()
 	lvCol.cx = 200;
 	ListView_InsertColumn(m_ListHwnd, 2, &lvCol);
 
-	// Load the profile json
-	std::vector<ProfileData> profileData = ParseProfile("profile.json");
-
 	// Add sample items
 	std::vector<std::wstring> titles;
 	std::vector<std::wstring> times;
@@ -919,12 +902,10 @@ void MainWindow::CreateRomListWindow()
 		{
 			titles.push_back(entry.path().filename().wstring());
 
-
-
 			std::wstring total_time_played = L"No time played";
 			std::wstring last_played = L"Never played";
 
-			for (auto& gameData : profileData)
+			for (auto& gameData : m_Application->ProfileDataList)
 			{
 				if (entry.path().filename() == gameData.filename)
 				{

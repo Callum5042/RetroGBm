@@ -4,8 +4,8 @@
 
 #include <format>
 #include <string>
-#include <algorithm>
 #include <filesystem>
+#include <chrono>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -15,6 +15,42 @@
 #include <RetroGBm/Logger.h>
 
 #include "Audio/XAudio2Output.h"
+
+namespace
+{
+	std::string getISODateTime()
+	{
+		using namespace std::chrono;
+
+		// Get current time
+		auto now = system_clock::now();
+
+		// Extract milliseconds
+		auto ms = duration_cast<milliseconds>(now.time_since_epoch()) % 1000;
+
+		// Convert to time_t for formatting
+		auto in_time_t = system_clock::to_time_t(now);
+
+		// Get local time
+		std::tm buf;
+#ifdef _WIN32
+		localtime_s(&buf, &in_time_t); // Windows
+#else
+		localtime_r(&in_time_t, &buf); // POSIX (Linux/macOS)
+#endif
+
+		std::ostringstream ss;
+		ss << std::put_time(&buf, "%Y-%m-%dT%H:%M:%S");
+		ss << '.' << std::setw(3) << std::setfill('0') << ms.count();
+
+		// Get timezone offset (e.g. +0100)
+		char tz[6];
+		std::strftime(tz, sizeof(tz), "%z", &buf);
+		ss << tz;
+
+		return ss.str();
+	}
+}
 
 Application* Application::Instance = nullptr;
 
@@ -60,6 +96,7 @@ int Application::Start()
 
 void Application::LoadRom(const std::string& file)
 {
+
 	StopEmulator();
 	bool tracelog = m_Emulator->IsTraceLogEnabled();
 
@@ -74,6 +111,10 @@ void Application::LoadRom(const std::string& file)
 	Logger::Info("Loading ROM file: " + file);
 	m_Emulator->ToggleTraceLog(tracelog);
 	m_Emulator->LoadRom(file);
+
+	// Set start time
+	CurrentTimeStamp = std::chrono::high_resolution_clock::now();
+	CurrentFilename = std::filesystem::path(file).filename().string();
 
 	// Emulator runs on a background thread
 	m_EmulatorThread = std::thread([&]
@@ -98,6 +139,11 @@ void Application::LoadRom(const std::string& file)
 void Application::StopEmulator()
 {
 	// Stop the emulator
+	if (!m_Emulator->IsRunning())
+	{
+		return;
+	}
+
 	m_Emulator->Stop();
 	if (m_EmulatorThread.joinable())
 	{
@@ -105,6 +151,40 @@ void Application::StopEmulator()
 	}
 
 	Logger::Info("Emulator stopped");
+
+	// Calculate play time
+	auto end_time = std::chrono::high_resolution_clock::now();
+	int play_time_minutes = std::chrono::duration_cast<std::chrono::minutes>(end_time - CurrentTimeStamp).count();
+
+	// Set last played date
+	std::string today_date = getISODateTime();
+
+	// Find the game profile entry
+	bool found_entry = false;
+	for (auto& profileData : ProfileDataList)
+	{
+		if (profileData.filename == CurrentFilename)
+		{
+			profileData.totalPlayTimeMinutes += play_time_minutes;
+			profileData.lastPlayed = today_date;
+			found_entry = true;
+			break;
+		}
+	}
+
+	// If we don't find a profile entry then add one
+	if (found_entry)
+	{
+		ProfileData new_data;
+		new_data.filename = CurrentFilename;
+		new_data.totalPlayTimeMinutes += play_time_minutes;
+		new_data.lastPlayed = today_date;
+
+		ProfileDataList.push_back(new_data);
+	}
+
+	// Save profile
+	SaveProfile("profile.json", ProfileDataList);
 }
 
 void Application::Run()
@@ -159,6 +239,9 @@ void Application::Run()
 
 void Application::Init()
 {
+	// Load the profile json
+	ProfileDataList = ParseProfile("profile.json");
+
 	// Render device
 	m_RenderDevice = std::make_unique<Render::RenderDevice>();
 	m_RenderDevice->Create();

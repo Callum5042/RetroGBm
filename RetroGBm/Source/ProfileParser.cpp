@@ -1,7 +1,10 @@
 #include "ProfileParser.h"
 #include "simdjson.h"
+#include "json.hpp"
 
 #include <RetroGBm/Logger.h>
+
+#include <fstream>
 
 using namespace simdjson;
 
@@ -98,4 +101,28 @@ std::vector<ProfileData> ParseProfile(const std::filesystem::path& path)
 	}
 
 	return profileDataList;
+}
+
+void to_json(nlohmann::json& j, const ProfileData& p)
+{
+	j = nlohmann::json
+	{
+		{"checksum", p.checksum},
+		{"fileName", p.filename},
+		{"lastPlayed", p.lastPlayed},
+		{"totalPlayTimeMinutes", p.totalPlayTimeMinutes}
+	};
+}
+
+void SaveProfile(const std::filesystem::path& path, const std::vector<ProfileData>& data)
+{
+	nlohmann::json j; // thanks to the `to_json` function
+	// to_json(j, data);
+
+	j["gameData"] = data;
+
+	std::string json = j.dump(2);
+
+	std::ofstream file("profile.json", std::ios_base::trunc);
+	file << json;
 }

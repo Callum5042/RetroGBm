@@ -3,7 +3,6 @@
 #include <string>
 #include <Windows.h>
 #include <memory>
-#include <thread>
 #include <RetroGBm/HighTimer.h>
 
 #include "Render/RenderTarget.h"
