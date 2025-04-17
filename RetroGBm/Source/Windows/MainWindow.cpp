@@ -143,8 +143,22 @@ LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 		break;
 
 		case WM_CLOSE:
-			OnClose();
+		{
+			if (m_Application->GetEmulator()->IsRunning())
+			{
+				int result = MessageBox(m_Hwnd, L"Do you want to exit the emulator?", L"Exit Emulator", MB_OKCANCEL | MB_ICONQUESTION);
+				if (result == IDOK)
+				{
+					OnClose();
+				}
+			}
+			else
+			{
+				PostQuitMessage(0);
+			}
+
 			return 0;
+		}
 
 		case WM_SYSCHAR:
 			// Disable beeping when we ALT key combo is pressed
@@ -598,6 +612,7 @@ bool MainWindow::OpenFileDialog(std::string* filepath)
 
 void MainWindow::OnClose()
 {
+	m_Application->StopEmulator();
 	PostQuitMessage(0);
 }
 
