@@ -160,6 +160,17 @@ LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 			return 0;
 		}
 
+		case WM_SETCURSOR:
+		{
+			if ((HWND)wParam == m_RenderHwnd)
+			{
+				SetCursor(NULL);
+				return TRUE;
+			}
+
+			break;
+		}
+
 		case WM_SYSCHAR:
 			// Disable beeping when we ALT key combo is pressed
 			return 1;
@@ -197,16 +208,16 @@ LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 			return 0;
 		}
 
-		case WM_NCHITTEST:
-		{
-			// This allows for clicking the child render window to pass the events through to the main window
-			if (hwnd == m_RenderHwnd)
-			{
-				return HTTRANSPARENT;
-			}
+		//case WM_NCHITTEST:
+		//{
+		//	// This allows for clicking the child render window to pass the events through to the main window
+		//	if (hwnd == m_RenderHwnd)
+		//	{
+		//		return HTTRANSPARENT;
+		//	}
 
-			break;
-		}
+		//	break;
+		//}
 
 		case WM_ENTERSIZEMOVE:
 			SetTimer(m_Hwnd, m_RenderTimer, 1, NULL);
@@ -995,7 +1006,7 @@ void MainWindow::CreateRenderWindow()
 	ComputeRenderWindowSize(&width, &height);
 
 	// Create render window as a child of the main window
-	m_RenderHwnd = CreateWindow(m_RegisterClassName.c_str(), L"EmulatorWindow", WS_POPUP | WS_VISIBLE | WS_SYSMENU, 0, 0, width, height, NULL, NULL, hInstance, this);
+	m_RenderHwnd = CreateWindow(m_RegisterClassName.c_str(), L"EmulatorWindow", WS_POPUP | WS_VISIBLE | WS_SYSMENU | WS_CHILD, 0, 0, width, height, NULL, NULL, hInstance, this);
 	if (m_RenderHwnd == NULL)
 	{
 		throw std::exception("CreateWindow Failed");
