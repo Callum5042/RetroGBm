@@ -3,7 +3,6 @@
 #include <string>
 #include <Windows.h>
 #include <memory>
-#include <thread>
 #include <RetroGBm/HighTimer.h>
 
 #include "Render/RenderTarget.h"
@@ -46,8 +45,14 @@ private:
 	int m_FrameCount = 0;
 	int m_FramesPerSecond = 0;
 
-
 	static const UINT m_RenderTimer = 555;
+
+	void LoadRom(const std::string& path);
+
+	// ROM list window
+	void CreateRomListWindow();
+	HWND m_ListHwnd = NULL;
+	static const UINT m_ListMenuId = 4001;
 
 	// Render window
 	void CreateRenderWindow();

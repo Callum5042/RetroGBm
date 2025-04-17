@@ -2,15 +2,12 @@
 
 #include <memory>
 #include <thread>
-
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-#include <xaudio2.h>
+#include <vector>
+#include <chrono>
 
 #include "Windows/MainWindow.h"
 #include "Windows/TileWindow.h"
 #include "Windows/CartridgeInfoWindow.h"
-
 #include "Windows/CpuRegistersWindow.h"
 
 #include "Render/RenderDevice.h"
@@ -19,6 +16,8 @@
 #include "Render/RenderTexture.h"
 
 #include "RetroGBm/Audio/ISoundOutput.h"
+
+#include "ProfileParser.h"
 
 class Emulator;
 
@@ -52,6 +51,11 @@ public:
 	
 	// Tools Windows
 	std::unique_ptr<CpuRegisterWindow> CpuRegistersWindow = nullptr;
+
+	// Profile Data
+	std::vector<ProfileData> ProfileDataList;
+	std::chrono::steady_clock::time_point CurrentTimeStamp;
+	std::string CurrentFilename;
 
 private:
 	void Init();

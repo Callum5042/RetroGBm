@@ -6,7 +6,6 @@
 
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Joypad.h>
-#include <RetroGBm/Cartridge/BaseCartridge.h>
 #include <RetroGBm/SaveStateHeader.h>
 
 #include <format>
@@ -14,6 +13,8 @@
 #include <vector>
 #include <shobjidl.h>
 #include <filesystem>
+#include <chrono>
+#include <sstream>
 
 namespace
 {
@@ -70,6 +71,7 @@ void MainWindow::Create(const std::string& title, int width, int height)
 	CreateMenuBar();
 	CreateStatusBar();
 	CreateRenderWindow();
+	CreateRomListWindow();
 
 	// Statusbar on draw on top of render
 	SetWindowPos(m_HwndStatusbar, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
@@ -112,6 +114,34 @@ LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 {
 	switch (msg)
 	{
+		case WM_NOTIFY:
+		{
+			LPNMHDR nmhdr = (LPNMHDR)lParam;
+
+			// Check if the message is from your ListView (ID = 1)
+			if (nmhdr->idFrom == m_ListMenuId && nmhdr->code == NM_CLICK)
+			{
+				LPNMITEMACTIVATE item = (LPNMITEMACTIVATE)lParam;
+
+				if (item->iItem != -1)
+				{
+					int row = item->iItem;
+
+					// Optional: Get text from that row
+					WCHAR buf[256];
+					ListView_GetItemText(m_ListHwnd, row, 0, buf, 256);
+
+					std::wstring filename(buf);
+					std::filesystem::path rom_path("ROMS");
+					rom_path.append(filename);
+
+					this->LoadRom(rom_path.string());
+				}
+			}
+			return 0;
+		}
+		break;
+
 		case WM_CLOSE:
 			OnClose();
 			return 0;
@@ -202,6 +232,9 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			this->SetStatusBarTitle("");
 			this->SetStatusBarStats("");
 			this->SetStatusBarState("");
+
+			ShowWindow(m_RenderHwnd, SW_HIDE);
+			ShowWindow(m_ListHwnd, SW_SHOW);
 
 			if (m_Application->CpuRegistersWindow != nullptr)
 			{
@@ -408,31 +441,38 @@ void MainWindow::OpenDialog()
 	std::string path;
 	if (OpenFileDialog(&path))
 	{
-		m_FilePath = path;
-		m_Application->LoadRom(path);
-		EnableMenuItem(m_ToolsMenuItem, m_MenuToolsCartridgeInfo, MF_ENABLED);
-
-		std::string filename = std::filesystem::path(m_FilePath).filename().string();
-
-		this->SetStatusBarTitle(filename);
-		this->SetStatusBarState("Playing");
-
-		// Reload cartridge info
-		CartridgeInfoWindow* cartridge_info_window = m_Application->GetCartridgeInfoWindow();
-		if (cartridge_info_window != nullptr)
-		{
-			cartridge_info_window->UpdateCartridgeInfo();
-		}
-
-		// Show savestate details
-		UpdateSaveStateDetails();
+		this->LoadRom(path);
 	}
+}
+
+void MainWindow::LoadRom(const std::string& path)
+{
+	m_FilePath = path;
+	m_Application->LoadRom(path);
+	EnableMenuItem(m_ToolsMenuItem, m_MenuToolsCartridgeInfo, MF_ENABLED);
+
+	std::string filename = std::filesystem::path(m_FilePath).filename().string();
+
+	this->SetStatusBarTitle(filename);
+	this->SetStatusBarState("Playing");
+
+	// Reload cartridge info
+	CartridgeInfoWindow* cartridge_info_window = m_Application->GetCartridgeInfoWindow();
+	if (cartridge_info_window != nullptr)
+	{
+		cartridge_info_window->UpdateCartridgeInfo();
+	}
+
+	// Show savestate details
+	UpdateSaveStateDetails();
+
+	// Show render window
+	ShowWindow(m_ListHwnd, SW_HIDE);
+	ShowWindow(m_RenderHwnd, SW_SHOW);
 }
 
 void MainWindow::UpdateSaveStateDetails()
 {
-	std::string title = m_Application->GetEmulator()->GetCartridge()->GetCartridgeData().title;
-
 	for (int i = 1; i <= 9; ++i)
 	{
 		std::string filename = std::filesystem::path(m_FilePath).filename().string();
@@ -454,11 +494,6 @@ void MainWindow::UpdateSaveStateDetails()
 				{
 					continue;
 				}
-
-				// Date created string
-				//char date_created_str[11]; // Enough space for "yyyy/mm/dd\0"
-				//std::tm* date_created = std::localtime(&header.date_created);
-				//std::strftime(date_created_str, sizeof(date_created_str), "%Y/%m/%d", date_created);
 
 				// Date modified string
 				char date_modified_str[11]; // Enough space for "yyyy/mm/dd\0"
@@ -684,6 +719,12 @@ void MainWindow::OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	SendMessage(m_HwndStatusbar, WM_SIZE, wParam, lParam);
 	ComputeStatusBarSections();
 
+	// Resize title window
+	if (m_ListHwnd != NULL)
+	{
+		MoveWindow(m_ListHwnd, 0, 0, LOWORD(lParam), HIWORD(lParam), TRUE);
+	}
+
 	// Resize render window
 	int render_width, render_height;
 	ComputeRenderWindowSize(&render_width, &render_height);
@@ -812,6 +853,125 @@ void MainWindow::ComputeStatusBarSections()
 	SendMessage(m_HwndStatusbar, SB_SETPARTS, (WPARAM)edges.size(), (LPARAM)edges.data());
 }
 
+void MainWindow::CreateRomListWindow()
+{
+	HINSTANCE hInstance = GetModuleHandle(NULL);
+
+	// Init common controls
+	INITCOMMONCONTROLSEX icex = { sizeof(INITCOMMONCONTROLSEX), ICC_LISTVIEW_CLASSES };
+	InitCommonControlsEx(&icex);
+
+	int width, height;
+	ComputeRenderWindowSize(&width, &height);
+
+	// Create ListView
+	m_ListHwnd = CreateWindow(WC_LISTVIEW, L"",
+		WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL | LVS_NOSORTHEADER,
+		0, 0, width, height, m_Hwnd, reinterpret_cast<HMENU>((UINT_PTR)m_ListMenuId), hInstance, this);
+
+	// Add columns
+	LVCOLUMN lvCol = { 0 };
+	lvCol.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
+
+	const wchar_t* title = L"Title";
+	lvCol.pszText = const_cast<wchar_t*>(title);
+	lvCol.cx = 400;
+	ListView_InsertColumn(m_ListHwnd, 0, &lvCol);
+
+	const wchar_t* time_played = L"Time Played";
+	lvCol.pszText = const_cast<wchar_t*>(time_played);
+	lvCol.cx = 200;
+	ListView_InsertColumn(m_ListHwnd, 1, &lvCol);
+
+	const wchar_t* last_played = L"Last Played";
+	lvCol.pszText = const_cast<wchar_t*>(last_played);
+	lvCol.cx = 200;
+	ListView_InsertColumn(m_ListHwnd, 2, &lvCol);
+
+	// Add sample items
+	std::vector<std::wstring> titles;
+	std::vector<std::wstring> times;
+	std::vector<std::wstring> history;
+
+	// Populate ROM paths
+	std::filesystem::path rom_path("ROMS");
+	for (const auto& entry : std::filesystem::directory_iterator(rom_path))
+	{
+		std::filesystem::path extensions = entry.path().extension();
+		if (extensions == ".gbc" || extensions == ".gb")
+		{
+			titles.push_back(entry.path().filename().wstring());
+
+			std::wstring total_time_played = L"No time played";
+			std::wstring last_played = L"Never played";
+
+			for (auto& gameData : m_Application->ProfileDataList)
+			{
+				if (entry.path().filename() == gameData.filename)
+				{
+					// Total Play Time
+					int time_played = gameData.totalPlayTimeMinutes;
+					if (time_played >= 120)
+					{
+						uint64_t minutes = time_played % 60;
+						uint64_t hours = (time_played - minutes) / 60;
+
+						total_time_played = std::to_wstring(hours) + L" hours " + std::to_wstring(minutes) + L" minutes";
+					}
+					else if (time_played > 0 && time_played < 120)
+					{
+						total_time_played = std::to_wstring(time_played) + L" minutes";
+					}
+					else
+					{
+						total_time_played = L"Less than a minute";
+					}
+
+					// Last Played
+					std::string last_played_json = gameData.lastPlayed;
+
+					// Remove extra info to match format
+					std::string trimmed = last_played_json.substr(0, 19);
+
+					// Declare a sys_time object for parsing the datetime
+					std::chrono::sys_time<std::chrono::seconds> tp;
+
+					// Parse the datetime without milliseconds and timezone
+					std::stringstream ss(trimmed);
+					ss >> std::chrono::parse("%FT%T", tp);
+
+					if (!ss.fail())
+					{
+						// Convert sys_time to year_month_day for formatting
+						auto ymd = std::chrono::year_month_day{ std::chrono::floor<std::chrono::days>(tp) };
+						last_played = Utilities::ConvertToWString(std::format("{:%d/%m/%Y}\n", ymd));
+					}
+				}
+			}
+
+			times.push_back(total_time_played);
+			history.push_back(last_played);
+		}
+	}
+
+	for (int i = 0; i < titles.size(); ++i)
+	{
+		LVITEM lvItem = { 0 };
+		lvItem.mask = LVIF_TEXT;
+		lvItem.iItem = i;
+		lvItem.pszText = (LPWSTR)titles[i].c_str();
+		ListView_InsertItem(m_ListHwnd, &lvItem);
+
+		ListView_SetItemText(m_ListHwnd, i, 1, (LPWSTR)times[i].c_str());
+		ListView_SetItemText(m_ListHwnd, i, 2, (LPWSTR)history[i].c_str());
+	}
+
+	ListView_SetExtendedListViewStyle(m_ListHwnd, LVS_EX_FULLROWSELECT);
+
+	ShowWindow(m_ListHwnd, SW_SHOW);
+	UpdateWindow(m_Hwnd);
+}
+
 void MainWindow::CreateRenderWindow()
 {
 	HINSTANCE hInstance = GetModuleHandle(NULL);
@@ -827,7 +987,7 @@ void MainWindow::CreateRenderWindow()
 	}
 
 	SetParent(m_RenderHwnd, m_Hwnd);
-	ShowWindow(m_RenderHwnd, SW_SHOW);
+	ShowWindow(m_RenderHwnd, SW_HIDE);
 
 	// Target
 	m_MainRenderTarget = m_Application->GetRenderDevice()->CreateRenderTarget();

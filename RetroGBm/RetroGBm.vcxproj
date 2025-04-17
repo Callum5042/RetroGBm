@@ -148,6 +148,8 @@
   <ItemGroup>
     <ClCompile Include="Source\Application.cpp" />
     <ClCompile Include="Source\Audio\XAudio2Output.cpp" />
+    <ClCompile Include="Source\ProfileParser.cpp" />
+    <ClCompile Include="Source\simdjson.cpp" />
     <ClCompile Include="Source\Windows\CartridgeInfoWindow.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Windows\CpuRegistersWindow.cpp" />
@@ -163,6 +165,9 @@
   <ItemGroup>
     <ClInclude Include="Include\Application.h" />
     <ClInclude Include="Include\Audio\XAudio2Output.h" />
+    <ClInclude Include="Include\json.hpp" />
+    <ClInclude Include="Include\ProfileParser.h" />
+    <ClInclude Include="Include\simdjson.h" />
     <ClInclude Include="Include\Windows\CartridgeInfoWindow.h" />
     <ClInclude Include="Include\Windows\CpuRegistersWindow.h" />
     <ClInclude Include="Include\Windows\MainWindow.h" />
