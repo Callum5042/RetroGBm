@@ -15,6 +15,15 @@
 #include <shobjidl.h>
 #include <filesystem>
 
+#include <chrono>
+#include <sstream>
+#include <string>
+#include <sstream>
+#include <chrono>
+
+#include "simdjson.h"
+using namespace simdjson;
+
 namespace
 {
 	MainWindow* GetWindow(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -857,6 +866,8 @@ void MainWindow::ComputeStatusBarSections()
 	SendMessage(m_HwndStatusbar, SB_SETPARTS, (WPARAM)edges.size(), (LPARAM)edges.data());
 }
 
+#include <RetroGBm/Logger.h>
+
 void MainWindow::CreateRomListWindow()
 {
 	HINSTANCE hInstance = GetModuleHandle(NULL);
@@ -869,9 +880,9 @@ void MainWindow::CreateRomListWindow()
 	ComputeRenderWindowSize(&width, &height);
 
 	// Create ListView
-	m_ListHwnd = CreateWindow(WC_LISTVIEW, L"", 
-		WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL | LVS_NOSORTHEADER, 
-		0, 0, width, height, m_Hwnd, reinterpret_cast<HMENU>(m_ListMenuId), hInstance, this);
+	m_ListHwnd = CreateWindow(WC_LISTVIEW, L"",
+		WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL | LVS_NOSORTHEADER,
+		0, 0, width, height, m_Hwnd, reinterpret_cast<HMENU>((UINT_PTR)m_ListMenuId), hInstance, this);
 
 	// Add columns
 	LVCOLUMN lvCol = { 0 };
@@ -892,6 +903,17 @@ void MainWindow::CreateRomListWindow()
 	lvCol.cx = 200;
 	ListView_InsertColumn(m_ListHwnd, 2, &lvCol);
 
+	// Load the profile json
+	ondemand::parser parser;
+	padded_string json;
+
+	bool profileJsonExists = false;
+	if (std::filesystem::exists("profile.json"))
+	{
+		json = padded_string::load("profile.json");
+		profileJsonExists = true;
+	}
+
 	// Add sample items
 	std::vector<std::wstring> titles;
 	std::vector<std::wstring> times;
@@ -901,15 +923,77 @@ void MainWindow::CreateRomListWindow()
 	std::filesystem::path rom_path("ROMS");
 	for (const auto& entry : std::filesystem::directory_iterator(rom_path))
 	{
-		std::string tmp = entry.path().string();
 		std::filesystem::path extensions = entry.path().extension();
-
 		if (extensions == ".gbc" || extensions == ".gb")
 		{
 			titles.push_back(entry.path().filename().wstring());
 
-			times.push_back(L"N/A");
-			history.push_back(L"N/A");
+			std::wstring total_time_played = L"No time played";
+			std::wstring last_played = L"Never played";
+
+			// Access the "gameData" array
+			if (profileJsonExists)
+			{
+				ondemand::document doc = parser.iterate(json);
+				if (doc.find_field("gameData").error() == simdjson::error_code::SUCCESS)
+				{
+					ondemand::array game_data = doc["gameData"];
+
+					for (ondemand::object game : game_data)
+					{
+						auto file_name_result = game["fileName"];
+						if (file_name_result.error() == SUCCESS)
+						{
+							std::string_view file_name = file_name_result.value().get_string().value();
+
+							if (entry.path().filename() == file_name)
+							{
+								// Get total play time
+								uint64_t time_played = game["totalPlayTimeMinutes"].get_int64().value();
+
+								if (time_played >= 120)
+								{
+									uint64_t minutes = time_played % 60;
+									uint64_t hours = (time_played - minutes) / 60;
+
+									total_time_played = std::to_wstring(hours) + L" hours " + std::to_wstring(minutes) + L" minutes";
+								}
+								else if (time_played > 0 && time_played < 120)
+								{
+									total_time_played = std::to_wstring(time_played) + L" minutes";
+								}
+								else
+								{
+									total_time_played = L"Less than a minute";
+								}
+
+								// Get last played
+								std::string last_played_json = std::string(game["lastPlayed"].get_string().value());
+
+								// Remove extra info to match format
+								std::string trimmed = last_played_json.substr(0, 19);
+
+								// Declare a sys_time object for parsing the datetime
+								std::chrono::sys_time<std::chrono::seconds> tp;
+
+								// Parse the datetime without milliseconds and timezone
+								std::stringstream ss(trimmed);
+								ss >> std::chrono::parse("%FT%T", tp);
+
+								if (!ss.fail())
+								{
+									// Convert sys_time to year_month_day for formatting
+									auto ymd = std::chrono::year_month_day{ std::chrono::floor<std::chrono::days>(tp) };
+									last_played = Utilities::ConvertToWString(std::format("{:%d/%m/%Y}\n", ymd));
+								}
+							}
+						}
+					}
+				}
+			}
+
+			times.push_back(total_time_played);
+			history.push_back(last_played);
 		}
 	}
 
