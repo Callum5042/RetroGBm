@@ -97,7 +97,7 @@ void Application::LoadRom(const std::string& file)
 	StopEmulator();
 	bool tracelog = m_Emulator->IsTraceLogEnabled();
 
-	m_Emulator = std::make_unique<Emulator>(m_SoundOutput.get());
+	m_Emulator = std::make_unique<Emulator>(SoundOutput.get());
 
 	std::filesystem::path battery_path = "RomData";
 	std::filesystem::create_directories(battery_path);
@@ -186,7 +186,7 @@ void Application::StopEmulator()
 
 void Application::Run()
 {
-	m_Emulator = std::make_unique<Emulator>(m_SoundOutput.get());
+	m_Emulator = std::make_unique<Emulator>(SoundOutput.get());
 
 	// UI runs on main thread
 	while (m_Running)
@@ -216,11 +216,11 @@ void Application::Run()
 				if (m_Emulator->GetFPS() < 60)
 				{
 					float playback_ratio = m_Emulator->GetFPS() / 60.0f;
-					m_SoundOutput->SetFrequencyRatio(playback_ratio);
+					SoundOutput->SetFrequencyRatio(playback_ratio);
 				}
 				else
 				{
-					m_SoundOutput->SetFrequencyRatio(1.0f);
+					SoundOutput->SetFrequencyRatio(1.0f);
 				}
 
 				// Render debug window
@@ -261,7 +261,7 @@ void Application::Init()
 	CreateMainWindow();
 
 	// Initialize audio
-	m_SoundOutput = std::make_unique<XAudio2Output>();
+	SoundOutput = std::make_unique<XAudio2Output>();
 }
 
 void Application::CreateMainWindow()

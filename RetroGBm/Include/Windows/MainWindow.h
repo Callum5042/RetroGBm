@@ -53,6 +53,7 @@ private:
 	void CreateRomListWindow();
 	HWND m_ListHwnd = NULL;
 	static const UINT m_ListMenuId = 4001;
+	bool m_ListIsEmpty = false;
 
 	// Render window
 	void CreateRenderWindow();
@@ -84,6 +85,9 @@ private:
 	static const UINT m_MenuEmulationLoadState = 303;
 	static const UINT m_MenuEmulationDoubleSpeed = 304;
 	static const UINT m_MenuEmulationScreenshot = 305;
+
+	HMENU m_OptionsMenuItem = NULL;
+	static const UINT m_MenuOptionsEnableAudio = 401;
 
 	HMENU m_SaveSlotMenuItem = NULL;
 	static const UINT m_MenuSaveSlot1 = 2100;

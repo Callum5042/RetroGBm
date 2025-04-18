@@ -3,6 +3,7 @@
 #include "Application.h"
 #include "Utilities/Utilities.h"
 #include "../resource.h"
+#include "Audio/XAudio2Output.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -18,9 +19,6 @@
 #include <filesystem>
 #include <chrono>
 #include <sstream>
-
-#include <wincodec.h> // WIC
-#pragma comment(lib, "windowscodecs.lib")
 
 namespace
 {
@@ -215,6 +213,35 @@ LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 
 			// Fill screen with colour to avoid horrible effect
 			FillRect(hdc, &ps.rcPaint, reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1));
+
+			// Text to display
+			if (m_ListIsEmpty)
+			{
+				// Create a modern font (Segoe UI, 20pt)
+				HFONT hFont = CreateFontA(
+					0, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+					ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+					DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
+					"Segoe UI"
+				);
+
+				// Select it into the DC
+				HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);
+
+				LPCSTR text = "No 'ROMS' directory found";
+
+				// Get client rectangle of parent window
+				RECT rect;
+				GetClientRect(hwnd, &rect);
+
+				// Set text format options
+				DrawTextA(hdc, text, -1, &rect, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+
+				// Clean up: restore old font and delete new font
+				SelectObject(hdc, hOldFont);
+				DeleteObject(hFont);
+			}
+
 			EndPaint(hwnd, &ps);
 
 			return 0;
@@ -305,6 +332,23 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		case m_MenuEmulationScreenshot:
 			this->TakeScreenshot();
 			break;
+
+			// Options Menu
+		case m_MenuOptionsEnableAudio:
+		{
+			m_Application->SoundOutput->EnableAudio = !m_Application->SoundOutput->EnableAudio;
+
+			if (m_Application->SoundOutput->EnableAudio)
+			{
+				CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsEnableAudio, MF_BYCOMMAND | MF_CHECKED);
+			}
+			else
+			{
+				CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsEnableAudio, MF_BYCOMMAND | MF_UNCHECKED);
+			}
+
+			break;
+		}
 
 			// Tools Menu
 		case m_MenuToolsCpuRegisters:
@@ -860,7 +904,12 @@ void MainWindow::CreateMenuBar()
 	AppendMenuW(m_EmulationMenuItem, MF_UNCHECKED, m_MenuEmulationScreenshot, L"Screenshot");
 	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_EmulationMenuItem), L"Emulation");
 
-	// Debug menu
+	// Options menu
+	m_OptionsMenuItem = CreateMenu();
+	AppendMenuW(m_OptionsMenuItem, MF_CHECKED, m_MenuOptionsEnableAudio, L"Enable Audio");
+	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_OptionsMenuItem), L"Options");
+
+	// Tools menu
 	m_ToolsMenuItem = CreateMenu();
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsCpuRegisters, L"CPU Registers");
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
@@ -905,41 +954,41 @@ void MainWindow::CreateRomListWindow()
 	INITCOMMONCONTROLSEX icex = { sizeof(INITCOMMONCONTROLSEX), ICC_LISTVIEW_CLASSES };
 	InitCommonControlsEx(&icex);
 
-	int width, height;
-	ComputeRenderWindowSize(&width, &height);
-
-	// Create ListView
-	m_ListHwnd = CreateWindow(WC_LISTVIEW, L"",
-		WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL | LVS_NOSORTHEADER,
-		0, 0, width, height, m_Hwnd, reinterpret_cast<HMENU>((UINT_PTR)m_ListMenuId), hInstance, this);
-
-	// Add columns
-	LVCOLUMN lvCol = { 0 };
-	lvCol.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
-
-	const wchar_t* title = L"Title";
-	lvCol.pszText = const_cast<wchar_t*>(title);
-	lvCol.cx = 400;
-	ListView_InsertColumn(m_ListHwnd, 0, &lvCol);
-
-	const wchar_t* time_played = L"Time Played";
-	lvCol.pszText = const_cast<wchar_t*>(time_played);
-	lvCol.cx = 200;
-	ListView_InsertColumn(m_ListHwnd, 1, &lvCol);
-
-	const wchar_t* last_played = L"Last Played";
-	lvCol.pszText = const_cast<wchar_t*>(last_played);
-	lvCol.cx = 200;
-	ListView_InsertColumn(m_ListHwnd, 2, &lvCol);
-
-	// Add sample items
-	std::vector<std::wstring> titles;
-	std::vector<std::wstring> times;
-	std::vector<std::wstring> history;
-
 	// Populate ROM paths
 	if (std::filesystem::exists("ROMS"))
 	{
+
+		int width, height;
+		ComputeRenderWindowSize(&width, &height);
+
+		// Create ListView
+		m_ListHwnd = CreateWindow(WC_LISTVIEW, L"",
+			WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL | LVS_NOSORTHEADER,
+			0, 0, width, height, m_Hwnd, reinterpret_cast<HMENU>((UINT_PTR)m_ListMenuId), hInstance, this);
+
+		// Add columns
+		LVCOLUMN lvCol = { 0 };
+		lvCol.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
+
+		const wchar_t* title = L"Title";
+		lvCol.pszText = const_cast<wchar_t*>(title);
+		lvCol.cx = 400;
+		ListView_InsertColumn(m_ListHwnd, 0, &lvCol);
+
+		const wchar_t* time_played = L"Time Played";
+		lvCol.pszText = const_cast<wchar_t*>(time_played);
+		lvCol.cx = 200;
+		ListView_InsertColumn(m_ListHwnd, 1, &lvCol);
+
+		const wchar_t* last_played = L"Last Played";
+		lvCol.pszText = const_cast<wchar_t*>(last_played);
+		lvCol.cx = 200;
+		ListView_InsertColumn(m_ListHwnd, 2, &lvCol);
+
+		// Add sample items
+		std::vector<std::wstring> titles;
+		std::vector<std::wstring> times;
+		std::vector<std::wstring> history;
 		std::filesystem::path rom_path("ROMS");
 
 		for (const auto& entry : std::filesystem::directory_iterator(rom_path))
@@ -991,7 +1040,7 @@ void MainWindow::CreateRomListWindow()
 						{
 							// Convert sys_time to year_month_day for formatting
 							auto ymd = std::chrono::year_month_day{ std::chrono::floor<std::chrono::days>(tp) };
-							last_played = Utilities::ConvertToWString(std::format("{:%d/%m/%Y}\n", ymd));
+							last_played = Utilities::ConvertToWString(std::format("{:%d/%m/%Y}", ymd));
 						}
 					}
 				}
@@ -1014,10 +1063,14 @@ void MainWindow::CreateRomListWindow()
 		}
 
 		ListView_SetExtendedListViewStyle(m_ListHwnd, LVS_EX_FULLROWSELECT);
-	}
 
-	ShowWindow(m_ListHwnd, SW_SHOW);
-	UpdateWindow(m_Hwnd);
+		ShowWindow(m_ListHwnd, SW_SHOW);
+		UpdateWindow(m_ListHwnd);
+	}
+	else
+	{
+		m_ListIsEmpty = true;
+	}
 }
 
 void MainWindow::CreateRenderWindow()
