@@ -738,26 +738,13 @@ fun Viewport(emulator: EmulatorWrapper) {
         mutableStateOf(Bitmap.createBitmap(160, 144, Bitmap.Config.ARGB_8888))
     }
 
-    // Launch a coroutine to update the bitmap in the background
-    LaunchedEffect(emulator) {
-        val updateTextureCoroutineScope = CoroutineScope(Dispatchers.Default)
-        updateTextureCoroutineScope.launch {
-            while (emulator.isRunning()) {
-                // Run the background work on a different thread
-                val pixels = withContext(Dispatchers.Default) {
-                    emulator.getVideoBuffer() // Get the video buffer on a background thread
-                }
+    // Update display on callback
+    emulator.displayOutput.onDraw { pixels ->
+        val updatedBitmap = Bitmap.createBitmap(160, 144, Bitmap.Config.ARGB_8888)
+        val pixelsBuffer = IntBuffer.wrap(pixels.toList().toIntArray())
 
-                // Update the Bitmap on the main thread
-                withContext(Dispatchers.Main) {
-                    val updatedBitmap = Bitmap.createBitmap(160, 144, Bitmap.Config.ARGB_8888)
-                    val pixelsBuffer = IntBuffer.wrap(pixels.toList().toIntArray())
-                    updatedBitmap.copyPixelsFromBuffer(pixelsBuffer)
-                    
-                    bitmapState.value = updatedBitmap
-                }
-            }
-        }
+        updatedBitmap.copyPixelsFromBuffer(pixelsBuffer)
+        bitmapState.value = updatedBitmap
     }
 
     Image(

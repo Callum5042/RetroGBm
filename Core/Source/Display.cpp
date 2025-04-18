@@ -770,7 +770,8 @@ void Display::UpdateDisplay()
 	int video_pitch = sizeof(uint32_t)* ScreenResolutionX;
 	if (this->IsLcdEnabled())
 	{
-		m_DisplayOutput->Draw(m_VideoBuffer.data(), video_pitch);
+        auto data = m_VideoBuffer.data();
+		m_DisplayOutput->Draw(data, video_pitch);
 	}
 	else
 	{

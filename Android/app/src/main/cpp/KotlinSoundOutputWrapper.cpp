@@ -1,27 +1,5 @@
 #include "KotlinSoundOutputWrapper.h"
-
-namespace {
-
-    JavaVM* g_javaVM = nullptr;
-
-    JNIEnv* GetJNIEnv() {
-        JNIEnv* env = nullptr;
-        if (g_javaVM->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
-            // Attach current thread if not already attached
-            g_javaVM->AttachCurrentThread(&env, nullptr);
-        }
-        return env;
-    }
-
-    jshort convertToPcm16(uint8_t value) {
-        return static_cast<jshort>((value - 128) * 256);
-    }
-}
-
-extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved) {
-    g_javaVM = vm;
-    return JNI_VERSION_1_6;
-}
+#include "JniLoader.h"
 
 KotlinSoundOutputWrapper::KotlinSoundOutputWrapper(JNIEnv* env, jobject javaSoundOutput) {
     this->javaSoundOutput = env->NewGlobalRef(javaSoundOutput);
@@ -38,8 +16,7 @@ KotlinSoundOutputWrapper::KotlinSoundOutputWrapper(JNIEnv* env, jobject javaSoun
 }
 
 KotlinSoundOutputWrapper::~KotlinSoundOutputWrapper() {
-    JNIEnv* env = GetJNIEnv(); // You'll need to define this
-
+    JNIEnv* env = GetJNIEnv();
     env->DeleteGlobalRef(javaSoundOutput);
 }
 
