@@ -39,6 +39,8 @@ namespace Render
 		// Update texture
 		void Update(void* video_buffer, int video_pitch);
 
+		ID3D11Texture2D* GetTexture() { return m_Texture.Get(); }
+
 	private:
 		// Number of vertices to draw
 		UINT m_VertexCount = 0;

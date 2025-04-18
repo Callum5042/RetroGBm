@@ -601,11 +601,8 @@ void Ppu::PushPixelToVideoBuffer()
 	{
 		uint32_t pixel_data = (m_Context.pipeline.pixel_queue.front());
 
-		// Need this for android
-#ifndef _WIN32
+		// We don't have an alpha channel so mask this as FF
 		pixel_data = 0xFF000000 | pixel_data;
-#endif // !_WIN32
-
 
 		m_Context.pipeline.pixel_queue.pop_front();
 

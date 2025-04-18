@@ -4,6 +4,9 @@
 #include "Utilities/Utilities.h"
 #include "../resource.h"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Joypad.h>
 #include <RetroGBm/SaveStateHeader.h>
@@ -15,6 +18,9 @@
 #include <filesystem>
 #include <chrono>
 #include <sstream>
+
+#include <wincodec.h> // WIC
+#pragma comment(lib, "windowscodecs.lib")
 
 namespace
 {
@@ -294,6 +300,10 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 
 		case m_MenuEmulationDoubleSpeed:
 			this->ToggleEmulationDoubleSpeed();
+			break;
+
+		case m_MenuEmulationScreenshot:
+			this->TakeScreenshot();
 			break;
 
 			// Tools Menu
@@ -846,6 +856,8 @@ void MainWindow::CreateMenuBar()
 	AppendMenuW(m_EmulationMenuItem, MF_POPUP, reinterpret_cast<UINT_PTR>(m_LoadSlotMenuItem), L"Load State");
 	AppendMenuW(m_EmulationMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_EmulationMenuItem, MF_UNCHECKED, m_MenuEmulationDoubleSpeed, L"Double Speed");
+	AppendMenuW(m_EmulationMenuItem, MF_SEPARATOR, NULL, NULL);
+	AppendMenuW(m_EmulationMenuItem, MF_UNCHECKED, m_MenuEmulationScreenshot, L"Screenshot");
 	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_EmulationMenuItem), L"Emulation");
 
 	// Debug menu
@@ -1069,4 +1081,50 @@ void MainWindow::SetStatusBarState(const std::string& text)
 	int section = 2;
 	std::wstring str = Utilities::ConvertToWString(text);
 	SendMessage(m_HwndStatusbar, SB_SETTEXT, section | SBT_POPOUT, reinterpret_cast<LPARAM>(str.data()));
+}
+
+void MainWindow::TakeScreenshot()
+{
+	m_Application->GetEmulator()->Pause(true);
+
+	// Generate a GUID for name
+	GUID gidReference;
+	HRESULT hCreateGuid = CoCreateGuid(&gidReference);
+
+	WCHAR str[256];
+	int len = StringFromGUID2(gidReference, str, 256);
+
+	std::string guid(Utilities::ConvertToString(str));
+
+	// Create a buffer for the image data in RGBA format
+	int width = 160;
+	int height = 144;
+	std::string filename = guid + ".png";
+
+	// Save screenshots in /Screenshots/{filename} folder
+	std::filesystem::path savepath("Screenshots");
+	savepath.append(std::filesystem::path(m_FilePath).filename().string());
+
+	if (!std::filesystem::exists(savepath))
+	{
+		std::filesystem::create_directories(savepath);
+	}
+
+	savepath.append(filename);
+
+	const uint8_t* videoBuffer = (const uint8_t*)m_Application->GetEmulator()->GetVideoBuffer();
+	int videoPitch = m_Application->GetEmulator()->GetVideoPitch();
+
+	std::vector<uint8_t> imageData(width * height * 4);
+
+	// Copy the video buffer into the imageData buffer, row by row
+	for (int row = 0; row < height; ++row)
+	{
+		std::memcpy(imageData.data() + row * width * 4, videoBuffer + row * videoPitch, width * 4);
+	}
+
+	// Save the image as PNG
+	stbi_write_png(savepath.string().c_str(), width, height, 4, imageData.data(), width * 4);
+
+	m_Application->GetEmulator()->Pause(false);
 }
