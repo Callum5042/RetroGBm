@@ -149,6 +149,7 @@
     <ClCompile Include="Source\Application.cpp" />
     <ClCompile Include="Source\Audio\XAudio2Output.cpp" />
     <ClCompile Include="Source\ProfileParser.cpp" />
+    <ClCompile Include="Source\Render\DisplayOutput.cpp" />
     <ClCompile Include="Source\simdjson.cpp" />
     <ClCompile Include="Source\Windows\CartridgeInfoWindow.cpp" />
     <ClCompile Include="Source\Main.cpp" />
@@ -167,6 +168,7 @@
     <ClInclude Include="Include\Audio\XAudio2Output.h" />
     <ClInclude Include="Include\json.hpp" />
     <ClInclude Include="Include\ProfileParser.h" />
+    <ClInclude Include="Include\Render\DisplayOutput.h" />
     <ClInclude Include="Include\simdjson.h" />
     <ClInclude Include="Include\stb_image_write.h" />
     <ClInclude Include="Include\Windows\CartridgeInfoWindow.h" />

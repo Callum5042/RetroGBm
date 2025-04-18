@@ -30,13 +30,13 @@ using namespace std::chrono_literals;
 
 Emulator* Emulator::Instance = nullptr;
 
-Emulator::Emulator(ISoundOutput* soundOutput)
+Emulator::Emulator(IDisplayOutput* display_output, ISoundOutput* soundOutput)
 {
+	m_DisplayOutput = display_output;
 	m_SoundOutput = soundOutput;
 
 	Instance = this;
 
-	// TODO: Do I still need this here?
 	m_Cpu = std::make_unique<Cpu>(m_Cartridge.get());
 	m_Timer = std::make_unique<Timer>();
 	m_Ram = std::make_unique<Ram>();
@@ -53,6 +53,8 @@ Emulator::Emulator(ISoundOutput* soundOutput)
 
 Emulator::Emulator(std::unique_ptr<BaseCartridge> cartridge, ISoundOutput* soundOutput)
 {
+	// Think this constructor can be removed??
+
 	m_SoundOutput = soundOutput;
 
 	Instance = this;

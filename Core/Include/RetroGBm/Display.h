@@ -9,6 +9,8 @@
 class Ppu;
 class BaseCartridge;
 
+class IDisplayOutput;
+
 struct DisplayContext
 {
 	// Registers
@@ -70,10 +72,11 @@ class Display
 {
 	friend class Ppu;
 	BaseCartridge* m_Cartridge = nullptr;
+	IDisplayOutput* m_DisplayOutput = nullptr;
 
 public:
 	Display();
-	Display(BaseCartridge* cartridge);
+	Display(BaseCartridge* cartridge, IDisplayOutput* display_output);
 	virtual ~Display() = default;
 
 	void Init();
@@ -144,4 +147,6 @@ private:
 	// Video buffers
 	std::vector<uint32_t> m_VideoBuffer;
 	std::vector<uint32_t> m_BlankVideoBuffer;
+
+	void UpdateDisplay();
 };

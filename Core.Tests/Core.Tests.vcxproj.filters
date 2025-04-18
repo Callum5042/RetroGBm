@@ -60,6 +60,9 @@
     <ClCompile Include="NullSoundOutput.cpp">
       <Filter>Source Files\Mocks</Filter>
     </ClCompile>
+    <ClCompile Include="NullDisplayOutput.cpp">
+      <Filter>Source Files\Mocks</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MockCartridge.h">
@@ -69,6 +72,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClInclude Include="NullSoundOutput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NullDisplayOutput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

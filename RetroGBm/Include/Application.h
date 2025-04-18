@@ -16,6 +16,7 @@
 #include "Render/RenderTexture.h"
 
 #include "Audio/XAudio2Output.h"
+#include "Render/DisplayOutput.h"
 
 #include "ProfileParser.h"
 
@@ -59,6 +60,7 @@ public:
 
 	// Audio
 	std::unique_ptr<XAudio2Output> SoundOutput = nullptr;
+	std::unique_ptr<DisplayOutput> m_DisplayOutput = nullptr;
 
 private:
 	void Init();

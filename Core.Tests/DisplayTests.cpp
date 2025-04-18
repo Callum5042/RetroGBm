@@ -1,6 +1,8 @@
 #include "CppUnitTest.h"
-#include "MockCartridge.h"
 #include <RetroGBm/Display.h>
+
+#include "MockCartridge.h"
+#include "NullDisplayOutput.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -13,7 +15,8 @@ namespace CoreTests
 		{
 			// Arrange
 			MockCartridge cartridge;
-			Display display(&cartridge);
+			NullDisplayOutput display_output;
+			Display display(&cartridge, &display_output);
 			const_cast<DisplayContext*>(display.GetContext())->lcdc = 0b0;
 
 			// Act
@@ -27,7 +30,8 @@ namespace CoreTests
 		{
 			// Arrange
 			MockCartridge cartridge;
-			Display display(&cartridge);
+			NullDisplayOutput display_output;
+			Display display(&cartridge, &display_output);
 			const_cast<DisplayContext*>(display.GetContext())->lcdc = 0b1;
 
 			// Act
@@ -41,7 +45,8 @@ namespace CoreTests
 		{
 			// Arrange
 			MockCartridge cartridge;
-			Display display(&cartridge);
+			NullDisplayOutput display_output;
+			Display display(&cartridge, &display_output);
 			const_cast<DisplayContext*>(display.GetContext())->lcdc = 0b10;
 
 			// Act
@@ -55,7 +60,8 @@ namespace CoreTests
 		{
 			// Arrange
 			MockCartridge cartridge;
-			Display display(&cartridge);
+			NullDisplayOutput display_output;
+			Display display(&cartridge, &display_output);
 			const_cast<DisplayContext*>(display.GetContext())->lcdc = 0b00;
 
 			// Act
@@ -69,7 +75,8 @@ namespace CoreTests
 		{
 			// Arrange
 			MockCartridge cartridge;
-			Display display(&cartridge);
+			NullDisplayOutput display_output;
+			Display display(&cartridge, &display_output);
 			display.Init();
 
 			const_cast<DisplayContext*>(display.GetContext())->stat = 0;
@@ -86,7 +93,8 @@ namespace CoreTests
 		{
 			// Arrange
 			MockCartridge cartridge;
-			Display display(&cartridge);
+			NullDisplayOutput display_output;
+			Display display(&cartridge, &display_output);
 			display.Init();
 
 			const_cast<DisplayContext*>(display.GetContext())->stat = 0;
@@ -102,7 +110,8 @@ namespace CoreTests
 		{
 			// Arrange
 			MockCartridge cartridge;
-			Display display(&cartridge);
+			NullDisplayOutput display_output;
+			Display display(&cartridge, &display_output);
 			display.Init();
 
 			const_cast<DisplayContext*>(display.GetContext())->stat = 0b111;
@@ -119,7 +128,8 @@ namespace CoreTests
 		{
 			// Arrange
 			MockCartridge cartridge;
-			Display display(&cartridge);
+			NullDisplayOutput display_output;
+			Display display(&cartridge, &display_output);
 			display.Init();
 
 			const_cast<DisplayContext*>(display.GetContext())->ly = 0;
@@ -136,7 +146,8 @@ namespace CoreTests
 		{
 			// Arrange
 			MockCartridge cartridge;
-			Display display(&cartridge);
+			NullDisplayOutput display_output;
+			Display display(&cartridge, &display_output);
 			display.Init();
 
 			const_cast<DisplayContext*>(display.GetContext())->lcdc = 0;
@@ -154,7 +165,8 @@ namespace CoreTests
 		{
 			// Arrange
 			MockCartridge cartridge;
-			Display display(&cartridge);
+			NullDisplayOutput display_output;
+			Display display(&cartridge, &display_output);
 			display.Init();
 
 			const_cast<DisplayContext*>(display.GetContext())->lcdc = 0;
