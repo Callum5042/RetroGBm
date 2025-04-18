@@ -146,10 +146,16 @@ LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 		{
 			if (m_Application->GetEmulator()->IsRunning())
 			{
+				m_Application->GetEmulator()->Pause(true);
+
 				int result = MessageBox(m_Hwnd, L"Do you want to exit the emulator?", L"Exit Emulator", MB_OKCANCEL | MB_ICONQUESTION);
 				if (result == IDOK)
 				{
 					OnClose();
+				}
+				else
+				{
+					m_Application->GetEmulator()->Pause(false);
 				}
 			}
 			else
