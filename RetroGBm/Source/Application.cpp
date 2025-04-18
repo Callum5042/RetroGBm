@@ -170,7 +170,7 @@ void Application::StopEmulator()
 	}
 
 	// If we don't find a profile entry then add one
-	if (found_entry)
+	if (!found_entry)
 	{
 		ProfileData new_data;
 		new_data.filename = CurrentFilename;
