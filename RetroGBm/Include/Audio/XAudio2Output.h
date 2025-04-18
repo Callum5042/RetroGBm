@@ -26,6 +26,8 @@ public:
     void Stop() override;
     void Play(int left, int right) override;
 
+    void SetFrequencyRatio(float ratio);
+
 private:
     const int BufferSize = 1024;
     const int SampleRate = 22050;
@@ -54,4 +56,7 @@ private:
     void __stdcall OnBufferEnd(void* pBufferContext) override;
     void __stdcall OnLoopEnd(void* pBufferContext) override;
     void __stdcall OnVoiceError(void* pBufferContext, HRESULT Error) override;
+
+    // Framerate control
+
 };

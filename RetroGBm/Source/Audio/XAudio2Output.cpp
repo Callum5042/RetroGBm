@@ -43,6 +43,11 @@ void XAudio2Output::Stop()
 {
 }
 
+void XAudio2Output::SetFrequencyRatio(float ratio)
+{
+	m_SourceVoice->SetFrequencyRatio(ratio);
+}
+
 void XAudio2Output::Play(int left, int right)
 {
 	// Only want to add sample to the buffer synced with CPU
