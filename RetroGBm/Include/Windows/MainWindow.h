@@ -53,6 +53,7 @@ private:
 	void CreateRomListWindow();
 	HWND m_ListHwnd = NULL;
 	static const UINT m_ListMenuId = 4001;
+	bool m_ListIsEmpty = false;
 
 	// Render window
 	void CreateRenderWindow();
