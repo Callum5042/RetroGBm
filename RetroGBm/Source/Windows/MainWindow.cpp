@@ -107,8 +107,13 @@ void MainWindow::Update()
 	m_MainRenderTarget->Clear();
 	if (m_Application->GetEmulator()->IsRunning())
 	{
-		m_MainRenderTexture->Update(m_Application->GetEmulator()->GetVideoBuffer(), m_Application->GetEmulator()->GetVideoPitch());
-		m_MainRenderTexture->Render();
+		void* pixels = m_Application->m_DisplayOutput->PixelBuffer;
+
+		if (pixels != nullptr)
+		{
+			m_MainRenderTexture->Update(pixels, m_Application->GetEmulator()->GetVideoPitch());
+			m_MainRenderTexture->Render();
+		}
 	}
 
 	m_MainRenderTarget->Present();
@@ -350,7 +355,7 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 
-			// Tools Menu
+		// Tools Menu
 		case m_MenuToolsCpuRegisters:
 		{
 			UINT menu_state = GetMenuState(m_ToolsMenuItem, m_MenuToolsCpuRegisters, MF_BYCOMMAND);
@@ -1098,6 +1103,8 @@ void MainWindow::CreateRenderWindow()
 	// Texture
 	m_MainRenderTexture = m_Application->GetRenderDevice()->CreateTexture();
 	m_MainRenderTexture->Create(160, 144);
+
+	m_Application->m_DisplayOutput = std::make_unique<DisplayOutput>(m_MainRenderTexture.get());
 }
 
 void MainWindow::ComputeRenderWindowSize(int* width, int* height)

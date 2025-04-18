@@ -175,6 +175,7 @@
     <ClCompile Include="DisplayTests.cpp" />
     <ClCompile Include="InstructionsTests.cpp" />
     <ClCompile Include="JoypadTests.cpp" />
+    <ClCompile Include="NullDisplayOutput.cpp" />
     <ClCompile Include="NullSoundOutput.cpp" />
     <ClCompile Include="PpuTests.cpp" />
     <ClCompile Include="MockCartridge.cpp" />
@@ -188,6 +189,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MockCartridge.h" />
+    <ClInclude Include="NullDisplayOutput.h" />
     <ClInclude Include="NullSoundOutput.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

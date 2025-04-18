@@ -6,8 +6,12 @@
 #include <unordered_map>
 #include <array>
 
+#include "RetroGBm/IDisplayOutput.h"
+
 class Ppu;
 class BaseCartridge;
+
+class IDisplayOutput;
 
 struct DisplayContext
 {
@@ -70,10 +74,11 @@ class Display
 {
 	friend class Ppu;
 	BaseCartridge* m_Cartridge = nullptr;
+	IDisplayOutput* m_DisplayOutput = nullptr;
 
 public:
-	Display();
-	Display(BaseCartridge* cartridge);
+	Display(IDisplayOutput* display_output);
+	Display(BaseCartridge* cartridge, IDisplayOutput* display_output);
 	virtual ~Display() = default;
 
 	void Init();
@@ -122,6 +127,8 @@ public:
 	void* GetVideoBuffer();
 	int GetVideoBufferSize();
 	void SetVideoBufferPixel(int x, int y, uint32_t data);
+
+	void UpdateDisplay();
 
 private:
 	DisplayContext m_Context = {};

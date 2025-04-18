@@ -9,34 +9,17 @@
 #include <RetroGBm/Logger.h>
 
 #include "KotlinSoundOutputWrapper.h"
-
-//class NullSoundOutput : public ISoundOutput
-//{
-//public:
-//    NullSoundOutput() = default;
-//
-//    void Start() override {
-//
-//    }
-//
-//    void Stop() override {
-//
-//    }
-//
-//    void Play(int left, int right) override {
-//
-//    }
-//};
+#include "KotlinDisplayOutputWrapper.h"
 
 extern "C"
 {
     JNIEXPORT jlong JNICALL
-    Java_com_retrogbm_EmulatorWrapper_createEmulator(JNIEnv *env, jobject thiz, jlong soundOutputPtr)
+    Java_com_retrogbm_EmulatorWrapper_createEmulator(JNIEnv *env, jobject thiz, jlong displayOutputPtr, jlong soundOutputPtr)
     {
+        IDisplayOutput* display_output = reinterpret_cast<IDisplayOutput*>(displayOutputPtr);
         ISoundOutput* sound_output = reinterpret_cast<ISoundOutput*>(soundOutputPtr);
 
-        // ISoundOutput* sound_output = new NullSoundOutput();
-        return reinterpret_cast<jlong>(new Emulator(sound_output));
+        return reinterpret_cast<jlong>(new Emulator(display_output, sound_output));
     }
 
     JNIEXPORT void JNICALL
@@ -241,5 +224,11 @@ extern "C"
 JNIEXPORT jlong JNICALL
 Java_com_retrogbm_SoundOutput_nativeCreate(JNIEnv *env, jobject thiz) {
     ISoundOutput* output = new KotlinSoundOutputWrapper(env, thiz);
+    return reinterpret_cast<jlong>(output);
+}
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_com_retrogbm_DisplayOutput_nativeCreate(JNIEnv *env, jobject thiz) {
+    IDisplayOutput* output = new KotlinDisplayOutputWrapper(env, thiz);
     return reinterpret_cast<jlong>(output);
 }

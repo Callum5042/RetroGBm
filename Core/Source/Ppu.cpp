@@ -233,6 +233,9 @@ void Ppu::HBlank()
 			{
 				m_Cpu->RequestInterrupt(InterruptFlag::STAT);
 			}
+
+			// Push pixels
+			m_Display->UpdateDisplay();
 		}
 		else
 		{

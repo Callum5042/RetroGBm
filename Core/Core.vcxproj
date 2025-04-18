@@ -124,6 +124,7 @@
     <ClInclude Include="External\spdlog\tweakme.h" />
     <ClInclude Include="External\spdlog\version.h" />
     <ClInclude Include="Include\RetroGBm\Audio\FrequencySweep.h" />
+    <ClInclude Include="Include\RetroGBm\IDisplayOutput.h" />
     <ClInclude Include="Include\RetroGBm\Audio\ISoundOutput.h" />
     <ClInclude Include="Include\RetroGBm\Audio\LengthCounter.h" />
     <ClInclude Include="Include\RetroGBm\Audio\Lfsr.h" />

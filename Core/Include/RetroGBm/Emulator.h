@@ -25,6 +25,7 @@ class IBus;
 class BaseCartridge;
 class Apu;
 
+class IDisplayOutput;
 class ISoundOutput;
 
 struct EmulatorContext
@@ -48,10 +49,11 @@ public:
 
 class Emulator : public IBus
 {
+	IDisplayOutput* m_DisplayOutput = nullptr;
 	ISoundOutput* m_SoundOutput = nullptr;
 
 public:
-	Emulator(ISoundOutput* soundOutput);
+	Emulator(IDisplayOutput* display_output, ISoundOutput* soundOutput);
 	Emulator(std::unique_ptr<BaseCartridge> cartridge, ISoundOutput* soundOutput);
 	virtual ~Emulator();
 
