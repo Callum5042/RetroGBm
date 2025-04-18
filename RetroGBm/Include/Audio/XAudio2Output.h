@@ -6,7 +6,15 @@
 
 #include <cstdint>
 #include <vector>
-#include <memory>
+
+static constexpr int AudioBufferCount = 4;
+static constexpr int SamplesPerBuffer = 1024;
+
+struct AudioBuffer
+{
+    std::vector<uint8_t> buffer;
+    bool inUse = false;
+};
 
 class XAudio2Output : public ISoundOutput, private IXAudio2VoiceCallback
 {
@@ -22,13 +30,13 @@ private:
     const int BufferSize = 1024;
     const int SampleRate = 22050;
 
-    std::vector<uint8_t> m_EmptyBuffer;
+    // Audio buffer
+    AudioBuffer m_RingBuffers[AudioBufferCount];
+    int m_CurrentBuffer = 0;
+    int m_CurrentSampleOffset = 0;
 
-    // Things
-    std::vector<uint8_t> m_AudioBuffer;
-    int m_SampleCount = 0;
-    int _tick = 0;
-    int _divider = 0;
+    int m_Tick = 0;
+    int m_Divider = 0;
 
     // XAudio2
     IXAudio2* m_Audio = nullptr;

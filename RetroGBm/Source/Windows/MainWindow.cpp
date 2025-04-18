@@ -920,79 +920,83 @@ void MainWindow::CreateRomListWindow()
 	std::vector<std::wstring> history;
 
 	// Populate ROM paths
-	std::filesystem::path rom_path("ROMS");
-	for (const auto& entry : std::filesystem::directory_iterator(rom_path))
+	if (std::filesystem::exists("ROMS"))
 	{
-		std::filesystem::path extensions = entry.path().extension();
-		if (extensions == ".gbc" || extensions == ".gb")
+		std::filesystem::path rom_path("ROMS");
+
+		for (const auto& entry : std::filesystem::directory_iterator(rom_path))
 		{
-			titles.push_back(entry.path().filename().wstring());
-
-			std::wstring total_time_played = L"No time played";
-			std::wstring last_played = L"Never played";
-
-			for (auto& gameData : m_Application->ProfileDataList)
+			std::filesystem::path extensions = entry.path().extension();
+			if (extensions == ".gbc" || extensions == ".gb")
 			{
-				if (entry.path().filename() == gameData.filename)
+				titles.push_back(entry.path().filename().wstring());
+
+				std::wstring total_time_played = L"No time played";
+				std::wstring last_played = L"Never played";
+
+				for (auto& gameData : m_Application->ProfileDataList)
 				{
-					// Total Play Time
-					int time_played = gameData.totalPlayTimeMinutes;
-					if (time_played >= 120)
+					if (entry.path().filename() == gameData.filename)
 					{
-						uint64_t minutes = time_played % 60;
-						uint64_t hours = (time_played - minutes) / 60;
+						// Total Play Time
+						int time_played = gameData.totalPlayTimeMinutes;
+						if (time_played >= 120)
+						{
+							uint64_t minutes = time_played % 60;
+							uint64_t hours = (time_played - minutes) / 60;
 
-						total_time_played = std::to_wstring(hours) + L" hours " + std::to_wstring(minutes) + L" minutes";
-					}
-					else if (time_played > 0 && time_played < 120)
-					{
-						total_time_played = std::to_wstring(time_played) + L" minutes";
-					}
-					else
-					{
-						total_time_played = L"Less than a minute";
-					}
+							total_time_played = std::to_wstring(hours) + L" hours " + std::to_wstring(minutes) + L" minutes";
+						}
+						else if (time_played > 0 && time_played < 120)
+						{
+							total_time_played = std::to_wstring(time_played) + L" minutes";
+						}
+						else
+						{
+							total_time_played = L"Less than a minute";
+						}
 
-					// Last Played
-					std::string last_played_json = gameData.lastPlayed;
+						// Last Played
+						std::string last_played_json = gameData.lastPlayed;
 
-					// Remove extra info to match format
-					std::string trimmed = last_played_json.substr(0, 19);
+						// Remove extra info to match format
+						std::string trimmed = last_played_json.substr(0, 19);
 
-					// Declare a sys_time object for parsing the datetime
-					std::chrono::sys_time<std::chrono::seconds> tp;
+						// Declare a sys_time object for parsing the datetime
+						std::chrono::sys_time<std::chrono::seconds> tp;
 
-					// Parse the datetime without milliseconds and timezone
-					std::stringstream ss(trimmed);
-					ss >> std::chrono::parse("%FT%T", tp);
+						// Parse the datetime without milliseconds and timezone
+						std::stringstream ss(trimmed);
+						ss >> std::chrono::parse("%FT%T", tp);
 
-					if (!ss.fail())
-					{
-						// Convert sys_time to year_month_day for formatting
-						auto ymd = std::chrono::year_month_day{ std::chrono::floor<std::chrono::days>(tp) };
-						last_played = Utilities::ConvertToWString(std::format("{:%d/%m/%Y}\n", ymd));
+						if (!ss.fail())
+						{
+							// Convert sys_time to year_month_day for formatting
+							auto ymd = std::chrono::year_month_day{ std::chrono::floor<std::chrono::days>(tp) };
+							last_played = Utilities::ConvertToWString(std::format("{:%d/%m/%Y}\n", ymd));
+						}
 					}
 				}
+
+				times.push_back(total_time_played);
+				history.push_back(last_played);
 			}
-
-			times.push_back(total_time_played);
-			history.push_back(last_played);
 		}
+
+		for (int i = 0; i < titles.size(); ++i)
+		{
+			LVITEM lvItem = { 0 };
+			lvItem.mask = LVIF_TEXT;
+			lvItem.iItem = i;
+			lvItem.pszText = (LPWSTR)titles[i].c_str();
+			ListView_InsertItem(m_ListHwnd, &lvItem);
+
+			ListView_SetItemText(m_ListHwnd, i, 1, (LPWSTR)times[i].c_str());
+			ListView_SetItemText(m_ListHwnd, i, 2, (LPWSTR)history[i].c_str());
+		}
+
+		ListView_SetExtendedListViewStyle(m_ListHwnd, LVS_EX_FULLROWSELECT);
 	}
-
-	for (int i = 0; i < titles.size(); ++i)
-	{
-		LVITEM lvItem = { 0 };
-		lvItem.mask = LVIF_TEXT;
-		lvItem.iItem = i;
-		lvItem.pszText = (LPWSTR)titles[i].c_str();
-		ListView_InsertItem(m_ListHwnd, &lvItem);
-
-		ListView_SetItemText(m_ListHwnd, i, 1, (LPWSTR)times[i].c_str());
-		ListView_SetItemText(m_ListHwnd, i, 2, (LPWSTR)history[i].c_str());
-	}
-
-	ListView_SetExtendedListViewStyle(m_ListHwnd, LVS_EX_FULLROWSELECT);
 
 	ShowWindow(m_ListHwnd, SW_SHOW);
 	UpdateWindow(m_Hwnd);
