@@ -28,6 +28,8 @@ public:
 
     void SetFrequencyRatio(float ratio);
 
+    bool EnableAudio = true;
+
 private:
     const int BufferSize = 1024;
     const int SampleRate = 22050;
@@ -46,7 +48,6 @@ private:
     IXAudio2SourceVoice* m_SourceVoice = nullptr;
 
     void Initialise();
-    void QueueAudio(const std::vector<uint8_t>& buffer);
 
     // Inherited via IXAudio2VoiceCallback
     void __stdcall OnVoiceProcessingPassStart(UINT32 BytesRequired) override;
@@ -56,7 +57,4 @@ private:
     void __stdcall OnBufferEnd(void* pBufferContext) override;
     void __stdcall OnLoopEnd(void* pBufferContext) override;
     void __stdcall OnVoiceError(void* pBufferContext, HRESULT Error) override;
-
-    // Framerate control
-
 };

@@ -3,6 +3,7 @@
 #include "Application.h"
 #include "Utilities/Utilities.h"
 #include "../resource.h"
+#include "Audio/XAudio2Output.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -18,9 +19,6 @@
 #include <filesystem>
 #include <chrono>
 #include <sstream>
-
-#include <wincodec.h> // WIC
-#pragma comment(lib, "windowscodecs.lib")
 
 namespace
 {
@@ -334,6 +332,23 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		case m_MenuEmulationScreenshot:
 			this->TakeScreenshot();
 			break;
+
+			// Options Menu
+		case m_MenuOptionsEnableAudio:
+		{
+			m_Application->SoundOutput->EnableAudio = !m_Application->SoundOutput->EnableAudio;
+
+			if (m_Application->SoundOutput->EnableAudio)
+			{
+				CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsEnableAudio, MF_BYCOMMAND | MF_CHECKED);
+			}
+			else
+			{
+				CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsEnableAudio, MF_BYCOMMAND | MF_UNCHECKED);
+			}
+
+			break;
+		}
 
 			// Tools Menu
 		case m_MenuToolsCpuRegisters:
@@ -889,7 +904,12 @@ void MainWindow::CreateMenuBar()
 	AppendMenuW(m_EmulationMenuItem, MF_UNCHECKED, m_MenuEmulationScreenshot, L"Screenshot");
 	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_EmulationMenuItem), L"Emulation");
 
-	// Debug menu
+	// Options menu
+	m_OptionsMenuItem = CreateMenu();
+	AppendMenuW(m_OptionsMenuItem, MF_CHECKED, m_MenuOptionsEnableAudio, L"Enable Audio");
+	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_OptionsMenuItem), L"Options");
+
+	// Tools menu
 	m_ToolsMenuItem = CreateMenu();
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsCpuRegisters, L"CPU Registers");
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
@@ -1020,7 +1040,7 @@ void MainWindow::CreateRomListWindow()
 						{
 							// Convert sys_time to year_month_day for formatting
 							auto ymd = std::chrono::year_month_day{ std::chrono::floor<std::chrono::days>(tp) };
-							last_played = Utilities::ConvertToWString(std::format("{:%d/%m/%Y}\n", ymd));
+							last_played = Utilities::ConvertToWString(std::format("{:%d/%m/%Y}", ymd));
 						}
 					}
 				}

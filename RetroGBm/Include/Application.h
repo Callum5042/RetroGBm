@@ -57,6 +57,9 @@ public:
 	std::chrono::steady_clock::time_point CurrentTimeStamp;
 	std::string CurrentFilename;
 
+	// Audio
+	std::unique_ptr<XAudio2Output> SoundOutput = nullptr;
+
 private:
 	void Init();
 	void Run();
@@ -79,7 +82,4 @@ private:
 	// Rendering
 	std::unique_ptr<Render::RenderDevice> m_RenderDevice = nullptr;
 	std::unique_ptr<Render::RenderShader> m_RenderShader = nullptr;
-
-	// Audio
-	std::unique_ptr<XAudio2Output> m_SoundOutput = nullptr;
 };

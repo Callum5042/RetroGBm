@@ -57,6 +57,11 @@ void XAudio2Output::Play(int left, int right)
 		return;
 	}
 
+	if (!EnableAudio)
+	{
+		return;
+	}
+
 	// Get current buffer
 	AudioBuffer& buf = m_RingBuffers[m_CurrentBuffer];
 
@@ -130,26 +135,6 @@ void XAudio2Output::Initialise()
 	}
 
 	m_SourceVoice->Start(0);
-}
-
-void XAudio2Output::QueueAudio(const std::vector<uint8_t>& buffer)
-{
-	AudioBuffer* audio_buffer = new AudioBuffer();
-	audio_buffer->buffer = buffer;
-
-	// Prepare XAudio2 buffer (8-bit unsigned PCM data, stereo interleaved)
-	XAUDIO2_BUFFER xaudioBuffer = {};
-	xaudioBuffer.pAudioData = audio_buffer->buffer.data();
-	xaudioBuffer.AudioBytes = static_cast<UINT32>(audio_buffer->buffer.size());
-	xaudioBuffer.Flags = 0;
-	xaudioBuffer.pContext = audio_buffer;
-
-	// Submit buffer for playback
-	HRESULT hr = m_SourceVoice->SubmitSourceBuffer(&xaudioBuffer);
-	if (FAILED(hr))
-	{
-		Logger::Error("IXAudio2SourceVoice::SubmitSourceBuffer failed");
-	}
 }
 
 void __stdcall XAudio2Output::OnVoiceProcessingPassStart(UINT32 BytesRequired)

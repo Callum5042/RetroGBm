@@ -86,6 +86,9 @@ private:
 	static const UINT m_MenuEmulationDoubleSpeed = 304;
 	static const UINT m_MenuEmulationScreenshot = 305;
 
+	HMENU m_OptionsMenuItem = NULL;
+	static const UINT m_MenuOptionsEnableAudio = 401;
+
 	HMENU m_SaveSlotMenuItem = NULL;
 	static const UINT m_MenuSaveSlot1 = 2100;
 
