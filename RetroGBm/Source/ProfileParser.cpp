@@ -116,9 +116,7 @@ void to_json(nlohmann::json& j, const ProfileData& p)
 
 void SaveProfile(const std::filesystem::path& path, const std::vector<ProfileData>& data)
 {
-	nlohmann::json j; // thanks to the `to_json` function
-	// to_json(j, data);
-
+	nlohmann::json j;
 	j["gameData"] = data;
 
 	std::string json = j.dump(2);
