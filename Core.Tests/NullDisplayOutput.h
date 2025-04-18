@@ -8,5 +8,5 @@ public:
     NullDisplayOutput() = default;
     virtual ~NullDisplayOutput() = default;
 
-    void Draw(void* pixel_buffer) override;
+    void Draw(void* pixel_buffer, int pixel_pitch) override;
 };

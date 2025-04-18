@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <array>
 
+#include "RetroGBm/IDisplayOutput.h"
+
 class Ppu;
 class BaseCartridge;
 
@@ -75,7 +77,7 @@ class Display
 	IDisplayOutput* m_DisplayOutput = nullptr;
 
 public:
-	Display();
+	Display(IDisplayOutput* display_output);
 	Display(BaseCartridge* cartridge, IDisplayOutput* display_output);
 	virtual ~Display() = default;
 
@@ -126,6 +128,8 @@ public:
 	int GetVideoBufferSize();
 	void SetVideoBufferPixel(int x, int y, uint32_t data);
 
+	void UpdateDisplay();
+
 private:
 	DisplayContext m_Context = {};
 
@@ -147,6 +151,4 @@ private:
 	// Video buffers
 	std::vector<uint32_t> m_VideoBuffer;
 	std::vector<uint32_t> m_BlankVideoBuffer;
-
-	void UpdateDisplay();
 };

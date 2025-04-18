@@ -6,7 +6,7 @@
 #include "RetroGBm/Ppu.h"
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 #include "RetroGBm/Logger.h"
-#include "RetroGBm/IDisplayOutput.h"
+
 
 #include <cstdint>
 #include <sstream>
@@ -31,7 +31,7 @@ namespace
 	}
 }
 
-Display::Display()
+Display::Display(IDisplayOutput* display_output) : m_DisplayOutput(display_output)
 {
 	m_Cartridge = Emulator::Instance->GetCartridge();
 }
@@ -767,12 +767,13 @@ void Display::SetVideoBufferPixel(int x, int y, uint32_t data)
 
 void Display::UpdateDisplay()
 {
+	int video_pitch = sizeof(uint32_t)* ScreenResolutionX;
 	if (this->IsLcdEnabled())
 	{
-		m_DisplayOutput->Draw(m_VideoBuffer.data());
+		m_DisplayOutput->Draw(m_VideoBuffer.data(), video_pitch);
 	}
 	else
 	{
-		m_DisplayOutput->Draw(m_BlankVideoBuffer.data());
+		m_DisplayOutput->Draw(m_BlankVideoBuffer.data(), video_pitch);
 	}
 }

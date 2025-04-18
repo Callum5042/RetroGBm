@@ -261,7 +261,6 @@ void Application::Init()
 	CreateMainWindow();
 
 	// Initialize audio
-	m_DisplayOutput = std::make_unique<DisplayOutput>();
 	SoundOutput = std::make_unique<XAudio2Output>();
 }
 
