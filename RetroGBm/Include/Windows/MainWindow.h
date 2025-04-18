@@ -83,6 +83,7 @@ private:
 	static const UINT m_MenuEmulationSaveState = 302;
 	static const UINT m_MenuEmulationLoadState = 303;
 	static const UINT m_MenuEmulationDoubleSpeed = 304;
+	static const UINT m_MenuEmulationScreenshot = 305;
 
 	HMENU m_SaveSlotMenuItem = NULL;
 	static const UINT m_MenuSaveSlot1 = 2100;
@@ -104,6 +105,7 @@ private:
 
 	void ToggleEmulationPaused();
 	void ToggleEmulationDoubleSpeed();
+	void TakeScreenshot();
 
 	std::string m_FilePath;
 	void RestartEmulation();
