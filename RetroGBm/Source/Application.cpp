@@ -14,8 +14,6 @@
 #include <RetroGBm/Joypad.h>
 #include <RetroGBm/Logger.h>
 
-#include "Audio/XAudio2Output.h"
-
 namespace
 {
 	std::string getISODateTime()
@@ -96,7 +94,6 @@ int Application::Start()
 
 void Application::LoadRom(const std::string& file)
 {
-
 	StopEmulator();
 	bool tracelog = m_Emulator->IsTraceLogEnabled();
 
@@ -214,6 +211,17 @@ void Application::Run()
 			{
 				// Update main window
 				m_MainWindow->Update();
+
+				// Control audio playback speed
+				if (m_Emulator->GetFPS() < 60)
+				{
+					float playback_ratio = m_Emulator->GetFPS() / 60.0f;
+					m_SoundOutput->SetFrequencyRatio(playback_ratio);
+				}
+				else
+				{
+					m_SoundOutput->SetFrequencyRatio(1.0f);
+				}
 
 				// Render debug window
 				if (m_TileWindow != nullptr)

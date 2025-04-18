@@ -1,22 +1,17 @@
 #include "RetroGBm/Pch.h"
 #include "Audio/XAudio2Output.h"
 #include "RetroGBm/Logger.h"
-
-namespace
-{
-	struct AudioBuffer
-	{
-		std::vector<uint8_t> buffer;
-	};
-}
+#include "RetroGBm/Constants.h"
 
 XAudio2Output::XAudio2Output()
 {
-	const int CPU_FREQUENCY = 4 * 1024 * 1024;
-	_divider = CPU_FREQUENCY / SampleRate;
+	m_Divider = GameBoy::TicksPerSec / SampleRate;
 
-	m_AudioBuffer.resize(BufferSize, 128);
-	m_EmptyBuffer.resize(SampleRate, 128);
+	for (int i = 0; i < AudioBufferCount; ++i)
+	{
+		m_RingBuffers[i].buffer.resize(SamplesPerBuffer * 2, 128);
+		m_RingBuffers[i].inUse = false;
+	}
 
 	this->Initialise();
 }
@@ -48,24 +43,52 @@ void XAudio2Output::Stop()
 {
 }
 
+void XAudio2Output::SetFrequencyRatio(float ratio)
+{
+	m_SourceVoice->SetFrequencyRatio(ratio);
+}
+
 void XAudio2Output::Play(int left, int right)
 {
 	// Only want to add sample to the buffer synced with CPU
-	if (_tick++ != 0)
+	if (m_Tick++ != 0)
 	{
-		_tick %= _divider;
+		m_Tick %= m_Divider;
 		return;
 	}
 
-	// Populate buffer
-	m_AudioBuffer[m_SampleCount++] = static_cast<uint8_t>(left);
-	m_AudioBuffer[m_SampleCount++] = static_cast<uint8_t>(right);
+	// Get current buffer
+	AudioBuffer& buf = m_RingBuffers[m_CurrentBuffer];
 
-	// Queue audio buffer
-	if (m_SampleCount >= BufferSize)
+	// Skip if all buffers are full (avoid overwriting submitted ones)
+	if (buf.inUse)
+		return;
+
+	// Fill current buffer
+	buf.buffer[m_CurrentSampleOffset++] = static_cast<uint8_t>(left);
+	buf.buffer[m_CurrentSampleOffset++] = static_cast<uint8_t>(right);
+
+	// Buffer full, submit to XAudio2
+	if (m_CurrentSampleOffset >= buf.buffer.size())
 	{
-		this->QueueAudio(m_AudioBuffer);
-		m_SampleCount = 0;
+		XAUDIO2_BUFFER xaudioBuffer = {};
+		xaudioBuffer.pAudioData = buf.buffer.data();
+		xaudioBuffer.AudioBytes = static_cast<UINT32>(buf.buffer.size());
+		xaudioBuffer.pContext = &buf;
+
+		HRESULT hr = m_SourceVoice->SubmitSourceBuffer(&xaudioBuffer);
+		if (FAILED(hr))
+		{
+			Logger::Error("SubmitSourceBuffer failed");
+		}
+		else
+		{
+			buf.inUse = true;
+		}
+
+		// Move to next buffer
+		m_CurrentBuffer = (m_CurrentBuffer + 1) % AudioBufferCount;
+		m_CurrentSampleOffset = 0;
 	}
 }
 
@@ -147,20 +170,10 @@ void __stdcall XAudio2Output::OnBufferStart(void* pBufferContext)
 
 void __stdcall XAudio2Output::OnBufferEnd(void* pBufferContext)
 {
-	AudioBuffer* buffer = reinterpret_cast<AudioBuffer*>(pBufferContext);
-	if (buffer != nullptr)
+	if (pBufferContext != nullptr)
 	{
-		delete buffer;
-		buffer = nullptr;
-	}
-
-	// Bit of a hack - needs improving
-	XAUDIO2_VOICE_STATE voiceState;
-	m_SourceVoice->GetState(&voiceState);
-
-	if (voiceState.BuffersQueued == 0)
-	{
-		this->QueueAudio(m_EmptyBuffer);
+		AudioBuffer* buffer = reinterpret_cast<AudioBuffer*>(pBufferContext);
+		buffer->inUse = false;
 	}
 }
 

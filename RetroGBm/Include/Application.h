@@ -15,7 +15,7 @@
 #include "Render/RenderTarget.h"
 #include "Render/RenderTexture.h"
 
-#include "RetroGBm/Audio/ISoundOutput.h"
+#include "Audio/XAudio2Output.h"
 
 #include "ProfileParser.h"
 
@@ -81,5 +81,5 @@ private:
 	std::unique_ptr<Render::RenderShader> m_RenderShader = nullptr;
 
 	// Audio
-	std::unique_ptr<ISoundOutput> m_SoundOutput = nullptr;
+	std::unique_ptr<XAudio2Output> m_SoundOutput = nullptr;
 };
