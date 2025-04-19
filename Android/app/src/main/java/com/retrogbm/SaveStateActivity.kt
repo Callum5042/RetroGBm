@@ -122,7 +122,7 @@ fun formatDateModified(dateModified: Long): String {
     // Convert Instant to local date (assuming system's default time zone)
     val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
     // Format the date as "yyyy/MM/dd"
-    val formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.ENGLISH)
+    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.ENGLISH)
     return localDate.format(formatter)
 }
 
@@ -199,8 +199,6 @@ fun InputDialog(
     onConfirm: (String) -> Unit
 ) {
     var text by remember { mutableStateOf("") }
-
-    val titleColor = MaterialTheme.colorScheme.onSurface
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -436,7 +434,9 @@ fun SaveStateSlotCard(data: SaveStateData, onUpdate: (oldPath: String, path: Str
                 color = titleColor
             )
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .padding(horizontal = 8.dp)
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
