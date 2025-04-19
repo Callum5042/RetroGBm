@@ -293,6 +293,11 @@ class EmulatorActivity : ComponentActivity() {
         this.timeStarted = Date()
         this.checksum = calculateFileChecksum(bytes)
 
+        // Audio
+        val sharedPreferences = this.baseContext.getSharedPreferences("retrogbm_settings_prefs", Context.MODE_PRIVATE)
+        val enableSound = sharedPreferences.getBoolean("enable_sound", true)
+        emulator.soundOutput.toggleAudio(enableSound)
+
         // Emulator background thread
         emulatorThread = emulatorCoroutineScope.launch(Dispatchers.Default) {
             while (emulator.isRunning()) {
