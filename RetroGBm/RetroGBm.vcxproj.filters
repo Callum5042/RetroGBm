@@ -125,6 +125,9 @@
     <ClInclude Include="Include\Render\DisplayOutput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Include\hashpp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\ShaderData.hlsli" />
