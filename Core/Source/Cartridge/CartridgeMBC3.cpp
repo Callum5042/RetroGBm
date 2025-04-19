@@ -197,6 +197,15 @@ void CartridgeMBC3::LoadState(std::fstream* file)
 	int hours = m_RtcData.m_RtcHours + (int)h.count();
 	int days = m_RtcData.m_RtcDays + (int)d.count();
 
+	minutes += (seconds - (seconds % 60)) / 60;
+	seconds = (seconds % 60);
+
+	hours += (minutes - (minutes % 60)) / 60;
+	minutes = minutes % 60;
+
+	days += (hours - (hours % 24)) / 24;
+	hours = hours % 24;
+
 	m_RtcData.m_RtcSeconds = seconds;
 	m_RtcData.m_RtcMinutes = minutes;
 	m_RtcData.m_RtcHours = hours;

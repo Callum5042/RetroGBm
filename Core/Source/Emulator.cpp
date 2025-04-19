@@ -175,6 +175,15 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 				int hours = mbc3->m_RtcData.m_RtcHours + (int)h.count();
 				int days = mbc3->m_RtcData.m_RtcDays + (int)d.count();
 
+				minutes += (seconds - (seconds % 60)) / 60;
+				seconds = (seconds % 60);
+
+				hours += (minutes - (minutes % 60)) / 60;
+				minutes = minutes % 60;
+
+				days += (hours - (hours % 24)) / 24;
+				hours = hours % 24;
+
 				mbc3->m_RtcData.m_RtcSeconds = seconds;
 				mbc3->m_RtcData.m_RtcMinutes = minutes;
 				mbc3->m_RtcData.m_RtcHours = hours;
