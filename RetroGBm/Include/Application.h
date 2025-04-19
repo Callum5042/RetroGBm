@@ -57,6 +57,7 @@ public:
 	std::vector<ProfileData> ProfileDataList;
 	std::chrono::steady_clock::time_point CurrentTimeStamp;
 	std::string CurrentFilename;
+	std::string Checksum;
 
 	// Audio
 	std::unique_ptr<XAudio2Output> SoundOutput = nullptr;

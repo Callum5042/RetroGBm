@@ -14,6 +14,8 @@
 #include <RetroGBm/Joypad.h>
 #include <RetroGBm/Logger.h>
 
+#include "hashpp.h"
+
 namespace
 {
 	std::string getISODateTime()
@@ -113,6 +115,9 @@ void Application::LoadRom(const std::string& file)
 	CurrentTimeStamp = std::chrono::high_resolution_clock::now();
 	CurrentFilename = std::filesystem::path(file).filename().string();
 
+	// Calculate hash
+	Checksum = hashpp::get::getFileHash(hashpp::ALGORITHMS::SHA2_256, file).getString();
+
 	// Emulator runs on a background thread
 	m_EmulatorThread = std::thread([&]
 	{
@@ -160,7 +165,7 @@ void Application::StopEmulator()
 	bool found_entry = false;
 	for (auto& profileData : ProfileDataList)
 	{
-		if (profileData.filename == CurrentFilename)
+		if (profileData.checksum == Checksum)
 		{
 			profileData.totalPlayTimeMinutes += play_time_minutes;
 			profileData.lastPlayed = today_date;
@@ -176,6 +181,7 @@ void Application::StopEmulator()
 		new_data.filename = CurrentFilename;
 		new_data.totalPlayTimeMinutes += play_time_minutes;
 		new_data.lastPlayed = today_date;
+		new_data.checksum = Checksum;
 
 		ProfileDataList.push_back(new_data);
 	}
