@@ -12,7 +12,7 @@
 |-----------------------------------------------|-----------|------------------------|
 | Donkey Kong Country							| ☆☆☆☆☆	|						 |
 | Donkey Kong Land								| ☆☆☆☆☆	|						 |
-| Dr. Mario										| ☆☆☆☆☆	|						 |
+| Dr. Mario										| ★★★★★	|						 |
 | Dragon Warrior I & II							| ☆☆☆☆☆	|						 |
 | Dragon Warrior III							| ☆☆☆☆☆	|						 |
 | Dragon Warrior Monsters						| ☆☆☆☆☆	|						 |
@@ -25,19 +25,19 @@
 | Mario Golf									| ☆☆☆☆☆	|						 |
 | Mario Tennis									| ☆☆☆☆☆	|						 |
 | Metal Gear Solid								| ☆☆☆☆☆	|						 |
-| Pokemon - Crystal Version						| ☆☆☆☆☆	|						 |
-| Pokemon - Gold Version						| ☆☆☆☆☆	|						 |
+| Pokemon - Crystal Version						| ★★★★☆	| Pokedex has minor graphical glitches |
+| Pokemon - Gold Version						| ★★★★★	|						 |
 | Pokemon - Silver Version						| ☆☆☆☆☆	|						 |
 | Pokemon - Yellow Version						| ☆☆☆☆☆	|						 |
-| Pokemon Pinball								| ☆☆☆☆☆	|						 |
-| Pokemon Red									| ☆☆☆☆☆	|						 |
+| Pokemon Pinball								| ★★★★★	|						 |
+| Pokemon Red									| ★★★★★	|						 |
 | Pokemon Trading Card Game						| ☆☆☆☆☆	|						 |
 | Prehistorik Man								| ☆☆☆☆☆	|						 |
 | Robin Hood									| ☆☆☆☆☆	|						 |
 | Shantae										| ☆☆☆☆☆	|						 |
 | Space Invaders								| ☆☆☆☆☆	|						 |
 | Super Mario Bros. Deluxe						| ☆☆☆☆☆	|						 |
-| Super Mario Land								| ☆☆☆☆☆	|						 |
-| Tetris										| ☆☆☆☆☆	|						 |
+| Super Mario Land								| ★★★★☆	| Pause screen is incorrectly displayed |
+| Tetris										| ★★★★★	|						 |
 | Wario Land 3									| ☆☆☆☆☆	|						 |
 | Wario Land II									| ☆☆☆☆☆	|						 |
