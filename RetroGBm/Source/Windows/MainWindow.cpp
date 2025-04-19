@@ -593,7 +593,7 @@ void MainWindow::UpdateSaveStateDetails()
 				// Time played
 				std::chrono::duration<double> time_played(header.time_played);
 				auto duration_in_hours = std::chrono::duration_cast<std::chrono::hours>(time_played);
-				auto duration_in_minutes = std::chrono::duration_cast<std::chrono::minutes>(time_played);
+				auto duration_in_minutes = std::chrono::duration_cast<std::chrono::minutes>(time_played) - duration_in_hours;
 
 				std::wstringstream ss;
 				ss << L"Slot " << std::to_wstring(i) << L" - ";
@@ -604,13 +604,11 @@ void MainWindow::UpdateSaveStateDetails()
 				// Hours
 				if (duration_in_hours.count() != 0)
 				{
-					ss << duration_in_hours.count();
+					ss << duration_in_hours.count() << " hours";
 					if (duration_in_minutes.count() != 0)
 					{
-						ss << (60 / duration_in_minutes.count());
+						ss << " " << duration_in_minutes.count() << " minutes";
 					}
-
-					ss << " hours";
 				}
 				else
 				{
