@@ -211,8 +211,6 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 				battery.write(reinterpret_cast<const char*>(&rtc_size), sizeof(rtc_size));
 				battery.write(reinterpret_cast<const char*>(mbc3->m_RtcRegisters.data()), mbc3->m_RtcRegisters.size() * sizeof(uint8_t));
 				battery.write(reinterpret_cast<const char*>(&mbc3->m_RtcData), sizeof(mbc3->m_RtcData));
-
-				Logger::Info("MBC3 - Unix epoch: " + std::to_string(mbc3->m_RtcData.m_UnixEpoch));
 			}
 
 			battery.close();
