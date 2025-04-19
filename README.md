@@ -23,7 +23,7 @@ Gameboy Colour emulator written in C++ for Windows and Android.
 | ![Mario Tennis](/Images/mario_tennis.png) | ![Pokemon Pinball](/Images/pokemon_pinball.png)  | ![Zelda - Oracle of Ages](/Images/zelda_oracle_ages.png)  |
 
 | ![Android List](/Images/android1.jpg) | ![Android Playing](/Images/android2.jpg) | ![Android Savestates](/Images/android3.jpg) |
-|----------|----------|
+|----------|----------|----------|
 
 ## Build
 
