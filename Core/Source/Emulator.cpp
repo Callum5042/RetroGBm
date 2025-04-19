@@ -2,11 +2,11 @@
 #include "RetroGBm/Emulator.h"
 #include "RetroGBm/Cpu.h"
 
-#include <algorithm>
 #include <vector>
 #include <thread>
 #include <mutex>
 #include <fstream>
+#include <chrono>
 
 #include "RetroGBm/Cpu.h"
 #include "RetroGBm/Ram.h"
@@ -27,6 +27,7 @@
 #include "RetroGBm/md5.h"
 
 using namespace std::chrono_literals;
+using namespace std::chrono;
 
 Emulator* Emulator::Instance = nullptr;
 
@@ -150,35 +151,29 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 				battery.read(reinterpret_cast<char*>(mbc3->m_RtcRegisters.data()), mbc3->m_RtcRegisters.size() * sizeof(uint8_t));
 				battery.read(reinterpret_cast<char*>(&mbc3->m_RtcData), sizeof(mbc3->m_RtcData));
 
-				std::time_t saved_time = 0;
-				battery.read(reinterpret_cast<char*>(&saved_time), sizeof(saved_time));
-
 				auto currentTime = std::chrono::system_clock::now();
-				std::time_t currentTime_t = std::chrono::system_clock::to_time_t(currentTime) - saved_time;
-				std::tm currentTime_tm = *std::gmtime(&currentTime_t);
+				auto lastTime = std::chrono::system_clock::from_time_t(mbc3->m_RtcData.m_UnixEpoch);
 
-				int seconds = mbc3->m_RtcData.m_RtcSeconds + currentTime_tm.tm_sec;
-				int minutes = mbc3->m_RtcData.m_RtcMinutes + currentTime_tm.tm_min;
-				int hours = mbc3->m_RtcData.m_RtcHours + currentTime_tm.tm_hour;
-				int days = mbc3->m_RtcData.m_RtcDays + currentTime_tm.tm_yday;
+				Logger::Info("MBC3 - Last unix epoch: " + std::to_string(std::chrono::system_clock::to_time_t(lastTime)));
+				Logger::Info("MBC3 - Current unix epoch: " + std::to_string(std::chrono::system_clock::to_time_t(currentTime)));
 
-				if (seconds >= 60)
-				{
-					seconds = 0;
-					minutes++;
-				}
+				auto duration = duration_cast<seconds>(currentTime - lastTime);
 
-				if (minutes >= 60)
-				{
-					minutes = 0;
-					hours++;
-				}
+				auto d = duration_cast<days>(duration);
+				duration -= d;
 
-				if (hours >= 24)
-				{
-					hours = 0;
-					days++;
-				}
+				auto h = duration_cast<hours>(duration);
+				duration -= h;
+
+				auto m = duration_cast<minutes>(duration);
+				duration -= m;
+
+				auto s = duration_cast<seconds>(duration);
+
+				int seconds = mbc3->m_RtcData.m_RtcSeconds + (int)s.count();
+				int minutes = mbc3->m_RtcData.m_RtcMinutes + (int)m.count();
+				int hours = mbc3->m_RtcData.m_RtcHours + (int)h.count();
+				int days = mbc3->m_RtcData.m_RtcDays + (int)d.count();
 
 				mbc3->m_RtcData.m_RtcSeconds = seconds;
 				mbc3->m_RtcData.m_RtcMinutes = minutes;
@@ -217,10 +212,7 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 				battery.write(reinterpret_cast<const char*>(mbc3->m_RtcRegisters.data()), mbc3->m_RtcRegisters.size() * sizeof(uint8_t));
 				battery.write(reinterpret_cast<const char*>(&mbc3->m_RtcData), sizeof(mbc3->m_RtcData));
 
-				auto currentTime = std::chrono::system_clock::now();
-				std::time_t currentTime_t = std::chrono::system_clock::to_time_t(currentTime);
-
-				battery.write(reinterpret_cast<const char*>(&currentTime_t), sizeof(currentTime_t));
+				Logger::Info("MBC3 - Unix epoch: " + std::to_string(mbc3->m_RtcData.m_UnixEpoch));
 			}
 
 			battery.close();
