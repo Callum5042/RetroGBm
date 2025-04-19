@@ -1,19 +1,19 @@
 ﻿# RetroGBm
 
-Gameboy Colour emulator written in C++ for Windows and Android.
+A fast and lightweight Game Boy Color emulator written in C++ for Windows and Android.
 
 ![Build](https://github.com/Callum5042/RetroGBm/actions/workflows/msbuild.yml/badge.svg)
 
 ### Features
 
-- MBC1/MBC3/MBC5
-- Battery save support
-- Multiple save states
-- Rotating quick saves
-- RTC emulation support
-- Cycles accurate
-- Audio support
-- Play time information
+- Support for MBC1, MBC3, and MBC5 mappers
+- Battery-backed save support
+- Multiple save states with rotating quick saves
+- Adjustable emulation speed
+- Real-Time Clock (RTC) emulation
+- Cycle-accurate CPU and PPU timing
+- Audio emulation
+- Play time tracking
 
 ## Screenshots
 
