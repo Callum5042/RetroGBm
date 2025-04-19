@@ -1,7 +1,5 @@
 package com.retrogbm
 
-import android.util.Log
-
 class DisplayOutput {
     val nativePtr: Long
     private external fun nativeCreate(): Long
@@ -11,7 +9,6 @@ class DisplayOutput {
     }
 
     fun draw(pixels: IntArray) {
-        Log.d("Display", "Display")
         onDrawCallback?.invoke(pixels)
     }
 
