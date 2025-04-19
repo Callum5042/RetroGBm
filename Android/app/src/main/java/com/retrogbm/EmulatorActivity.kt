@@ -93,7 +93,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -390,20 +389,22 @@ fun Content(emulator: EmulatorWrapper, fileName: String, slot: Int) {
     val openDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
         onResult = { uri ->
-            val currentActivity = context as? Activity
-            currentActivity?.let { activity ->
+            if (uri != null) {
+                val currentActivity = context as? Activity
+                currentActivity?.let { activity ->
 
-                if (emulator.isRunning()) {
-                    emulator.stop()
+                    if (emulator.isRunning()) {
+                        emulator.stop()
+                    }
+
+                    activity.finish()
+                    val intent = Intent(activity, activity::class.java).apply {
+                        putExtra("ROM_URI", uri.toString())
+                        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+
+                    activity.startActivity(intent)
                 }
-
-                activity.finish()
-                val intent = Intent(activity, activity::class.java).apply {
-                    putExtra("ROM_URI", uri.toString())
-                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-
-                activity.startActivity(intent)
             }
         }
     )

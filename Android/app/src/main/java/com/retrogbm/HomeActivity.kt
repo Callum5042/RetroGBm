@@ -172,9 +172,11 @@ fun Content(previewRomData: ProfileRomData) {
     val openDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
         onResult = { uri ->
-            val intent = Intent(context, EmulatorActivity::class.java)
-            intent.putExtra("ROM_URI", uri.toString())
-            context.startActivity(intent)
+            if (uri != null) {
+                val intent = Intent(context, EmulatorActivity::class.java)
+                intent.putExtra("ROM_URI", uri.toString())
+                context.startActivity(intent)
+            }
         }
     )
 
