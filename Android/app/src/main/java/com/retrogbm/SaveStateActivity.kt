@@ -429,6 +429,7 @@ fun SaveStateSlotCard(data: SaveStateData, onUpdate: (oldPath: String, path: Str
             Text(
                 text = title,
                 modifier = Modifier
+                    .padding(horizontal = 8.dp)
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState()),
                 color = titleColor
