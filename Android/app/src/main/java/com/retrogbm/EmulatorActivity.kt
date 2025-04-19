@@ -129,6 +129,7 @@ class EmulatorActivity : ComponentActivity() {
         // Load the ROM from the intent set by the home page
         val title = intent.getStringExtra("ROM_TITLE")
         if (!title.isNullOrEmpty()) {
+            Emulator.emulator = EmulatorWrapper()
             val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
             val path = absolutePath!! + "/ROMS/" + title
             loadRom(Uri.fromFile(File(path)), title)
@@ -137,6 +138,7 @@ class EmulatorActivity : ComponentActivity() {
         // Load the ROM from the ACTION_OPEN_DOCUMENT intent
         val romUriString = intent?.getStringExtra("ROM_URI")
         if (!romUriString.isNullOrEmpty()) {
+            Emulator.emulator = EmulatorWrapper()
             val romUri = romUriString.let { Uri.parse(it) }
             val romFileName = getFileName(this, romUri)
             loadRom(romUri, romFileName!!)
