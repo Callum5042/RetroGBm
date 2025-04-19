@@ -1,10 +1,12 @@
 #include "RetroGBm/Pch.h"
 #include "RetroGBm/Cartridge/CartridgeMBC3.h"
+#include "RetroGBm/Logger.h"
 
-#include <iostream>
 #include <chrono>
-#include <ctime>
 #include <cstdint>
+
+using namespace std::chrono_literals;
+using namespace std::chrono;
 
 CartridgeMBC3::CartridgeMBC3(CartridgeDataV2 cartridge_data) : BaseCartridge(cartridge_data)
 {
@@ -147,9 +149,7 @@ void CartridgeMBC3::SaveState(std::fstream* file)
 
 	file->write(reinterpret_cast<const char*>(&m_RtcData), sizeof(m_RtcData));
 
-	auto currentTime = std::chrono::system_clock::now();
-	std::time_t currentTime_t = std::chrono::system_clock::to_time_t(currentTime);
-	file->write(reinterpret_cast<const char*>(&currentTime_t), sizeof(currentTime_t));
+	Logger::Info("Unix epoch: " + std::to_string(m_RtcData.m_UnixEpoch));
 }
 
 void CartridgeMBC3::LoadState(std::fstream* file)
@@ -173,42 +173,36 @@ void CartridgeMBC3::LoadState(std::fstream* file)
 
 	file->read(reinterpret_cast<char*>(&m_RtcData), sizeof(m_RtcData));
 
-	std::time_t saved_time = 0;
-	file->read(reinterpret_cast<char*>(&saved_time), sizeof(saved_time));
-
 	auto currentTime = std::chrono::system_clock::now();
-	std::time_t currentTime_t = std::chrono::system_clock::to_time_t(currentTime) - saved_time;
-	std::tm currentTime_tm = *std::gmtime(&currentTime_t);
+	auto lastTime = std::chrono::system_clock::from_time_t(m_RtcData.m_UnixEpoch);
 
-	int seconds = m_RtcData.m_RtcSeconds + currentTime_tm.tm_sec;
-	int minutes = m_RtcData.m_RtcMinutes + currentTime_tm.tm_min;
-	int hours = m_RtcData.m_RtcHours + currentTime_tm.tm_hour;
-	int days = m_RtcData.m_RtcDays + currentTime_tm.tm_yday;
+	Logger::Info("MBC3 - Last unix epoch: " + std::to_string(std::chrono::system_clock::to_time_t(lastTime)));
+	Logger::Info("MBC3 - Current unix epoch: " + std::to_string(std::chrono::system_clock::to_time_t(currentTime)));
 
-	if (seconds >= 60)
-	{
-		seconds = 0;
-		minutes++;
-	}
+	auto duration = duration_cast<seconds>(currentTime - lastTime);
 
-	if (minutes >= 60)
-	{
-		minutes = 0;
-		hours++;
-	}
+	auto d = duration_cast<days>(duration);
+	duration -= d;
 
-	if (hours >= 24)
-	{
-		hours = 0;
-		days++;
-	}
+	auto h = duration_cast<hours>(duration);
+	duration -= h;
+
+	auto m = duration_cast<minutes>(duration);
+	duration -= m;
+
+	auto s = duration_cast<seconds>(duration);
+
+	int seconds = m_RtcData.m_RtcSeconds + (int)s.count();
+	int minutes = m_RtcData.m_RtcMinutes + (int)m.count();
+	int hours = m_RtcData.m_RtcHours + (int)h.count();
+	int days = m_RtcData.m_RtcDays + (int)d.count();
 
 	m_RtcData.m_RtcSeconds = seconds;
 	m_RtcData.m_RtcMinutes = minutes;
 	m_RtcData.m_RtcHours = hours;
 	m_RtcData.m_RtcDays = days;
 
-	this->SetRTC(seconds, minutes, hours, days);
+	SetRTC(seconds, minutes, hours, days);
 }
 
 void CartridgeMBC3::SetRTC(uint8_t seconds, uint8_t minutes, uint8_t hours, uint16_t days)
@@ -227,6 +221,9 @@ void CartridgeMBC3::TickRTC()
 	m_RealTimeClockTimer.Tick();
 	if (m_RealTimeClockTimer.TotalTime() > 1.0f)
 	{
+		auto currentTime = std::chrono::system_clock::now();
+		m_RtcData.m_UnixEpoch = std::chrono::system_clock::to_time_t(currentTime);
+
 		// Seconds
 		m_RtcData.m_RtcSeconds++;
 

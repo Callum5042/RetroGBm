@@ -12,6 +12,7 @@ struct RtcData
 	uint16_t m_RtcDays = 0;
 
 	bool m_RtcLatched = false;
+	time_t m_UnixEpoch = 0;
 };
 
 class CartridgeMBC3 : public BaseCartridge
