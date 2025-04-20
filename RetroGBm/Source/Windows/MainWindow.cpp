@@ -128,7 +128,7 @@ LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 			LPNMHDR nmhdr = (LPNMHDR)lParam;
 
 			// Check if the message is from your ListView (ID = 1)
-			if (nmhdr->idFrom == m_ListMenuId && nmhdr->code == NM_CLICK)
+			if (nmhdr->idFrom == m_ListMenuId && nmhdr->code == NM_DBLCLK)
 			{
 				LPNMITEMACTIVATE item = (LPNMITEMACTIVATE)lParam;
 
