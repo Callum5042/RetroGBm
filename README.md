@@ -37,4 +37,4 @@ A fast and lightweight Game Boy Color emulator written in C++ for Windows and An
 
 ## Test roms
 
-[Testing ROMS](/Testing.mnd)
+[Testing ROMS](/Testing.md)
