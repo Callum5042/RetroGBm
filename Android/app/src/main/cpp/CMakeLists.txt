@@ -11,12 +11,27 @@ cmake_minimum_required(VERSION 3.22.1)
 # build script scope).
 project("retrogbm")
 
-set(EmulatorCoreIncDir "D:/Sources/RetroGBm/Core/Include")
-set(EmulatorCoreSrcDir "D:/Sources/RetroGBm/Core/Source")
-set(EmulatorCoreExternalIncDir "D:/Sources/RetroGBm/Core/External")
+# Define a base source directory
+set(SourceDir "../../../../../")
+
+# Use the base to define your core paths
+set(EmulatorCoreIncDir "${SourceDir}Core/Include")
+set(EmulatorCoreSrcDir "${SourceDir}Core/Source")
+set(EmulatorCoreExternalIncDir "${SourceDir}Core/External")
 
 include_directories(${EmulatorCoreIncDir})
 include_directories(${EmulatorCoreExternalIncDir})
+
+# -------- Optimization Flags (aggressive) --------
+# Apply only in Release mode
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -flto -ffunction-sections -fdata-sections -fstrict-aliasing -fomit-frame-pointer")
+    set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -Wl,--gc-sections")
+endif()
+
+# Optional: force C++20 if needed for performance/STL optimizations
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
