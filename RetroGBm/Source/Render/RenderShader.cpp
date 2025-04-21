@@ -4,6 +4,8 @@
 #include "../Shaders/PixelShader.hlsl.h"
 #include "../Shaders/VertexShader.hlsl.h"
 
+#include <RetroGBm/Constants.h>
+
 namespace DX
 {
 	inline void Check(HRESULT hr)
@@ -26,7 +28,15 @@ void Render::RenderShader::Create()
 	LoadPixelShader();
 	LoadVertexShader();
 
-	// Sampler
+	CreateSamplerState();
+	CreateCameraConstantBuffer();
+
+	// Set buffer
+	UpdateSize(800.0f, 600.0f, false);
+}
+
+void Render::RenderShader::CreateSamplerState()
+{
 	D3D11_SAMPLER_DESC sampler_desc = {};
 	sampler_desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 	sampler_desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -39,6 +49,16 @@ void Render::RenderShader::Create()
 	sampler_desc.MaxLOD = 1000.0f;
 
 	DX::Check(m_RenderDevice->GetDevice()->CreateSamplerState(&sampler_desc, &m_AnisotropicSampler));
+}
+
+void Render::RenderShader::CreateCameraConstantBuffer()
+{
+	D3D11_BUFFER_DESC desc = {};
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.ByteWidth = sizeof(CameraBuffer);
+	desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	DX::Check(m_RenderDevice->GetDevice()->CreateBuffer(&desc, nullptr, m_ConstantBuffer.ReleaseAndGetAddressOf()));
 }
 
 void Render::RenderShader::Use()
@@ -54,6 +74,11 @@ void Render::RenderShader::Use()
 
 	// Bind pixel shader texture sampler
 	m_RenderDevice->GetDeviceContext()->PSSetSamplers(0, 1, m_AnisotropicSampler.GetAddressOf());
+
+	// Set constant buffer
+	const int camera_buffer_slot = 0;
+	m_RenderDevice->GetDeviceContext()->VSSetConstantBuffers(camera_buffer_slot, 1, m_ConstantBuffer.GetAddressOf());
+	m_RenderDevice->GetDeviceContext()->PSSetConstantBuffers(camera_buffer_slot, 1, m_ConstantBuffer.GetAddressOf());
 }
 
 void Render::RenderShader::LoadVertexShader()
@@ -75,4 +100,38 @@ void Render::RenderShader::LoadVertexShader()
 void Render::RenderShader::LoadPixelShader()
 {
 	m_RenderDevice->GetDevice()->CreatePixelShader(g_PixelShader, sizeof(g_PixelShader), nullptr, m_PixelShader.ReleaseAndGetAddressOf());
+}
+
+void Render::RenderShader::UpdateSize(float width, float height, bool stretch)
+{
+	Render::CameraBuffer buffer = {};
+
+	XMMATRIX world = XMMatrixIdentity();
+
+	if (stretch)
+	{
+		world *= XMMatrixScaling(width / 2, height / 2, 1.0f);
+	}
+	else
+	{
+		int texture_width = GameBoy::ScreenWidth;
+		int texture_height = GameBoy::ScreenHeight;
+
+		texture_width = static_cast<int>(width);
+		texture_height = static_cast<int>(width * 0.9f);
+
+		if (texture_height > height)
+		{
+			texture_width = static_cast<int>(height * 1.11f);
+			texture_height = static_cast<int>(height);
+		}
+
+		world *= XMMatrixScaling(texture_width * 0.5f, texture_height * 0.5f, 1.0f);
+	}
+
+	buffer.world = XMMatrixTranspose(world);
+
+	buffer.camera_projection = XMMatrixOrthographicLH(width, height, 0.0f, 1.0f);
+
+	m_RenderDevice->GetDeviceContext()->UpdateSubresource(m_ConstantBuffer.Get(), 0, nullptr, &buffer, 0, 0);
 }

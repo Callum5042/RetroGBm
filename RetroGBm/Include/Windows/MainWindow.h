@@ -88,6 +88,7 @@ private:
 
 	HMENU m_OptionsMenuItem = NULL;
 	static const UINT m_MenuOptionsEnableAudio = 401;
+	static const UINT m_MenuOptionsStretchDisplay = 402;
 
 	HMENU m_SaveSlotMenuItem = NULL;
 	static const UINT m_MenuSaveSlot1 = 2100;
@@ -102,6 +103,7 @@ private:
 	HMENU m_StatusBar = NULL;
 
 	// Other unknown atm
+	bool m_StretchDisplay = true;
 
 	void OpenDialog();
 	bool OpenFileDialog(std::string* filepath);

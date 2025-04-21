@@ -63,6 +63,10 @@ public:
 	std::unique_ptr<XAudio2Output> SoundOutput = nullptr;
 	std::unique_ptr<DisplayOutput> m_DisplayOutput = nullptr;
 
+	// Rendering
+	std::unique_ptr<Render::RenderDevice> m_RenderDevice = nullptr;
+	std::unique_ptr<Render::RenderShader> m_RenderShader = nullptr;
+
 private:
 	void Init();
 	void Run();
@@ -81,8 +85,4 @@ private:
 	// Emulator
 	std::unique_ptr<Emulator> m_Emulator;
 	std::thread m_EmulatorThread;
-
-	// Rendering
-	std::unique_ptr<Render::RenderDevice> m_RenderDevice = nullptr;
-	std::unique_ptr<Render::RenderShader> m_RenderShader = nullptr;
 };

@@ -16,8 +16,7 @@ struct VertexOutput
 cbuffer WorldBuffer : register(b0)
 {
     matrix cWorld;
-    matrix cView;
-    matrix cProjection;
+    matrix cCameraProjection;
 }
 
 // Texture sampler
