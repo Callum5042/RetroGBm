@@ -28,14 +28,16 @@ void Render::RenderShader::Create()
 	LoadPixelShader();
 	LoadVertexShader();
 
-	CreateSamplerState();
+	CreatePointFilterSamplerState();
+	CreateLinearFilterSamplerState();
+
 	CreateCameraConstantBuffer();
 
 	// Set buffer
-	UpdateSize(800.0f, 600.0f, false);
+	UpdateSize(800, 600, false);
 }
 
-void Render::RenderShader::CreateSamplerState()
+void Render::RenderShader::CreatePointFilterSamplerState()
 {
 	D3D11_SAMPLER_DESC sampler_desc = {};
 	sampler_desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
@@ -48,7 +50,23 @@ void Render::RenderShader::CreateSamplerState()
 	sampler_desc.MinLOD = 0;
 	sampler_desc.MaxLOD = 1000.0f;
 
-	DX::Check(m_RenderDevice->GetDevice()->CreateSamplerState(&sampler_desc, &m_AnisotropicSampler));
+	DX::Check(m_RenderDevice->GetDevice()->CreateSamplerState(&sampler_desc, &m_PointFilterSampler));
+}
+
+void Render::RenderShader::CreateLinearFilterSamplerState()
+{
+	D3D11_SAMPLER_DESC sampler_desc = {};
+	sampler_desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sampler_desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampler_desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampler_desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampler_desc.MipLODBias = 0;
+	sampler_desc.MaxAnisotropy = D3D11_REQ_MAXANISOTROPY;
+	sampler_desc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	sampler_desc.MinLOD = 0;
+	sampler_desc.MaxLOD = 1000.0f;
+
+	DX::Check(m_RenderDevice->GetDevice()->CreateSamplerState(&sampler_desc, &m_LinearFilterSampler));
 }
 
 void Render::RenderShader::CreateCameraConstantBuffer()
@@ -73,7 +91,7 @@ void Render::RenderShader::Use()
 	m_RenderDevice->GetDeviceContext()->PSSetShader(m_PixelShader.Get(), nullptr, 0);
 
 	// Bind pixel shader texture sampler
-	m_RenderDevice->GetDeviceContext()->PSSetSamplers(0, 1, m_AnisotropicSampler.GetAddressOf());
+	m_RenderDevice->GetDeviceContext()->PSSetSamplers(0, 1, (UseLinearFiltering ? m_LinearFilterSampler.GetAddressOf() : m_PointFilterSampler.GetAddressOf()));
 
 	// Set constant buffer
 	const int camera_buffer_slot = 0;
@@ -102,7 +120,7 @@ void Render::RenderShader::LoadPixelShader()
 	m_RenderDevice->GetDevice()->CreatePixelShader(g_PixelShader, sizeof(g_PixelShader), nullptr, m_PixelShader.ReleaseAndGetAddressOf());
 }
 
-void Render::RenderShader::UpdateSize(float width, float height, bool stretch)
+void Render::RenderShader::UpdateSize(int width, int height, bool stretch)
 {
 	Render::CameraBuffer buffer = {};
 
@@ -110,7 +128,7 @@ void Render::RenderShader::UpdateSize(float width, float height, bool stretch)
 
 	if (stretch)
 	{
-		world *= XMMatrixScaling(width / 2, height / 2, 1.0f);
+		world *= XMMatrixScaling(width * 0.5f, height * 0.5f, 1.0f);
 	}
 	else
 	{
@@ -131,7 +149,7 @@ void Render::RenderShader::UpdateSize(float width, float height, bool stretch)
 
 	buffer.world = XMMatrixTranspose(world);
 
-	buffer.camera_projection = XMMatrixOrthographicLH(width, height, 0.0f, 1.0f);
+	buffer.camera_projection = XMMatrixOrthographicLH((float)width, (float)height, 0.0f, 1.0f);
 
 	m_RenderDevice->GetDeviceContext()->UpdateSubresource(m_ConstantBuffer.Get(), 0, nullptr, &buffer, 0, 0);
 }

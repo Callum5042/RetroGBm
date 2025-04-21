@@ -89,6 +89,7 @@ private:
 	HMENU m_OptionsMenuItem = NULL;
 	static const UINT m_MenuOptionsEnableAudio = 401;
 	static const UINT m_MenuOptionsStretchDisplay = 402;
+	static const UINT m_MenuOptionsLinearFilter = 403;
 
 	HMENU m_SaveSlotMenuItem = NULL;
 	static const UINT m_MenuSaveSlot1 = 2100;

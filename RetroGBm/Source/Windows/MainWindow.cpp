@@ -371,10 +371,26 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			RECT rect;
 			if (GetWindowRect(m_RenderHwnd, &rect))
 			{
-				float width = static_cast<float>(rect.right - rect.left);
-				float height = static_cast<float>(rect.bottom - rect.top);
+				int width = (rect.right - rect.left);
+				int height = (rect.bottom - rect.top);
 
 				m_Application->m_RenderShader->UpdateSize(width, height, m_StretchDisplay);
+			}
+
+			break;
+		}
+
+		case m_MenuOptionsLinearFilter:
+		{
+			m_Application->m_RenderShader->UseLinearFiltering = !m_Application->m_RenderShader->UseLinearFiltering;
+
+			if (m_Application->m_RenderShader->UseLinearFiltering)
+			{
+				CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsLinearFilter, MF_BYCOMMAND | MF_CHECKED);
+			}
+			else
+			{
+				CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsLinearFilter, MF_BYCOMMAND | MF_UNCHECKED);
 			}
 
 			break;
@@ -939,6 +955,7 @@ void MainWindow::CreateMenuBar()
 	m_OptionsMenuItem = CreateMenu();
 	AppendMenuW(m_OptionsMenuItem, MF_CHECKED, m_MenuOptionsEnableAudio, L"Enable Audio");
 	AppendMenuW(m_OptionsMenuItem, MF_CHECKED, m_MenuOptionsStretchDisplay, L"Stretch Display");
+	AppendMenuW(m_OptionsMenuItem, MF_UNCHECKED, m_MenuOptionsLinearFilter, L"Linear Filtering");
 	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_OptionsMenuItem), L"Options");
 
 	// Tools menu

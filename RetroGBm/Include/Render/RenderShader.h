@@ -32,7 +32,9 @@ namespace Render
 		void Use();
 
 		// Update the window size
-		void UpdateSize(float width, float height, bool stretch);
+		void UpdateSize(int width, int height, bool stretch);
+
+		bool UseLinearFiltering = false;
 
 	private:
 		// Create vertex shader
@@ -45,8 +47,11 @@ namespace Render
 		ComPtr<ID3D11PixelShader> m_PixelShader = nullptr;
 
 		// Sampler
-		void CreateSamplerState();
-		ComPtr<ID3D11SamplerState> m_AnisotropicSampler = nullptr;
+		void CreatePointFilterSamplerState();
+		ComPtr<ID3D11SamplerState> m_PointFilterSampler = nullptr;
+
+		void CreateLinearFilterSamplerState();
+		ComPtr<ID3D11SamplerState> m_LinearFilterSampler = nullptr;
 
 		// Camera
 		void CreateCameraConstantBuffer();
