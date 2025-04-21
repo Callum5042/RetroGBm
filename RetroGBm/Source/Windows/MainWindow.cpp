@@ -355,6 +355,47 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 
+		case m_MenuOptionsStretchDisplay:
+		{
+			m_StretchDisplay = !m_StretchDisplay;
+
+			if (m_StretchDisplay)
+			{
+				CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsStretchDisplay, MF_BYCOMMAND | MF_CHECKED);
+			}
+			else
+			{
+				CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsStretchDisplay, MF_BYCOMMAND | MF_UNCHECKED);
+			}
+
+			RECT rect;
+			if (GetWindowRect(m_RenderHwnd, &rect))
+			{
+				int width = (rect.right - rect.left);
+				int height = (rect.bottom - rect.top);
+
+				m_Application->m_RenderShader->UpdateSize(width, height, m_StretchDisplay);
+			}
+
+			break;
+		}
+
+		case m_MenuOptionsLinearFilter:
+		{
+			m_Application->m_RenderShader->UseLinearFiltering = !m_Application->m_RenderShader->UseLinearFiltering;
+
+			if (m_Application->m_RenderShader->UseLinearFiltering)
+			{
+				CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsLinearFilter, MF_BYCOMMAND | MF_CHECKED);
+			}
+			else
+			{
+				CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsLinearFilter, MF_BYCOMMAND | MF_UNCHECKED);
+			}
+
+			break;
+		}
+
 		// Tools Menu
 		case m_MenuToolsCpuRegisters:
 		{
@@ -825,7 +866,10 @@ void MainWindow::OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	// Resize target
 	if (m_MainRenderTarget != nullptr)
+	{
 		m_MainRenderTarget->Resize(render_width, render_height);
+		m_Application->m_RenderShader->UpdateSize(render_width, render_height, m_StretchDisplay);
+	}
 }
 
 void MainWindow::CreateMainWindow(const std::string& title, int width, int height)
@@ -910,6 +954,8 @@ void MainWindow::CreateMenuBar()
 	// Options menu
 	m_OptionsMenuItem = CreateMenu();
 	AppendMenuW(m_OptionsMenuItem, MF_CHECKED, m_MenuOptionsEnableAudio, L"Enable Audio");
+	AppendMenuW(m_OptionsMenuItem, MF_CHECKED, m_MenuOptionsStretchDisplay, L"Stretch Display");
+	AppendMenuW(m_OptionsMenuItem, MF_UNCHECKED, m_MenuOptionsLinearFilter, L"Linear Filtering");
 	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_OptionsMenuItem), L"Options");
 
 	// Tools menu
@@ -1101,6 +1147,9 @@ void MainWindow::CreateRenderWindow()
 	// Texture
 	m_MainRenderTexture = m_Application->GetRenderDevice()->CreateTexture();
 	m_MainRenderTexture->Create(160, 144);
+
+	// Shader
+	m_Application->m_RenderShader->UpdateSize(width, height, m_StretchDisplay);
 
 	m_Application->m_DisplayOutput = std::make_unique<DisplayOutput>(m_MainRenderTexture.get());
 }
