@@ -18,7 +18,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
-                cppFlags += "-std=c++20"
+                arguments += "-DCMAKE_BUILD_TYPE=Release"
             }
         }
     }
@@ -31,6 +31,9 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("debug")
+            ndk {
+                debugSymbolLevel = "none"
+            }
         }
     }
     compileOptions {

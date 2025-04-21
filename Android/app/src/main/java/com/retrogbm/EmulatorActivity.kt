@@ -114,9 +114,6 @@ class EmulatorActivity : ComponentActivity() {
     private lateinit var timeStarted: Date
     private lateinit var checksum: String
 
-    // Emulator components
-    private var emulator: EmulatorWrapper = Emulator.emulator
-
     // Coroutines
     private val emulatorCoroutineScope = CoroutineScope(Dispatchers.Main)
     private lateinit var emulatorThread: Job
@@ -152,13 +149,13 @@ class EmulatorActivity : ComponentActivity() {
         this.lifecycleObserver = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_PAUSE -> {
-                    if (emulator.isRunning()) {
-                        emulator.pause()
+                    if (Emulator.emulator.isRunning()) {
+                        Emulator.emulator.pause()
                     }
                 }
                 Lifecycle.Event.ON_RESUME -> {
-                    if (emulator.isRunning()) {
-                        emulator.resume()
+                    if (Emulator.emulator.isRunning()) {
+                        Emulator.emulator.resume()
                     }
 
                     if (wasStopped) this.timeStarted = Date()
@@ -166,7 +163,7 @@ class EmulatorActivity : ComponentActivity() {
                 Lifecycle.Event.ON_STOP -> {
                     wasStopped = true
                     try {
-                        handleSaveState(emulator, absolutePath!!, fileName, "AutoSave", SaveStateType.Save, this)
+                        handleSaveState(Emulator.emulator, absolutePath!!, fileName, "AutoSave", SaveStateType.Save, this)
                         updateProfile()
 
                         Log.w("EmulatorActivity", "Activity Stopped")
@@ -200,7 +197,7 @@ class EmulatorActivity : ComponentActivity() {
 
         setContent {
             RetroGBmTheme {
-                Content(emulator, fileName, slotNumber)
+                Content(Emulator.emulator, fileName, slotNumber)
             }
         }
     }
@@ -209,11 +206,11 @@ class EmulatorActivity : ComponentActivity() {
         super.onDestroy()
 
         val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
-        handleSaveState(emulator, absolutePath!!, fileName, "AutoSave", SaveStateType.Save, this)
+        handleSaveState(Emulator.emulator, absolutePath!!, fileName, "AutoSave", SaveStateType.Save, this)
         Log.w("RetroGBm", "AutoSaved Successfully")
 
-        if (emulator.isRunning()) {
-            emulator.stop()
+        if (Emulator.emulator.isRunning()) {
+            Emulator.emulator.stop()
             emulatorThread.cancel()
             emulatorCoroutineScope.cancel()
         }
@@ -287,7 +284,7 @@ class EmulatorActivity : ComponentActivity() {
 
         // Load ROM
         val batteryFilePath = batteryPath.let { "$it/$fileName.save" }
-        emulator.loadRom(bytes, batteryFilePath)
+        Emulator.emulator.loadRom(bytes, batteryFilePath)
 
         // Store fileName
         this.fileName = fileName
@@ -297,12 +294,12 @@ class EmulatorActivity : ComponentActivity() {
         // Audio
         val sharedPreferences = this.baseContext.getSharedPreferences("retrogbm_settings_prefs", Context.MODE_PRIVATE)
         val enableSound = sharedPreferences.getBoolean("enable_sound", true)
-        emulator.soundOutput.toggleAudio(enableSound)
+        Emulator.emulator.soundOutput.toggleAudio(enableSound)
 
         // Emulator background thread
         emulatorThread = emulatorCoroutineScope.launch(Dispatchers.Default) {
-            while (emulator.isRunning()) {
-                emulator.tick()
+            while (Emulator.emulator.isRunning()) {
+                Emulator.emulator.tick()
             }
         }
     }
@@ -600,11 +597,11 @@ fun AppTopBar(
             // Emulation speed
             IconButton(onClick = {
                 val speed = if (emulationDoubleSpeed) { 1.0f } else { 1.0f / emulationSpeed }
-                emulator.setEmulationSpeed(speed)
+
+                Log.d("Hmm", "DoubleSpeed: $emulationDoubleSpeed - $speed")
+                Emulator.emulator.setEmulationSpeed(speed)
 
                 emulationDoubleSpeed = !emulationDoubleSpeed
-
-                Log.d("Hmm", "DoubleSpeed: $emulationDoubleSpeed")
             }) {
                 Icon(
                     imageVector = if (emulationDoubleSpeed) { Icons.Filled.FastForward } else { Icons.Filled.PlayArrow },
