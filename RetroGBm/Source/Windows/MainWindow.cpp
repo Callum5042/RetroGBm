@@ -294,6 +294,9 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		case m_MenuFileOpenId:
 			OpenDialog();
 			break;
+		case m_MenuFileOpenRomDirectoryId:
+			OpenDialogRomDirectory();
+			break;
 		case m_MenuFileCloseId:
 		{
 			m_Application->StopEmulator();
@@ -576,6 +579,15 @@ void MainWindow::OpenDialog()
 	}
 }
 
+void MainWindow::OpenDialogRomDirectory()
+{
+	std::string path;
+	if (OpenFileDialogRomDirectory(&path))
+	{
+
+	}
+}
+
 void MainWindow::LoadRom(const std::string& path)
 {
 	m_FilePath = path;
@@ -692,6 +704,66 @@ bool MainWindow::OpenFileDialog(std::string* filepath)
 
 	file_open->SetFileTypes(2, filters);
 	file_open->SetTitle(L"Open ROM");
+
+	hr = file_open->Show(m_Hwnd);
+	if (FAILED(hr))
+	{
+		CoUninitialize();
+		return false;
+	}
+
+	// Get the file name from the dialog box
+	IShellItem* item = NULL;
+	hr = file_open->GetResult(&item);
+	if (SUCCEEDED(hr))
+	{
+		PWSTR path;
+		hr = item->GetDisplayName(SIGDN_FILESYSPATH, &path);
+
+		// Display the file name to the user
+		if (SUCCEEDED(hr))
+		{
+			*filepath = Utilities::ConvertToString(path);
+			CoTaskMemFree(path);
+		}
+
+		item->Release();
+	}
+
+	// Cleanup
+	file_open->Release();
+	CoUninitialize();
+
+	return true;
+}
+
+bool MainWindow::OpenFileDialogRomDirectory(std::string* filepath)
+{
+	HRESULT hr = S_OK;
+
+	// Initialize the COM library
+	hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	if (FAILED(hr))
+	{
+		throw std::exception("CoInitializeEx failed");
+	}
+
+	// Create the FileOpenDialog object
+	IFileOpenDialog* file_open = NULL;
+	hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&file_open));
+	if (FAILED(hr))
+	{
+		CoUninitialize();
+		throw std::exception("CoCreateInstance failed");
+	}
+
+	// Options
+	DWORD dwOptions;
+	hr = file_open->GetOptions(&dwOptions);
+
+	// Show the Open dialog box
+	file_open->SetTitle(L"Open ROM Directory");
+	file_open->SetOptions(dwOptions | FOS_PICKFOLDERS);
 
 	hr = file_open->Show(m_Hwnd);
 	if (FAILED(hr))
@@ -916,7 +988,8 @@ void MainWindow::CreateMenuBar()
 
 	// File menu
 	m_FileMenuItem = CreateMenu();
-	AppendMenuW(m_FileMenuItem, MF_STRING, m_MenuFileOpenId, L"Open");
+	AppendMenuW(m_FileMenuItem, MF_STRING, m_MenuFileOpenId, L"Open ROM");
+	AppendMenuW(m_FileMenuItem, MF_STRING, m_MenuFileOpenRomDirectoryId, L"Open ROM Directory");
 	AppendMenuW(m_FileMenuItem, MF_STRING, m_MenuFileCloseId, L"Close");
 	AppendMenuW(m_FileMenuItem, MF_STRING, m_MenuFileRestartId, L"Restart");
 	AppendMenuW(m_FileMenuItem, MF_SEPARATOR, NULL, NULL);
