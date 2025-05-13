@@ -1,8 +1,9 @@
 #pragma once
 
 #include <string>
-#include <Windows.h>
 #include <memory>
+#include <filesystem>
+#include <Windows.h>
 #include <RetroGBm/HighTimer.h>
 
 #include "Render/RenderTarget.h"
@@ -125,4 +126,8 @@ private:
 	void OnResized(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 	void UpdateSaveStateDetails();
+
+	// ROM Directories
+	std::filesystem::path m_RomPath = "ROMS";
+	void RefreshRomList();
 };

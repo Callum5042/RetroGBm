@@ -584,8 +584,15 @@ void MainWindow::OpenDialogRomDirectory()
 	std::string path;
 	if (OpenFileDialogRomDirectory(&path))
 	{
-
+		m_RomPath = path;
+		this->RefreshRomList();
 	}
+}
+
+void MainWindow::RefreshRomList()
+{
+	DestroyWindow(m_ListHwnd);
+	this->CreateRomListWindow();
 }
 
 void MainWindow::LoadRom(const std::string& path)
@@ -1077,9 +1084,8 @@ void MainWindow::CreateRomListWindow()
 	InitCommonControlsEx(&icex);
 
 	// Populate ROM paths
-	if (std::filesystem::exists("ROMS"))
+	if (std::filesystem::exists(m_RomPath))
 	{
-
 		int width, height;
 		ComputeRenderWindowSize(&width, &height);
 
@@ -1111,9 +1117,8 @@ void MainWindow::CreateRomListWindow()
 		std::vector<std::wstring> titles;
 		std::vector<std::wstring> times;
 		std::vector<std::wstring> history;
-		std::filesystem::path rom_path("ROMS");
 
-		for (const auto& entry : std::filesystem::directory_iterator(rom_path))
+		for (const auto& entry : std::filesystem::directory_iterator(m_RomPath))
 		{
 			std::filesystem::path extensions = entry.path().extension();
 			if (extensions == ".gbc" || extensions == ".gb")
