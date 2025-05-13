@@ -7,9 +7,9 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@drawable/gameboyicon"
+        android:icon="@mipmap/gameboyicon"
         android:label="@string/app_name"
-        android:roundIcon="@drawable/gameboyicon"
+        android:roundIcon="@mipmap/gameboyicon"
         android:supportsRtl="true"
         android:theme="@style/Theme.RetroGBm"
         tools:targetApi="31">
