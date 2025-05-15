@@ -1,6 +1,8 @@
 package com.retrogbm
 
+import android.app.Activity
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
@@ -24,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileOpen
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
@@ -71,7 +74,12 @@ class HomeActivity : ComponentActivity() {
         // Path variables
         val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
         val profilePath = absolutePath?.let { "$it/profile.json" } ?: "profile.json"
-        val romPath = absolutePath?.let { "$it/ROMS" }
+        // val romPath = absolutePath?.let { "$it/ROMS" }
+
+        var romPath = intent.getStringExtra("ROM_DIRECTORY")
+        if (romPath.isNullOrEmpty()) {
+            romPath = absolutePath?.let { "$it/ROMS" }
+        }
 
         // Load the ROMS
         if (romPath.isNullOrEmpty()) {
@@ -180,6 +188,23 @@ fun Content(previewRomData: ProfileRomData) {
         }
     )
 
+    // Launcher for the ACTION_OPEN_DOCUMENT intent
+    val openRomDirectoryDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree(),
+        onResult = { uri ->
+            if (uri != null) {
+
+                val activity = context as? Activity
+                val newIntent = Intent(context, HomeActivity::class.java).apply {
+                    putExtra("ROM_DIRECTORY", uri.toString())
+                }
+
+                context.startActivity(newIntent)
+                activity?.finish()
+            }
+        }
+    )
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -216,6 +241,16 @@ fun Content(previewRomData: ProfileRomData) {
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false },
                         ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(id = R.string.open_rom_directory)) },
+                                leadingIcon = { Icon(Icons.Filled.FolderOpen, null) },
+                                onClick = {
+                                    showMenu = false
+
+                                    openRomDirectoryDocumentLauncher.launch(null)
+                                }
+                            )
+                            HorizontalDivider()
                             DropdownMenuItem(
                                 text = { Text(stringResource(id = R.string.settings)) },
                                 leadingIcon = { Icon(Icons.Filled.Settings, null) },
