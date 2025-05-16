@@ -1,10 +1,12 @@
 package com.retrogbm
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.provider.DocumentsContract
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -54,6 +56,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
+import androidx.documentfile.provider.DocumentFile
 import com.retrogbm.profile.ProfileRepository
 import com.retrogbm.ui.theme.RetroGBmTheme
 import com.retrogbm.utilities.TimeFormatter
@@ -62,6 +66,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.time.Duration.Companion.minutes
+
+data class FileInfo(val fileName: String, var fileUri: Uri?)
 
 class HomeActivity : ComponentActivity() {
 
@@ -79,13 +85,8 @@ class HomeActivity : ComponentActivity() {
         var romPath = intent.getStringExtra("ROM_DIRECTORY")
         if (romPath.isNullOrEmpty()) {
             romPath = absolutePath?.let { "$it/ROMS" }
-        }
 
-        // Load the ROMS
-        if (romPath.isNullOrEmpty()) {
-            Log.i("ROMFiles", "ROM Path is empty")
-        } else {
-            val files = listFilesInDirectory(romPath)
+            val files = listFilesInDirectory(romPath!!)
             val profileData = profileRepository.loadProfileData(profilePath)
 
             files.forEach{ file ->
@@ -111,21 +112,47 @@ class HomeActivity : ComponentActivity() {
                     Content(previewRomData)
                 }
             }
+
+        } else {
+
+            val files = listRomFilesFromUri(this, Uri.parse(romPath))
+            val profileData = profileRepository.loadProfileData(profilePath)
+
+            val previewData = convertFilesToGameData(files)
+            val previewMap = previewData.associateBy { it.title }
+
+            profileData.gameData.forEach { gameData ->
+                previewMap[gameData.fileName]?.let { previewGameData ->
+                    if (gameData.lastPlayed != null) {
+                        previewGameData.lastPlayed = formatDateModified(gameData.lastPlayed!!)
+                        previewGameData.totalPlayTimeMinutes = formatTimePlayed(gameData.totalPlayTimeMinutes.toDouble())
+                    }
+                }
+            }
+
+            val previewRomData = ProfileRomData(previewData)
+
+            setContent {
+                RetroGBmTheme {
+                    Content(previewRomData)
+                }
+            }
         }
     }
 
-    private fun convertFilesToGameData(files: List<String>) : MutableList<ProfileRomGameData> {
+    private fun convertFilesToGameData(files: List<FileInfo>) : MutableList<ProfileRomGameData> {
         return files.map { fileName ->
             ProfileRomGameData(
-                title = fileName,
+                title = fileName.fileName,
                 lastPlayed = "Never Played",
-                totalPlayTimeMinutes = "No Time Played"
+                totalPlayTimeMinutes = "No Time Played",
+                fileUri = fileName.fileUri
             )
         }.toMutableList()
     }
 
-    private fun listFilesInDirectory(directoryPath: String) : List<String> {
-        val filteredFiles = mutableListOf<String>()
+    private fun listFilesInDirectory(directoryPath: String) : List<FileInfo> {
+        val filteredFiles = mutableListOf<FileInfo>()
 
         val directory = File(directoryPath)
         if (directory.exists() && directory.isDirectory) {
@@ -133,7 +160,7 @@ class HomeActivity : ComponentActivity() {
             if (files != null) {
                 for (file in files) {
                     if (file.isFile && (file.name.endsWith(".gb") || file.name.endsWith(".gbc"))) {
-                        filteredFiles.add(file.name)
+                        filteredFiles.add(FileInfo(file.name, file.toUri()))
                     }
                 }
             } else {
@@ -141,6 +168,24 @@ class HomeActivity : ComponentActivity() {
             }
         } else {
             Log.d("ROMFiles", "The specified path is not a valid directory.")
+        }
+
+        return filteredFiles
+    }
+
+    private fun listRomFilesFromUri(context: Context, treeUri: Uri): List<FileInfo> {
+        val filteredFiles = mutableListOf<FileInfo>()
+        val pickedDir = DocumentFile.fromTreeUri(context, treeUri)
+
+        if (pickedDir != null && pickedDir.isDirectory) {
+            val children = pickedDir.listFiles()
+            for (file in children) {
+                if (file.isFile && (file.name?.endsWith(".gb") == true || file.name?.endsWith(".gbc") == true)) {
+                    filteredFiles.add(FileInfo(file.name!!, file.uri))
+                }
+            }
+        } else {
+            Log.d("ROMFiles", "The specified URI is not a valid directory or is null.")
         }
 
         return filteredFiles
@@ -161,7 +206,8 @@ class HomeActivity : ComponentActivity() {
 data class ProfileRomGameData(
     var title: String,
     var lastPlayed: String,
-    var totalPlayTimeMinutes: String
+    var totalPlayTimeMinutes: String,
+    var fileUri: Uri?
 )
 
 data class ProfileRomData(
@@ -193,6 +239,11 @@ fun Content(previewRomData: ProfileRomData) {
         contract = ActivityResultContracts.OpenDocumentTree(),
         onResult = { uri ->
             if (uri != null) {
+
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
 
                 val activity = context as? Activity
                 val newIntent = Intent(context, HomeActivity::class.java).apply {
@@ -296,7 +347,8 @@ fun List(data: ProfileRomData) {
             RomInfoCard(
                 title = gameData.title,
                 time = gameData.totalPlayTimeMinutes,
-                date = gameData.lastPlayed
+                date = gameData.lastPlayed,
+                fileUri = gameData.fileUri
             )
             HorizontalDivider(
                 color = Color.Gray, // Color of the border
@@ -308,7 +360,7 @@ fun List(data: ProfileRomData) {
 }
 
 @Composable
-fun RomInfoCard(title: String, time: String, date: String) {
+fun RomInfoCard(title: String, time: String, date: String, fileUri: Uri?) {
 
     val context = LocalContext.current
     val titleColor = MaterialTheme.colorScheme.onSurface
@@ -319,7 +371,13 @@ fun RomInfoCard(title: String, time: String, date: String) {
             .padding(horizontal = 0.dp)
             .clickable {
                 val intent = Intent(context, EmulatorActivity::class.java)
-                intent.putExtra("ROM_TITLE", title)
+
+                if (fileUri != null) {
+                    intent.putExtra("ROM_URI", fileUri.toString())
+                } else {
+                    intent.putExtra("ROM_TITLE", title)
+                }
+
                 context.startActivity(intent)
             }
     ) {
@@ -369,29 +427,29 @@ fun NoRomFound() {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun RomInfoCardPreview() {
-    RetroGBmTheme {
-        RomInfoCard("Pokemon - Crystal Version (UE) (V1.1) [C][!].gbc", "13 minutes", "14/03/2024")
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun RomInfoCardPreview() {
+//    RetroGBmTheme {
+//        RomInfoCard("Pokemon - Crystal Version (UE) (V1.1) [C][!].gbc", "13 minutes", "14/03/2024")
+//    }
+//}
 
-@Preview(showBackground = true)
-@Composable
-fun BodyContentHasRomsPreview() {
-    RetroGBmTheme {
-        val previewData = ProfileRomData(
-            gameData = mutableListOf(
-                ProfileRomGameData("Pokemon Red", "04/12/2023", "2 hours"),
-                ProfileRomGameData("Legend of Zelda", "04/05/2019", "2 hours 20 minutes"),
-                ProfileRomGameData("Super Mario", "04/12/2021", "95 minutes")
-            )
-        )
-
-        Content(previewData)
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun BodyContentHasRomsPreview() {
+//    RetroGBmTheme {
+//        val previewData = ProfileRomData(
+//            gameData = mutableListOf(
+//                ProfileRomGameData("Pokemon Red", "04/12/2023", "2 hours"),
+//                ProfileRomGameData("Legend of Zelda", "04/05/2019", "2 hours 20 minutes"),
+//                ProfileRomGameData("Super Mario", "04/12/2021", "95 minutes")
+//            )
+//        )
+//
+//        Content(previewData)
+//    }
+//}
 
 @Preview(showBackground = true)
 @Composable
