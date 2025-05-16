@@ -16,14 +16,16 @@ android {
         versionName = "25.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        externalNativeBuild {
-            cmake {
-                arguments += "-DCMAKE_BUILD_TYPE=Release"
-            }
-        }
     }
 
     buildTypes {
+        debug {
+            externalNativeBuild {
+                cmake {
+                    arguments += "-DCMAKE_BUILD_TYPE=Debug"
+                }
+            }
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -33,6 +35,11 @@ android {
             signingConfig = signingConfigs.getByName("debug")
             ndk {
                 debugSymbolLevel = "none"
+            }
+            externalNativeBuild {
+                cmake {
+                    arguments += "-DCMAKE_BUILD_TYPE=Release"
+                }
             }
         }
     }

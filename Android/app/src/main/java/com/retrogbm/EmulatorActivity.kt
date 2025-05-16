@@ -132,7 +132,7 @@ class EmulatorActivity : ComponentActivity() {
             loadRom(Uri.fromFile(File(path)), title)
         }
 
-        // Load the ROM from the ACTION_OPEN_DOCUMENT intent
+        // Load the ROM from the Uri
         val romUriString = intent?.getStringExtra("ROM_URI")
         if (!romUriString.isNullOrEmpty()) {
             Emulator.emulator = EmulatorWrapper()
@@ -320,11 +320,21 @@ class EmulatorActivity : ComponentActivity() {
     }
 
     private fun getFileName(context: Context, uri: Uri): String? {
-        val cursor = context.contentResolver.query(uri, null, null, null, null)
-        return cursor?.use {
-            val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            it.moveToFirst()
-            it.getString(nameIndex)
+        return when (uri.scheme) {
+            "content" -> {
+                context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (nameIndex != -1 && cursor.moveToFirst()) {
+                        cursor.getString(nameIndex)
+                    } else {
+                        null
+                    }
+                }
+            }
+            "file" -> {
+                File(uri.path ?: return null).name
+            }
+            else -> null
         }
     }
 

@@ -6,6 +6,7 @@
     <string name="save_state">Save State</string>
     <string name="load_state">Load State</string>
     <string name="settings">Settings</string>
+    <string name="open_rom_directory">Open ROM Directory</string>
     <string name="title_activity_home">HomeActivity</string>
     <string name="title_activity_emulator">EmulatorActivity</string>
     <string name="title_activity_options">OptionsActivity</string>
