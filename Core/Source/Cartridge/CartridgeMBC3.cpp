@@ -225,6 +225,41 @@ void CartridgeMBC3::SetRTC(uint8_t seconds, uint8_t minutes, uint8_t hours, uint
 	m_RtcRegisters[4] |= ((days >> 8) & 0x1);
 }
 
+void CartridgeMBC3::SetRTC(std::chrono::seconds duration)
+{
+	auto d = duration_cast<days>(duration);
+	duration -= d;
+
+	auto h = duration_cast<hours>(duration);
+	duration -= h;
+
+	auto m = duration_cast<minutes>(duration);
+	duration -= m;
+
+	auto s = duration_cast<seconds>(duration);
+
+	int seconds = this->m_RtcData.m_RtcSeconds + (int)s.count();
+	int minutes = this->m_RtcData.m_RtcMinutes + (int)m.count();
+	int hours = this->m_RtcData.m_RtcHours + (int)h.count();
+	int days = this->m_RtcData.m_RtcDays + (int)d.count();
+
+	minutes += (seconds - (seconds % 60)) / 60;
+	seconds = (seconds % 60);
+
+	hours += (minutes - (minutes % 60)) / 60;
+	minutes = minutes % 60;
+
+	days += (hours - (hours % 24)) / 24;
+	hours = hours % 24;
+
+	this->m_RtcData.m_RtcSeconds = seconds;
+	this->m_RtcData.m_RtcMinutes = minutes;
+	this->m_RtcData.m_RtcHours = hours;
+	this->m_RtcData.m_RtcDays = days;
+
+	this->SetRTC(seconds, minutes, hours, days);
+}
+
 void CartridgeMBC3::TickRTC()
 {
 	m_RealTimeClockTimer.Tick();

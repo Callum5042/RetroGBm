@@ -154,6 +154,7 @@ private:
 	bool GetSaveStateDateCreated(const std::string& filepath, time_t* dateCreated, double* time_played);
 
 	// Save state timestamps
+	std::chrono::system_clock::time_point m_PausedTimeStamp;
 	std::chrono::steady_clock::time_point m_CurrentTimeStamp;
 	std::map<std::string, std::chrono::steady_clock::time_point> m_StateTimestamps;
 

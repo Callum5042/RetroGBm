@@ -276,6 +276,21 @@ int Emulator::GetFPS()
 void Emulator::Pause(bool pause)
 {
 	m_Paused = pause;
+
+	if (m_Paused)
+	{
+		m_PausedTimeStamp = std::chrono::system_clock::now();
+	}
+	else
+	{
+		CartridgeMBC3* mbc3 = dynamic_cast<CartridgeMBC3*>(m_Cartridge.get());
+		if (mbc3 != nullptr && CartridgeHasRTC(mbc3))
+		{
+			auto currentTime = std::chrono::system_clock::now();
+			auto duration = duration_cast<seconds>(currentTime - m_PausedTimeStamp);
+			mbc3->SetRTC(duration);
+		}
+	}
 }
 
 void Emulator::ToggleTraceLog(bool enable)
