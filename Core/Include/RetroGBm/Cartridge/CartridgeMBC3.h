@@ -2,6 +2,7 @@
 
 #include "BaseCartridge.h"
 #include <cstdint>
+#include <chrono>
 #include "../HighTimer.h"
 
 struct RtcData
@@ -30,6 +31,8 @@ public:
 
 	void TickRTC();
 	void SetRTC(uint8_t seconds, uint8_t minutes, uint8_t hours, uint16_t days);
+	void SetRTC(std::chrono::seconds duration);
+
 	bool IsRtcEnabled() const;
 
 	inline bool IsRamEnabled() const
