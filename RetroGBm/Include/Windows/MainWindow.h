@@ -74,6 +74,7 @@ private:
 	static const UINT m_MenuFileRestartId = 104;
 	static const UINT m_MenuFileExitId = 103;
 	static const UINT m_MenuFileOpenRomDirectoryId = 105;
+	static const UINT m_MenuFileRefreshId = 106;
 
 	HMENU m_ToolsMenuItem = NULL;
 	static const UINT m_MenuToolsCpuRegisters = 204;
@@ -113,6 +114,7 @@ private:
 	bool OpenFileDialog(std::string* filepath);
 	bool OpenFileDialogRomDirectory(std::string* filepath);
 	void ToggleTracelog();
+	void Refresh();
 
 	void ToggleEmulationPaused();
 	void ToggleEmulationDoubleSpeed();
