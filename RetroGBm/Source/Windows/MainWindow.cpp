@@ -297,6 +297,9 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		case m_MenuFileOpenRomDirectoryId:
 			OpenDialogRomDirectory();
 			break;
+		case m_MenuFileRefreshId:
+			Refresh();
+			break;
 		case m_MenuFileCloseId:
 		{
 			m_Application->StopEmulator();
@@ -587,6 +590,11 @@ void MainWindow::OpenDialogRomDirectory()
 		m_RomPath = path;
 		this->RefreshRomList();
 	}
+}
+
+void MainWindow::Refresh()
+{
+	this->RefreshRomList();
 }
 
 void MainWindow::RefreshRomList()
@@ -997,6 +1005,8 @@ void MainWindow::CreateMenuBar()
 	m_FileMenuItem = CreateMenu();
 	AppendMenuW(m_FileMenuItem, MF_STRING, m_MenuFileOpenId, L"Open ROM");
 	AppendMenuW(m_FileMenuItem, MF_STRING, m_MenuFileOpenRomDirectoryId, L"Open ROM Directory");
+	AppendMenuW(m_FileMenuItem, MF_STRING, m_MenuFileRefreshId, L"Refresh");
+	AppendMenuW(m_FileMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_FileMenuItem, MF_STRING, m_MenuFileCloseId, L"Close");
 	AppendMenuW(m_FileMenuItem, MF_STRING, m_MenuFileRestartId, L"Restart");
 	AppendMenuW(m_FileMenuItem, MF_SEPARATOR, NULL, NULL);
