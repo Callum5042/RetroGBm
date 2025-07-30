@@ -26,6 +26,9 @@
 
 #include "RetroGBm/md5.h"
 
+#include "RetroGBm/Tcp/TcpClient.h"
+#include "RetroGBm/Tcp/TcpListener.h"
+
 using namespace std::chrono_literals;
 using namespace std::chrono;
 

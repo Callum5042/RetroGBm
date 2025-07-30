@@ -3,8 +3,10 @@
 #include <string>
 #include <memory>
 #include <filesystem>
-#include <Windows.h>
 #include <RetroGBm/HighTimer.h>
+
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 
 #include "Render/RenderTarget.h"
 #include "Render/RenderTexture.h"

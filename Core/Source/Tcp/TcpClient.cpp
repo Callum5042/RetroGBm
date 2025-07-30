@@ -1,5 +1,5 @@
 #include "RetroGBm/Pch.h"
-#include "TcpClient.h"
+#include "RetroGBm/Tcp/TcpClient.h"
 #include <iostream>
 
 TcpClient::TcpClient(const std::string& ip, int port)

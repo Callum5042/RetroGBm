@@ -20,6 +20,12 @@
 #include <chrono>
 #include <sstream>
 
+#include <RetroGBm/Tcp/TcpClient.h>
+#include <RetroGBm/Tcp/TcpListener.h>
+#include <RetroGBm\Logger.h>
+
+#include <thread>
+
 namespace
 {
 	MainWindow* GetWindow(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -405,12 +411,55 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		case m_MenuOptionsNetworkHost:
 		{
 			MessageBox(NULL, L"Host", L"Test", MB_OK);
+
+			if (Emulator::Instance->m_TcpListener != nullptr)
+			{
+				delete Emulator::Instance->m_TcpListener;
+				Emulator::Instance->m_TcpListener = nullptr;
+			}
+
+			Emulator::Instance->m_TcpListener = new TcpListener("127.0.0.1", 54000);
+			Emulator::Instance->m_TcpListener->Start();
+
+			std::thread t1([&]
+			{
+				Emulator::Instance->m_TcpListener->Listen([](SOCKET* clientSocket, char data[512]) -> uint8_t
+				{
+					std::stringstream ss;
+					ss << "Received: " << data;
+
+					Logger::Info(ss.str());
+
+					// Send response
+					std::string str = "ECHO: " + std::string(data);
+					send(*clientSocket, str.data(), str.size(), 0);
+
+					return 0;
+				});
+			});
+
+			t1.detach();
+
+			Emulator::Instance->m_TcpMode = TcpMode::Server;
+
 			break;
 		}
 
 		case m_MenuOptionsNetworkConnect:
 		{
 			MessageBox(NULL, L"Connect", L"Test", MB_OK);
+
+			if (Emulator::Instance->m_TcpClient != nullptr)
+			{
+				delete Emulator::Instance->m_TcpClient;
+				Emulator::Instance->m_TcpClient = nullptr;
+			}
+
+			Emulator::Instance->m_TcpClient = new TcpClient("127.0.0.1", 54000);
+			Emulator::Instance->m_TcpClient->Start();
+
+			Emulator::Instance->m_TcpMode = TcpMode::Client;
+
 			break;
 		}
 

@@ -14,7 +14,9 @@ public:
 	bool Start();
 
 	void Send(const std::string& message) const;
+
 	std::string Receive() const;
+
 
 private:
 	std::string m_HostIp;

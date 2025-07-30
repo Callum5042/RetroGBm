@@ -28,6 +28,9 @@ class Apu;
 class IDisplayOutput;
 class ISoundOutput;
 
+class TcpClient;
+class TcpListener;
+
 struct EmulatorContext
 {
 	Cpu* cpu = nullptr;
@@ -45,6 +48,13 @@ public:
 
 	virtual uint8_t ReadBus(uint16_t address) = 0;
 	virtual void WriteBus(uint16_t address, uint8_t value) = 0;
+};
+
+enum class TcpMode
+{
+	None,
+	Client,
+	Server,
 };
 
 class Emulator : public IBus
@@ -120,6 +130,12 @@ public:
 	bool m_HaltNoJump = false;
 
 	void SetBatteryPath(const std::string& path);
+
+	// TCP Client and Listener
+	TcpClient* m_TcpClient = nullptr;
+	TcpListener* m_TcpListener = nullptr;
+
+	TcpMode m_TcpMode = TcpMode::None;
 
 private:
 	std::mutex m_EmulatorMutex;
