@@ -480,6 +480,9 @@
     <ClInclude Include="Include\RetroGBm\IDisplayOutput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Tcp\TcpClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Cpu.cpp">
@@ -567,6 +570,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Apu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Tcp\TcpClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

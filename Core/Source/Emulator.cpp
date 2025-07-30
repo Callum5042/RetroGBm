@@ -386,23 +386,6 @@ void Emulator::Tick()
 
 	// Check flag
 	m_Cpu->HandleInterrupts();
-
-	// Debug
-	//{
-	//	uint8_t data = this->ReadBus(0xFF02);
-	//	if (data == 0x81)
-	//	{
-	//		uint8_t c = this->ReadBus(0xFF01);
-
-	//		m_DebugMessage += static_cast<char>(c);
-	//		this->WriteBus(0xFF02, 0);
-	//	}
-
-	//	if (!m_DebugMessage.empty())
-	//	{
-	//		// std::cout << "\tDEBUG: " << m_DebugMessage << '\n';
-	//	}
-	//}
 }
 
 void Emulator::Cycle(int machine_cycles)
@@ -527,6 +510,26 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	else if (address == 0xFF02)
 	{
 		m_SerialData[1] = value;
+
+		// Transfer started
+		if (value & 0x80)
+		{
+			uint8_t sent = m_SerialData[0];
+			uint8_t received = 0xFF;
+
+			std::stringstream ss;
+			ss << "Serial transfer started: 0x" << std::hex << (int)sent;
+			Logger::Info(ss.str());
+
+			m_SerialData[0] = received;
+
+			// Clear the Transfer Start Flag (bit 7)
+			m_SerialData[1] &= ~0x80;
+
+			// Optionally request interrupt: Serial transfer complete
+			m_Cpu->RequestInterrupt(InterruptFlag::Serial);
+		}
+
 		return;
 	}
 	else if (((address >= 0xFF04) && (address <= 0xFF07)))
