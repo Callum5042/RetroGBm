@@ -402,6 +402,18 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 
+		case m_MenuOptionsNetworkHost:
+		{
+			MessageBox(NULL, L"Host", L"Test", MB_OK);
+			break;
+		}
+
+		case m_MenuOptionsNetworkConnect:
+		{
+			MessageBox(NULL, L"Connect", L"Test", MB_OK);
+			break;
+		}
+
 		// Tools Menu
 		case m_MenuToolsCpuRegisters:
 		{
@@ -1046,6 +1058,9 @@ void MainWindow::CreateMenuBar()
 	AppendMenuW(m_OptionsMenuItem, MF_CHECKED, m_MenuOptionsEnableAudio, L"Enable Audio");
 	AppendMenuW(m_OptionsMenuItem, MF_CHECKED, m_MenuOptionsStretchDisplay, L"Stretch Display");
 	AppendMenuW(m_OptionsMenuItem, MF_UNCHECKED, m_MenuOptionsLinearFilter, L"Linear Filtering");
+	AppendMenuW(m_OptionsMenuItem, MF_SEPARATOR, NULL, NULL);
+	AppendMenuW(m_OptionsMenuItem, MF_UNCHECKED, m_MenuOptionsNetworkHost, L"Network Host");
+	AppendMenuW(m_OptionsMenuItem, MF_UNCHECKED, m_MenuOptionsNetworkConnect, L"Network Connect");
 	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_OptionsMenuItem), L"Options");
 
 	// Tools menu
