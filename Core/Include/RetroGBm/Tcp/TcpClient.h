@@ -13,10 +13,8 @@ public:
 
 	bool Start();
 
-	void Send(const std::string& message) const;
-
-	std::string Receive() const;
-
+	void Send(const uint8_t data) const;
+	uint8_t ReceiveByte() const;
 
 private:
 	std::string m_HostIp;

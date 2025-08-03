@@ -24,10 +24,15 @@
 
 #include "RetroGBm/Logger.h"
 
+#define NOMINMAX
 #include "RetroGBm/md5.h"
 
-#include "RetroGBm/Tcp/TcpClient.h"
-#include "RetroGBm/Tcp/TcpListener.h"
+#include <WinSock2.h>
+
+//#include "RetroGBm/Tcp/TcpClient.h"
+//#include "RetroGBm/Tcp/TcpListener.h"
+
+#pragma comment(lib, "Ws2_32.lib")
 
 using namespace std::chrono_literals;
 using namespace std::chrono;
@@ -409,12 +414,14 @@ void Emulator::Cycle(int machine_cycles)
 				{
 					m_Ppu->Tick();
 					m_Apu->Tick();
+					LinkCableTransfer();
 				}
 			}
 			else
 			{
 				m_Ppu->Tick();
 				m_Apu->Tick();
+				LinkCableTransfer();
 			}
 		}
 
@@ -517,20 +524,10 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 		// Transfer started
 		if (value & 0x80)
 		{
-			uint8_t sent = m_SerialData[0];
-			uint8_t received = 0xFF;
+			m_SimulateTransfer = true;
 
-			std::stringstream ss;
-			ss << "Serial transfer started: 0x" << std::hex << (int)sent;
-			Logger::Info(ss.str());
-
-			m_SerialData[0] = received;
-
-			// Clear the Transfer Start Flag (bit 7)
-			m_SerialData[1] &= ~0x80;
-
-			// Optionally request interrupt: Serial transfer complete
-			m_Cpu->RequestInterrupt(InterruptFlag::Serial);
+			uint8_t data_array[2] = { 0xFF, m_SerialData[0] };
+			send(m_PeerSocket, reinterpret_cast<const char*>(data_array), sizeof(data_array), 0);
 		}
 
 		return;
@@ -904,4 +901,48 @@ void Emulator::SetEmulationSpeedMultipler(float multipler)
 {
 	Logger::Info("Emulation speed changed to " + std::to_string(multipler));
 	m_Ppu->SetSpeedMultipler(multipler);
+}
+
+void Emulator::LinkCableTransfer()
+{
+	// Each CPU cycle we will transfer data
+
+	// Each tick will be 512 CPU cycles (8192 Hz)
+
+	// The shadow register will simulate the transfer, holding the full value of the serial data
+	static int tick = 0;
+	static int transfer_tick = 0;
+
+	if (m_SimulateTransfer)
+	{
+		tick++;
+		if (tick >= 512)
+		{
+			int a = m_SerialData[0];
+			int b = m_SerialDataShadowIncoming;
+
+			int result = (a << 8) | b;
+			result <<= transfer_tick;
+			int tmp = (result >> 8) & 0xFF;
+
+			m_SerialData[0] = tmp;
+
+			tick = 0;
+			transfer_tick++;
+
+			if (transfer_tick >= 8)
+			{
+				// Transfer complete
+				transfer_tick = 0;
+
+				// Clear the Transfer Start Flag (bit 7)
+				m_SerialData[1] &= ~0x80;
+
+				// Optionally request interrupt: Serial transfer complete
+				m_Cpu->RequestInterrupt(InterruptFlag::Serial);
+
+				m_SimulateTransfer = false;
+			}
+		}
+	}
 }

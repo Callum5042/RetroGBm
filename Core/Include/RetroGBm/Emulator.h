@@ -31,6 +31,9 @@ class ISoundOutput;
 class TcpClient;
 class TcpListener;
 
+typedef unsigned __int64 UINT_PTR, * PUINT_PTR;
+typedef UINT_PTR        SOCKET;
+
 struct EmulatorContext
 {
 	Cpu* cpu = nullptr;
@@ -132,16 +135,23 @@ public:
 	void SetBatteryPath(const std::string& path);
 
 	// TCP Client and Listener
-	TcpClient* m_TcpClient = nullptr;
-	TcpListener* m_TcpListener = nullptr;
+	void LinkCableTransfer();
+
+	/*TcpClient* m_TcpClient = nullptr;
+	TcpListener* m_TcpListener = nullptr;*/
 
 	TcpMode m_TcpMode = TcpMode::None;
+
+	uint8_t m_SerialDataShadowIncoming = 0;
+	char m_SerialData[2] = { 0, 0 };
+
+	bool m_SimulateTransfer;
+
+	SOCKET m_PeerSocket = (SOCKET)(~0);
 
 private:
 	std::mutex m_EmulatorMutex;
 	bool m_Paused = false;
-
-	char m_SerialData[2] = { 0, 0 };
 
 	uint8_t m_CurrentOpCode = 0x0;
 

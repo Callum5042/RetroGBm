@@ -59,28 +59,28 @@ bool TcpClient::Start()
     return true;
 }
 
-void TcpClient::Send(const std::string& message) const
+void TcpClient::Send(const uint8_t data) const
 {
-    send(m_Socket, message.data(), message.size(), 0);
+	uint8_t data_array[2] = { 0xFF, data };
+    send(m_Socket, reinterpret_cast<const char*>(data_array), sizeof(data_array), 0);
 }
 
-std::string TcpClient::Receive() const
+uint8_t TcpClient::ReceiveByte() const
 {
     char buffer[1024] = { 0 };
     int bytes_received = recv(m_Socket, buffer, sizeof(buffer) - 1, 0);
     if (bytes_received > 0)
     {
-        buffer[bytes_received] = '\0'; // Null-terminate the string
-        return std::string(buffer);
+        return buffer[1];
     }
     else if (bytes_received == 0)
     {
         std::cerr << "Connection closed by server.\n";
-        return "";
+        return 0;
     }
     else
     {
         std::cerr << "recv failed: " << WSAGetLastError() << "\n";
-        return "";
+        return 0;
     }
 }
