@@ -9,5 +9,4 @@ public:
 	virtual ~INetworkOutput() = default;
 
 	virtual void SendData(uint8_t data) = 0;
-	virtual uint8_t ReceiveData() = 0;
 };

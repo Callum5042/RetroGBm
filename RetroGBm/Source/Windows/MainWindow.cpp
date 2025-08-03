@@ -21,8 +21,6 @@
 #include <chrono>
 #include <sstream>
 
-#include <RetroGBm/Tcp/TcpClient.h>
-#include <RetroGBm/Tcp/TcpListener.h>
 #include <RetroGBm\Logger.h>
 
 namespace

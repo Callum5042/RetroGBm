@@ -480,12 +480,6 @@
     <ClInclude Include="Include\RetroGBm\IDisplayOutput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\RetroGBm\Tcp\TcpClient.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\RetroGBm\Tcp\TcpListener.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Include\RetroGBm\INetworkOutput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -576,12 +570,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Apu.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Tcp\TcpClient.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Tcp\TcpListener.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

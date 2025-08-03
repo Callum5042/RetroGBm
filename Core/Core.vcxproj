@@ -174,8 +174,6 @@
     <ClInclude Include="Include\RetroGBm\Ram.h" />
     <ClInclude Include="Include\RetroGBm\SaveStateHeader.h" />
     <ClInclude Include="Include\RetroGBm\Timer.h" />
-    <ClInclude Include="Include\RetroGBm\Tcp\TcpClient.h" />
-    <ClInclude Include="Include\RetroGBm\Tcp\TcpListener.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\RetroGBm\Cartridge\CartridgeMBC3.h" />
@@ -210,8 +208,6 @@
     </ClCompile>
     <ClCompile Include="Source\Ppu.cpp" />
     <ClCompile Include="Source\Ram.cpp" />
-    <ClCompile Include="Source\Tcp\TcpClient.cpp" />
-    <ClCompile Include="Source\Tcp\TcpListener.cpp" />
     <ClCompile Include="Source\Timer.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
