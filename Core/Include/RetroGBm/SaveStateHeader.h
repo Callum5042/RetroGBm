@@ -12,7 +12,7 @@ struct SaveStateHeader
 	int64_t date_modified = 0;
 	double time_played = 0;
 
-	uint8_t checksum[16];
+	uint8_t checksum[16] = {};
 
 	char reserved[12] = {};
 };

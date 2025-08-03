@@ -27,12 +27,7 @@ class Apu;
 
 class IDisplayOutput;
 class ISoundOutput;
-
-class TcpClient;
-class TcpListener;
-
-typedef unsigned __int64 UINT_PTR, * PUINT_PTR;
-typedef UINT_PTR        SOCKET;
+class INetworkOutput;
 
 struct EmulatorContext
 {
@@ -64,9 +59,10 @@ class Emulator : public IBus
 {
 	IDisplayOutput* m_DisplayOutput = nullptr;
 	ISoundOutput* m_SoundOutput = nullptr;
+	INetworkOutput* m_NetworkOutput = nullptr;
 
 public:
-	Emulator(IDisplayOutput* display_output, ISoundOutput* soundOutput);
+	Emulator(IDisplayOutput* display_output, ISoundOutput* sound_output, INetworkOutput* network_output);
 	Emulator(std::unique_ptr<BaseCartridge> cartridge, ISoundOutput* soundOutput);
 	virtual ~Emulator();
 
@@ -135,19 +131,7 @@ public:
 	void SetBatteryPath(const std::string& path);
 
 	// TCP Client and Listener
-	void LinkCableTransfer();
-
-	/*TcpClient* m_TcpClient = nullptr;
-	TcpListener* m_TcpListener = nullptr;*/
-
-	TcpMode m_TcpMode = TcpMode::None;
-
-	// uint8_t m_SerialDataShadowIncoming = 0;
 	char m_SerialData[2] = { 0, 0 };
-
-	bool m_SimulateTransfer;
-
-	SOCKET m_PeerSocket = (SOCKET)(~0);
 
 private:
 	std::mutex m_EmulatorMutex;

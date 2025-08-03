@@ -25,36 +25,8 @@
 #include <RetroGBm/Tcp/TcpListener.h>
 #include <RetroGBm\Logger.h>
 
-#include <thread>
-#include <iostream>
-
 namespace
 {
-	DWORD WINAPI ReceiveMessages(LPVOID lpParam)
-	{
-		SOCKET sock = *(SOCKET*)lpParam;
-		char buffer[1024];
-
-		while (true)
-		{
-			int bytesReceived = recv(sock, buffer, sizeof(buffer) - 1, 0);
-			if (bytesReceived <= 0)
-			{
-				std::cout << "Disconnected.\n";
-				break;
-			}
-
-			Emulator::Instance->m_SerialData[0] = buffer[1];
-			// Emulator::Instance->m_SimulateTransfer = true;
-
-			Emulator::Instance->m_SerialData[1] &= ~0x80;
-			Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::Serial);
-		}
-
-		closesocket(sock);
-		return 0;
-	}
-
 	MainWindow* GetWindow(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		MainWindow* window = nullptr;
@@ -439,24 +411,8 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			MessageBox(NULL, L"Host", L"Test", MB_OK);
 
-			SOCKET listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
-			int port = 54000;
-
-			sockaddr_in addr;
-			addr.sin_family = AF_INET;
-			addr.sin_port = htons(port);
-			addr.sin_addr.s_addr = INADDR_ANY;
-
-			bind(listenSocket, (sockaddr*)&addr, sizeof(addr));
-			listen(listenSocket, 1);
-
-			std::cout << "Listening on port " << port << "...\n";
-			Emulator::Instance->m_PeerSocket = accept(listenSocket, NULL, NULL);
-			std::cout << "Peer connected.\n";
-
-			CreateThread(NULL, 0, ReceiveMessages, &Emulator::Instance->m_PeerSocket, 0, NULL);
-			Emulator::Instance->m_TcpMode = TcpMode::Server;
+			const char* ip = "127.0.0.1";
+			Application::Instance->m_NetworkOutput->CreateHost(ip);
 
 			break;
 		}
@@ -465,27 +421,8 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			MessageBox(NULL, L"Connect", L"Test", MB_OK);
 
-			int port = 54000;
 			const char* ip = "127.0.0.1";
-
-			Emulator::Instance->m_PeerSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
-			sockaddr_in serverAddr;
-			serverAddr.sin_family = AF_INET;
-			serverAddr.sin_port = htons(port);
-			serverAddr.sin_addr.s_addr = inet_addr(ip);
-
-			std::cout << "Connecting to " << ip << ":" << port << "...\n";
-			if (connect(Emulator::Instance->m_PeerSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR)
-			{
-				std::cerr << "Failed to connect.\n";
-				exit(1);
-			}
-			std::cout << "Connected to peer.\n";
-
-			CreateThread(NULL, 0, ReceiveMessages, &Emulator::Instance->m_PeerSocket, 0, NULL);
-
-			Emulator::Instance->m_TcpMode = TcpMode::Client;
+			Application::Instance->m_NetworkOutput->CreateClient(ip);
 
 			break;
 		}

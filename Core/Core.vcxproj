@@ -154,6 +154,7 @@
     <ClInclude Include="Include\RetroGBm\External\spdlog\stopwatch.h" />
     <ClInclude Include="Include\RetroGBm\External\spdlog\tweakme.h" />
     <ClInclude Include="Include\RetroGBm\External\spdlog\version.h" />
+    <ClInclude Include="Include\RetroGBm\INetworkOutput.h" />
     <ClInclude Include="Include\RetroGBm\Logger.h" />
     <ClInclude Include="Include\RetroGBm\md5.h" />
     <ClInclude Include="Include\RetroGBm\Ppu.h" />

@@ -21,10 +21,10 @@
 
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 #include "RetroGBm/Cartridge/CartridgeMBC3.h"
+#include "RetroGBm/INetworkOutput.h"
 
 #include "RetroGBm/Logger.h"
 
-#define NOMINMAX
 #include "RetroGBm/md5.h"
 
 #include <WinSock2.h>
@@ -39,10 +39,11 @@ using namespace std::chrono;
 
 Emulator* Emulator::Instance = nullptr;
 
-Emulator::Emulator(IDisplayOutput* display_output, ISoundOutput* soundOutput)
+Emulator::Emulator(IDisplayOutput* display_output, ISoundOutput* sound_output, INetworkOutput* network_output)
 {
 	m_DisplayOutput = display_output;
-	m_SoundOutput = soundOutput;
+	m_SoundOutput = sound_output;
+	m_NetworkOutput = network_output;
 
 	Instance = this;
 
@@ -315,7 +316,7 @@ void Emulator::ToggleTraceLog(bool enable)
 	}
 }
 
-void Emulator::Tick()
+void Emulator::Tick() 
 {
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
 
@@ -414,14 +415,12 @@ void Emulator::Cycle(int machine_cycles)
 				{
 					m_Ppu->Tick();
 					m_Apu->Tick();
-					LinkCableTransfer();
 				}
 			}
 			else
 			{
 				m_Ppu->Tick();
 				m_Apu->Tick();
-				LinkCableTransfer();
 			}
 		}
 
@@ -521,25 +520,14 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	{
 		m_SerialData[1] = value;
 
-		if ((m_SerialData[1] & 0x2) == 0x2)
-		{
-			Logger::Info("Clock speed 1");
-		}
-		else
-		{
-			Logger::Info("Clock speed 0");
-		}
-
 		// Transfer started
 		if (value & 0x80)
 		{
-			// m_SimulateTransfer = true;
+			// Pass 0xFF to pad the data as sending 0x00 will cause the serial to hang
+			/*uint8_t data_array[2] = { 0xFF, m_SerialData[0] };
+			send(m_PeerSocket, reinterpret_cast<const char*>(data_array), sizeof(data_array), 0);*/
 
-			uint8_t data_array[2] = { 0xFF, m_SerialData[0] };
-			send(m_PeerSocket, reinterpret_cast<const char*>(data_array), sizeof(data_array), 0);
-
-			/*Emulator::Instance->m_SerialData[1] &= ~0x80;
-			Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::Serial);*/
+			m_NetworkOutput->SendData(m_SerialData[0]);
 		}
 
 		return;
@@ -913,48 +901,4 @@ void Emulator::SetEmulationSpeedMultipler(float multipler)
 {
 	Logger::Info("Emulation speed changed to " + std::to_string(multipler));
 	m_Ppu->SetSpeedMultipler(multipler);
-}
-
-void Emulator::LinkCableTransfer()
-{
-	// Each CPU cycle we will transfer data
-
-	// Each tick will be 512 CPU cycles (8192 Hz)
-
-	// The shadow register will simulate the transfer, holding the full value of the serial data
-	//static int tick = 0;
-	//static int transfer_tick = 0;
-
-	//if (m_SimulateTransfer)
-	//{
-	//	tick++;
-	//	if (tick >= 512)
-	//	{
-	//		int a = m_SerialData[0];
-	//		int b = m_SerialDataShadowIncoming;
-
-	//		int result = (a << 8) | b;
-	//		result <<= transfer_tick;
-	//		int tmp = (result >> 8) & 0xFF;
-
-	//		m_SerialData[0] = tmp;
-
-	//		tick = 0;
-	//		transfer_tick++;
-
-	//		if (transfer_tick >= 8)
-	//		{
-	//			// Transfer complete
-	//			transfer_tick = 0;
-
-	//			// Clear the Transfer Start Flag (bit 7)
-	//			m_SerialData[1] &= ~0x80;
-
-	//			// Optionally request interrupt: Serial transfer complete
-	//			m_Cpu->RequestInterrupt(InterruptFlag::Serial);
-
-	//			m_SimulateTransfer = false;
-	//		}
-	//	}
-	//}
 }

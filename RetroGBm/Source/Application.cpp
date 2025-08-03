@@ -101,7 +101,7 @@ void Application::LoadRom(const std::string& file)
 	StopEmulator();
 	bool tracelog = m_Emulator->IsTraceLogEnabled();
 
-	m_Emulator = std::make_unique<Emulator>(m_DisplayOutput.get(), SoundOutput.get());
+	m_Emulator = std::make_unique<Emulator>(m_DisplayOutput.get(), SoundOutput.get(), m_NetworkOutput.get());
 
 	std::filesystem::path battery_path = "RomData";
 	std::filesystem::create_directories(battery_path);
@@ -194,7 +194,7 @@ void Application::StopEmulator()
 
 void Application::Run()
 {
-	m_Emulator = std::make_unique<Emulator>(m_DisplayOutput.get(), SoundOutput.get());
+	m_Emulator = std::make_unique<Emulator>(m_DisplayOutput.get(), SoundOutput.get(), m_NetworkOutput.get());
 
 	// UI runs on main thread
 	while (m_Running)
@@ -270,6 +270,9 @@ void Application::Init()
 
 	// Initialize audio
 	SoundOutput = std::make_unique<XAudio2Output>();
+
+	// Initialize network
+	m_NetworkOutput = std::make_unique<WinNetworkOutput>();
 }
 
 void Application::CreateMainWindow()
