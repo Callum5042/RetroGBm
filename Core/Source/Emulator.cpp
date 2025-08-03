@@ -27,13 +27,6 @@
 
 #include "RetroGBm/md5.h"
 
-#include <WinSock2.h>
-
-//#include "RetroGBm/Tcp/TcpClient.h"
-//#include "RetroGBm/Tcp/TcpListener.h"
-
-#pragma comment(lib, "Ws2_32.lib")
-
 using namespace std::chrono_literals;
 using namespace std::chrono;
 
