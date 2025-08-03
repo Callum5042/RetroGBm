@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RetroGBm/IDisplayOutput.h"
+#include <RetroGBm/IDisplayOutput.h>
 
 class NullDisplayOutput : public IDisplayOutput
 {
