@@ -538,8 +538,8 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 			uint8_t data_array[2] = { 0xFF, m_SerialData[0] };
 			send(m_PeerSocket, reinterpret_cast<const char*>(data_array), sizeof(data_array), 0);
 
-			Emulator::Instance->m_SerialData[1] &= ~0x80;
-			Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::Serial);
+			/*Emulator::Instance->m_SerialData[1] &= ~0x80;
+			Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::Serial);*/
 		}
 
 		return;
