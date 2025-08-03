@@ -142,7 +142,7 @@ public:
 
 	TcpMode m_TcpMode = TcpMode::None;
 
-	uint8_t m_SerialDataShadowIncoming = 0;
+	// uint8_t m_SerialDataShadowIncoming = 0;
 	char m_SerialData[2] = { 0, 0 };
 
 	bool m_SimulateTransfer;

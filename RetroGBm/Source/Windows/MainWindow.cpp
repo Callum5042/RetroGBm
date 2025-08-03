@@ -11,6 +11,7 @@
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Joypad.h>
 #include <RetroGBm/SaveStateHeader.h>
+#include <RetroGBm/Cpu.h>
 
 #include <format>
 #include <string>
@@ -43,8 +44,11 @@ namespace
 				break;
 			}
 
-			Emulator::Instance->m_SerialDataShadowIncoming = buffer[1];
-			Emulator::Instance->m_SimulateTransfer = true;
+			Emulator::Instance->m_SerialData[0] = buffer[1];
+			// Emulator::Instance->m_SimulateTransfer = true;
+
+			Emulator::Instance->m_SerialData[1] &= ~0x80;
+			Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::Serial);
 		}
 
 		closesocket(sock);

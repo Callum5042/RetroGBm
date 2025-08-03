@@ -521,13 +521,25 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	{
 		m_SerialData[1] = value;
 
+		if ((m_SerialData[1] & 0x2) == 0x2)
+		{
+			Logger::Info("Clock speed 1");
+		}
+		else
+		{
+			Logger::Info("Clock speed 0");
+		}
+
 		// Transfer started
 		if (value & 0x80)
 		{
-			m_SimulateTransfer = true;
+			// m_SimulateTransfer = true;
 
 			uint8_t data_array[2] = { 0xFF, m_SerialData[0] };
 			send(m_PeerSocket, reinterpret_cast<const char*>(data_array), sizeof(data_array), 0);
+
+			Emulator::Instance->m_SerialData[1] &= ~0x80;
+			Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::Serial);
 		}
 
 		return;
@@ -910,39 +922,39 @@ void Emulator::LinkCableTransfer()
 	// Each tick will be 512 CPU cycles (8192 Hz)
 
 	// The shadow register will simulate the transfer, holding the full value of the serial data
-	static int tick = 0;
-	static int transfer_tick = 0;
+	//static int tick = 0;
+	//static int transfer_tick = 0;
 
-	if (m_SimulateTransfer)
-	{
-		tick++;
-		if (tick >= 512)
-		{
-			int a = m_SerialData[0];
-			int b = m_SerialDataShadowIncoming;
+	//if (m_SimulateTransfer)
+	//{
+	//	tick++;
+	//	if (tick >= 512)
+	//	{
+	//		int a = m_SerialData[0];
+	//		int b = m_SerialDataShadowIncoming;
 
-			int result = (a << 8) | b;
-			result <<= transfer_tick;
-			int tmp = (result >> 8) & 0xFF;
+	//		int result = (a << 8) | b;
+	//		result <<= transfer_tick;
+	//		int tmp = (result >> 8) & 0xFF;
 
-			m_SerialData[0] = tmp;
+	//		m_SerialData[0] = tmp;
 
-			tick = 0;
-			transfer_tick++;
+	//		tick = 0;
+	//		transfer_tick++;
 
-			if (transfer_tick >= 8)
-			{
-				// Transfer complete
-				transfer_tick = 0;
+	//		if (transfer_tick >= 8)
+	//		{
+	//			// Transfer complete
+	//			transfer_tick = 0;
 
-				// Clear the Transfer Start Flag (bit 7)
-				m_SerialData[1] &= ~0x80;
+	//			// Clear the Transfer Start Flag (bit 7)
+	//			m_SerialData[1] &= ~0x80;
 
-				// Optionally request interrupt: Serial transfer complete
-				m_Cpu->RequestInterrupt(InterruptFlag::Serial);
+	//			// Optionally request interrupt: Serial transfer complete
+	//			m_Cpu->RequestInterrupt(InterruptFlag::Serial);
 
-				m_SimulateTransfer = false;
-			}
-		}
-	}
+	//			m_SimulateTransfer = false;
+	//		}
+	//	}
+	//}
 }
