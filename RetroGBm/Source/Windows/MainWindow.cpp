@@ -11,6 +11,7 @@
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Joypad.h>
 #include <RetroGBm/SaveStateHeader.h>
+#include <RetroGBm/Cpu.h>
 
 #include <format>
 #include <string>
@@ -19,6 +20,8 @@
 #include <filesystem>
 #include <chrono>
 #include <sstream>
+
+#include <RetroGBm\Logger.h>
 
 namespace
 {
@@ -398,6 +401,70 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			{
 				CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsLinearFilter, MF_BYCOMMAND | MF_UNCHECKED);
 			}
+
+			break;
+		}
+
+		case m_MenuOptionsNetworkHost:
+		{
+			UINT menu_state = GetMenuState(m_OptionsMenuItem, m_MenuOptionsNetworkHost, MF_BYCOMMAND);
+			if ((menu_state & MF_UNCHECKED) == MF_UNCHECKED)
+			{
+				const char* ip = "127.0.0.1";
+				if (Application::Instance->m_NetworkOutput->CreateHost(ip))
+				{
+					// Check the menu item
+					CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkHost, MF_BYCOMMAND | MF_CHECKED);
+
+					// Disable the host and connect menu items
+					EnableMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkHost, MF_DISABLED);
+					EnableMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkConnect, MF_DISABLED);
+
+					// Enable the disconnect menu item
+					EnableMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkDisconnect, MF_ENABLED);
+				}
+			}
+
+			break;
+		}
+
+		case m_MenuOptionsNetworkConnect:
+		{
+			UINT menu_state = GetMenuState(m_OptionsMenuItem, m_MenuOptionsNetworkConnect, MF_BYCOMMAND);
+			if ((menu_state & MF_UNCHECKED) == MF_UNCHECKED)
+			{
+				const char* ip = "127.0.0.1";
+				if (Application::Instance->m_NetworkOutput->CreateClient(ip))
+				{
+					// Check the menu item
+					CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkConnect, MF_BYCOMMAND | MF_CHECKED);
+
+					// Disable the host and connect menu items
+					EnableMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkHost, MF_DISABLED);
+					EnableMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkConnect, MF_DISABLED);
+
+					// Enable the disconnect menu item
+					EnableMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkDisconnect, MF_ENABLED);
+				}
+			}
+
+			break;
+		}
+
+		case m_MenuOptionsNetworkDisconnect:
+		{
+			Application::Instance->m_NetworkOutput->Disconnect();
+
+			// Disable the disconnect menu item
+			EnableMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkDisconnect, MF_DISABLED);
+
+			// Enable the host and connect menu items
+			EnableMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkHost, MF_ENABLED);
+			EnableMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkConnect, MF_ENABLED);
+
+			// Uncheck the menu items
+			CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkHost, MF_BYCOMMAND | MF_UNCHECKED);
+			CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkConnect, MF_BYCOMMAND | MF_UNCHECKED);
 
 			break;
 		}
@@ -1046,6 +1113,10 @@ void MainWindow::CreateMenuBar()
 	AppendMenuW(m_OptionsMenuItem, MF_CHECKED, m_MenuOptionsEnableAudio, L"Enable Audio");
 	AppendMenuW(m_OptionsMenuItem, MF_CHECKED, m_MenuOptionsStretchDisplay, L"Stretch Display");
 	AppendMenuW(m_OptionsMenuItem, MF_UNCHECKED, m_MenuOptionsLinearFilter, L"Linear Filtering");
+	AppendMenuW(m_OptionsMenuItem, MF_SEPARATOR, NULL, NULL);
+	AppendMenuW(m_OptionsMenuItem, MF_UNCHECKED, m_MenuOptionsNetworkHost, L"Network Host");
+	AppendMenuW(m_OptionsMenuItem, MF_UNCHECKED, m_MenuOptionsNetworkConnect, L"Network Connect");
+	AppendMenuW(m_OptionsMenuItem, MF_STRING | MF_DISABLED, m_MenuOptionsNetworkDisconnect, L"Network Disconnect");
 	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_OptionsMenuItem), L"Options");
 
 	// Tools menu

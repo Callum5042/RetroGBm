@@ -21,6 +21,7 @@
 
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 #include "RetroGBm/Cartridge/CartridgeMBC3.h"
+#include "RetroGBm/INetworkOutput.h"
 
 #include "RetroGBm/Logger.h"
 
@@ -31,10 +32,11 @@ using namespace std::chrono;
 
 Emulator* Emulator::Instance = nullptr;
 
-Emulator::Emulator(IDisplayOutput* display_output, ISoundOutput* soundOutput)
+Emulator::Emulator(IDisplayOutput* display_output, ISoundOutput* sound_output, INetworkOutput* network_output)
 {
 	m_DisplayOutput = display_output;
-	m_SoundOutput = soundOutput;
+	m_SoundOutput = sound_output;
+	m_NetworkOutput = network_output;
 
 	Instance = this;
 
@@ -307,7 +309,7 @@ void Emulator::ToggleTraceLog(bool enable)
 	}
 }
 
-void Emulator::Tick()
+void Emulator::Tick() 
 {
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
 
@@ -386,23 +388,6 @@ void Emulator::Tick()
 
 	// Check flag
 	m_Cpu->HandleInterrupts();
-
-	// Debug
-	//{
-	//	uint8_t data = this->ReadBus(0xFF02);
-	//	if (data == 0x81)
-	//	{
-	//		uint8_t c = this->ReadBus(0xFF01);
-
-	//		m_DebugMessage += static_cast<char>(c);
-	//		this->WriteBus(0xFF02, 0);
-	//	}
-
-	//	if (!m_DebugMessage.empty())
-	//	{
-	//		// std::cout << "\tDEBUG: " << m_DebugMessage << '\n';
-	//	}
-	//}
 }
 
 void Emulator::Cycle(int machine_cycles)
@@ -527,6 +512,17 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	else if (address == 0xFF02)
 	{
 		m_SerialData[1] = value;
+
+		// Transfer started
+		if (value & 0x80)
+		{
+			// Pass 0xFF to pad the data as sending 0x00 will cause the serial to hang
+			/*uint8_t data_array[2] = { 0xFF, m_SerialData[0] };
+			send(m_PeerSocket, reinterpret_cast<const char*>(data_array), sizeof(data_array), 0);*/
+
+			m_NetworkOutput->SendData(m_SerialData[0]);
+		}
+
 		return;
 	}
 	else if (((address >= 0xFF04) && (address <= 0xFF07)))

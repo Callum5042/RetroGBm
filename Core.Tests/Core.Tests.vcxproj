@@ -190,6 +190,7 @@
   <ItemGroup>
     <ClInclude Include="MockCartridge.h" />
     <ClInclude Include="NullDisplayOutput.h" />
+    <ClInclude Include="NullNetworkOutput.h" />
     <ClInclude Include="NullSoundOutput.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

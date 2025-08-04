@@ -3,8 +3,10 @@
 #include <string>
 #include <memory>
 #include <filesystem>
-#include <Windows.h>
 #include <RetroGBm/HighTimer.h>
+
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 
 #include "Render/RenderTarget.h"
 #include "Render/RenderTexture.h"
@@ -93,6 +95,9 @@ private:
 	static const UINT m_MenuOptionsEnableAudio = 401;
 	static const UINT m_MenuOptionsStretchDisplay = 402;
 	static const UINT m_MenuOptionsLinearFilter = 403;
+	static const UINT m_MenuOptionsNetworkHost = 404;
+	static const UINT m_MenuOptionsNetworkConnect = 405;
+	static const UINT m_MenuOptionsNetworkDisconnect = 406;
 
 	HMENU m_SaveSlotMenuItem = NULL;
 	static const UINT m_MenuSaveSlot1 = 2100;

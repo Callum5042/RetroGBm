@@ -27,6 +27,7 @@ class Apu;
 
 class IDisplayOutput;
 class ISoundOutput;
+class INetworkOutput;
 
 struct EmulatorContext
 {
@@ -47,13 +48,21 @@ public:
 	virtual void WriteBus(uint16_t address, uint8_t value) = 0;
 };
 
+enum class TcpMode
+{
+	None,
+	Client,
+	Server,
+};
+
 class Emulator : public IBus
 {
 	IDisplayOutput* m_DisplayOutput = nullptr;
 	ISoundOutput* m_SoundOutput = nullptr;
+	INetworkOutput* m_NetworkOutput = nullptr;
 
 public:
-	Emulator(IDisplayOutput* display_output, ISoundOutput* soundOutput);
+	Emulator(IDisplayOutput* display_output, ISoundOutput* sound_output, INetworkOutput* network_output);
 	Emulator(std::unique_ptr<BaseCartridge> cartridge, ISoundOutput* soundOutput);
 	virtual ~Emulator();
 
@@ -121,11 +130,12 @@ public:
 
 	void SetBatteryPath(const std::string& path);
 
+	// TCP Client and Listener
+	char m_SerialData[2] = { 0, 0 };
+
 private:
 	std::mutex m_EmulatorMutex;
 	bool m_Paused = false;
-
-	char m_SerialData[2] = { 0, 0 };
 
 	uint8_t m_CurrentOpCode = 0x0;
 

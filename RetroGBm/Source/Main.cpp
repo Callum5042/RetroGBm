@@ -1,6 +1,9 @@
 #include "Application.h"
 #include <memory>
 
+#include <WinSock2.h>
+#include <iostream>
+
 // Useful docs
 // https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
 // https://rgbds.gbdev.io/docs/v0.5.1/gbz80.7/#HALT
@@ -18,6 +21,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	// _CrtSetBreakAlloc(972);
 #endif
+
+	// Initialize Winsock
+	WSADATA wsa_data = {};
+	int startup_result = WSAStartup(MAKEWORD(2, 2), &wsa_data);
+	if (startup_result != 0)
+	{
+		std::cerr << "WSAStartup failed: " << startup_result << "\n";
+		return 1;
+	}
 
 	std::unique_ptr<Application> application = std::make_unique<Application>();
 	return application->Start();

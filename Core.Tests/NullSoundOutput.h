@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RetroGBm/Audio/ISoundOutput.h"
+#include <RetroGBm/Audio/ISoundOutput.h>
 
 class NullSoundOutput : public ISoundOutput
 {

@@ -77,5 +77,8 @@
     <ClInclude Include="NullDisplayOutput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="NullNetworkOutput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -17,6 +17,7 @@
 
 #include "Audio/XAudio2Output.h"
 #include "Render/DisplayOutput.h"
+#include "Networking/WinNetworkOutput.h"
 
 #include "ProfileParser.h"
 
@@ -62,6 +63,7 @@ public:
 	// Audio
 	std::unique_ptr<XAudio2Output> SoundOutput = nullptr;
 	std::unique_ptr<DisplayOutput> m_DisplayOutput = nullptr;
+	std::unique_ptr<WinNetworkOutput> m_NetworkOutput = nullptr;
 
 	// Rendering
 	std::unique_ptr<Render::RenderDevice> m_RenderDevice = nullptr;
