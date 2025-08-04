@@ -14,6 +14,7 @@ A fast and lightweight Game Boy Color emulator written in C++ for Windows and An
 - Cycle-accurate CPU and PPU timing
 - Audio emulation
 - Play time tracking
+- Link cable support
 
 ## Screenshots
 
