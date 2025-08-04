@@ -133,6 +133,9 @@ public:
 	// TCP Client and Listener
 	char m_SerialData[2] = { 0, 0 };
 
+	// Cheat codes
+	void ApplyCheats();
+
 private:
 	std::mutex m_EmulatorMutex;
 	bool m_Paused = false;
@@ -170,4 +173,7 @@ private:
 
 	// File Checksum
 	std::vector<uint8_t> m_FileChecksum;
+
+	// Gameshark codes
+	std::vector<std::string> m_GamesharkCodes;
 };

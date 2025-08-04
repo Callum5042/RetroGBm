@@ -18,6 +18,7 @@
 #include "RetroGBm/Apu.h"
 #include "RetroGBm/HighTimer.h"
 #include "RetroGBm/SaveStateHeader.h"
+#include "RetroGBm/Cheats.h"
 
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 #include "RetroGBm/Cartridge/CartridgeMBC3.h"
@@ -237,6 +238,10 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	Chocobo1::MD5 md5;
 	md5.addData(filedata);
 	m_FileChecksum = md5.toVector();
+
+	// Set the cartridge data
+	m_GamesharkCodes.push_back("01FB04D2"); // Celebi
+	m_GamesharkCodes.push_back("010730D2"); // Shiny
 
 
 	Logger::Info("ROM loaded successfully");
@@ -894,4 +899,20 @@ void Emulator::SetEmulationSpeedMultipler(float multipler)
 {
 	Logger::Info("Emulation speed changed to " + std::to_string(multipler));
 	m_Ppu->SetSpeedMultipler(multipler);
+}
+
+void Emulator::ApplyCheats()
+{
+	int bank = m_Ram->GetWorkRamBank();
+
+	for (auto& code : m_GamesharkCodes)
+	{
+		const GamesharkToken token = ParseGamesharkCode(code);
+
+		m_Ram->SetWorkRamBank(token.bank);
+		m_Ram->WriteWorkRam(token.address, token.value);
+	}
+
+	// Restore the bank to previous value
+	m_Ram->SetWorkRamBank(bank);
 }
