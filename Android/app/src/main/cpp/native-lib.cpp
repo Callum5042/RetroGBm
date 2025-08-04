@@ -10,6 +10,7 @@
 
 #include "KotlinSoundOutputWrapper.h"
 #include "KotlinDisplayOutputWrapper.h"
+#include "KotlinNetworkOutputWrapper.h"
 
 extern "C"
 {
@@ -18,8 +19,9 @@ extern "C"
     {
         IDisplayOutput* display_output = reinterpret_cast<IDisplayOutput*>(displayOutputPtr);
         ISoundOutput* sound_output = reinterpret_cast<ISoundOutput*>(soundOutputPtr);
+        INetworkOutput* network_output = new KotlinNetworkOutputWrapper();
 
-        return reinterpret_cast<jlong>(new Emulator(display_output, sound_output));
+        return reinterpret_cast<jlong>(new Emulator(display_output, sound_output, network_output));
     }
 
     JNIEXPORT void JNICALL
