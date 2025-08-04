@@ -6,6 +6,8 @@
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 #include "RetroGBm/HighTimer.h"
 #include "RetroGBm/Dma.h"
+#include "RetroGBm/Ram.h"
+#include "RetroGBm/Cheats.h"
 
 #include <algorithm>
 #include <chrono>
@@ -236,6 +238,18 @@ void Ppu::HBlank()
 
 			// Push pixels
 			m_Display->UpdateDisplay();
+
+			// Gameshark
+			int bank = Emulator::Instance->GetRam()->GetWorkRamBank();
+
+			// If the game is using a gameshark code, we need to write the value to the work RAM
+			const GamesharkToken token = ParseGamesharkCode("01FB04D2");
+
+			Emulator::Instance->GetRam()->SetWorkRamBank(token.bank);
+			Emulator::Instance->GetRam()->WriteWorkRam(token.address, token.value);
+
+			// Restore the bank to previous value
+			Emulator::Instance->GetRam()->SetWorkRamBank(bank);
 		}
 		else
 		{

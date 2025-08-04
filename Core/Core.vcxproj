@@ -124,6 +124,7 @@
     <ClInclude Include="External\spdlog\tweakme.h" />
     <ClInclude Include="External\spdlog\version.h" />
     <ClInclude Include="Include\RetroGBm\Audio\FrequencySweep.h" />
+    <ClInclude Include="Include\RetroGBm\Cheats.h" />
     <ClInclude Include="Include\RetroGBm\IDisplayOutput.h" />
     <ClInclude Include="Include\RetroGBm\Audio\ISoundOutput.h" />
     <ClInclude Include="Include\RetroGBm\Audio\LengthCounter.h" />
@@ -193,6 +194,7 @@
     <ClCompile Include="Source\Cartridge\CartridgeMBC3.cpp" />
     <ClCompile Include="Source\Cartridge\CartridgeMBC5.cpp" />
     <ClCompile Include="Source\Cartridge\CartridgeROM.cpp" />
+    <ClCompile Include="Source\Cheats.cpp" />
     <ClCompile Include="Source\Joypad.cpp" />
     <ClCompile Include="Source\Display.cpp" />
     <ClCompile Include="Source\Dma.cpp" />

@@ -63,6 +63,9 @@
     <ClCompile Include="NullDisplayOutput.cpp">
       <Filter>Source Files\Mocks</Filter>
     </ClCompile>
+    <ClCompile Include="CheatsTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MockCartridge.h">
