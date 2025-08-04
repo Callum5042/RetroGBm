@@ -97,6 +97,7 @@ private:
 	static const UINT m_MenuOptionsLinearFilter = 403;
 	static const UINT m_MenuOptionsNetworkHost = 404;
 	static const UINT m_MenuOptionsNetworkConnect = 405;
+	static const UINT m_MenuOptionsNetworkDisconnect = 406;
 
 	HMENU m_SaveSlotMenuItem = NULL;
 	static const UINT m_MenuSaveSlot1 = 2100;

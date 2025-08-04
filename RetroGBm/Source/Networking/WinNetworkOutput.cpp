@@ -34,38 +34,26 @@ namespace
 
 WinNetworkOutput::~WinNetworkOutput()
 {
-	if (m_PeerSocket != INVALID_SOCKET)
-	{
-		closesocket(m_PeerSocket);
-		m_PeerSocket = INVALID_SOCKET;
-	}
-
-	if (m_ListenSocket != NULL)
-	{
-		closesocket(m_ListenSocket);
-		m_ListenSocket = NULL;
-	}
-
-	if (m_ReceiveThread.joinable())
-	{
-		m_ReceiveThread.join();
-	}
+	this->Disconnect();
 }
 
 void WinNetworkOutput::SendData(uint8_t data)
 {
-	uint8_t data_array[2] = { 0xFF, data };
-	send(m_PeerSocket, reinterpret_cast<const char*>(data_array), sizeof(data_array), 0);
+	if (m_PeerSocket != INVALID_SOCKET)
+	{
+		uint8_t data_array[2] = { 0xFF, data };
+		send(m_PeerSocket, reinterpret_cast<const char*>(data_array), sizeof(data_array), 0);
+	}
 }
 
-void WinNetworkOutput::CreateHost(const std::string& ip)
+bool WinNetworkOutput::CreateHost(const std::string& ip)
 {
 	// Create socket
 	m_ListenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (m_ListenSocket == INVALID_SOCKET)
 	{
 		Logger::Error("Failed to create socket.");
-		return;
+		return false;
 	}
 
 	sockaddr_in addr;
@@ -77,7 +65,7 @@ void WinNetworkOutput::CreateHost(const std::string& ip)
 	if (bind_result == SOCKET_ERROR)
 	{
 		Logger::Error("Failed to bind socket to port " + std::to_string(m_DefaultPort));
-		return;
+		return false;
 	}
 
 	// Start listening for connections
@@ -87,24 +75,26 @@ void WinNetworkOutput::CreateHost(const std::string& ip)
 	// Wait for peer to connect
 	m_ReceiveThread = std::thread([&]
 	{
-		m_PeerSocket = accept(m_ListenSocket, NULL, NULL);
-		Logger::Info("Peer connected.");
+		while (m_Listening)
+		{
+			m_PeerSocket = accept(m_ListenSocket, NULL, NULL);
+			Logger::Info("Peer connected.");
 
-		closesocket(m_ListenSocket);
-		m_ListenSocket = NULL;
-
-		CreateThread(NULL, 0, ReceiveMessages, &m_PeerSocket, 0, NULL);
+			CreateThread(NULL, 0, ReceiveMessages, &m_PeerSocket, 0, NULL);
+		}
 	});
+
+	return true;
 }
 
-void WinNetworkOutput::CreateClient(const std::string& ip)
+bool WinNetworkOutput::CreateClient(const std::string& ip)
 {
 	// Create socket
 	m_PeerSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (m_PeerSocket == INVALID_SOCKET)
 	{
 		Logger::Error("Failed to create socket.");
-		return;
+		return false;
 	}
 
 	// Connect to the host
@@ -118,9 +108,33 @@ void WinNetworkOutput::CreateClient(const std::string& ip)
 	{
 		Logger::Error("Failed to connect to " + ip + ":" + std::to_string(m_DefaultPort));
 		closesocket(m_PeerSocket);
-		return;
+		return false;
 	}
 
 	Logger::Info("Connected to " + ip + ":" + std::to_string(m_DefaultPort));
 	CreateThread(NULL, 0, ReceiveMessages, &m_PeerSocket, 0, NULL);
+
+	return true;
+}
+
+void WinNetworkOutput::Disconnect()
+{
+	if (m_PeerSocket != INVALID_SOCKET)
+	{
+		closesocket(m_PeerSocket);
+		m_PeerSocket = INVALID_SOCKET;
+	}
+
+	if (m_ListenSocket != INVALID_SOCKET)
+	{
+		closesocket(m_ListenSocket);
+		m_ListenSocket = INVALID_SOCKET;
+	}
+
+	// Make sure to close the socket before stopping the thread otherwise will deadlock
+	m_Listening = false;
+	if (m_ReceiveThread.joinable())
+	{
+		m_ReceiveThread.join();
+	}
 }

@@ -15,12 +15,15 @@ public:
 
 	void SendData(uint8_t data) override;
 
-	void CreateHost(const std::string& ip);
-	void CreateClient(const std::string& ip);
+	bool CreateHost(const std::string& ip);
+	bool CreateClient(const std::string& ip);
+
+	void Disconnect();
 
 private:
 	SOCKET m_PeerSocket = INVALID_SOCKET;
 	SOCKET m_ListenSocket = INVALID_SOCKET;
+	std::atomic_bool m_Listening = true;
 
 	int m_DefaultPort = 54000;
 
