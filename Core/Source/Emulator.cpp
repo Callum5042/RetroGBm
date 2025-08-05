@@ -916,3 +916,9 @@ void Emulator::ApplyCheats()
 	// Restore the bank to previous value
 	m_Ram->SetWorkRamBank(bank);
 }
+
+void Emulator::SetGamesharkCode(const std::vector<std::string>& codes)
+{
+	m_GamesharkCodes.clear();
+	m_GamesharkCodes.insert(m_GamesharkCodes.end(), codes.begin(), codes.end());
+}

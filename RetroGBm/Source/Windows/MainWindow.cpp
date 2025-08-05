@@ -518,6 +518,12 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 				}
 			}
 			break;
+		case m_MenuToolsCheats:
+		{
+			m_Application->CheatsWindow = std::make_unique<CheatsWindow>(m_Application);
+			m_Application->CheatsWindow->Create();
+			break;
+		}
 	}
 
 	// Handle save state
@@ -1121,6 +1127,8 @@ void MainWindow::CreateMenuBar()
 
 	// Tools menu
 	m_ToolsMenuItem = CreateMenu();
+	AppendMenuW(m_ToolsMenuItem, MF_STRING, m_MenuToolsCheats, L"Cheats");
+	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsCpuRegisters, L"CPU Registers");
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTilemap, L"Tiledata");
