@@ -2,16 +2,8 @@
 
 #include "Window.h"
 #include <string>
-#include <vector>
 
 class Application;
-
-struct CheatCode
-{
-	std::wstring name;
-	std::wstring code;
-	bool enabled = false;
-};
 
 class CheatsWindow
 {
@@ -59,5 +51,4 @@ private:
 
 	// Cheat codes
 	int m_SelectedCheatCodeIndex = -1;
-	std::vector<CheatCode> m_CheatCodes;
 };

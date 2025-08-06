@@ -65,12 +65,49 @@ namespace
 
 		return std::string(buffer.data(), chars_converted);
 	}
+
+	std::vector<std::string> SplitString(std::string code)
+	{
+		std::vector<std::string> tokens;
+		size_t pos = 0;
+
+		std::string token;
+		const std::string delimiter = "\r\n";
+		while ((pos = code.find(delimiter)) != std::string::npos)
+		{
+			token = code.substr(0, pos);
+			tokens.push_back(token);
+			code.erase(0, pos + delimiter.length());
+		}
+
+		tokens.push_back(code);
+		return tokens;
+	}
+
+	std::wstring ConvertCodeToMultiline(std::vector<std::string> codes)
+	{
+		std::string result;
+		for (auto& code : codes)
+		{
+			if (!code.empty())
+			{
+				if (!result.empty())
+				{
+					// Add newline between codes
+					result += "\r\n"; 
+				}
+
+				// Append the code
+				result += code; 
+			}
+		}
+
+		return ConvertToWString(result);
+	}
 }
 
 CheatsWindow::CheatsWindow(Application* application) : m_Application(application)
 {
-	m_CheatCodes.push_back({ L"Wild Celebi", L"01FB04D2" });
-	m_CheatCodes.push_back({ L"Shiny Pokemon", L"010730D2" });
 }
 
 CheatsWindow::~CheatsWindow()
@@ -130,16 +167,20 @@ void CheatsWindow::Create()
 	ListView_InsertColumn(m_ListHwnd, 0, &lvc);
 
 	// Add some items
-	for (int i = 0; i < m_CheatCodes.size(); ++i)
+	for (int i = 0; i < Emulator::Instance->m_GamesharkCodes.size(); ++i)
 	{
+		const CheatCode& gameshark = Emulator::Instance->m_GamesharkCodes[i];
+		bool enabled = gameshark.enabled; // Have to cache it because it will change when setting the item otherwise...
+
 		LVITEM lvi = { 0 };
 		lvi.mask = LVIF_TEXT;
 		lvi.iItem = i;
 		lvi.iSubItem = 0;
-		lvi.pszText = const_cast<wchar_t*>(m_CheatCodes[i].name.c_str());
+		lvi.pszText = const_cast<wchar_t*>(gameshark.name.c_str());
 		ListView_InsertItem(m_ListHwnd, &lvi);
 
-		// ListView_SetItemText(m_ListHwnd, i, 1, const_cast<wchar_t*>(m_CheatCodes[i].code.c_str()));
+		// Check the checkbox by default
+		ListView_SetCheckState(m_ListHwnd, i, (enabled ? TRUE : FALSE));
 	}
 
 
@@ -281,8 +322,7 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 	{
 		case WM_CREATE:
 		{
-			HWND hHeader = (HWND)SendMessage(m_ListHwnd, LVM_GETHEADER, 0, 0);
-			SetWindowPos(hHeader, 0, 0, 0, 0, 0, SWP_HIDEWINDOW);
+
 
 			break;
 		}
@@ -345,14 +385,17 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 				}
 
 				// Add to the list
+				// int itemCount = ListView_GetItemCount(m_ListHwnd);
+
 				LVITEM lvi = { 0 };
 				lvi.mask = LVIF_TEXT;
-				lvi.iItem = m_CheatCodes.size();
+				lvi.iItem = Emulator::Instance->m_GamesharkCodes.size();
 				lvi.iSubItem = 0;
 				lvi.pszText = const_cast<wchar_t*>(cheat_name.c_str());
 				ListView_InsertItem(m_ListHwnd, &lvi);
 
-				m_CheatCodes.push_back({ cheat_name, cheat_code });
+				std::vector<std::string> codes = SplitString(ConvertToString(cheat_code));
+				Emulator::Instance->m_GamesharkCodes.push_back({ cheat_name, codes, false });
 
 				// Enable/disable buttons
 				EnableWindow(m_ButtonAdd, TRUE);
@@ -389,8 +432,8 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 				}
 
 				// Update the selected cheat code
-				m_CheatCodes[m_SelectedCheatCodeIndex].name = cheat_name;
-				m_CheatCodes[m_SelectedCheatCodeIndex].code = cheat_code;
+				Emulator::Instance->m_GamesharkCodes[m_SelectedCheatCodeIndex].name = cheat_name;
+				Emulator::Instance->m_GamesharkCodes[m_SelectedCheatCodeIndex].code = SplitString(ConvertToString(cheat_code));
 
 				ListView_SetItemText(m_ListHwnd, m_SelectedCheatCodeIndex, 0, const_cast<wchar_t*>(cheat_name.c_str()));
 
@@ -398,7 +441,7 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 			else if (wmId == m_ControlDeleteButtonId)
 			{
 				// Remove item
-				m_CheatCodes.erase(m_CheatCodes.begin() + m_SelectedCheatCodeIndex);
+				Emulator::Instance->m_GamesharkCodes.erase(Emulator::Instance->m_GamesharkCodes.begin() + m_SelectedCheatCodeIndex);
 
 				// Update UI
 				ListView_DeleteItem(m_ListHwnd, m_SelectedCheatCodeIndex);
@@ -438,8 +481,8 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 								m_SelectedCheatCodeIndex = pnm->iItem;
 
 								// Display the selected cheat code in the edit controls
-								std::wstring name = m_CheatCodes[m_SelectedCheatCodeIndex].name;
-								std::wstring code = m_CheatCodes[m_SelectedCheatCodeIndex].code;
+								std::wstring name = Emulator::Instance->m_GamesharkCodes[m_SelectedCheatCodeIndex].name;
+								std::wstring code = ConvertCodeToMultiline(Emulator::Instance->m_GamesharkCodes[m_SelectedCheatCodeIndex].code);
 
 								SetWindowText(m_EditName, name.c_str());
 								SetWindowText(m_EditCode, code.c_str());
@@ -458,32 +501,20 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 
 							int iItem = pnm->iItem;
 
-							// Get the codes as a list
-							std::string code = ConvertToString(m_CheatCodes[iItem].code);
-
-							std::vector<std::string> tokens;
-							size_t pos = 0;
-
-							std::string token;
-							const std::string delimiter = "\r\n";
-							while ((pos = code.find(delimiter)) != std::string::npos)
+							if (iItem >= 0 && iItem < Emulator::Instance->m_GamesharkCodes.size())
 							{
-								token = code.substr(0, pos);
-								tokens.push_back(token);
-								code.erase(0, pos + delimiter.length());
-							}
+								Emulator::Instance->m_GamesharkCodes[iItem].enabled = isChecked;
 
-							tokens.push_back(code);
-
-							if (!wasChecked && isChecked)
-							{
-								// Enable the codes
-								Emulator::Instance->EnableGamesharkCode(tokens);
-							}
-							else
-							{
-								// Disable the codes
-								Emulator::Instance->DisableGamesharkCode(tokens);
+								//if (!wasChecked && isChecked)
+								//{
+								//	// Enable the codes
+								//	Emulator::Instance->m_GamesharkCodes[iItem].enabled = true;
+								//}
+								//else
+								//{
+								//	// Disable the codes
+								//	Emulator::Instance->m_GamesharkCodes[iItem].enabled = false;
+								//}
 							}
 						}
 

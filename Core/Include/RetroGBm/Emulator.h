@@ -29,6 +29,13 @@ class IDisplayOutput;
 class ISoundOutput;
 class INetworkOutput;
 
+struct CheatCode
+{
+	std::wstring name;
+	std::vector<std::string> code;
+	bool enabled = false;
+};
+
 struct EmulatorContext
 {
 	Cpu* cpu = nullptr;
@@ -46,13 +53,6 @@ public:
 
 	virtual uint8_t ReadBus(uint16_t address) = 0;
 	virtual void WriteBus(uint16_t address, uint8_t value) = 0;
-};
-
-enum class TcpMode
-{
-	None,
-	Client,
-	Server,
 };
 
 class Emulator : public IBus
@@ -135,8 +135,7 @@ public:
 
 	// Cheat codes
 	void ApplyCheats();
-	void EnableGamesharkCode(const std::vector<std::string>& codes);
-	void DisableGamesharkCode(const std::vector<std::string>& codes);
+	std::vector<CheatCode> m_GamesharkCodes;
 
 private:
 	std::mutex m_EmulatorMutex;
@@ -175,7 +174,4 @@ private:
 
 	// File Checksum
 	std::vector<uint8_t> m_FileChecksum;
-
-	// Gameshark codes
-	std::vector<std::string> m_GamesharkCodes;
 };

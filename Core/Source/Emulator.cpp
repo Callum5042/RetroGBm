@@ -244,6 +244,9 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	//m_GamesharkCodes.push_back("010730D2"); // Shiny
 
 
+	m_GamesharkCodes.push_back({ L"Wild Celebi", { "01FB04D2" }, true });
+	m_GamesharkCodes.push_back({ L"Shiny Pokemon", { "010730D2" }, true });
+
 	Logger::Info("ROM loaded successfully");
 	return true;
 }
@@ -314,7 +317,7 @@ void Emulator::ToggleTraceLog(bool enable)
 	}
 }
 
-void Emulator::Tick() 
+void Emulator::Tick()
 {
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
 
@@ -907,29 +910,18 @@ void Emulator::ApplyCheats()
 
 	for (auto& code : m_GamesharkCodes)
 	{
-		const GamesharkToken token = ParseGamesharkCode(code);
+		if (code.enabled)
+		{
+			for (auto& c : code.code)
+			{
+				const GamesharkToken token = ParseGamesharkCode(c);
 
-		m_Ram->SetWorkRamBank(token.bank);
-		m_Ram->WriteWorkRam(token.address, token.value);
+				m_Ram->SetWorkRamBank(token.bank);
+				m_Ram->WriteWorkRam(token.address, token.value);
+			}
+		}
 	}
 
 	// Restore the bank to previous value
 	m_Ram->SetWorkRamBank(bank);
-}
-
-void Emulator::EnableGamesharkCode(const std::vector<std::string>& codes)
-{
-	m_GamesharkCodes.insert(m_GamesharkCodes.end(), codes.begin(), codes.end());
-}
-
-void Emulator::DisableGamesharkCode(const std::vector<std::string>& codes)
-{
-	for (auto& code : codes)
-	{
-		auto it = std::find(m_GamesharkCodes.begin(), m_GamesharkCodes.end(), code);
-		if (it != m_GamesharkCodes.end())
-		{
-			m_GamesharkCodes.erase(it);
-		}
-	}
 }
