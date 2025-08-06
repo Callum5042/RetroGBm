@@ -240,8 +240,8 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	m_FileChecksum = md5.toVector();
 
 	// Set the cartridge data
-	m_GamesharkCodes.push_back("01FB04D2"); // Celebi
-	m_GamesharkCodes.push_back("010730D2"); // Shiny
+	//m_GamesharkCodes.push_back("01FB04D2"); // Celebi
+	//m_GamesharkCodes.push_back("010730D2"); // Shiny
 
 
 	Logger::Info("ROM loaded successfully");
@@ -917,8 +917,19 @@ void Emulator::ApplyCheats()
 	m_Ram->SetWorkRamBank(bank);
 }
 
-void Emulator::SetGamesharkCode(const std::vector<std::string>& codes)
+void Emulator::EnableGamesharkCode(const std::vector<std::string>& codes)
 {
-	m_GamesharkCodes.clear();
 	m_GamesharkCodes.insert(m_GamesharkCodes.end(), codes.begin(), codes.end());
+}
+
+void Emulator::DisableGamesharkCode(const std::vector<std::string>& codes)
+{
+	for (auto& code : codes)
+	{
+		auto it = std::find(m_GamesharkCodes.begin(), m_GamesharkCodes.end(), code);
+		if (it != m_GamesharkCodes.end())
+		{
+			m_GamesharkCodes.erase(it);
+		}
+	}
 }

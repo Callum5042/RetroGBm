@@ -7,8 +7,10 @@
 #pragma comment(lib, "dwmapi.lib")
 
 #include <RetroGBm/Logger.h>
+#include <RetroGBm/Emulator.h>
 
 #include <stdio.h>
+#include <string>
 
 // Set theme
 // https://docs.microsoft.com/en-gb/windows/win32/controls/cookbook-overview?redirectedfrom=MSDN
@@ -52,6 +54,16 @@ namespace
 		int chars_converted = MultiByteToWideChar(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), buffer.data(), static_cast<int>(buffer.size()));
 
 		return std::wstring(buffer.data(), chars_converted);
+	}
+
+	static std::string ConvertToString(const std::wstring& wstr)
+	{
+		size_t size = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int>(wstr.size()), NULL, 0, NULL, NULL);
+
+		std::vector<char> buffer(size);
+		int chars_converted = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int>(wstr.size()), buffer.data(), static_cast<int>(buffer.size()), NULL, NULL);
+
+		return std::string(buffer.data(), chars_converted);
 	}
 }
 
@@ -446,13 +458,32 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 
 							int iItem = pnm->iItem;
 
+							// Get the codes as a list
+							std::string code = ConvertToString(m_CheatCodes[iItem].code);
+
+							std::vector<std::string> tokens;
+							size_t pos = 0;
+
+							std::string token;
+							const std::string delimiter = "\r\n";
+							while ((pos = code.find(delimiter)) != std::string::npos)
+							{
+								token = code.substr(0, pos);
+								tokens.push_back(token);
+								code.erase(0, pos + delimiter.length());
+							}
+
+							tokens.push_back(code);
+
 							if (!wasChecked && isChecked)
 							{
-								// Logger::Info("Checkbox enabled");
+								// Enable the codes
+								Emulator::Instance->EnableGamesharkCode(tokens);
 							}
 							else
 							{
-								// Logger::Info("Checkbox disabled");
+								// Disable the codes
+								Emulator::Instance->DisableGamesharkCode(tokens);
 							}
 						}
 

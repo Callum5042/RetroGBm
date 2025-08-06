@@ -135,7 +135,8 @@ public:
 
 	// Cheat codes
 	void ApplyCheats();
-	void SetGamesharkCode(const std::vector<std::string>& codes);
+	void EnableGamesharkCode(const std::vector<std::string>& codes);
+	void DisableGamesharkCode(const std::vector<std::string>& codes);
 
 private:
 	std::mutex m_EmulatorMutex;
