@@ -36,6 +36,9 @@
         <activity
             android:name=".SaveStateActivity"
             android:label="@string/app_name" />
+        <activity
+            android:name=".CheatsActivity"
+            android:label="@string/app_name" />
     </application>
 
 </manifest>
