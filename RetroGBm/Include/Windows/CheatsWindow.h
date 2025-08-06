@@ -36,4 +36,9 @@ private:
 
 	HWND m_ButtonAdd = NULL;
 	HWND m_ButtonDelete = NULL;
+
+
+	// ListView
+	HWND m_ListHwnd = NULL;
+	static const UINT m_ListMenuId = 5001;
 };

@@ -6,6 +6,8 @@
 #pragma comment(lib, "uxtheme.lib")
 #pragma comment(lib, "dwmapi.lib")
 
+#include <stdio.h>
+
 // Set theme
 // https://docs.microsoft.com/en-gb/windows/win32/controls/cookbook-overview?redirectedfrom=MSDN
 #pragma comment(linker,"\"/manifestdependency:type='win32' name = 'Microsoft.Windows.Common-Controls' version = '6.0.0.0' processorArchitecture = '*' publicKeyToken = '6595b64144ccf1df' language = '*'\"")
@@ -62,7 +64,9 @@ CheatsWindow::~CheatsWindow()
 
 void CheatsWindow::Create()
 {
-	this->WindowCreate("Cheats", 400, 300);
+	HINSTANCE hInstance = GetModuleHandle(NULL);
+
+	this->WindowCreate("Cheats", 500, 300);
 
 	static HFONT m_Font;
 
@@ -81,10 +85,60 @@ void CheatsWindow::Create()
 			CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Segoe UI"));*/
 	}
 
+	int width = 200 + 20;
+	int height = 200;
+
+	/*m_ListHwnd = CreateWindow(WC_LISTVIEW, L"",
+		WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL | LVS_NOSORTHEADER,
+		0, 0, width, height, m_Hwnd, reinterpret_cast<HMENU>((UINT_PTR)m_ListMenuId), hInstance, this);*/
+
+		// Initialize common controls
+	INITCOMMONCONTROLSEX icex = { sizeof(INITCOMMONCONTROLSEX), ICC_LISTVIEW_CLASSES };
+	InitCommonControlsEx(&icex);
+
+	// Create ListView control
+	m_ListHwnd = CreateWindowEx(
+		WS_EX_CLIENTEDGE, WC_LISTVIEW, L"",
+		WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL,
+		10, 10, 200, 300 - 20,
+		m_Hwnd, (HMENU)1, GetModuleHandle(NULL), NULL);
+
+	// Enable checkboxes
+	ListView_SetExtendedListViewStyle(m_ListHwnd, LVS_EX_FULLROWSELECT | LVS_EX_CHECKBOXES);
+
+	// Add a dummy column (required for LVS_REPORT layout)
+	LVCOLUMN lvc = { 0 };
+	lvc.mask = LVCF_WIDTH | LVCF_TEXT;
+	lvc.cx = 160; // width of column
+	lvc.pszText = (LPWSTR)L"Cheats"; // column header text
+	ListView_InsertColumn(m_ListHwnd, 0, &lvc);
+
+	// Add some items
+	for (int i = 0; i < 20; ++i)
+	{
+		wchar_t buffer[32];
+		swprintf_s(buffer, L"Item %d", i + 1);
+
+		LVITEM lvi = { 0 };
+		lvi.mask = LVIF_TEXT;
+		lvi.iItem = i;
+		lvi.iSubItem = 0;
+		lvi.pszText = buffer;
+		ListView_InsertItem(m_ListHwnd, &lvi);
+	}
+
+
+	/// The Form Controls ////////////////////////////////
+	//////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////
+
+
+
 	// Label: "Cheat name"
 	m_LabelName = CreateWindowW(L"STATIC", L"Cheat name:",
 		WS_CHILD | WS_VISIBLE,
-		20, 20, 100, 20,
+		width, 20, 270, 20,
 		m_Hwnd, nullptr, nullptr, nullptr);
 
 	SendMessageW(m_LabelName, WM_SETFONT, (WPARAM)m_Font, TRUE);
@@ -92,7 +146,7 @@ void CheatsWindow::Create()
 	// Single-line Edit: Cheat name
 	m_EditName = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", nullptr,
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_AUTOHSCROLL,
-		20, 45, 340, 25,
+		width, 45, 270, 25,
 		m_Hwnd, nullptr, nullptr, nullptr);
 
 	SendMessageW(m_EditName, WM_SETFONT, (WPARAM)m_Font, TRUE);
@@ -100,7 +154,7 @@ void CheatsWindow::Create()
 	// Label: "Cheat code"
 	m_LabelCode = CreateWindowW(L"STATIC", L"Cheat code:",
 		WS_CHILD | WS_VISIBLE,
-		20, 80, 100, 20,
+		width, 80, 270, 20,
 		m_Hwnd, nullptr, nullptr, nullptr);
 
 	SendMessageW(m_LabelCode, WM_SETFONT, (WPARAM)m_Font, TRUE);
@@ -108,7 +162,7 @@ void CheatsWindow::Create()
 	// Multi-line Edit: Cheat code
 	m_EditCode = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", nullptr,
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL,
-		20, 105, 340, 120,
+		width, 105, 270, 120,
 		m_Hwnd, nullptr, nullptr, nullptr);
 
 	SendMessageW(m_EditCode, WM_SETFONT, (WPARAM)m_Font, TRUE);
@@ -116,7 +170,7 @@ void CheatsWindow::Create()
 	// Button: Add
 	m_ButtonAdd = CreateWindowW(L"BUTTON", L"Add",
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-		20, 235, 160, 30, // x, y, width, height
+		width, 235, 100, 30, // x, y, width, height
 		m_Hwnd, (HMENU)1001, nullptr, nullptr);
 
 	SendMessageW(m_ButtonAdd, WM_SETFONT, (WPARAM)m_Font, TRUE);
@@ -124,7 +178,7 @@ void CheatsWindow::Create()
 	// Button: Delete
 	m_ButtonDelete = CreateWindowW(L"BUTTON", L"Delete",
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-		200, 235, 160, 30,
+		width + 135 + 35, 235, 100, 30,
 		m_Hwnd, (HMENU)1002, nullptr, nullptr);
 
 	SendMessageW(m_ButtonDelete, WM_SETFONT, (WPARAM)m_Font, TRUE);
@@ -193,6 +247,14 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 {
 	switch (msg)
 	{
+		case WM_CREATE:
+		{
+			HWND hHeader = (HWND)SendMessage(m_ListHwnd, LVM_GETHEADER, 0, 0);
+			SetWindowPos(hHeader, 0, 0, 0, 0, 0, SWP_HIDEWINDOW);
+
+			break;
+		}
+
 		case WM_CLOSE:
 			Destroy();
 			return 0;
@@ -203,6 +265,19 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 			SetTextColor(hdc, RGB(0, 0, 0));
 			SetBkMode(hdc, TRANSPARENT);
 			return (LONG_PTR)GetSysColorBrush(COLOR_WINDOW);
+		}
+
+		case WM_PAINT:
+		{
+			PAINTSTRUCT ps;
+			HDC hdc = BeginPaint(hwnd, &ps);
+
+			// Fill screen with colour to avoid horrible effect
+			FillRect(hdc, &ps.rcPaint, reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1));
+
+			EndPaint(hwnd, &ps);
+
+			break;
 		}
 	}
 
