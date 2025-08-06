@@ -6,6 +6,8 @@
 #pragma comment(lib, "uxtheme.lib")
 #pragma comment(lib, "dwmapi.lib")
 
+#include <RetroGBm/Logger.h>
+
 #include <stdio.h>
 
 // Set theme
@@ -55,6 +57,8 @@ namespace
 
 CheatsWindow::CheatsWindow(Application* application) : m_Application(application)
 {
+	m_CheatCodes.push_back({ L"Wild Celebi", L"01FB04D2" });
+	m_CheatCodes.push_back({ L"Shiny Pokemon", L"010730D2" });
 }
 
 CheatsWindow::~CheatsWindow()
@@ -92,7 +96,7 @@ void CheatsWindow::Create()
 		WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL | LVS_NOSORTHEADER,
 		0, 0, width, height, m_Hwnd, reinterpret_cast<HMENU>((UINT_PTR)m_ListMenuId), hInstance, this);*/
 
-		// Initialize common controls
+	// Initialize common controls
 	INITCOMMONCONTROLSEX icex = { sizeof(INITCOMMONCONTROLSEX), ICC_LISTVIEW_CLASSES };
 	InitCommonControlsEx(&icex);
 
@@ -101,7 +105,7 @@ void CheatsWindow::Create()
 		WS_EX_CLIENTEDGE, WC_LISTVIEW, L"",
 		WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL,
 		10, 10, 200, 300 - 20,
-		m_Hwnd, (HMENU)1, GetModuleHandle(NULL), NULL);
+		m_Hwnd, (HMENU)m_ControlListViewId, GetModuleHandle(NULL), NULL);
 
 	// Enable checkboxes
 	ListView_SetExtendedListViewStyle(m_ListHwnd, LVS_EX_FULLROWSELECT | LVS_EX_CHECKBOXES);
@@ -114,17 +118,16 @@ void CheatsWindow::Create()
 	ListView_InsertColumn(m_ListHwnd, 0, &lvc);
 
 	// Add some items
-	for (int i = 0; i < 20; ++i)
+	for (int i = 0; i < m_CheatCodes.size(); ++i)
 	{
-		wchar_t buffer[32];
-		swprintf_s(buffer, L"Item %d", i + 1);
-
 		LVITEM lvi = { 0 };
 		lvi.mask = LVIF_TEXT;
 		lvi.iItem = i;
 		lvi.iSubItem = 0;
-		lvi.pszText = buffer;
+		lvi.pszText = const_cast<wchar_t*>(m_CheatCodes[i].name.c_str());
 		ListView_InsertItem(m_ListHwnd, &lvi);
+
+		// ListView_SetItemText(m_ListHwnd, i, 1, const_cast<wchar_t*>(m_CheatCodes[i].code.c_str()));
 	}
 
 
@@ -132,8 +135,6 @@ void CheatsWindow::Create()
 	//////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////
-
-
 
 	// Label: "Cheat name"
 	m_LabelName = CreateWindowW(L"STATIC", L"Cheat name:",
@@ -147,7 +148,7 @@ void CheatsWindow::Create()
 	m_EditName = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", nullptr,
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_AUTOHSCROLL,
 		width, 45, 270, 25,
-		m_Hwnd, nullptr, nullptr, nullptr);
+		m_Hwnd, (HMENU)m_ControlEditNameId, nullptr, nullptr);
 
 	SendMessageW(m_EditName, WM_SETFONT, (WPARAM)m_Font, TRUE);
 
@@ -163,25 +164,44 @@ void CheatsWindow::Create()
 	m_EditCode = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", nullptr,
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL,
 		width, 105, 270, 120,
-		m_Hwnd, nullptr, nullptr, nullptr);
+		m_Hwnd, (HMENU)m_ControlEditCodeId, nullptr, nullptr);
 
 	SendMessageW(m_EditCode, WM_SETFONT, (WPARAM)m_Font, TRUE);
 
 	// Button: Add
+	int button_x = 220;
+	int button_width = 80;
+
 	m_ButtonAdd = CreateWindowW(L"BUTTON", L"Add",
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-		width, 235, 100, 30, // x, y, width, height
-		m_Hwnd, (HMENU)1001, nullptr, nullptr);
+		button_x, 235, button_width, 30, // x, y, width, height
+		m_Hwnd, (HMENU)m_ControlAddButtonId, nullptr, nullptr);
 
 	SendMessageW(m_ButtonAdd, WM_SETFONT, (WPARAM)m_Font, TRUE);
 
+	// Button: Update
+	button_x += button_width;
+
+	m_ButtonUpdate = CreateWindowW(L"BUTTON", L"Update",
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
+		button_x, 235, button_width, 30, // x, y, width, height
+		m_Hwnd, (HMENU)m_ControlUpdateButtonId, nullptr, nullptr);
+
+	SendMessageW(m_ButtonUpdate, WM_SETFONT, (WPARAM)m_Font, TRUE);
+
 	// Button: Delete
+	button_x += button_width;
+
 	m_ButtonDelete = CreateWindowW(L"BUTTON", L"Delete",
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-		width + 135 + 35, 235, 100, 30,
-		m_Hwnd, (HMENU)1002, nullptr, nullptr);
+		button_x, 235, button_width, 30,
+		m_Hwnd, (HMENU)m_ControlDeleteButtonId, nullptr, nullptr);
 
 	SendMessageW(m_ButtonDelete, WM_SETFONT, (WPARAM)m_Font, TRUE);
+
+	// Disable Update and Delete buttons initially
+	EnableWindow(m_ButtonUpdate, FALSE);
+	EnableWindow(m_ButtonDelete, FALSE);
 }
 
 void CheatsWindow::Destroy()
@@ -276,6 +296,170 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 			FillRect(hdc, &ps.rcPaint, reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1));
 
 			EndPaint(hwnd, &ps);
+
+			break;
+		}
+		case WM_COMMAND:
+		{
+			int wmId = LOWORD(wParam);
+
+			if (wmId == m_ControlAddButtonId)
+			{
+				std::wstring cheat_name;
+				std::wstring cheat_code;
+
+				HWND control = NULL;
+				int length = 0;
+
+				// Get cheat name from the edit control
+				control = GetDlgItem(hwnd, m_ControlEditNameId);
+				length = GetWindowTextLength(control) + 1;
+
+				cheat_name.resize(static_cast<size_t>(length) - 1);
+				GetWindowText(control, const_cast<LPWSTR>(cheat_name.data()), length);
+
+				// Get cheat code from the edit control
+				control = GetDlgItem(hwnd, m_ControlEditCodeId);
+				length = GetWindowTextLength(control) + 1;
+
+				cheat_code.resize(static_cast<size_t>(length) - 1);
+				GetWindowText(control, const_cast<LPWSTR>(cheat_code.data()), length);
+
+				// Check if its valid
+				if (cheat_name.empty() || cheat_code.empty())
+				{
+					MessageBox(hwnd, L"Please enter a valid cheat name and code.", L"Error", MB_OK | MB_ICONERROR);
+					return 0;
+				}
+
+				// Add to the list
+				LVITEM lvi = { 0 };
+				lvi.mask = LVIF_TEXT;
+				lvi.iItem = m_CheatCodes.size();
+				lvi.iSubItem = 0;
+				lvi.pszText = const_cast<wchar_t*>(cheat_name.c_str());
+				ListView_InsertItem(m_ListHwnd, &lvi);
+
+				m_CheatCodes.push_back({ cheat_name, cheat_code });
+
+				// Enable/disable buttons
+				EnableWindow(m_ButtonAdd, TRUE);
+				EnableWindow(m_ButtonUpdate, TRUE);
+				EnableWindow(m_ButtonDelete, TRUE);
+			}
+			else if (wmId == m_ControlUpdateButtonId)
+			{
+				std::wstring cheat_name;
+				std::wstring cheat_code;
+
+				HWND control = NULL;
+				int length = 0;
+
+				// Get cheat name from the edit control
+				control = GetDlgItem(hwnd, m_ControlEditNameId);
+				length = GetWindowTextLength(control) + 1;
+
+				cheat_name.resize(static_cast<size_t>(length) - 1);
+				GetWindowText(control, const_cast<LPWSTR>(cheat_name.data()), length);
+
+				// Get cheat code from the edit control
+				control = GetDlgItem(hwnd, m_ControlEditCodeId);
+				length = GetWindowTextLength(control) + 1;
+
+				cheat_code.resize(static_cast<size_t>(length) - 1);
+				GetWindowText(control, const_cast<LPWSTR>(cheat_code.data()), length);
+
+				// Check if its valid
+				if (cheat_name.empty() || cheat_code.empty())
+				{
+					MessageBox(hwnd, L"Please enter a valid cheat name and code.", L"Error", MB_OK | MB_ICONERROR);
+					return 0;
+				}
+
+				// Update the selected cheat code
+				m_CheatCodes[m_SelectedCheatCodeIndex].name = cheat_name;
+				m_CheatCodes[m_SelectedCheatCodeIndex].code = cheat_code;
+
+				ListView_SetItemText(m_ListHwnd, m_SelectedCheatCodeIndex, 0, const_cast<wchar_t*>(cheat_name.c_str()));
+
+			}
+			else if (wmId == m_ControlDeleteButtonId)
+			{
+				// Remove item
+				m_CheatCodes.erase(m_CheatCodes.begin() + m_SelectedCheatCodeIndex);
+
+				// Update UI
+				ListView_DeleteItem(m_ListHwnd, m_SelectedCheatCodeIndex);
+
+				// Clear form control
+				m_SelectedCheatCodeIndex = -1;
+				SetWindowText(m_EditName, L"");
+				SetWindowText(m_EditCode, L"");
+
+				// Enable/disable buttons
+				EnableWindow(m_ButtonAdd, TRUE);
+				EnableWindow(m_ButtonUpdate, FALSE);
+				EnableWindow(m_ButtonDelete, FALSE);
+			}
+
+			break;
+		}
+		case WM_NOTIFY:
+		{
+			LPNMHDR nmhdr = (LPNMHDR)lParam;
+
+			// Ensure it's from your ListView (e.g., ID = 1)
+			if (nmhdr->idFrom == m_ControlListViewId)
+			{
+				switch (nmhdr->code)
+				{
+					// Selection or check state changed
+					case LVN_ITEMCHANGED: 
+					{
+						NMLISTVIEW* pnm = (NMLISTVIEW*)lParam;
+
+						if ((pnm->uChanged & LVIF_STATE) && ((pnm->uNewState & LVIS_SELECTED) != (pnm->uOldState & LVIS_SELECTED)))
+						{
+							if (pnm->uNewState & LVIS_SELECTED)
+							{
+								// Item was selected
+								m_SelectedCheatCodeIndex = pnm->iItem;
+
+								// Display the selected cheat code in the edit controls
+								std::wstring name = m_CheatCodes[m_SelectedCheatCodeIndex].name;
+								std::wstring code = m_CheatCodes[m_SelectedCheatCodeIndex].code;
+
+								SetWindowText(m_EditName, name.c_str());
+								SetWindowText(m_EditCode, code.c_str());
+
+								// Enable/disable buttons
+								EnableWindow(m_ButtonAdd, TRUE);
+								EnableWindow(m_ButtonUpdate, TRUE);
+								EnableWindow(m_ButtonDelete, TRUE);
+							}
+						}
+
+						if (pnm->uChanged & LVIF_STATE)
+						{
+							BOOL wasChecked = (pnm->uOldState & INDEXTOSTATEIMAGEMASK(2)) != 0;
+							BOOL isChecked = (pnm->uNewState & INDEXTOSTATEIMAGEMASK(2)) != 0;
+
+							int iItem = pnm->iItem;
+
+							if (!wasChecked && isChecked)
+							{
+								// Logger::Info("Checkbox enabled");
+							}
+							else
+							{
+								// Logger::Info("Checkbox disabled");
+							}
+						}
+
+						break;
+					}
+				}
+			}
 
 			break;
 		}
