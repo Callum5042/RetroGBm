@@ -244,8 +244,8 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	//m_GamesharkCodes.push_back("010730D2"); // Shiny
 
 
-	m_GamesharkCodes.push_back({ L"Wild Celebi", { "01FB04D2" }, true });
-	m_GamesharkCodes.push_back({ L"Shiny Pokemon", { "010730D2" }, true });
+	m_GamesharkCodes.push_back({ "Wild Celebi", { "01FB04D2" }, false });
+	m_GamesharkCodes.push_back({ "Shiny Pokemon", { "010730D2" }, true });
 
 	Logger::Info("ROM loaded successfully");
 	return true;

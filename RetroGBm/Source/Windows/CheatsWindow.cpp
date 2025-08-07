@@ -172,11 +172,13 @@ void CheatsWindow::Create()
 		const CheatCode& gameshark = Emulator::Instance->m_GamesharkCodes[i];
 		bool enabled = gameshark.enabled; // Have to cache it because it will change when setting the item otherwise...
 
+		std::wstring codeName = ConvertToWString(gameshark.name);
+
 		LVITEM lvi = { 0 };
 		lvi.mask = LVIF_TEXT;
 		lvi.iItem = i;
 		lvi.iSubItem = 0;
-		lvi.pszText = const_cast<wchar_t*>(gameshark.name.c_str());
+		lvi.pszText =  const_cast<wchar_t*>(codeName.c_str());
 		ListView_InsertItem(m_ListHwnd, &lvi);
 
 		// Check the checkbox by default
@@ -395,7 +397,7 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 				ListView_InsertItem(m_ListHwnd, &lvi);
 
 				std::vector<std::string> codes = SplitString(ConvertToString(cheat_code));
-				Emulator::Instance->m_GamesharkCodes.push_back({ cheat_name, codes, false });
+				Emulator::Instance->m_GamesharkCodes.push_back({ ConvertToString(cheat_name), codes, false });
 
 				// Enable/disable buttons
 				EnableWindow(m_ButtonAdd, TRUE);
@@ -432,7 +434,7 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 				}
 
 				// Update the selected cheat code
-				Emulator::Instance->m_GamesharkCodes[m_SelectedCheatCodeIndex].name = cheat_name;
+				Emulator::Instance->m_GamesharkCodes[m_SelectedCheatCodeIndex].name = ConvertToString(cheat_name);
 				Emulator::Instance->m_GamesharkCodes[m_SelectedCheatCodeIndex].code = SplitString(ConvertToString(cheat_code));
 
 				ListView_SetItemText(m_ListHwnd, m_SelectedCheatCodeIndex, 0, const_cast<wchar_t*>(cheat_name.c_str()));
@@ -481,7 +483,7 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 								m_SelectedCheatCodeIndex = pnm->iItem;
 
 								// Display the selected cheat code in the edit controls
-								std::wstring name = Emulator::Instance->m_GamesharkCodes[m_SelectedCheatCodeIndex].name;
+								std::wstring name = ConvertToWString(Emulator::Instance->m_GamesharkCodes[m_SelectedCheatCodeIndex].name);
 								std::wstring code = ConvertCodeToMultiline(Emulator::Instance->m_GamesharkCodes[m_SelectedCheatCodeIndex].code);
 
 								SetWindowText(m_EditName, name.c_str());

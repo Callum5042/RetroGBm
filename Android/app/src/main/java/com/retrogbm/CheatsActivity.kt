@@ -1,7 +1,6 @@
 package com.retrogbm
 
 import android.app.Activity
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -24,9 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -40,7 +37,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -61,9 +57,11 @@ class CheatsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        cheats = mutableListOf()
-        cheats.add("Celebi Encounter")
-        cheats.add("Shiny Pokemon")
+        cheats = Emulator.emulator.getCheatCodes().toMutableList()
+
+//        cheats = mutableListOf()
+//        cheats.add("Celebi Encounter")
+//        cheats.add("Shiny Pokemon")
 
         setContent {
             RetroGBmTheme {
@@ -72,7 +70,83 @@ class CheatsActivity : ComponentActivity() {
         }
     }
 
-    private lateinit var cheats: MutableList<String>
+    private lateinit var cheats: MutableList<CheatCode>
+
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+    @Composable
+    fun CheatFormDialog(title: String,
+                        cheatName: String,
+                        cheatCode: String,
+                        onCancel: () -> Unit,
+                        onConfirm: (name: String, code: String) -> Unit
+                        ) {
+
+        var cheatNameInput by remember { mutableStateOf(cheatName) }
+        var cheatCodeInput by remember { mutableStateOf(cheatCode) }
+
+        Dialog(onDismissRequest = {
+            onCancel()
+        }) {
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .width(300.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(title, style = MaterialTheme.typography.titleMedium)
+
+                    OutlinedTextField(
+                        value = cheatNameInput,
+                        onValueChange = { cheatNameInput = it },
+                        label = { Text("Cheat Name") },
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = cheatCodeInput,
+                        onValueChange = { cheatCodeInput = it },
+                        label = { Text("Cheat Code") },
+                        modifier = Modifier.height(100.dp), // Or whatever height suits
+                        maxLines = 5
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = {
+                            onCancel()
+                        }) {
+                            Text("Cancel")
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Button(onClick = {
+                            onConfirm(cheatNameInput, cheatCodeInput)
+//                            showAddDialog = false
+//
+//                            cheats.add(
+//                                CheatCode(
+//                                    name = cheatNameInput,
+//                                    code = cheatCodeInput.split("\n").toTypedArray(),
+//                                    enabled = false
+//                                )
+//                            )
+
+                        }) {
+                            Text("OK")
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
     @Composable
@@ -83,60 +157,25 @@ class CheatsActivity : ComponentActivity() {
         var showAddDialog by remember { mutableStateOf(false) }
 
         if (showAddDialog) {
-            var input1 by remember { mutableStateOf("") }
-            var input2 by remember { mutableStateOf("") }
+            CheatFormDialog(
+                title = "Add Cheat",
+                cheatName = "",
+                cheatCode = "",
+                onCancel = { showAddDialog = false },
+                onConfirm = { name, code ->
+                    showAddDialog = false
 
-            Dialog(onDismissRequest = { showAddDialog = false }) {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 8.dp
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .width(300.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text("Add Cheat", style = MaterialTheme.typography.titleMedium)
-
-                        OutlinedTextField(
-                            value = input1,
-                            onValueChange = { input1 = it },
-                            label = { Text("Cheat Name") },
-                            singleLine = true
+                    cheats.add(
+                        CheatCode(
+                            name = name,
+                            code = code.split("\n").toTypedArray(),
+                            enabled = false
                         )
+                    )
 
-                        OutlinedTextField(
-                            value = input2,
-                            onValueChange = { input2 = it },
-                            label = { Text("Cheat Code") },
-                            modifier = Modifier.height(100.dp), // Or whatever height suits
-                            maxLines = 5
-                        )
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            TextButton(onClick = { showAddDialog = false }) {
-                                Text("Cancel")
-                            }
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            Button(onClick = {
-                                showAddDialog = false
-
-                                cheats.add(input1)
-
-                            }) {
-                                Text("OK")
-                            }
-                        }
-                    }
+                    Emulator.emulator.setCheatCodes(cheats.toTypedArray())
                 }
-            }
+            )
         }
 
         Scaffold(
@@ -187,7 +226,7 @@ class CheatsActivity : ComponentActivity() {
                     items(count = cheats.size) { index ->
 
                         val item = cheats[index]
-                        var checked by remember { mutableStateOf(false) }
+                        var checked by remember { mutableStateOf(item.enabled) }
                         var showContextMenu by remember { mutableStateOf(false) }
 
                         Box(
@@ -215,12 +254,34 @@ class CheatsActivity : ComponentActivity() {
                                 ) {
                                     Checkbox(
                                         checked = checked,
-                                        onCheckedChange = { checked = it }
+                                        onCheckedChange = {
+                                            checked = it
+                                            item.enabled = it
+                                            Emulator.emulator.setCheatCodes(cheats.toTypedArray())
+                                        }
                                     )
                                     Text(
-                                        item
+                                        item.name
                                     )
                                 }
+                            }
+
+                            var showUpdateDialog by remember { mutableStateOf(false) }
+                            if (showUpdateDialog) {
+                                CheatFormDialog(
+                                    title = "Update Cheat",
+                                    cheatName = item.name,
+                                    cheatCode = item.code.joinToString("\n"),
+                                    onCancel = { showUpdateDialog = false },
+                                    onConfirm = { name, code ->
+                                        showUpdateDialog = false
+
+                                        item.name = name
+                                        item.code = code.split("\n").toTypedArray()
+
+                                        Emulator.emulator.setCheatCodes(cheats.toTypedArray())
+                                    }
+                                )
                             }
 
                             if (showContextMenu) {
@@ -239,7 +300,7 @@ class CheatsActivity : ComponentActivity() {
                                             leadingIcon = { Icon(Icons.Filled.Edit, null) },
                                             onClick = {
                                                 showContextMenu = false
-                                                // showUpdateDialog = true
+                                                showUpdateDialog = true
                                             }
                                         )
                                         HorizontalDivider()

@@ -31,7 +31,7 @@ class INetworkOutput;
 
 struct CheatCode
 {
-	std::wstring name;
+	std::string name;
 	std::vector<std::string> code;
 	bool enabled = false;
 };
@@ -136,6 +136,16 @@ public:
 	// Cheat codes
 	void ApplyCheats();
 	std::vector<CheatCode> m_GamesharkCodes;
+
+	inline std::vector<CheatCode> GetGamesharkCodes() const
+	{
+		return m_GamesharkCodes;
+	}
+
+	inline void SetGamesharkCodes(const std::vector<CheatCode>& codes)
+	{
+		m_GamesharkCodes = codes;
+	}
 
 private:
 	std::mutex m_EmulatorMutex;
