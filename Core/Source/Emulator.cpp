@@ -239,14 +239,6 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	md5.addData(filedata);
 	m_FileChecksum = md5.toVector();
 
-	// Set the cartridge data
-	//m_GamesharkCodes.push_back("01FB04D2"); // Celebi
-	//m_GamesharkCodes.push_back("010730D2"); // Shiny
-
-
-	m_GamesharkCodes.push_back({ "Wild Celebi", { "01FB04D2" }, false });
-	m_GamesharkCodes.push_back({ "Shiny Pokemon", { "010730D2" }, true });
-
 	Logger::Info("ROM loaded successfully");
 	return true;
 }
