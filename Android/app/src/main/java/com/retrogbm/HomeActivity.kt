@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
+import com.retrogbm.profile.ProfileOptions
 import com.retrogbm.profile.ProfileRepository
 import com.retrogbm.ui.theme.RetroGBmTheme
 import com.retrogbm.utilities.TimeFormatter
@@ -82,13 +83,25 @@ class HomeActivity : ComponentActivity() {
         val profilePath = absolutePath?.let { "$it/profile.json" } ?: "profile.json"
         // val romPath = absolutePath?.let { "$it/ROMS" }
 
-        var romPath = intent.getStringExtra("ROM_DIRECTORY")
+        val profileData = profileRepository.loadProfileData(profilePath)
+        val romPathIntent = intent.getStringExtra("ROM_DIRECTORY")
+        if (!romPathIntent.isNullOrEmpty()) {
+            if (profileData.options == null){
+                profileData.options = ProfileOptions(
+                    romDirectories = ""
+                )
+            }
+
+            profileData.options?.romDirectories = romPathIntent
+            profileRepository.saveProfileData(profilePath, profileData)
+        }
+
+        var romPath = profileData.options?.romDirectories
+
         if (romPath.isNullOrEmpty()) {
             romPath = absolutePath?.let { "$it/ROMS" }
 
             val files = listFilesInDirectory(romPath!!)
-            val profileData = profileRepository.loadProfileData(profilePath)
-
             files.forEach{ file ->
                 Log.i("ROMFiles", "File: $file")
             }
@@ -116,8 +129,6 @@ class HomeActivity : ComponentActivity() {
         } else {
 
             val files = listRomFilesFromUri(this, Uri.parse(romPath))
-            val profileData = profileRepository.loadProfileData(profilePath)
-
             val previewData = convertFilesToGameData(files)
             val previewMap = previewData.associateBy { it.title }
 

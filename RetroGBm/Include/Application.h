@@ -59,7 +59,7 @@ public:
 	std::unique_ptr<CheatsWindow> CheatsWindow = nullptr;
 
 	// Profile Data
-	std::vector<ProfileData> ProfileDataList;
+	ProfileData ProfileDataList;
 	std::chrono::steady_clock::time_point CurrentTimeStamp;
 	std::string CurrentFilename;
 	std::string Checksum;

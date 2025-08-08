@@ -660,6 +660,9 @@ void MainWindow::OpenDialogRomDirectory()
 	std::string path;
 	if (OpenFileDialogRomDirectory(&path))
 	{
+		m_Application->ProfileDataList.options.rom_directories = path;
+		SaveProfile("profile.json", m_Application->ProfileDataList);
+
 		m_RomPath = path;
 		this->RefreshRomList();
 	}
@@ -1207,7 +1210,13 @@ void MainWindow::CreateRomListWindow()
 		std::vector<std::wstring> times;
 		std::vector<std::wstring> history;
 
-		for (const auto& entry : std::filesystem::directory_iterator(m_RomPath))
+		std::string path;
+		if (!m_Application->ProfileDataList.options.rom_directories.empty())
+		{
+			path = m_Application->ProfileDataList.options.rom_directories;
+		}
+
+		for (const auto& entry : std::filesystem::directory_iterator(path))
 		{
 			std::filesystem::path extensions = entry.path().extension();
 			if (extensions == ".gbc" || extensions == ".gb")
@@ -1217,7 +1226,7 @@ void MainWindow::CreateRomListWindow()
 				std::wstring total_time_played = L"No time played";
 				std::wstring last_played = L"Never played";
 
-				for (auto& gameData : m_Application->ProfileDataList)
+				for (auto& gameData : m_Application->ProfileDataList.gameData)
 				{
 					if (entry.path().filename() == gameData.filename)
 					{
