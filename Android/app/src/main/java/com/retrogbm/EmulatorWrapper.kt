@@ -1,5 +1,7 @@
 package com.retrogbm
 
+import java.util.UUID
+
 enum class JoyPadButton(val buttonCode: Int) {
     A(0),
     B(1),

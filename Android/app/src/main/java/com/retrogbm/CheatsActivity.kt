@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -44,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,16 +54,22 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.retrogbm.ui.theme.RetroGBmTheme
+import java.util.UUID
 
 class CheatsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        cheats = Emulator.emulator.getCheatCodes().toMutableList()
-
-//        cheats = mutableListOf()
-//        cheats.add("Celebi Encounter")
-//        cheats.add("Shiny Pokemon")
+        cheats = Emulator.emulator.getCheatCodes()
+            .map { cheat->
+                CheatCodeItem(
+                    id = UUID.randomUUID().toString(),
+                    name = cheat.name,
+                    code = cheat.code,
+                    enabled = cheat.enabled
+                )
+            }
+            .toMutableStateList()
 
         setContent {
             RetroGBmTheme {
@@ -70,9 +78,70 @@ class CheatsActivity : ComponentActivity() {
         }
     }
 
-    private lateinit var cheats: MutableList<CheatCode>
+    private fun toCheatCodeList(): Array<CheatCode> {
+        return cheats
+            .map { cheat ->
+                CheatCode(
+                    name = cheat.name,
+                    code = cheat.code,
+                    enabled = cheat.enabled
+                )
+            }
+            .toTypedArray()
+    }
 
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+    data class CheatCodeItem(
+        val id: String,
+        var name: String,
+        var code: Array<String>,
+        var enabled: Boolean
+    )
+
+    private lateinit var cheats: MutableList<CheatCodeItem>
+
+    @Composable
+    fun DeleteDialog(title: String,
+                     onCancel: () -> Unit,
+                     onConfirm: () -> Unit) {
+        Dialog(onDismissRequest = {
+            onCancel()
+        }) {
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .width(300.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(title, style = MaterialTheme.typography.titleMedium)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = {
+                            onCancel()
+                        }) {
+                            Text("Cancel")
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Button(onClick = {
+                            onConfirm()
+                        }) {
+                            Text("OK")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @Composable
     fun CheatFormDialog(title: String,
                         cheatName: String,
@@ -129,16 +198,6 @@ class CheatsActivity : ComponentActivity() {
 
                         Button(onClick = {
                             onConfirm(cheatNameInput, cheatCodeInput)
-//                            showAddDialog = false
-//
-//                            cheats.add(
-//                                CheatCode(
-//                                    name = cheatNameInput,
-//                                    code = cheatCodeInput.split("\n").toTypedArray(),
-//                                    enabled = false
-//                                )
-//                            )
-
                         }) {
                             Text("OK")
                         }
@@ -166,14 +225,15 @@ class CheatsActivity : ComponentActivity() {
                     showAddDialog = false
 
                     cheats.add(
-                        CheatCode(
+                        CheatCodeItem(
+                            id = UUID.randomUUID().toString(),
                             name = name,
                             code = code.split("\n").toTypedArray(),
                             enabled = false
                         )
                     )
 
-                    Emulator.emulator.setCheatCodes(cheats.toTypedArray())
+                    Emulator.emulator.setCheatCodes(toCheatCodeList())
                 }
             )
         }
@@ -223,9 +283,11 @@ class CheatsActivity : ComponentActivity() {
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
-                    items(count = cheats.size) { index ->
+                    items(
+                        items = cheats,
+                        key = { it.id }
+                    ) { item ->
 
-                        val item = cheats[index]
                         var checked by remember { mutableStateOf(item.enabled) }
                         var showContextMenu by remember { mutableStateOf(false) }
 
@@ -257,7 +319,7 @@ class CheatsActivity : ComponentActivity() {
                                         onCheckedChange = {
                                             checked = it
                                             item.enabled = it
-                                            Emulator.emulator.setCheatCodes(cheats.toTypedArray())
+                                            Emulator.emulator.setCheatCodes(toCheatCodeList())
                                         }
                                     )
                                     Text(
@@ -279,9 +341,24 @@ class CheatsActivity : ComponentActivity() {
                                         item.name = name
                                         item.code = code.split("\n").toTypedArray()
 
-                                        Emulator.emulator.setCheatCodes(cheats.toTypedArray())
+                                        Emulator.emulator.setCheatCodes(toCheatCodeList())
                                     }
                                 )
+                            }
+
+                            var showDeleteDialog by remember { mutableStateOf(false) }
+                            if (showDeleteDialog) {
+                                DeleteDialog(
+                                    title = "Delete Cheat",
+                                    onCancel = {
+                                        showDeleteDialog = false
+                                    },
+                                    onConfirm = {
+                                        showDeleteDialog = false
+                                        if (cheats.remove(item)) {
+                                            Emulator.emulator.setCheatCodes(toCheatCodeList())
+                                        }
+                                    })
                             }
 
                             if (showContextMenu) {
@@ -309,7 +386,7 @@ class CheatsActivity : ComponentActivity() {
                                             leadingIcon = { Icon(Icons.Filled.DeleteForever, null) },
                                             onClick = {
                                                 showContextMenu = false
-                                                // showDeleteDialog = true
+                                                showDeleteDialog = true
                                             }
                                         )
                                     }
