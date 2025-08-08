@@ -15,6 +15,7 @@ A fast and lightweight Game Boy Color emulator written in C++ for Windows and An
 - Audio emulation
 - Play time tracking
 - Link cable support
+- Gameshark cheat codes
 
 ## Screenshots
 
