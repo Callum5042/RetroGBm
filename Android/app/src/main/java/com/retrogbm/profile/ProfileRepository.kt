@@ -47,7 +47,12 @@ class ProfileRepository {
     }
 
     private fun createNewProfile(file: File): ProfileData {
-        val profile = ProfileData(gameData = mutableListOf())
+        val profile = ProfileData(
+            options = ProfileOptions(
+                romDirectories = ""
+            ),
+            gameData = mutableListOf()
+        )
 
         try {
             // Create new file and write profile
