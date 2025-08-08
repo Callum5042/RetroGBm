@@ -18,6 +18,7 @@
 #include "RetroGBm/Apu.h"
 #include "RetroGBm/HighTimer.h"
 #include "RetroGBm/SaveStateHeader.h"
+#include "RetroGBm/Cheats.h"
 
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 #include "RetroGBm/Cartridge/CartridgeMBC3.h"
@@ -238,6 +239,13 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	md5.addData(filedata);
 	m_FileChecksum = md5.toVector();
 
+	// Set the cartridge data
+	//m_GamesharkCodes.push_back("01FB04D2"); // Celebi
+	//m_GamesharkCodes.push_back("010730D2"); // Shiny
+
+
+	m_GamesharkCodes.push_back({ "Wild Celebi", { "01FB04D2" }, false });
+	m_GamesharkCodes.push_back({ "Shiny Pokemon", { "010730D2" }, true });
 
 	Logger::Info("ROM loaded successfully");
 	return true;
@@ -309,7 +317,7 @@ void Emulator::ToggleTraceLog(bool enable)
 	}
 }
 
-void Emulator::Tick() 
+void Emulator::Tick()
 {
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
 
@@ -894,4 +902,26 @@ void Emulator::SetEmulationSpeedMultipler(float multipler)
 {
 	Logger::Info("Emulation speed changed to " + std::to_string(multipler));
 	m_Ppu->SetSpeedMultipler(multipler);
+}
+
+void Emulator::ApplyCheats()
+{
+	int bank = m_Ram->GetWorkRamBank();
+
+	for (auto& code : m_GamesharkCodes)
+	{
+		if (code.enabled)
+		{
+			for (auto& c : code.code)
+			{
+				const GamesharkToken token = ParseGamesharkCode(c);
+
+				m_Ram->SetWorkRamBank(token.bank);
+				m_Ram->WriteWorkRam(token.address, token.value);
+			}
+		}
+	}
+
+	// Restore the bank to previous value
+	m_Ram->SetWorkRamBank(bank);
 }

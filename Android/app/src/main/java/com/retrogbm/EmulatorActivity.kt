@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.Image
@@ -39,7 +40,9 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -509,6 +512,10 @@ fun Content(emulator: EmulatorWrapper, fileName: String, slot: Int) {
                     val intent = Intent(context, OptionsActivity::class.java)
                     context.startActivity(intent)
                 },
+                onCheats = {
+                    val intent = Intent(context, CheatsActivity::class.java)
+                    context.startActivity(intent)
+                },
                 onScreenshot = {
                     emulator.pause()
 
@@ -553,6 +560,7 @@ fun AppTopBar(
     onLoadState: () -> Unit,
     onRestart: () -> Unit,
     onStop: () -> Unit,
+    onCheats: () -> Unit,
     onOptions: () -> Unit,
     onScreenshot: () -> Unit
 ) {
@@ -709,6 +717,14 @@ fun AppTopBar(
                         }
                     )
                     HorizontalDivider()
+                    DropdownMenuItem(
+                        leadingIcon = { Icon(Icons.Filled.Science, null) },
+                        text = { Text("Cheats") },
+                        onClick = {
+                            showMenu = false
+                            onCheats()
+                        }
+                    )
                     DropdownMenuItem(
                         leadingIcon = { Icon(Icons.Filled.Image, null) },
                         text = { Text("Screenshot") },

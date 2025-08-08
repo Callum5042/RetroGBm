@@ -171,6 +171,7 @@
     <ClCompile Include="CartridgeMBC3Tests.cpp" />
     <ClCompile Include="CartridgeMBC5Tests.cpp" />
     <ClCompile Include="CartridgeROMTests.cpp" />
+    <ClCompile Include="CheatsTests.cpp" />
     <ClCompile Include="CpuTests.cpp" />
     <ClCompile Include="DisplayTests.cpp" />
     <ClCompile Include="InstructionsTests.cpp" />

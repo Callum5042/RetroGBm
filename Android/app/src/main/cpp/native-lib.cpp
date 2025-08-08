@@ -220,6 +220,107 @@ extern "C"
     Java_com_retrogbm_LoggerWrapper_critical(JNIEnv *env, jobject thi, jstring message) {
         Logger::Critical(env->GetStringUTFChars(message, nullptr));
     }
+
+    JNIEXPORT jobjectArray JNICALL
+    Java_com_retrogbm_EmulatorWrapper_getCheatCodes(JNIEnv* env, jobject thiz, jlong emulator_ptr) {
+
+        Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+
+        // Get C++ vector
+        std::vector<CheatCode> codes = emulator->GetGamesharkCodes();
+
+        // Find Kotlin CheatCode class
+        jclass cheatCodeClass = env->FindClass("com/retrogbm/CheatCode");
+        if (!cheatCodeClass) return nullptr;
+
+        // Get constructor: CheatCode(String name, String[] code, boolean enabled)
+        jmethodID ctor = env->GetMethodID(cheatCodeClass, "<init>",
+                                          "(Ljava/lang/String;[Ljava/lang/String;Z)V");
+        if (!ctor) return nullptr;
+
+        // Prepare return array
+        jobjectArray result = env->NewObjectArray((jsize)codes.size(), cheatCodeClass, nullptr);
+
+        for (jsize i = 0; i < (jsize)codes.size(); i++) {
+            // Name
+            jstring name = env->NewStringUTF(codes[i].name.c_str());
+
+            // Code array
+            jclass stringClass = env->FindClass("java/lang/String");
+            jobjectArray codeArray = env->NewObjectArray((jsize)codes[i].code.size(), stringClass, nullptr);
+            for (jsize j = 0; j < (jsize)codes[i].code.size(); j++) {
+                env->SetObjectArrayElement(codeArray, j, env->NewStringUTF(codes[i].code[j].c_str()));
+            }
+
+            // Enabled flag
+            jboolean enabled = (jboolean)codes[i].enabled;
+
+            // Create Kotlin CheatCode object
+            jobject cheatObj = env->NewObject(cheatCodeClass, ctor, name, codeArray, enabled);
+
+            // Set into return array
+            env->SetObjectArrayElement(result, i, cheatObj);
+
+            // Cleanup local refs
+            env->DeleteLocalRef(name);
+            env->DeleteLocalRef(codeArray);
+            env->DeleteLocalRef(cheatObj);
+        }
+
+        return result;
+    }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_EmulatorWrapper_setCheatCodes(JNIEnv* env, jobject thiz, jlong emulator_ptr, jobjectArray cheatCodes) {
+        jsize count = env->GetArrayLength(cheatCodes);
+        std::vector<CheatCode> cppCodes;
+        cppCodes.reserve(count);
+
+        jclass cheatCodeClass = env->FindClass("com/retrogbm/CheatCode");
+        jfieldID fidName = env->GetFieldID(cheatCodeClass, "name", "Ljava/lang/String;");
+        jfieldID fidCode = env->GetFieldID(cheatCodeClass, "code", "[Ljava/lang/String;");
+        jfieldID fidEnabled = env->GetFieldID(cheatCodeClass, "enabled", "Z");
+
+        for (jsize i = 0; i < count; i++) {
+            jobject cheatObj = env->GetObjectArrayElement(cheatCodes, i);
+
+            // Read name
+            jstring jName = (jstring)env->GetObjectField(cheatObj, fidName);
+            const char* cname = env->GetStringUTFChars(jName, nullptr);
+
+            // Read codes array
+            jobjectArray jCodeArray = (jobjectArray)env->GetObjectField(cheatObj, fidCode);
+            jsize codeCount = env->GetArrayLength(jCodeArray);
+            std::vector<std::string> codeVec;
+            codeVec.reserve(codeCount);
+            for (jsize j = 0; j < codeCount; j++) {
+                jstring jCodeStr = (jstring)env->GetObjectArrayElement(jCodeArray, j);
+                const char* ccode = env->GetStringUTFChars(jCodeStr, nullptr);
+                codeVec.emplace_back(ccode);
+                env->ReleaseStringUTFChars(jCodeStr, ccode);
+                env->DeleteLocalRef(jCodeStr);
+            }
+
+            // Read enabled flag
+            jboolean enabled = env->GetBooleanField(cheatObj, fidEnabled);
+
+            // Push to C++ vector
+            CheatCode cc;
+            cc.name = cname;
+            cc.code = std::move(codeVec);
+            cc.enabled = (bool)enabled;
+            cppCodes.push_back(std::move(cc));
+
+            // Cleanup
+            env->ReleaseStringUTFChars(jName, cname);
+            env->DeleteLocalRef(jName);
+            env->DeleteLocalRef(jCodeArray);
+            env->DeleteLocalRef(cheatObj);
+
+            Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+            emulator->SetGamesharkCodes(cppCodes);
+        }
+    }
 }
 
 extern "C"

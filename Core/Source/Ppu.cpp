@@ -6,6 +6,8 @@
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 #include "RetroGBm/HighTimer.h"
 #include "RetroGBm/Dma.h"
+#include "RetroGBm/Ram.h"
+#include "RetroGBm/Cheats.h"
 
 #include <algorithm>
 #include <chrono>
@@ -236,6 +238,9 @@ void Ppu::HBlank()
 
 			// Push pixels
 			m_Display->UpdateDisplay();
+
+			// Gameshark
+			Emulator::Instance->ApplyCheats();
 		}
 		else
 		{
@@ -246,7 +251,6 @@ void Ppu::HBlank()
 				m_Cpu->RequestInterrupt(InterruptFlag::STAT);
 			}
 		}
-
 
 		m_Context.dot_ticks = 0;
 	}

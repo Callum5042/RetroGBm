@@ -1,5 +1,7 @@
 package com.retrogbm
 
+import java.util.UUID
+
 enum class JoyPadButton(val buttonCode: Int) {
     A(0),
     B(1),
@@ -10,6 +12,12 @@ enum class JoyPadButton(val buttonCode: Int) {
     Left(6),
     Right(7)
 }
+
+data class CheatCode(
+    var name: String,
+    var code: Array<String>,
+    var enabled: Boolean
+)
 
 class EmulatorWrapper {
 
@@ -79,6 +87,14 @@ class EmulatorWrapper {
         resume(emulatorPtr)
     }
 
+    fun getCheatCodes(): Array<CheatCode> {
+        return getCheatCodes(emulatorPtr)
+    }
+
+    fun setCheatCodes(codes: Array<CheatCode>) {
+        setCheatCodes(emulatorPtr, codes)
+    }
+
     private external fun createEmulator(displayOutputPtr: Long, soundOutputPtr: Long): Long
     private external fun loadRom(emulatorPtr: Long, path: String)
     private external fun loadRomFromByteArray(emulatorPtr: Long, data: ByteArray)
@@ -99,4 +115,7 @@ class EmulatorWrapper {
     private external fun pause(emulatorPtr: Long)
     private external fun resume(emulatorPtr: Long)
     private external fun setEmulationSpeedMultiplier(emulatorPtr: Long, speedMultiplier: Float)
+
+    private external fun getCheatCodes(emulatorPtr: Long): Array<CheatCode>
+    private external fun setCheatCodes(emulatorPtr: Long, codes: Array<CheatCode>)
 }

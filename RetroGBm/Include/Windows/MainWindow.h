@@ -79,10 +79,11 @@ private:
 	static const UINT m_MenuFileRefreshId = 106;
 
 	HMENU m_ToolsMenuItem = NULL;
-	static const UINT m_MenuToolsCpuRegisters = 204;
 	static const UINT m_MenuToolsTilemap = 201;
 	static const UINT m_MenuToolsTracelog = 202;
 	static const UINT m_MenuToolsCartridgeInfo = 203;
+	static const UINT m_MenuToolsCpuRegisters = 204;
+	static const UINT m_MenuToolsCheats = 205;
 
 	HMENU m_EmulationMenuItem = NULL;
 	static const UINT m_MenuEmulationPausePlay = 301;

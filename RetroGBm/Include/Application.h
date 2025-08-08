@@ -9,6 +9,7 @@
 #include "Windows/TileWindow.h"
 #include "Windows/CartridgeInfoWindow.h"
 #include "Windows/CpuRegistersWindow.h"
+#include "Windows/CheatsWindow.h"
 
 #include "Render/RenderDevice.h"
 #include "Render/RenderShader.h"
@@ -53,6 +54,9 @@ public:
 	
 	// Tools Windows
 	std::unique_ptr<CpuRegisterWindow> CpuRegistersWindow = nullptr;
+
+	// Cheats Window
+	std::unique_ptr<CheatsWindow> CheatsWindow = nullptr;
 
 	// Profile Data
 	std::vector<ProfileData> ProfileDataList;

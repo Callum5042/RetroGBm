@@ -483,6 +483,9 @@
     <ClInclude Include="Include\RetroGBm\INetworkOutput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Include\RetroGBm\Cheats.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Cpu.cpp">
@@ -570,6 +573,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Apu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Cheats.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
