@@ -163,7 +163,7 @@ void Application::StopEmulator()
 
 	// Find the game profile entry
 	bool found_entry = false;
-	for (auto& profileData : ProfileDataList)
+	for (auto& profileData : ProfileDataList.gameData)
 	{
 		if (profileData.checksum == Checksum)
 		{
@@ -177,13 +177,13 @@ void Application::StopEmulator()
 	// If we don't find a profile entry then add one
 	if (!found_entry)
 	{
-		ProfileData new_data;
+		ProfileGameData new_data;
 		new_data.filename = CurrentFilename;
 		new_data.totalPlayTimeMinutes += play_time_minutes;
 		new_data.lastPlayed = today_date;
 		new_data.checksum = Checksum;
 
-		ProfileDataList.push_back(new_data);
+		ProfileDataList.gameData.push_back(new_data);
 	}
 
 	// Save profile

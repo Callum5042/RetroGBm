@@ -4,7 +4,12 @@
 #include <vector>
 #include <filesystem>
 
-struct ProfileData
+struct ProfileOptions
+{
+	std::string rom_directories = "RomData";
+};
+
+struct ProfileGameData
 {
 	std::string checksum;
 	std::string filename;
@@ -12,6 +17,12 @@ struct ProfileData
 	int totalPlayTimeMinutes = 0;
 };
 
-std::vector<ProfileData> ParseProfile(const std::filesystem::path& path);
+struct ProfileData
+{
+	ProfileOptions options;
+	std::vector<ProfileGameData> gameData;
+};
 
-void SaveProfile(const std::filesystem::path& path, const std::vector<ProfileData>& data);
+ProfileData ParseProfile(const std::filesystem::path& path);
+
+void SaveProfile(const std::filesystem::path& path, const ProfileData& data);

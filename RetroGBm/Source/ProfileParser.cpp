@@ -8,19 +8,41 @@
 
 using namespace simdjson;
 
-std::vector<ProfileData> ParseProfile(const std::filesystem::path& path)
+// JSON - Must be first
+void to_json(nlohmann::json& j, const ProfileGameData& p)
 {
+	j = nlohmann::json
+	{
+		{"checksum", p.checksum},
+		{"fileName", p.filename},
+		{"lastPlayed", p.lastPlayed},
+		{"totalPlayTimeMinutes", p.totalPlayTimeMinutes}
+	};
+}
+
+void to_json(nlohmann::json& j, const ProfileOptions& p)
+{
+	j = nlohmann::json
+	{
+		{"romDirectories", p.rom_directories},
+	};
+}
+
+ProfileData ParseProfile(const std::filesystem::path& path)
+{
+	ProfileData profile;
+
 	if (!std::filesystem::exists("profile.json"))
 	{
 		Logger::Warning("profile.json does not exist");
-		return std::vector<ProfileData>();
+		return profile;
 	}
 
 	// Load profile.json
 	simdjson_result<padded_string> json_result = padded_string::load("profile.json");
 	if (json_result.error() != error_code::SUCCESS)
 	{
-		return std::vector<ProfileData>();
+		return profile;
 	}
 
 	const padded_string& json = json_result.value();
@@ -33,13 +55,13 @@ std::vector<ProfileData> ParseProfile(const std::filesystem::path& path)
 	if (gameData.error() != error_code::SUCCESS)
 	{
 		Logger::Error("Unable to parse JSON 'gameData'");
-		return std::vector<ProfileData>();
+		return profile;
 	}
 
-	std::vector<ProfileData> profileDataList;
+	std::vector<ProfileGameData> profileDataList;
 	for (auto game : gameData.get_array())
 	{
-		ProfileData profileData;
+		ProfileGameData profileData;
 
 		// checksum
 		auto checksumJson = game.find_field("checksum");
@@ -100,24 +122,39 @@ std::vector<ProfileData> ParseProfile(const std::filesystem::path& path)
 		profileDataList.push_back(profileData);
 	}
 
-	return profileDataList;
-}
+	// Options
+	ProfileOptions options;
 
-void to_json(nlohmann::json& j, const ProfileData& p)
-{
-	j = nlohmann::json
+	simdjson_result<fallback::ondemand::value> optionsJson = doc.find_field("options");
+	if (optionsJson.error() == error_code::SUCCESS)
 	{
-		{"checksum", p.checksum},
-		{"fileName", p.filename},
-		{"lastPlayed", p.lastPlayed},
-		{"totalPlayTimeMinutes", p.totalPlayTimeMinutes}
-	};
+		// Options rom directories
+		auto romDirectoriesJson = optionsJson.find_field("romDirectories");
+		if (romDirectoriesJson.error() == error_code::SUCCESS)
+		{
+			auto& romDirectories = romDirectoriesJson.value();
+			if (romDirectories.is_string())
+			{
+				options.rom_directories = romDirectories.get_string().value();
+			}
+		}
+		else
+		{
+			Logger::Error("Unable to parse JSON 'romDirectories'");
+		}
+	}
+
+	// Return 
+	profile.options = options;
+	profile.gameData = profileDataList;
+	return profile;
 }
 
-void SaveProfile(const std::filesystem::path& path, const std::vector<ProfileData>& data)
+void SaveProfile(const std::filesystem::path& path, const ProfileData& data)
 {
 	nlohmann::json j;
-	j["gameData"] = data;
+	j["options"] = data.options;
+	j["gameData"] = data.gameData;
 
 	std::string json = j.dump(2);
 
