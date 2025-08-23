@@ -529,19 +529,6 @@ void Ppu::FetchWindowTileId()
 		{
 			if (IsWindowInView(m_Context.pipeline.fetch_x))
 			{
-				// FLUSH PIPELINE THING
-				if (!m_Context.pipeline.fetch_window)
-				{
-					// Set fetch to window and destroy pipeline
-					m_Context.pipeline.fetch_window = true;
-					m_Context.pipeline.pipeline_state = FetchState::Tile;
-
-					m_Context.pipeline.fifo_x -= static_cast<int>(m_Context.pipeline.pixel_queue.size());
-					m_Context.pipeline.fetch_x -= static_cast<int>(m_Context.pipeline.pixel_queue.size());
-
-					m_Context.pipeline.pixel_queue.clear();
-				}
-
 				uint16_t base_address = m_Display->GetWindowTileBaseAddress();
 
 				// Divide by 8
@@ -567,12 +554,8 @@ void Ppu::FetchWindowTileId()
 				m_Context.pipeline.background_window_attribute.flip_x = static_cast<bool>((attribute >> 5) & 0x1);
 				m_Context.pipeline.background_window_attribute.flip_y = static_cast<bool>((attribute >> 6) & 0x1);
 				m_Context.pipeline.background_window_attribute.priority = static_cast<bool>((attribute >> 7) & 0x1);
-
-				return;
 			}
 		}
-
-		m_Context.pipeline.fetch_window = false;
 	}
 }
 
