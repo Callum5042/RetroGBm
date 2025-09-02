@@ -276,6 +276,7 @@ class EmulatorActivity : ComponentActivity() {
         val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
 
         LoggerWrapper().info("Loading ROM file: $absolutePath/$fileName")
+        val sharedPreferences = this.baseContext.getSharedPreferences("retrogbm_settings_prefs", Context.MODE_PRIVATE)
 
         // Set battery path and possible create the folder
         val batteryPath = absolutePath?.let { "$it/RomData" }!!
@@ -285,9 +286,12 @@ class EmulatorActivity : ComponentActivity() {
             Log.i("LoadROM", "Created folder $batteryPath")
         }
 
+        // Get boot rom options
+        val skipBootRom = sharedPreferences.getBoolean("skip_boot_rom", true)
+
         // Load ROM
         val batteryFilePath = batteryPath.let { "$it/$fileName.save" }
-        Emulator.emulator.loadRom(bytes, batteryFilePath)
+        Emulator.emulator.loadRom(bytes, batteryFilePath, skipBootRom)
 
         // Store fileName
         this.fileName = fileName
@@ -295,7 +299,6 @@ class EmulatorActivity : ComponentActivity() {
         this.checksum = calculateFileChecksum(bytes)
 
         // Audio
-        val sharedPreferences = this.baseContext.getSharedPreferences("retrogbm_settings_prefs", Context.MODE_PRIVATE)
         val enableSound = sharedPreferences.getBoolean("enable_sound", true)
         Emulator.emulator.soundOutput.toggleAudio(enableSound)
 

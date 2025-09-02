@@ -118,6 +118,10 @@ fun ListContent() {
         mutableStateOf(sharedPreferences.getBoolean("enable_sound", true))
     }
 
+    var skipBootRom by remember {
+        mutableStateOf(sharedPreferences.getBoolean("skip_boot_rom", true))
+    }
+
     val absolutePath = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
     val romDirectory = absolutePath.let { "$it/ROMS" }
     val saveStateDirectory = absolutePath.let { "$it/SaveStates" }
@@ -277,6 +281,36 @@ fun ListContent() {
                             enableHapticFeedback = it
                             with (sharedPreferences.edit()) {
                                 putBoolean("haptic_feedback", enableHapticFeedback)
+                                apply()
+                            }
+                        }
+                    )
+                }
+            }
+        }
+        item {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 0.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Skip Boot ROM",
+                        fontSize = 18.sp,
+                        color = titleColor
+                    )
+
+                    Switch(
+                        checked = skipBootRom,
+                        onCheckedChange = {
+                            skipBootRom = it
+                            with (sharedPreferences.edit()) {
+                                putBoolean("skip_boot_rom", skipBootRom)
                                 apply()
                             }
                         }
