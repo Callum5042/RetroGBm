@@ -486,6 +486,9 @@
     <ClInclude Include="Include\RetroGBm\Cheats.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Include\RetroGBm\Bootrom.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Cpu.cpp">
