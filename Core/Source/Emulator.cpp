@@ -605,14 +605,15 @@ uint8_t Emulator::ReadBus(uint16_t address)
 		// Boot ROM mapping
 		if (m_EnableBootRom && m_MapBootRom)
 		{
-			if (m_Cartridge->GetCartridgeData().colour_mode == ColourModeV2::DMG)
+			// TODO: May want an option to use DMG boot rom for only DMG mode
+			/*if (m_Cartridge->GetCartridgeData().colour_mode == ColourModeV2::DMG)
 			{
 				if (m_MapBootRom && address <= 0x00FF)
 				{
 					return dmg_boot[address];
 				}
 			}
-			else
+			else*/
 			{
 				if (address <= 0x00FF || (address >= 0x0200 && address < 0x0900))
 				{
