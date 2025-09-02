@@ -99,6 +99,7 @@ private:
 	static const UINT m_MenuOptionsNetworkHost = 404;
 	static const UINT m_MenuOptionsNetworkConnect = 405;
 	static const UINT m_MenuOptionsNetworkDisconnect = 406;
+	static const UINT m_MenuOptionsSkipBootRom = 407;
 
 	HMENU m_SaveSlotMenuItem = NULL;
 	static const UINT m_MenuSaveSlot1 = 2100;

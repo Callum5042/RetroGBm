@@ -19,6 +19,7 @@
 #include "RetroGBm/HighTimer.h"
 #include "RetroGBm/SaveStateHeader.h"
 #include "RetroGBm/Cheats.h"
+#include "RetroGBm/Bootrom.h"
 
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 #include "RetroGBm/Cartridge/CartridgeMBC3.h"
@@ -120,6 +121,12 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	m_Cpu->Init();
 	m_Timer->Init();
 	m_Ppu->Init();
+
+	// Run Boot ROM
+	if (m_EnableBootRom)
+	{
+		m_Cpu->ProgramCounter = 0;
+	}
 
 	// Load RAM if cartridge has a battery
 	if (m_Cartridge->HasBattery())
@@ -327,11 +334,6 @@ void Emulator::Tick()
 
 	m_CurrentOpCode = opcode;
 
-	/*if (current_pc == 0x0048 || current_pc == 0x00bb)
-	{
-		int tmp = 1;
-	}*/
-
 	// Execute
 	if (!m_Halted)
 	{
@@ -516,10 +518,6 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 		// Transfer started
 		if (value & 0x80)
 		{
-			// Pass 0xFF to pad the data as sending 0x00 will cause the serial to hang
-			/*uint8_t data_array[2] = { 0xFF, m_SerialData[0] };
-			send(m_PeerSocket, reinterpret_cast<const char*>(data_array), sizeof(data_array), 0);*/
-
 			m_NetworkOutput->SendData(m_SerialData[0]);
 		}
 
@@ -557,6 +555,11 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	else if (address == 0xFF4F)
 	{
 		m_Ppu->SetVideoRamBank(value);
+		return;
+	}
+	else if (address == 0xFF50)
+	{
+		m_MapBootRom = false;
 		return;
 	}
 	else if (address == 0xFF51 || address == 0xFF52)
@@ -599,6 +602,26 @@ uint8_t Emulator::ReadBus(uint16_t address)
 {
 	if (address >= 0x0000 && address <= 0x7FFF)
 	{
+		// Boot ROM mapping
+		if (m_EnableBootRom && m_MapBootRom)
+		{
+			// TODO: May want an option to use DMG boot rom for only DMG mode
+			/*if (m_Cartridge->GetCartridgeData().colour_mode == ColourModeV2::DMG)
+			{
+				if (m_MapBootRom && address <= 0x00FF)
+				{
+					return dmg_boot[address];
+				}
+			}
+			else*/
+			{
+				if (address <= 0x00FF || (address >= 0x0200 && address < 0x0900))
+				{
+					return cgb_boot[address];
+				}
+			}
+		}
+
 		// ROM Data
 		return m_Cartridge->Read(address);
 	}

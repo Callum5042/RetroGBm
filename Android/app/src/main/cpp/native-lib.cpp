@@ -321,6 +321,12 @@ extern "C"
             emulator->SetGamesharkCodes(cppCodes);
         }
     }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_EmulatorWrapper_setBootRom(JNIEnv *env, jobject thiz, jlong emulator_ptr, jboolean enabled) {
+        Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+        emulator->SetBootRom(enabled);
+    }
 }
 
 extern "C"
