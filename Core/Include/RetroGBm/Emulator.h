@@ -147,6 +147,9 @@ public:
 		m_GamesharkCodes = codes;
 	}
 
+	bool m_EnableBootRom = true;
+	bool m_MapBootRom = true;
+
 private:
 	std::mutex m_EmulatorMutex;
 	bool m_Paused = false;
