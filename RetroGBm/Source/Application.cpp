@@ -101,6 +101,9 @@ void Application::LoadRom(const std::string& file)
 
 	m_Emulator = std::make_unique<Emulator>(m_DisplayOutput.get(), SoundOutput.get(), m_NetworkOutput.get());
 
+	bool enable_bootrom = !SkipBootRom;
+	m_Emulator->SetBootRom(enable_bootrom);
+
 	std::filesystem::path battery_path = "RomData";
 	std::filesystem::create_directories(battery_path);
 	std::string filename = std::filesystem::path(file).filename().string();

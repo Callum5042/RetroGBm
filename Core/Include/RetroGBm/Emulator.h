@@ -147,8 +147,8 @@ public:
 		m_GamesharkCodes = codes;
 	}
 
-	bool m_EnableBootRom = true;
-	bool m_MapBootRom = true;
+	inline bool GetBootRomEnabled() const { return m_EnableBootRom; }
+	inline void SetBootRom(bool enable) { m_EnableBootRom = enable; }
 
 private:
 	std::mutex m_EmulatorMutex;
@@ -187,4 +187,8 @@ private:
 
 	// File Checksum
 	std::vector<uint8_t> m_FileChecksum;
+
+	// Boot ROM
+	bool m_EnableBootRom = false;
+	bool m_MapBootRom = true;
 };

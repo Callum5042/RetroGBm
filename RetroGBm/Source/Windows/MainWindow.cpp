@@ -347,7 +347,7 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			this->TakeScreenshot();
 			break;
 
-			// Options Menu
+		// Options Menu
 		case m_MenuOptionsEnableAudio:
 		{
 			m_Application->SoundOutput->EnableAudio = !m_Application->SoundOutput->EnableAudio;
@@ -400,6 +400,25 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			else
 			{
 				CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsLinearFilter, MF_BYCOMMAND | MF_UNCHECKED);
+			}
+
+			break;
+		}
+
+		case m_MenuOptionsSkipBootRom:
+		{
+			/*bool bootrom_enabled = m_Application->GetEmulator()->GetBootRomEnabled();
+			m_Application->GetEmulator()->SetBootRom(!bootrom_enabled);*/
+
+			m_Application->SkipBootRom = !m_Application->SkipBootRom;
+
+			if (m_Application->SkipBootRom)
+			{
+				CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsSkipBootRom, MF_BYCOMMAND | MF_CHECKED);
+			}
+			else
+			{
+				CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsSkipBootRom, MF_BYCOMMAND | MF_UNCHECKED);
 			}
 
 			break;
@@ -1122,6 +1141,7 @@ void MainWindow::CreateMenuBar()
 	AppendMenuW(m_OptionsMenuItem, MF_CHECKED, m_MenuOptionsEnableAudio, L"Enable Audio");
 	AppendMenuW(m_OptionsMenuItem, MF_CHECKED, m_MenuOptionsStretchDisplay, L"Stretch Display");
 	AppendMenuW(m_OptionsMenuItem, MF_UNCHECKED, m_MenuOptionsLinearFilter, L"Linear Filtering");
+	AppendMenuW(m_OptionsMenuItem, (m_Application->SkipBootRom ? MF_CHECKED : MF_UNCHECKED), m_MenuOptionsSkipBootRom, L"Skip Boot ROM");
 	AppendMenuW(m_OptionsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_OptionsMenuItem, MF_UNCHECKED, m_MenuOptionsNetworkHost, L"Network Host");
 	AppendMenuW(m_OptionsMenuItem, MF_UNCHECKED, m_MenuOptionsNetworkConnect, L"Network Connect");

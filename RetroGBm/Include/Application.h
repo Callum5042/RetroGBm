@@ -73,6 +73,9 @@ public:
 	std::unique_ptr<Render::RenderDevice> m_RenderDevice = nullptr;
 	std::unique_ptr<Render::RenderShader> m_RenderShader = nullptr;
 
+	// Boot ROM
+	bool SkipBootRom = false;
+
 private:
 	void Init();
 	void Run();
