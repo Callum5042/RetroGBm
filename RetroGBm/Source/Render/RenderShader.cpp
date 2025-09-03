@@ -122,6 +122,12 @@ void Render::RenderShader::LoadPixelShader()
 
 void Render::RenderShader::UpdateSize(int width, int height, bool stretch)
 {
+	if (width <= 0 || height <= 0)
+	{
+		// Don't try to resize if the window is too small
+		return;
+	}
+
 	Render::CameraBuffer buffer = {};
 
 	XMMATRIX world = XMMatrixIdentity();

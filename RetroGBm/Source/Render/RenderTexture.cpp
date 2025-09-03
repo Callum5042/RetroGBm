@@ -33,14 +33,6 @@ void Render::RenderTexture::Create(int width, int height)
 		{ +1.0f, -1.0f, 0.0f, +1.0f, +1.0f }, // Bottom right vertex
 	};
 
-	//std::vector<Vertex> vertices =
-	//{
-	//	{ 0.0f, +600.0f, 0.0f, -0.0f, -0.0f }, // Top left vertex
-	//	{ +800.0f, +600.0f, 0.0f, +1.0f, -0.0f }, // Top right vertex
-	//	{ 0.0f, 0.0f, 0.0f, -0.0f, +1.0f }, // Bottom left vertex
-	//	{ +800.0f, 0.0f, 0.0f, +1.0f, +1.0f }, // Bottom right vertex
-	//};
-
 	m_VertexCount = static_cast<UINT>(vertices.size());
 
 	// Index data
