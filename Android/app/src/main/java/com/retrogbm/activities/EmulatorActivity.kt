@@ -1,4 +1,4 @@
-package com.retrogbm
+package com.retrogbm.activities
 
 import android.app.Activity
 import android.app.AlertDialog
@@ -32,7 +32,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.Image
@@ -42,7 +41,6 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -87,6 +85,10 @@ import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.retrogbm.EmulatorWrapper
+import com.retrogbm.JoyPadButton
+import com.retrogbm.LoggerWrapper
+import com.retrogbm.R
 import com.retrogbm.profile.ProfileGameData
 import com.retrogbm.profile.ProfileRepository
 import com.retrogbm.ui.theme.RetroGBmTheme
@@ -125,15 +127,6 @@ class EmulatorActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Load the ROM from the intent set by the home page
-        val title = intent.getStringExtra("ROM_TITLE")
-        if (!title.isNullOrEmpty()) {
-            Emulator.emulator = EmulatorWrapper()
-            val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
-            val path = absolutePath!! + "/ROMS/" + title
-            loadRom(Uri.fromFile(File(path)), title)
-        }
 
         // Load the ROM from the Uri
         val romUriString = intent?.getStringExtra("ROM_URI")
@@ -276,7 +269,9 @@ class EmulatorActivity : ComponentActivity() {
         val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
 
         LoggerWrapper().info("Loading ROM file: $absolutePath/$fileName")
-        val sharedPreferences = this.baseContext.getSharedPreferences("retrogbm_settings_prefs", Context.MODE_PRIVATE)
+        val sharedPreferences = this.baseContext.getSharedPreferences("retrogbm_settings_prefs",
+            MODE_PRIVATE
+        )
 
         // Set battery path and possible create the folder
         val batteryPath = absolutePath?.let { "$it/RomData" }!!
