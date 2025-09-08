@@ -10,4 +10,5 @@
     <string name="title_activity_home">HomeActivity</string>
     <string name="title_activity_emulator">EmulatorActivity</string>
     <string name="title_activity_options">OptionsActivity</string>
+    <string name="title_activity_emulator_v2">EmulatorActivityV2</string>
 </resources>

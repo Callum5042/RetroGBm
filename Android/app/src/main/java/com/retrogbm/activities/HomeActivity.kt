@@ -236,7 +236,7 @@ fun Content(previewRomData: ProfileRomData) {
         contract = ActivityResultContracts.OpenDocument(),
         onResult = { uri ->
             if (uri != null) {
-                val intent = Intent(context, EmulatorActivity::class.java)
+                val intent = Intent(context, EmulatorActivityV2::class.java)
                 intent.putExtra("ROM_URI", uri.toString())
                 context.startActivity(intent)
             }
@@ -317,7 +317,7 @@ fun Content(previewRomData: ProfileRomData) {
                                 onClick = {
                                     showMenu = false
 
-                                    val intent = Intent(context, OptionsActivity::class.java)
+                                    val intent = Intent(context, EmulatorActivityV2::class.java)
                                     context.startActivity(intent)
                                 }
                             )
@@ -379,7 +379,7 @@ fun RomInfoCard(title: String, time: String, date: String, fileUri: Uri?) {
         modifier = Modifier
             .padding(horizontal = 0.dp)
             .clickable {
-                val intent = Intent(context, EmulatorActivity::class.java)
+                val intent = Intent(context, EmulatorActivityV2::class.java)
 
                 if (fileUri != null) {
                     intent.putExtra("ROM_URI", fileUri.toString())

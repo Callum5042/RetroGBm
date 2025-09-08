@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.retrogbm.CheatCode
 import com.retrogbm.R
+import com.retrogbm.models.Emulator
 import com.retrogbm.ui.theme.RetroGBmTheme
 import java.util.UUID
 
