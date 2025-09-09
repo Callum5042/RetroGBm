@@ -7,7 +7,6 @@ import android.view.MotionEvent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -294,7 +293,6 @@ fun EmulatorScreen(innerPadding: PaddingValues, viewModel: EmulatorViewModel = v
     Box(
         modifier = Modifier
             .fillMaxHeight()
-            .background(Color(0xFF1B2328))
             .padding(innerPadding)
     ) {
         val configuration = LocalConfiguration.current
