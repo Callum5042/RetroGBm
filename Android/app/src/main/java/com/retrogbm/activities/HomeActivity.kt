@@ -317,7 +317,7 @@ fun Content(previewRomData: ProfileRomData) {
                                 onClick = {
                                     showMenu = false
 
-                                    val intent = Intent(context, EmulatorActivityV2::class.java)
+                                    val intent = Intent(context, OptionsActivity::class.java)
                                     context.startActivity(intent)
                                 }
                             )
