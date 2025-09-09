@@ -58,10 +58,13 @@ class EmulatorActivityV2 : ComponentActivity() {
 
         // Load the ROM from the Uri
         val romUriString = intent?.getStringExtra("ROM_URI")
-        if (!romUriString.isNullOrEmpty() && !viewModel.isActive()) {
+        if (!romUriString.isNullOrEmpty()) {
             val romUri = romUriString.toUri()
             fileName = getFileName(this, romUri) ?: return
-            loadRom(romUri, fileName)
+
+            if (!viewModel.isActive()) {
+                loadRom(romUri, fileName)
+            }
         }
 
         // Observe the app lifecycle
@@ -266,6 +269,10 @@ class EmulatorActivityV2 : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
+        if (isChangingConfigurations) {
+            return
+        }
+
         val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
         handleSaveState(viewModel.emulator, absolutePath!!, fileName, "AutoSave", SaveStateType.Save, this)
         Log.w("RetroGBm", "AutoSaved Successfully")
@@ -285,15 +292,15 @@ class EmulatorActivityV2 : ComponentActivity() {
         ProcessLifecycleOwner.get().lifecycle.removeObserver(this.lifecycleObserver)
     }
 
-//    override fun onResume() {
-//        super.onResume()
-//        viewModel.emulator.resume()
-//    }
-//
-//    override fun onPause() {
-//        super.onPause()
-//        viewModel.emulator.stop()
-//    }
+    override fun onResume() {
+        super.onResume()
+        viewModel.emulator.resume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        viewModel.emulator.pause()
+    }
 
     private fun configureLifecycle() {
         val absolutePath = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
