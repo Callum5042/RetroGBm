@@ -3,7 +3,6 @@ package com.retrogbm.composables
 import android.app.Activity
 import android.content.Context
 import android.content.res.Configuration
-import android.util.Log
 import android.view.MotionEvent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -80,7 +78,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.retrogbm.JoyPadButton
 import com.retrogbm.R
-import com.retrogbm.activities.EmulatorActivityV2
+import com.retrogbm.activities.EmulatorActivity
 import com.retrogbm.models.EmulatorViewModel
 import com.retrogbm.ui.theme.RetroGBmTheme
 import kotlinx.coroutines.Job
@@ -107,7 +105,7 @@ fun EmulatorMenuBar(
 
 ) {
     var showMenu by remember { mutableStateOf(false) }
-    val activity = LocalContext.current as EmulatorActivityV2
+    val activity = LocalContext.current as EmulatorActivity
 
     val sharedPreferences = remember {
         activity.getSharedPreferences("retrogbm_settings_prefs", Context.MODE_PRIVATE)
@@ -299,7 +297,7 @@ fun EmulatorScreen(innerPadding: PaddingValues, viewModel: EmulatorViewModel = v
     ) {
         val configuration = LocalConfiguration.current
 
-        val activity = LocalContext.current as EmulatorActivityV2
+        val activity = LocalContext.current as EmulatorActivity
         val hapticFeedback = LocalHapticFeedback.current
 
         val sharedPreferences = remember {
@@ -512,7 +510,7 @@ private fun detectDirection(x: Float, y: Float, centerX: Float, centerY: Float):
 @Composable
 fun EmulatorControlsPortrait(viewModel: EmulatorViewModel = viewModel()) {
 
-    val activity = LocalContext.current as EmulatorActivityV2
+    val activity = LocalContext.current as EmulatorActivity
     val hapticFeedback = LocalHapticFeedback.current
 
     val sharedPreferences = remember {
@@ -698,7 +696,7 @@ fun EmulatorButton(
     onRelease:() -> Unit,
     modifier: Modifier
 ) {
-    val activity = LocalContext.current as EmulatorActivityV2
+    val activity = LocalContext.current as EmulatorActivity
     val hapticFeedback = LocalHapticFeedback.current
 
     val sharedPreferences = remember {
