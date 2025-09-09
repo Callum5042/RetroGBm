@@ -1,4 +1,4 @@
-package com.retrogbm
+package com.retrogbm.activities
 
 import android.app.Activity
 import android.content.Context
@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.os.Environment
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -42,6 +41,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.retrogbm.models.Emulator
 import com.retrogbm.ui.theme.RetroGBmTheme
 
 class OptionsActivity : ComponentActivity() {

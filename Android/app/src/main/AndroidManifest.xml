@@ -14,17 +14,17 @@
         android:theme="@style/Theme.RetroGBm"
         tools:targetApi="31">
         <activity
-            android:name=".OptionsActivity"
+            android:name=".activities.OptionsActivity"
             android:exported="false"
             android:label="@string/title_activity_options"
             android:theme="@style/Theme.RetroGBm" />
         <activity
-            android:name=".EmulatorActivity"
+            android:name=".activities.EmulatorActivity"
             android:exported="false"
             android:label="@string/title_activity_emulator"
             android:theme="@style/Theme.RetroGBm" />
         <activity
-            android:name=".HomeActivity"
+            android:name=".activities.HomeActivity"
             android:exported="true"
             android:label="@string/app_name">
             <intent-filter>
@@ -34,10 +34,13 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".SaveStateActivity"
+            android:name=".activities.SaveStateActivity"
             android:label="@string/app_name" />
         <activity
-            android:name=".CheatsActivity"
+            android:name=".activities.CheatsActivity"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".activities.TestActivity"
             android:label="@string/app_name" />
     </application>
 
