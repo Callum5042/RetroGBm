@@ -17,10 +17,10 @@ data class ProfileGameData(
     var checksum: String,
     var lastPlayed: Date?,
     var totalPlayTimeMinutes: Int,
-    var cheats: Array<ProfileCheatCode>
+    var cheats: MutableList<ProfileCheatCode>? = mutableListOf()
 )
 
 data class ProfileData(
     var options: ProfileOptions?,
-    val gameData: MutableList<ProfileGameData>
+    val gameData: MutableList<ProfileGameData> = mutableListOf()
 )

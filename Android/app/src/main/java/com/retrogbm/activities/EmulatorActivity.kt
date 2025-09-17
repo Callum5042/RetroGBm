@@ -398,8 +398,8 @@ class EmulatorActivity : ComponentActivity() {
 
         val profileGameData = profileData.gameData.find { p -> p.checksum == this.checksum }
 
-        if (profileGameData != null) {
-        val cheats = profileGameData.cheats.map { it ->
+        profileGameData?.cheats?.let { cheats ->
+            val cheats = cheats.map { it ->
                 CheatCode(
                     name = it.name,
                     code = it.code.split("\r\n").toTypedArray(),
@@ -465,7 +465,7 @@ class EmulatorActivity : ComponentActivity() {
                 lastPlayed = null,
                 totalPlayTimeMinutes = 0,
                 fileName = fileName,
-                cheats = arrayOf()
+                cheats = mutableListOf()
             )
 
             profileData.gameData.add(profileGameData)
@@ -484,7 +484,7 @@ class EmulatorActivity : ComponentActivity() {
                 name = it.name,
                 code = it.code.joinToString(separator = "\r\n")
             )
-        }.toTypedArray()
+        }.toMutableList()
 
         // Attempt to save the last played to the profile
         profileRepository.saveProfileData(profilePath, profileData)
