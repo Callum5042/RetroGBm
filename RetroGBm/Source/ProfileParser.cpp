@@ -82,8 +82,8 @@ ProfileData ParseProfile(const std::filesystem::path& path)
 
 			for (auto cheatJson : cheatsArray)
 			{
-				auto nameField = cheatJson.find_field("name");
 				auto codeField = cheatJson.find_field("code");
+				auto nameField = cheatJson.find_field("name");
 
 				std::string name, code;
 

@@ -148,8 +148,8 @@ void Application::LoadRom(const std::string& file)
 	std::filesystem::create_directories(battery_path);
 	std::string filename = std::filesystem::path(file).filename().string();
 	battery_path.append(filename + ".save");
-	m_Emulator->SetBatteryPath(battery_path.string());
 
+	m_Emulator->SetBatteryPath(battery_path.string());
 	Logger::Info("Loading ROM file: " + file);
 	m_Emulator->ToggleTraceLog(tracelog);
 	m_Emulator->LoadRom(file);
@@ -180,6 +180,9 @@ void Application::LoadRom(const std::string& file)
 			break;
 		}
 	}
+
+	// Automatically set some default cheat codes - Currently not enabled
+	// SetDefaultCheatCodes();
 
 	// Emulator runs on a background thread
 	m_EmulatorThread = std::thread([&]
@@ -414,6 +417,30 @@ void Application::LoadState(const std::string& path)
 		catch (const std::exception& ex)
 		{
 			MessageBoxA(NULL, ex.what(), "Error", MB_OK | MB_ICONERROR);
+		}
+	}
+}
+
+void Application::SetDefaultCheatCodes()
+{
+	std::map<std::string, std::vector<CheatCode>> default_codes;
+
+	// Pokemon Crystal
+	default_codes["fdcc3c8c43813cf8731fc037d2a6d191bac75439c34b24ba1c27526e6acdc8a2"] =
+	{
+		{
+			"Shiny Pokemon",
+			{ 
+				"910730D2",
+			},
+		},
+	};
+
+	if (default_codes.find(Checksum) != default_codes.end())
+	{
+		if (m_Emulator->m_GamesharkCodes.empty())
+		{
+			m_Emulator->SetGamesharkCodes(default_codes[Checksum]);
 		}
 	}
 }

@@ -507,6 +507,9 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 							{
 								Emulator::Instance->m_GamesharkCodes[iItem].enabled = isChecked;
 
+								std::string cheat_name = Emulator::Instance->m_GamesharkCodes[iItem].name;
+								Logger::Info("Toggled cheat: " + cheat_name + " to " + std::to_string(isChecked));
+
 								//if (!wasChecked && isChecked)
 								//{
 								//	// Enable the codes
