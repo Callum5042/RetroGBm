@@ -42,6 +42,9 @@ import java.util.Date
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import androidx.core.graphics.createBitmap
+import com.retrogbm.CheatCode
+import com.retrogbm.models.Emulator
+import com.retrogbm.profile.ProfileCheatCode
 
 class EmulatorActivity : ComponentActivity() {
 
@@ -387,6 +390,26 @@ class EmulatorActivity : ComponentActivity() {
         val enableSound = sharedPreferences.getBoolean("enable_sound", true)
         viewModel.emulator.soundOutput.toggleAudio(enableSound)
 
+        // Load the cheats
+        val profilePath = absolutePath.let { "$it/profile.json" }
+
+        val profileRepository = ProfileRepository()
+        val profileData = profileRepository.loadProfileData(profilePath)
+
+        val profileGameData = profileData.gameData.find { p -> p.checksum == this.checksum }
+
+        if (profileGameData != null) {
+        val cheats = profileGameData.cheats.map { it ->
+                CheatCode(
+                    name = it.name,
+                    code = it.code.split("\r\n").toTypedArray(),
+                    enabled = false
+                )
+            }
+
+            viewModel.emulator.setCheatCodes(cheats.toTypedArray())
+        }
+
         // Emulator background thread
         viewModel.startEmulator()
     }
@@ -441,7 +464,8 @@ class EmulatorActivity : ComponentActivity() {
                 checksum = this.checksum,
                 lastPlayed = null,
                 totalPlayTimeMinutes = 0,
-                fileName = fileName
+                fileName = fileName,
+                cheats = arrayOf()
             )
 
             profileData.gameData.add(profileGameData)
@@ -453,6 +477,14 @@ class EmulatorActivity : ComponentActivity() {
 
         profileGameData.lastPlayed = timeStarted
         profileGameData.totalPlayTimeMinutes += timeDifference.toInt()
+
+        // Save cheats
+        profileGameData.cheats = viewModel.emulator.getCheatCodes().map { it ->
+            ProfileCheatCode(
+                name = it.name,
+                code = it.code.joinToString(separator = "\r\n")
+            )
+        }.toTypedArray()
 
         // Attempt to save the last played to the profile
         profileRepository.saveProfileData(profilePath, profileData)
