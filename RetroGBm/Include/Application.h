@@ -94,4 +94,7 @@ private:
 	// Emulator
 	std::unique_ptr<Emulator> m_Emulator;
 	std::thread m_EmulatorThread;
+
+	// Default codes
+	void SetDefaultCheatCodes();
 };

@@ -13,11 +13,51 @@
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Joypad.h>
 #include <RetroGBm/Logger.h>
+#include <Utilities/Utilities.h>
 
 #include "hashpp.h"
 
 namespace
 {
+	std::wstring ConvertCodeToMultiline(std::vector<std::string> codes)
+	{
+		std::string result;
+		for (auto& code : codes)
+		{
+			if (!code.empty())
+			{
+				if (!result.empty())
+				{
+					// Add newline between codes
+					result += "\r\n";
+				}
+
+				// Append the code
+				result += code;
+			}
+		}
+
+		return Utilities::ConvertToWString(result);
+	}
+
+	std::vector<std::string> SplitString(std::string code)
+	{
+		std::vector<std::string> tokens;
+		size_t pos = 0;
+
+		std::string token;
+		const std::string delimiter = "\r\n";
+		while ((pos = code.find(delimiter)) != std::string::npos)
+		{
+			token = code.substr(0, pos);
+			tokens.push_back(token);
+			code.erase(0, pos + delimiter.length());
+		}
+
+		tokens.push_back(code);
+		return tokens;
+	}
+
 	std::string getISODateTime()
 	{
 		using namespace std::chrono;
@@ -108,8 +148,8 @@ void Application::LoadRom(const std::string& file)
 	std::filesystem::create_directories(battery_path);
 	std::string filename = std::filesystem::path(file).filename().string();
 	battery_path.append(filename + ".save");
-	m_Emulator->SetBatteryPath(battery_path.string());
 
+	m_Emulator->SetBatteryPath(battery_path.string());
 	Logger::Info("Loading ROM file: " + file);
 	m_Emulator->ToggleTraceLog(tracelog);
 	m_Emulator->LoadRom(file);
@@ -120,6 +160,29 @@ void Application::LoadRom(const std::string& file)
 
 	// Calculate hash
 	Checksum = hashpp::get::getFileHash(hashpp::ALGORITHMS::SHA2_256, file).getString();
+
+	// Set cheat codes from saved cheats
+	for (const auto& profileData : ProfileDataList.gameData)
+	{
+		if (profileData.checksum == Checksum)
+		{
+			std::vector<CheatCode> codes;
+			for (const auto& cheat : profileData.cheats)
+			{
+				CheatCode code;
+				code.name = cheat.name;
+				code.code = SplitString(cheat.code);
+
+				codes.push_back(code);
+			}
+
+			m_Emulator->SetGamesharkCodes(codes);
+			break;
+		}
+	}
+
+	// Automatically set some default cheat codes - Currently not enabled
+	// SetDefaultCheatCodes();
 
 	// Emulator runs on a background thread
 	m_EmulatorThread = std::thread([&]
@@ -187,6 +250,28 @@ void Application::StopEmulator()
 		new_data.checksum = Checksum;
 
 		ProfileDataList.gameData.push_back(new_data);
+	}
+
+	// Update the cheats
+	for (auto& profileData : ProfileDataList.gameData)
+	{
+		if (profileData.checksum == Checksum)
+		{
+			std::vector<CheatCode> codes = m_Emulator->GetGamesharkCodes();
+
+			std::vector<ProfileCheats> cheats;
+			for (auto& code : codes)
+			{
+				ProfileCheats cheat;
+				cheat.name = code.name;
+				cheat.code = Utilities::ConvertToString(ConvertCodeToMultiline(code.code));
+
+				cheats.push_back(cheat);
+			}
+
+			profileData.cheats = cheats;
+			break;
+		}
 	}
 
 	// Save profile
@@ -332,6 +417,30 @@ void Application::LoadState(const std::string& path)
 		catch (const std::exception& ex)
 		{
 			MessageBoxA(NULL, ex.what(), "Error", MB_OK | MB_ICONERROR);
+		}
+	}
+}
+
+void Application::SetDefaultCheatCodes()
+{
+	std::map<std::string, std::vector<CheatCode>> default_codes;
+
+	// Pokemon Crystal
+	default_codes["fdcc3c8c43813cf8731fc037d2a6d191bac75439c34b24ba1c27526e6acdc8a2"] =
+	{
+		{
+			"Shiny Pokemon",
+			{ 
+				"910730D2",
+			},
+		},
+	};
+
+	if (default_codes.find(Checksum) != default_codes.end())
+	{
+		if (m_Emulator->m_GamesharkCodes.empty())
+		{
+			m_Emulator->SetGamesharkCodes(default_codes[Checksum]);
 		}
 	}
 }

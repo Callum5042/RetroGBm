@@ -6,15 +6,21 @@ data class ProfileOptions(
     var romDirectories: String
 )
 
+data class ProfileCheatCode(
+    var name: String,
+    var code: String
+)
+
 data class ProfileGameData(
     var name: String,
     var fileName: String,
     var checksum: String,
     var lastPlayed: Date?,
-    var totalPlayTimeMinutes: Int
+    var totalPlayTimeMinutes: Int,
+    var cheats: MutableList<ProfileCheatCode>? = mutableListOf()
 )
 
 data class ProfileData(
     var options: ProfileOptions?,
-    val gameData: MutableList<ProfileGameData>
+    val gameData: MutableList<ProfileGameData> = mutableListOf()
 )

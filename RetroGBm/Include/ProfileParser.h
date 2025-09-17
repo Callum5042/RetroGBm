@@ -9,12 +9,19 @@ struct ProfileOptions
 	std::string rom_directories = "RomData";
 };
 
+struct ProfileCheats
+{
+	std::string name;
+	std::string code;
+};
+
 struct ProfileGameData
 {
 	std::string checksum;
 	std::string filename;
 	std::string lastPlayed;
 	int totalPlayTimeMinutes = 0;
+	std::vector<ProfileCheats> cheats;
 };
 
 struct ProfileData

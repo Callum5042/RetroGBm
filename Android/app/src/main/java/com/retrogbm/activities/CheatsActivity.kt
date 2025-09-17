@@ -278,8 +278,8 @@ class CheatsActivity : ComponentActivity() {
         ) { innerPadding ->
             Column(
                 modifier = Modifier
-                    .fillMaxSize() // Ensure system bars are handled properly
-                    .padding(innerPadding)  // Adjust padding if needed
+                    .fillMaxSize()
+                    .padding(innerPadding)
             ) {
 
                 LazyColumn(
@@ -295,8 +295,8 @@ class CheatsActivity : ComponentActivity() {
                         var showContextMenu by remember { mutableStateOf(false) }
 
                         Box(
-                            modifier = Modifier.fillMaxWidth(), // Ensure full width to help with positioning
-                            contentAlignment = Alignment.BottomEnd // Aligns the menu to the bottom-right
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.BottomEnd
                         ) {
                             Column(
                                 modifier = Modifier
@@ -304,6 +304,8 @@ class CheatsActivity : ComponentActivity() {
                                     .combinedClickable(
                                         onClick = {
                                             checked = !checked
+                                            item.enabled = checked
+                                            Emulator.emulator.setCheatCodes(toCheatCodeList())
                                         },
                                         onLongClick = {
                                             showContextMenu = true
@@ -313,20 +315,18 @@ class CheatsActivity : ComponentActivity() {
 
                                 Row(
                                     modifier = Modifier
-                                        .padding(horizontal = 8.dp)
+                                        .padding(horizontal = 8.dp, vertical = 8.dp)
                                         .fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Checkbox(
                                         checked = checked,
-                                        onCheckedChange = {
-                                            checked = it
-                                            item.enabled = it
-                                            Emulator.emulator.setCheatCodes(toCheatCodeList())
-                                        }
+                                        onCheckedChange = null
                                     )
                                     Text(
-                                        item.name
+                                        modifier = Modifier
+                                            .padding(start = 8.dp),
+                                        text = item.name
                                     )
                                 }
                             }
@@ -398,8 +398,8 @@ class CheatsActivity : ComponentActivity() {
                         }
 
                         HorizontalDivider(
-                            color = Color.Gray, // Color of the border
-                            thickness = 1.dp,   // Thickness of the border
+                            color = Color.Gray,
+                            thickness = 1.dp,
                             modifier = Modifier.padding(vertical = 0.dp)
                         )
                     }

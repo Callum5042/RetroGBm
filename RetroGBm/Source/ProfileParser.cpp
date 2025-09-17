@@ -9,6 +9,15 @@
 using namespace simdjson;
 
 // JSON - Must be first
+void to_json(nlohmann::json& j, const ProfileCheats& p)
+{
+	j = nlohmann::json
+	{
+		{"name", p.name},
+		{"code", p.code}
+	};
+}
+
 void to_json(nlohmann::json& j, const ProfileGameData& p)
 {
 	j = nlohmann::json
@@ -16,7 +25,8 @@ void to_json(nlohmann::json& j, const ProfileGameData& p)
 		{"checksum", p.checksum},
 		{"fileName", p.filename},
 		{"lastPlayed", p.lastPlayed},
-		{"totalPlayTimeMinutes", p.totalPlayTimeMinutes}
+		{"totalPlayTimeMinutes", p.totalPlayTimeMinutes},
+		{"cheats", p.cheats}
 	};
 }
 
@@ -28,6 +38,7 @@ void to_json(nlohmann::json& j, const ProfileOptions& p)
 	};
 }
 
+// TODO: This whole simdjson needs to be replaced with nlohmann::json for consistency and ease of use
 ProfileData ParseProfile(const std::filesystem::path& path)
 {
 	ProfileData profile;
@@ -62,6 +73,33 @@ ProfileData ParseProfile(const std::filesystem::path& path)
 	for (auto game : gameData.get_array())
 	{
 		ProfileGameData profileData;
+
+		// cheats
+		auto cheatsJson = game.find_field("cheats");
+		if (cheatsJson.error() == error_code::SUCCESS)
+		{
+			auto cheatsArray = cheatsJson.get_array();
+
+			for (auto cheatJson : cheatsArray)
+			{
+				auto codeField = cheatJson.find_field("code");
+				auto nameField = cheatJson.find_field("name");
+
+				std::string name, code;
+
+				if (nameField.error() == simdjson::SUCCESS && nameField.type() == simdjson::ondemand::json_type::string)
+				{
+					name = std::string(nameField.get_string().value());
+				}
+
+				if (codeField.error() == simdjson::SUCCESS && codeField.type() == simdjson::ondemand::json_type::string)
+				{
+					code = std::string(codeField.get_string().value());
+				}
+
+				profileData.cheats.push_back({ name, code });
+			}
+		}
 
 		// checksum
 		auto checksumJson = game.find_field("checksum");
