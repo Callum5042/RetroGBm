@@ -198,10 +198,11 @@ data class SaveStateData(val slot: String, val dateModified: String, val timePla
 @Composable
 fun InputDialog(
     title: String,
+    value: String,
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
-    var text by remember { mutableStateOf("") }
+    var text by remember { mutableStateOf(value) }
 
     Dialog(onDismissRequest = {
         onDismiss()
@@ -222,7 +223,7 @@ fun InputDialog(
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
-                    label = { Text("Cheat Name") },
+                    label = { Text("Name") },
                     singleLine = true
                 )
 
@@ -334,9 +335,9 @@ fun Content(
             if (showDialog) {
                 InputDialog(
                     title = "Add SaveState Slot",
+                    value = "",
                     onDismiss = { showDialog = false },
                     onConfirm = {
-                        userInput = it
                         showDialog = false
 
                         saveStates.add(
@@ -371,6 +372,7 @@ fun SaveStateSlotCard(data: SaveStateData, onUpdate: (oldPath: String, path: Str
     if (showUpdateDialog) {
         InputDialog(
             title = "Update SaveState Slot",
+            value = title,
             onDismiss = { showUpdateDialog = false },
             onConfirm = {
                 showUpdateDialog = false
