@@ -114,7 +114,7 @@ private:
 	HMENU m_StatusBar = NULL;
 
 	// Other unknown atm
-	bool m_StretchDisplay = true;
+	bool m_StretchDisplay = false;
 
 	void OpenDialog();
 	void OpenDialogRomDirectory();

@@ -74,7 +74,7 @@ public:
 	std::unique_ptr<Render::RenderShader> m_RenderShader = nullptr;
 
 	// Boot ROM
-	bool SkipBootRom = false;
+	bool SkipBootRom = true;
 
 private:
 	void Init();
