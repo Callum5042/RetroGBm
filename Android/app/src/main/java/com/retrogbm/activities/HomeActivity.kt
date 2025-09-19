@@ -157,6 +157,8 @@ class HomeActivity : ComponentActivity() {
                 totalPlayTimeMinutes = "No Time Played",
                 fileUri = fileName.fileUri
             )
+        }.sortedBy {
+            gameData -> gameData.title
         }.toMutableList()
     }
 
