@@ -10,6 +10,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
+#include <Xinput.h>
+
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Joypad.h>
 #include <RetroGBm/Logger.h>
@@ -328,6 +330,26 @@ void Application::Run()
 				{
 					CpuRegistersWindow->Update();
 				}
+
+				// Poll Controller state
+				XINPUT_STATE state;
+				if (XInputGetState(0, &state) == ERROR_SUCCESS)
+				{
+					m_Emulator->GetJoypad()->SetJoypad(JoypadButton::A, (state.Gamepad.wButtons & XINPUT_GAMEPAD_A) || (state.Gamepad.wButtons & XINPUT_GAMEPAD_Y));
+					m_Emulator->GetJoypad()->SetJoypad(JoypadButton::B, (state.Gamepad.wButtons & XINPUT_GAMEPAD_B) || (state.Gamepad.wButtons & XINPUT_GAMEPAD_X));
+					m_Emulator->GetJoypad()->SetJoypad(JoypadButton::Start, state.Gamepad.wButtons & XINPUT_GAMEPAD_START);
+					m_Emulator->GetJoypad()->SetJoypad(JoypadButton::Select, state.Gamepad.wButtons & XINPUT_GAMEPAD_BACK);
+
+					bool up = (state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP) || (state.Gamepad.sThumbLY > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+					bool down = (state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN) || (state.Gamepad.sThumbLY < -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+					bool right = (state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) || (state.Gamepad.sThumbLX > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+					bool left = (state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) || (state.Gamepad.sThumbLX < -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+
+					m_Emulator->GetJoypad()->SetJoypad(JoypadButton::Up, up);
+					m_Emulator->GetJoypad()->SetJoypad(JoypadButton::Down, down);
+					m_Emulator->GetJoypad()->SetJoypad(JoypadButton::Right, right);
+					m_Emulator->GetJoypad()->SetJoypad(JoypadButton::Left, left);
+				}
 			}
 			else
 			{
@@ -359,6 +381,19 @@ void Application::Init()
 
 	// Initialize network
 	m_NetworkOutput = std::make_unique<WinNetworkOutput>();
+
+	// Initialize controller
+	XINPUT_STATE state;
+	DWORD dwResult = XInputGetState(0, &state);
+
+	if (dwResult == ERROR_SUCCESS)
+	{
+		Logger::Info("Controller is connected");
+	}
+	else
+	{
+		Logger::Info("Controller is not connected");
+	}
 }
 
 void Application::CreateMainWindow()

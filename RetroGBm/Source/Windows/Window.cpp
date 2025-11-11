@@ -8,7 +8,6 @@
 
 #include <string>
 #include <vector>
-#include <iostream>
 
 #define IDM_MYMENURESOURCE 3
 
