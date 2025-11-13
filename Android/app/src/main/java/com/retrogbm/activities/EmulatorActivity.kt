@@ -12,6 +12,9 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.OpenableColumns
 import android.util.Log
+import android.view.InputDevice
+import android.view.KeyEvent
+import android.view.MotionEvent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -43,8 +46,9 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 import androidx.core.graphics.createBitmap
 import com.retrogbm.CheatCode
-import com.retrogbm.models.Emulator
+import com.retrogbm.JoyPadButton
 import com.retrogbm.profile.ProfileCheatCode
+import kotlin.math.abs
 
 class EmulatorActivity : ComponentActivity() {
 
@@ -303,6 +307,73 @@ class EmulatorActivity : ComponentActivity() {
     override fun onPause() {
         super.onPause()
         viewModel.emulator.pause()
+    }
+
+    override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+        val isGamepad = event.source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK ||
+                event.source and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
+                event.source and InputDevice.SOURCE_DPAD == InputDevice.SOURCE_DPAD
+
+        if (event.action == MotionEvent.ACTION_MOVE && isGamepad) {
+
+            // LEFT JOYSTICK
+            val lx = getCenteredAxis(event, MotionEvent.AXIS_X)
+            val ly = getCenteredAxis(event, MotionEvent.AXIS_Y)
+
+            // DPAD HAT
+            val hatX = event.getAxisValue(MotionEvent.AXIS_HAT_X)
+            val hatY = event.getAxisValue(MotionEvent.AXIS_HAT_Y)
+
+            // Combined joystick + dpad
+            val finalX = if (hatX != 0f) hatX else lx
+            val finalY = if (hatY != 0f) hatY else ly
+
+            // Digital mapping
+            viewModel.emulator.pressButton(JoyPadButton.Left,  finalX < -0.3f)
+            viewModel.emulator.pressButton(JoyPadButton.Right, finalX >  0.3f)
+            viewModel.emulator.pressButton(JoyPadButton.Up,    finalY < -0.3f)
+            viewModel.emulator.pressButton(JoyPadButton.Down,  finalY >  0.3f)
+
+            return true
+        }
+
+        return super.onGenericMotionEvent(event)
+    }
+
+    private fun getCenteredAxis(event: MotionEvent, axis: Int): Float {
+        val range = event.device?.getMotionRange(axis, event.source)
+        return if (range != null) {
+            val value = event.getAxisValue(axis)
+            if (abs(value) > range.flat) value else 0f
+        } else 0f
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        when (keyCode) {
+            KeyEvent.KEYCODE_BUTTON_A -> viewModel.emulator.pressButton(JoyPadButton.A, true)
+            KeyEvent.KEYCODE_BUTTON_B -> viewModel.emulator.pressButton(JoyPadButton.B, true)
+            KeyEvent.KEYCODE_BUTTON_Y -> viewModel.emulator.pressButton(JoyPadButton.A, true)
+            KeyEvent.KEYCODE_BUTTON_X -> viewModel.emulator.pressButton(JoyPadButton.B, true)
+            KeyEvent.KEYCODE_BUTTON_START -> viewModel.emulator.pressButton(JoyPadButton.Start, true)
+            KeyEvent.KEYCODE_BUTTON_SELECT -> viewModel.emulator.pressButton(JoyPadButton.Select, true)
+
+            else -> return super.onKeyDown(keyCode, event)
+        }
+        return true
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        when (keyCode) {
+            KeyEvent.KEYCODE_BUTTON_A -> viewModel.emulator.pressButton(JoyPadButton.A, false)
+            KeyEvent.KEYCODE_BUTTON_B -> viewModel.emulator.pressButton(JoyPadButton.B, false)
+            KeyEvent.KEYCODE_BUTTON_Y -> viewModel.emulator.pressButton(JoyPadButton.A, false)
+            KeyEvent.KEYCODE_BUTTON_X -> viewModel.emulator.pressButton(JoyPadButton.B, false)
+            KeyEvent.KEYCODE_BUTTON_START -> viewModel.emulator.pressButton(JoyPadButton.Start, false)
+            KeyEvent.KEYCODE_BUTTON_SELECT -> viewModel.emulator.pressButton(JoyPadButton.Select, false)
+
+            else -> return super.onKeyUp(keyCode, event)
+        }
+        return true
     }
 
     private fun configureLifecycle() {
