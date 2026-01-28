@@ -993,8 +993,16 @@ void MainWindow::HandleKey(bool state, WORD scancode)
 		return;
 	}
 
-	const WORD ZKey = 0x5A;
-	const WORD XKey = 0x58;
+	const UINT key_a = this->m_Application->ProfileDataList.options.key_a;
+	const UINT key_b = this->m_Application->ProfileDataList.options.key_b;
+
+	const UINT key_start = this->m_Application->ProfileDataList.options.key_start;
+	const UINT key_select = this->m_Application->ProfileDataList.options.key_select;
+
+	const UINT key_up = this->m_Application->ProfileDataList.options.key_up;
+	const UINT key_down = this->m_Application->ProfileDataList.options.key_down;
+	const UINT key_left = this->m_Application->ProfileDataList.options.key_left;
+	const UINT key_right = this->m_Application->ProfileDataList.options.key_right;
 
 	UINT key = MapVirtualKeyW(scancode, MAPVK_VSC_TO_VK_EX);
 	if (state)
@@ -1002,32 +1010,37 @@ void MainWindow::HandleKey(bool state, WORD scancode)
 		this->OnKeyPressed(key);
 	}
 
-	switch (key)
+	if (key == key_a)
 	{
-		case ZKey:
-			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::B, state);
-			break;
-		case XKey:
-			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::A, state);
-			break;
-		case VK_RETURN:
-			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Start, state);
-			break;
-		case VK_TAB:
-			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Select, state);
-			break;
-		case VK_UP:
-			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Up, state);
-			break;
-		case VK_DOWN:
-			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Down, state);
-			break;
-		case VK_LEFT:
-			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Left, state);
-			break;
-		case VK_RIGHT:
-			m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Right, state);
-			break;
+		m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::A, state);
+	}
+	else if (key == key_b)
+	{
+		m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::B, state);
+	}
+	else if (key == key_start)
+	{
+		m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Start, state);
+	}
+	else if (key == key_select)
+	{
+		m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Select, state);
+	}
+	else if (key == key_up)
+	{
+		m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Up, state);
+	}
+	else if (key == key_down)
+	{
+		m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Down, state);
+	}
+	else if (key == key_left)
+	{
+		m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Left, state);
+	}
+	else if (key == key_right)
+	{
+		m_Application->GetEmulator()->GetJoypad()->SetJoypad(JoypadButton::Right, state);
 	}
 }
 
