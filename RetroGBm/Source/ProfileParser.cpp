@@ -35,6 +35,14 @@ void to_json(nlohmann::json& j, const ProfileOptions& p)
 	j = nlohmann::json
 	{
 		{"romDirectories", p.rom_directories},
+		{"key_a", p.key_a},
+		{"key_b", p.key_b},
+		{"key_start", p.key_start},
+		{"key_select", p.key_select},
+		{"key_up", p.key_up},
+		{"key_down", p.key_down},
+		{"key_left", p.key_left},
+		{"key_right", p.key_right},
 	};
 }
 
@@ -179,6 +187,19 @@ ProfileData ParseProfile(const std::filesystem::path& path)
 		else
 		{
 			Logger::Error("Unable to parse JSON 'romDirectories'");
+		}
+
+		// Input
+		auto key_a_json = optionsJson.find_field("key_a");
+		if (key_a_json.error() == error_code::SUCCESS)
+		{
+			options.key_a = key_a_json.get_int64().value();
+		}
+
+		auto key_b_json = optionsJson.find_field("key_b");
+		if (key_b_json.error() == error_code::SUCCESS)
+		{
+			options.key_b = key_b_json.get_int64().value();
 		}
 	}
 

@@ -4,9 +4,21 @@
 #include <vector>
 #include <filesystem>
 
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+
 struct ProfileOptions
 {
 	std::string rom_directories = "RomData";
+
+	int key_a = 'X';
+	int key_b = 'Z';
+	int key_start = VK_RETURN;
+	int key_select = VK_TAB;
+	int key_up = VK_UP;
+	int key_down = VK_DOWN;
+	int key_left = VK_LEFT;
+	int key_right = VK_RIGHT;
 };
 
 struct ProfileCheats
