@@ -21,14 +21,30 @@ class EmulatorWrapper {
 
     val displayOutput: DisplayOutput = DisplayOutput()
     val soundOutput: SoundOutput = SoundOutput()
+    val networkOutput: NetworkOutput = NetworkOutput()
+
+    val socketClient: SocketClient = SocketClient(this)
 
     private var emulatorPtr: Long = 0
 
     fun loadRom(data: ByteArray, path: String, skipBootRom: Boolean) {
-        emulatorPtr = createEmulator(displayOutput.nativePtr, soundOutput.nativePtr)
+        emulatorPtr = createEmulator(
+            displayOutput.nativePtr,
+            soundOutput.nativePtr,
+            networkOutput.nativePtr
+        )
+
         setBatteryPath(emulatorPtr, path)
         setBootRom(emulatorPtr, !skipBootRom)
         loadRomFromByteArray(emulatorPtr, data)
+
+        // Connect
+        // TODO: Make this a setting and globally stored or something
+        socketClient.connect("10.0.2.2")
+
+        networkOutput.onSendData { data ->
+            socketClient.sendData(data)
+        }
     }
 
     fun tick() {
@@ -83,7 +99,11 @@ class EmulatorWrapper {
         setCheatCodes(emulatorPtr, codes)
     }
 
-    private external fun createEmulator(displayOutputPtr: Long, soundOutputPtr: Long): Long
+    fun linkCableData(data: Byte) {
+        linkCableData(emulatorPtr, data)
+    }
+
+    private external fun createEmulator(displayOutputPtr: Long, soundOutputPtr: Long, networkOutputPtr: Long): Long
     private external fun loadRom(emulatorPtr: Long, path: String)
     private external fun loadRomFromByteArray(emulatorPtr: Long, data: ByteArray)
     private external fun tick(emulatorPtr: Long)
@@ -108,4 +128,6 @@ class EmulatorWrapper {
     private external fun setCheatCodes(emulatorPtr: Long, codes: Array<CheatCode>)
 
     private external fun setBootRom(emulatorPtr: Long, enabled: Boolean)
+
+    private external fun linkCableData(emulatorPtr: Long, data: Byte)
 }

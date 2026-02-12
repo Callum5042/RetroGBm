@@ -51,6 +51,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         native-lib.cpp
         KotlinSoundOutputWrapper.cpp
         KotlinDisplayOutputWrapper.cpp
+        KotlinNetworkOutputWrapper.cpp
         JniLoader.cpp
 
         ${EmulatorCoreSrcDir}/Cartridge/BaseCartridge.cpp
