@@ -10,17 +10,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -31,6 +35,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
+import com.retrogbm.RetroGBmApp
+import com.retrogbm.composables.CustomPopup
 import com.retrogbm.composables.OptionsCard
 import com.retrogbm.composables.OptionsDivider
 import com.retrogbm.composables.OptionsInfo
@@ -38,6 +44,7 @@ import com.retrogbm.composables.OptionsSlider
 import com.retrogbm.composables.OptionsSwitch
 import com.retrogbm.models.Emulator
 import com.retrogbm.ui.theme.RetroGBmTheme
+import kotlinx.coroutines.delay
 
 class OptionsActivity : ComponentActivity() {
 
@@ -158,6 +165,7 @@ fun ListContent() {
                 text = "Enable Haptic Feedback",
                 value = enableHapticFeedback,
                 onChange = { it ->
+                    enableHapticFeedback = it
                     sharedPreferences.edit {
                         putBoolean("haptic_feedback", it)
                     }
@@ -168,6 +176,7 @@ fun ListContent() {
                 text = "Skip Boot ROM",
                 value = skipBootRom,
                 onChange = { it ->
+                    skipBootRom = it
                     sharedPreferences.edit {
                         putBoolean("skip_boot_rom", it)
                     }
@@ -178,6 +187,7 @@ fun ListContent() {
                 text = "Enable Sound",
                 value = enableSound,
                 onChange = { it ->
+                    enableSound = it
                     sharedPreferences.edit {
                         putBoolean("enable_sound", it)
                     }
@@ -185,6 +195,117 @@ fun ListContent() {
                     Emulator.emulator.soundOutput.toggleAudio(it)
                 }
             )
+        }
+
+        // Network
+        var hosting by remember { mutableStateOf(false) }
+        var hostingPopup by remember { mutableStateOf(false) }
+
+        var connect by remember { mutableStateOf(false) }
+        var connectPopup by remember { mutableStateOf(false) }
+
+        // Connection status
+//        var connectionStatus by remember { mutableStateOf("Not connected") }
+//        LaunchedEffect(RetroGBmApp.getInstance().socketClient.isConnected()) {
+//            connectionStatus = if (RetroGBmApp.getInstance().socketClient.isConnected()) {
+//                "Connected"
+//            } else {
+//                "Not connected"
+//            }
+//
+//            // Periodically check for changes in connection status (e.g., every 1 second)
+//            while (true) {
+//                delay(1000)
+//                connectionStatus = if (RetroGBmApp.getInstance().socketClient.isConnected()) {
+//                    "Connected"
+//                } else {
+//                    "Not connected"
+//                }
+//            }
+//        }
+
+        OptionsCard(
+            title = "Networking"
+        ) {
+            OptionsInfo(
+                title = "Status",
+                text = "Not connected"
+            )
+            OptionsDivider()
+            OptionsSwitch(
+                text = "Host",
+                value = hosting,
+                onChange = { it ->
+                    if (hosting) {
+                        hosting = false
+                    } else {
+                        hosting = true
+                        hostingPopup = it
+                    }
+                }
+            )
+            OptionsDivider()
+            OptionsSwitch(
+                text = "Connect",
+                value = connect,
+                onChange = { it ->
+                    if (connect) {
+                        connect = false
+                    } else {
+                        connect = true
+                        connectPopup = it
+                    }
+                }
+            )
+
+            // Hosting pop up
+            if (hostingPopup) {
+                CustomPopup(
+                    title = "Host",
+                    onConfirm = {
+                        hosting = false
+                        hostingPopup = false
+                    },
+                    onCancel = {
+                        hosting = false
+                        hostingPopup = false
+                    }
+                ) {
+                    Text(
+                        text = "Android hosting not yet available"
+                    )
+                }
+            }
+
+            // Connect pop up
+            if (connectPopup) {
+                var ipAddress by remember { mutableStateOf("") }
+
+                CustomPopup(
+                    title = "Connect",
+                    onConfirm = {
+                        connect = true
+                        connectPopup = false
+
+                        RetroGBmApp.getInstance().socketClient.connect(ipAddress)
+                    },
+                    onCancel = {
+                        connect = false
+                        connectPopup = false
+                    }
+                ) {
+                    Column {
+                        OutlinedTextField(
+                            label = { Text("IP Address") },
+                            singleLine = true,
+                            value = ipAddress,
+                            onValueChange = {
+                                ipAddress = it
+                            }
+                        )
+                    }
+                }
+            }
         }
     }
 }

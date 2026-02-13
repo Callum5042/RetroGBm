@@ -14,6 +14,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -63,13 +64,9 @@ fun OptionsCard(
 fun OptionsSwitch(
     text: String,
     value: Boolean,
-    onChange: ((Boolean) -> Unit)?
+    onChange: (Boolean) -> Unit = {}
 ) {
     val titleColor = MaterialTheme.colorScheme.onSurface
-
-    var state by remember {
-        mutableStateOf(value)
-    }
 
     Column(
         modifier = Modifier.fillMaxWidth()
@@ -88,10 +85,9 @@ fun OptionsSwitch(
             )
 
             Switch(
-                checked = state,
+                checked = value,
                 onCheckedChange = {
-                    state = it
-                    onChange?.invoke(it)
+                    onChange(it)
                 }
             )
         }

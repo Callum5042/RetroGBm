@@ -1,12 +1,13 @@
 package com.retrogbm
 
 import android.util.Log
+import com.retrogbm.models.Emulator
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.Socket
 import kotlin.concurrent.thread
 
-class SocketClient(private val emulator: EmulatorWrapper) {
+class SocketClient() {
     private var socket: Socket? = null
     private var outputStream: OutputStream? = null
     private var inputStream: InputStream? = null
@@ -61,7 +62,7 @@ class SocketClient(private val emulator: EmulatorWrapper) {
                         val dataReceived = buffer.copyOf(bytesRead)
                         Log.d("Socket", "Received data: ${dataReceived.joinToString(", ") { it.toString() }}")
 
-                        emulator.linkCableData(buffer[1])
+                        Emulator.emulator.linkCableData(buffer[1])
                     }
                 }
             } catch (e: Exception) {

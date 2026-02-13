@@ -3,11 +3,8 @@ package com.retrogbm.models
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.retrogbm.EmulatorWrapper
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class Emulator {

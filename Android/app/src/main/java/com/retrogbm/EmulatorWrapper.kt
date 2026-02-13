@@ -23,7 +23,7 @@ class EmulatorWrapper {
     val soundOutput: SoundOutput = SoundOutput()
     val networkOutput: NetworkOutput = NetworkOutput()
 
-    val socketClient: SocketClient = SocketClient(this)
+    val socketClient: SocketClient = SocketClient()
 
     private var emulatorPtr: Long = 0
 
