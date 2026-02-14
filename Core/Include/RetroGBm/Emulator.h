@@ -150,6 +150,9 @@ public:
 	inline bool GetBootRomEnabled() const { return m_EnableBootRom; }
 	inline void SetBootRom(bool enable) { m_EnableBootRom = enable; }
 
+	// Network request to sync to the emulator
+	void LinkCableData(uint8_t data);
+
 private:
 	std::mutex m_EmulatorMutex;
 	bool m_Paused = false;

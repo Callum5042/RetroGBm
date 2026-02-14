@@ -21,10 +21,7 @@ namespace
 				break;
 			}
 
-			Emulator::Instance->m_SerialData[0] = buffer[1];
-
-			Emulator::Instance->m_SerialData[1] &= ~0x80;
-			Emulator::Instance->GetCpu()->RequestInterrupt(InterruptFlag::Serial);
+			Emulator::Instance->LinkCableData(buffer[1]);
 		}
 
 		closesocket(sock);

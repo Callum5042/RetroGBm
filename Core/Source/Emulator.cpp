@@ -940,3 +940,11 @@ void Emulator::ApplyCheats()
 	// Restore the bank to previous value
 	m_Ram->SetWorkRamBank(bank);
 }
+
+void Emulator::LinkCableData(uint8_t data)
+{
+	m_SerialData[0] = data;
+	m_SerialData[1] &= ~0x80;
+
+	this->GetCpu()->RequestInterrupt(InterruptFlag::Serial);
+}

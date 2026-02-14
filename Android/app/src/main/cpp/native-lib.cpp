@@ -15,11 +15,15 @@
 extern "C"
 {
     JNIEXPORT jlong JNICALL
-    Java_com_retrogbm_EmulatorWrapper_createEmulator(JNIEnv *env, jobject thiz, jlong displayOutputPtr, jlong soundOutputPtr)
+    Java_com_retrogbm_EmulatorWrapper_createEmulator(JNIEnv *env,
+                                                     jobject thiz,
+                                                     jlong displayOutputPtr,
+                                                     jlong soundOutputPtr,
+                                                     jlong networkOutputPtr)
     {
         IDisplayOutput* display_output = reinterpret_cast<IDisplayOutput*>(displayOutputPtr);
         ISoundOutput* sound_output = reinterpret_cast<ISoundOutput*>(soundOutputPtr);
-        INetworkOutput* network_output = new KotlinNetworkOutputWrapper();
+        INetworkOutput* network_output = reinterpret_cast<INetworkOutput*>(networkOutputPtr);
 
         return reinterpret_cast<jlong>(new Emulator(display_output, sound_output, network_output));
     }
@@ -340,4 +344,17 @@ JNIEXPORT jlong JNICALL
 Java_com_retrogbm_DisplayOutput_nativeCreate(JNIEnv *env, jobject thiz) {
     IDisplayOutput* output = new KotlinDisplayOutputWrapper(env, thiz);
     return reinterpret_cast<jlong>(output);
+}
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_com_retrogbm_NetworkOutput_nativeCreate(JNIEnv *env, jobject thiz) {
+    INetworkOutput* output = new KotlinNetworkOutputWrapper(env, thiz);
+    return reinterpret_cast<jlong>(output);
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_retrogbm_EmulatorWrapper_linkCableData(JNIEnv *env, jobject thiz, jlong emulator_ptr,
+                                                jbyte data) {
+    Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+    emulator->LinkCableData(data);
 }
