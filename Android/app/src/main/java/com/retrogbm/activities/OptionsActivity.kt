@@ -25,6 +25,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
+import com.retrogbm.EmulatorWrapper
 import com.retrogbm.RetroGBmApp
 import com.retrogbm.composables.CustomPopup
 import com.retrogbm.composables.OptionsCard
@@ -204,32 +206,29 @@ fun ListContent() {
         var connect by remember { mutableStateOf(false) }
         var connectPopup by remember { mutableStateOf(false) }
 
-        // Connection status
-//        var connectionStatus by remember { mutableStateOf("Not connected") }
-//        LaunchedEffect(RetroGBmApp.getInstance().socketClient.isConnected()) {
-//            connectionStatus = if (RetroGBmApp.getInstance().socketClient.isConnected()) {
-//                "Connected"
-//            } else {
-//                "Not connected"
-//            }
-//
-//            // Periodically check for changes in connection status (e.g., every 1 second)
-//            while (true) {
-//                delay(1000)
-//                connectionStatus = if (RetroGBmApp.getInstance().socketClient.isConnected()) {
-//                    "Connected"
-//                } else {
-//                    "Not connected"
-//                }
-//            }
-//        }
+        // Keep track of connection status
+        val connectionStatus by Emulator.emulator.socketClient.status.collectAsState()
+
+        // LaunchedEffect that runs once on composition and updates status periodically
+        LaunchedEffect(Unit) {
+            // Periodically check connection status every 1 second
+            while (true) {
+                delay(1000)
+
+                if (connect
+                    && !connectPopup
+                    && !Emulator.emulator.socketClient.isConnected()) {
+                    connect = false
+                }
+            }
+        }
 
         OptionsCard(
             title = "Networking"
         ) {
             OptionsInfo(
                 title = "Status",
-                text = "Not connected"
+                text = connectionStatus
             )
             OptionsDivider()
             OptionsSwitch(
@@ -251,6 +250,7 @@ fun ListContent() {
                 onChange = { it ->
                     if (connect) {
                         connect = false
+                        Emulator.emulator.socketClient.disconnect()
                     } else {
                         connect = true
                         connectPopup = it
@@ -287,7 +287,7 @@ fun ListContent() {
                         connect = true
                         connectPopup = false
 
-                        RetroGBmApp.getInstance().socketClient.connect(ipAddress)
+                        Emulator.emulator.socketClient.connect(ipAddress)
                     },
                     onCancel = {
                         connect = false

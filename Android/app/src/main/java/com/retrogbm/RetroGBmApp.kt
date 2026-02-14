@@ -4,8 +4,6 @@ import android.app.Application
 
 class RetroGBmApp : Application() {
 
-    lateinit var socketClient: SocketClient
-
     override fun onCreate() {
         super.onCreate()
         instance = this

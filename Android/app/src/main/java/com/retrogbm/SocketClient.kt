@@ -1,10 +1,14 @@
 package com.retrogbm
 
 import android.util.Log
+import androidx.lifecycle.AtomicReference
 import com.retrogbm.models.Emulator
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.Socket
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 
 class SocketClient() {
@@ -12,6 +16,11 @@ class SocketClient() {
     private var outputStream: OutputStream? = null
     private var inputStream: InputStream? = null
     private var serverPort = 54000
+
+    private val _status = MutableStateFlow("Not connected")
+    val status = _status.asStateFlow()
+
+    var ipAddress: String = ""; private set
 
     // Connect to the server
     fun connect(ip: String) {
@@ -21,11 +30,18 @@ class SocketClient() {
                 outputStream = socket?.outputStream
                 inputStream = socket?.inputStream
 
-                Log.d("Socket","Connected to the server!")
+                Log.d("Socket", "Connected to the server!")
                 listenForData()
+
+                _status.value = "Connected to $ip"
+                ipAddress = ip
+
             } catch (e: Exception) {
                 e.printStackTrace()
                 Log.d("Socket","Failed to connect to the server")
+
+                _status.value = "Failed to connect to the server"
+                ipAddress = ""
             }
         }
     }
@@ -68,6 +84,9 @@ class SocketClient() {
             } catch (e: Exception) {
                 e.printStackTrace()
                 Log.d("Socket", "Error while listening for data")
+
+                _status.value = "Disconnected"
+                socket?.close()
             }
         }
     }
@@ -86,6 +105,10 @@ class SocketClient() {
     }
 
     fun isConnected(): Boolean {
+        if (socket?.isClosed == true) {
+            return false
+        }
+
         return socket?.isConnected == true
     }
 }
