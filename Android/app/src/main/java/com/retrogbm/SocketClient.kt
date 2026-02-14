@@ -1,14 +1,12 @@
 package com.retrogbm
 
 import android.util.Log
-import androidx.lifecycle.AtomicReference
 import com.retrogbm.models.Emulator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.Socket
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 
 class SocketClient() {
