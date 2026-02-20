@@ -29,7 +29,7 @@ A fast and lightweight Game Boy Color emulator written in C++ for Windows and An
 
 ## Build
 
-**Windows**: Install Visual Studios 2022 and build from the solution file `RetroGBm.sln`.
+**Windows**: Install Visual Studios 2026 and build from the solution file `RetroGBm.sln`.
 
 **Android**: Install Android Studios and open the `android` folder, then build with Android Studios.
 
