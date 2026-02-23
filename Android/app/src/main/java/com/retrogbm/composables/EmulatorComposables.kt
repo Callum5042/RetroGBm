@@ -170,7 +170,9 @@ fun EmulatorMenuBar(
             // Menu
             Box {
                 // Overflow Menu
-                IconButton(onClick = { showMenu = !showMenu }) {
+                IconButton(onClick = {
+                    showMenu = !showMenu
+                }) {
                     Icon(
                         imageVector = Icons.Filled.MoreVert,
                         contentDescription = "More Options"
