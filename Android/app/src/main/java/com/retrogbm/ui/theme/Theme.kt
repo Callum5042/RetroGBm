@@ -12,8 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 
 private val DarkColorScheme = darkColorScheme(
     primary = Color.White,
@@ -45,17 +43,12 @@ fun RetroGBmTheme(
     }
 
     val context = LocalContext.current
-    val window = (context as Activity).window
+    val activity = (context as Activity)
+    val window = activity.window
 
     // Window colour
     window.statusBarColor = Color.Black.toArgb()
     window.navigationBarColor = Color.Black.toArgb()
-
-    // Hide system bar
-//    WindowInsetsControllerCompat(window, window.decorView).apply {
-//        systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-//        hide(WindowInsetsCompat.Type.systemBars())
-//    }
 
     MaterialTheme(
         colorScheme = colorScheme,

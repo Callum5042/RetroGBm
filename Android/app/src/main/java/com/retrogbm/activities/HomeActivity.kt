@@ -147,18 +147,8 @@ class HomeActivity : ComponentActivity() {
 
             val previewRomData = ProfileRomData(previewData)
 
-            // Hide system bars
-//            val controller = WindowInsetsControllerCompat(window, window.decorView)
-//            controller.hide(WindowInsetsCompat.Type.systemBars())
-//            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-
             setContent {
                 RetroGBmTheme {
-                    // Hide system bars
-                    val controller = WindowInsetsControllerCompat(window, window.decorView)
-                    controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE;
-                    controller.hide(WindowInsetsCompat.Type.systemBars());
-
                     Content(previewRomData)
                 }
             }

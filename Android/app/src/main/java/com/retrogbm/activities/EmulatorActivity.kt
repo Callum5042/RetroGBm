@@ -6,6 +6,7 @@ import com.retrogbm.composables.EmulatorMenuBar
 import com.retrogbm.composables.EmulatorScreen
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
@@ -23,6 +24,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
@@ -94,15 +97,27 @@ class EmulatorActivity : ComponentActivity() {
         val sortedByValue = quickSaveMap.toList().sortedBy { it.second }.toMap(LinkedHashMap())
         var slotNumber = if (sortedByValue.isNotEmpty()) sortedByValue.keys.last() else 1
 
-
         // Composable view
         setContent {
-            RetroGBmTheme {
-                // Hide system bars
-                val controller = WindowInsetsControllerCompat(window, window.decorView)
-                controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE;
-                controller.hide(WindowInsetsCompat.Type.systemBars());
 
+            // Detect orientation
+            val configuration = LocalConfiguration.current
+            val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+            LaunchedEffect(configuration.orientation) {
+                if (isLandscape) {
+                    WindowInsetsControllerCompat(window, window.decorView).apply {
+                        systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                        hide(WindowInsetsCompat.Type.systemBars())
+                    }
+                } else {
+                    WindowInsetsControllerCompat(window, window.decorView).apply {
+                        systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+                        show(WindowInsetsCompat.Type.systemBars())
+                    }
+                }
+            }
+
+            RetroGBmTheme {
                 Scaffold(
                     topBar = {
                         val context = LocalContext.current
