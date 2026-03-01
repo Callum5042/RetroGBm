@@ -1,0 +1,163 @@
+#include "Windows/NetworkConnectWindow.h"
+#include "Utilities/Utilities.h"
+
+#include <sstream>
+
+namespace
+{
+	static NetworkConnectWindow* GetWindow(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+	{
+		NetworkConnectWindow* window = nullptr;
+		if (uMsg == WM_NCCREATE)
+		{
+			CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
+			window = reinterpret_cast<NetworkConnectWindow*>(pCreate->lpCreateParams);
+			SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
+		}
+		else
+		{
+			window = reinterpret_cast<NetworkConnectWindow*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+		}
+
+		return window;
+	}
+
+	static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+	{
+		NetworkConnectWindow* window = GetWindow(hwnd, msg, wParam, lParam);
+		if (window == nullptr)
+		{
+			return DefWindowProc(hwnd, msg, wParam, lParam);
+		}
+
+		return window->HandleMessage(hwnd, msg, wParam, lParam);
+	}
+}
+
+NetworkConnectWindow::NetworkConnectWindow()
+{
+}
+
+NetworkConnectWindow::~NetworkConnectWindow()
+{
+	this->Destroy();
+}
+
+void NetworkConnectWindow::Create()
+{
+	this->WindowCreate("Connect to Network", 400, 200);
+}
+
+void NetworkConnectWindow::Destroy()
+{
+	if (m_Hwnd != NULL)
+	{
+		DestroyWindow(m_Hwnd);
+		m_Hwnd = NULL;
+	}
+
+	HINSTANCE hInstance = GetModuleHandle(NULL);
+	UnregisterClassW(m_RegisterClassName.c_str(), hInstance);
+}
+
+LRESULT NetworkConnectWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg)
+	{
+		case WM_PAINT:
+		{
+			PAINTSTRUCT ps;
+			HDC hdc = BeginPaint(hwnd, &ps);
+
+			// Clear screen with fill colour
+			FillRect(hdc, &ps.rcPaint, reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1));
+
+			// Text to display
+			//if (m_ListIsEmpty)
+			//{
+			//	// Create a modern font (Segoe UI, 20pt)
+			//	HFONT hFont = CreateFontA(
+			//		0, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+			//		ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+			//		DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
+			//		"Segoe UI"
+			//	);
+
+			//	// Select it into the DC
+			//	HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);
+
+			//	LPCSTR text = "No 'ROMS' directory found";
+
+			//	// Get client rectangle of parent window
+			//	RECT rect;
+			//	GetClientRect(hwnd, &rect);
+
+			//	// Set text format options
+			//	DrawTextA(hdc, text, -1, &rect, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+
+			//	// Clean up: restore old font and delete new font
+			//	SelectObject(hdc, hOldFont);
+			//	DeleteObject(hFont);
+			//}
+
+			EndPaint(hwnd, &ps);
+
+			return 0;
+		}
+
+		case WM_CLOSE:
+		{
+			this->Destroy();
+			return 0;
+		}
+	}
+
+	return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+void NetworkConnectWindow::WindowCreate(const std::string& title, int width, int height)
+{
+	HINSTANCE hInstance = GetModuleHandle(NULL);
+
+	// Convert to wstring
+	const std::wstring window_title = Utilities::ConvertToWString(title);
+	m_RegisterClassName = window_title;
+
+	// Setup window class
+	WNDCLASS wc = {};
+	wc.style = CS_VREDRAW | CS_HREDRAW;
+	wc.lpfnWndProc = MainWndProc;
+	wc.hInstance = hInstance;
+	wc.hIcon = NULL;
+	wc.hCursor = LoadCursor(0, IDC_ARROW);
+	wc.lpszClassName = m_RegisterClassName.c_str();
+	wc.lpszMenuName = NULL;
+	if (!RegisterClass(&wc))
+	{
+		throw std::exception("RegisterClass Failed");
+	}
+
+	// Compute window rectangle dimensions based on requested client area dimensions.
+	RECT window_rect = { 0, 0, width, height };
+	AdjustWindowRect(&window_rect, WS_OVERLAPPEDWINDOW, false);
+	int window_width = window_rect.right - window_rect.left;
+	int window_height = window_rect.bottom - window_rect.top;
+
+	// Create window
+	DWORD exStyle = WS_EX_DLGMODALFRAME;
+	DWORD dwStyle = (WS_OVERLAPPED | WS_CAPTION | WS_POPUP | WS_SYSMENU);
+
+	m_Hwnd = CreateWindow(wc.lpszClassName, window_title.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, window_width, window_height, NULL, NULL, hInstance, this);
+	if (m_Hwnd == NULL)
+	{
+		DWORD error = GetLastError();
+		std::stringstream ss;
+		ss << "CreateWindow Failed Error Code: " << error;
+		throw std::exception(ss.str().c_str());
+
+		throw std::exception("CreateWindow Failed");
+	}
+
+	// Show window
+	ShowWindow(m_Hwnd, SW_SHOWNORMAL);
+}

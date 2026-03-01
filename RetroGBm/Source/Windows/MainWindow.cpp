@@ -449,19 +449,25 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			UINT menu_state = GetMenuState(m_OptionsMenuItem, m_MenuOptionsNetworkConnect, MF_BYCOMMAND);
 			if ((menu_state & MF_UNCHECKED) == MF_UNCHECKED)
 			{
-				const char* ip = "127.0.0.1";
-				if (Application::Instance->m_NetworkOutput->CreateClient(ip))
-				{
-					// Check the menu item
-					CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkConnect, MF_BYCOMMAND | MF_CHECKED);
+				// m_Application->CpuRegistersWindow = std::make_unique<CpuRegisterWindow>();
 
-					// Disable the host and connect menu items
-					EnableMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkHost, MF_DISABLED);
-					EnableMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkConnect, MF_DISABLED);
+				m_NetworkWindow = new NetworkConnectWindow();
+				m_NetworkWindow->Create();
 
-					// Enable the disconnect menu item
-					EnableMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkDisconnect, MF_ENABLED);
-				}
+
+				//const char* ip = "127.0.0.1";
+				//if (Application::Instance->m_NetworkOutput->CreateClient(ip))
+				//{
+				//	// Check the menu item
+				//	CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkConnect, MF_BYCOMMAND | MF_CHECKED);
+
+				//	// Disable the host and connect menu items
+				//	EnableMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkHost, MF_DISABLED);
+				//	EnableMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkConnect, MF_DISABLED);
+
+				//	// Enable the disconnect menu item
+				//	EnableMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkDisconnect, MF_ENABLED);
+				//}
 			}
 
 			break;

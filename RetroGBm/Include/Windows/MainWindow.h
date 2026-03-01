@@ -11,6 +11,8 @@
 #include "Render/RenderTarget.h"
 #include "Render/RenderTexture.h"
 
+#include <Windows/NetworkConnectWindow.h>
+
 class Application;
 
 class MainWindow
@@ -139,4 +141,7 @@ private:
 	// ROM Directories
 	std::filesystem::path m_RomPath = "ROMS";
 	void RefreshRomList();
+
+	// Window
+	NetworkConnectWindow* m_NetworkWindow = nullptr;
 };
