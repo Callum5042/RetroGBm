@@ -20,4 +20,9 @@ private:
 	void WindowCreate(const std::string& title, int width, int height);
 	HWND m_Hwnd = NULL;
 	std::wstring m_RegisterClassName;
+
+	HWND m_LabelName;
+
+	HWND m_ButtonAdd;
+	const int m_ControlAddButtonId = 2001;
 };

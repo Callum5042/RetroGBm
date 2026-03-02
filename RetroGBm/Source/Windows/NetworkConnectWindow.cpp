@@ -2,6 +2,17 @@
 #include "Utilities/Utilities.h"
 
 #include <sstream>
+#include <string>
+#include <vector>
+
+#include <uxtheme.h>
+#include <dwmapi.h>
+#pragma comment(lib, "uxtheme.lib")
+#pragma comment(lib, "dwmapi.lib")
+
+// Set theme
+// https://docs.microsoft.com/en-gb/windows/win32/controls/cookbook-overview?redirectedfrom=MSDN
+#pragma comment(linker,"\"/manifestdependency:type='win32' name = 'Microsoft.Windows.Common-Controls' version = '6.0.0.0' processorArchitecture = '*' publicKeyToken = '6595b64144ccf1df' language = '*'\"")
 
 namespace
 {
@@ -46,6 +57,51 @@ NetworkConnectWindow::~NetworkConnectWindow()
 void NetworkConnectWindow::Create()
 {
 	this->WindowCreate("Connect to Network", 400, 200);
+
+	// Initialize common controls
+	INITCOMMONCONTROLSEX icex = { sizeof(INITCOMMONCONTROLSEX), ICC_LISTVIEW_CLASSES };
+	InitCommonControlsEx(&icex);
+
+	// Font
+	static HFONT m_Font;
+
+	// Create font
+	{
+		HDC hdc = GetDC(NULL);
+		long lfHeight = -MulDiv(12, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+		ReleaseDC(NULL, hdc);
+
+		m_Font = CreateFont(lfHeight, 0, 0, 0, 0, FALSE, 0, 0, 0, 0, 0, 0, 0, L"Arial");
+
+		/*m_Font = CreateFont(
+			-MulDiv(9, GetDeviceCaps(hdc, LOGPIXELSY), 72),
+			0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+			DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+			CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Segoe UI"));*/
+	}
+
+	int width = 200 + 20;
+	int height = 200;
+
+	m_LabelName = CreateWindowW(L"STATIC", L"Cheat name:",
+		WS_CHILD | WS_VISIBLE,
+		width, 20, 270, 20,
+		m_Hwnd, nullptr, nullptr, nullptr);
+
+	SendMessageW(m_LabelName, WM_SETFONT, (WPARAM)m_Font, TRUE);
+
+	// Button
+	int button_x = 10;
+	int button_width = 80;
+
+	m_ButtonAdd = CreateWindowW(L"BUTTON", L"Add",
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
+		button_x, 10, button_width, 30, // x, y, width, height
+		m_Hwnd, (HMENU)m_ControlAddButtonId, nullptr, nullptr);
+
+	SendMessageW(m_ButtonAdd, WM_SETFONT, (WPARAM)m_Font, TRUE);
+
+
 }
 
 void NetworkConnectWindow::Destroy()
@@ -64,6 +120,14 @@ LRESULT NetworkConnectWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, 
 {
 	switch (msg)
 	{
+		case WM_CTLCOLORSTATIC:
+		{
+			HDC hdc = (HDC)wParam;
+			SetTextColor(hdc, RGB(0, 0, 0));
+			SetBkMode(hdc, TRANSPARENT);
+			return (LONG_PTR)GetSysColorBrush(COLOR_WINDOW);
+		}
+
 		case WM_PAINT:
 		{
 			PAINTSTRUCT ps;
@@ -71,34 +135,6 @@ LRESULT NetworkConnectWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, 
 
 			// Clear screen with fill colour
 			FillRect(hdc, &ps.rcPaint, reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1));
-
-			// Text to display
-			//if (m_ListIsEmpty)
-			//{
-			//	// Create a modern font (Segoe UI, 20pt)
-			//	HFONT hFont = CreateFontA(
-			//		0, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
-			//		ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-			//		DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
-			//		"Segoe UI"
-			//	);
-
-			//	// Select it into the DC
-			//	HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);
-
-			//	LPCSTR text = "No 'ROMS' directory found";
-
-			//	// Get client rectangle of parent window
-			//	RECT rect;
-			//	GetClientRect(hwnd, &rect);
-
-			//	// Set text format options
-			//	DrawTextA(hdc, text, -1, &rect, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
-
-			//	// Clean up: restore old font and delete new font
-			//	SelectObject(hdc, hOldFont);
-			//	DeleteObject(hFont);
-			//}
 
 			EndPaint(hwnd, &ps);
 
