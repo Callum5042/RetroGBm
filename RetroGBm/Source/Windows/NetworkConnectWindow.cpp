@@ -43,6 +43,8 @@ namespace
 
 		return window->HandleMessage(hwnd, msg, wParam, lParam);
 	}
+
+	static HFONT g_Font;
 }
 
 NetworkConnectWindow::NetworkConnectWindow()
@@ -62,16 +64,13 @@ void NetworkConnectWindow::Create()
 	INITCOMMONCONTROLSEX icex = { sizeof(INITCOMMONCONTROLSEX), ICC_LISTVIEW_CLASSES };
 	InitCommonControlsEx(&icex);
 
-	// Font
-	static HFONT m_Font;
-
 	// Create font
 	{
 		HDC hdc = GetDC(NULL);
 		long lfHeight = -MulDiv(12, GetDeviceCaps(hdc, LOGPIXELSY), 72);
 		ReleaseDC(NULL, hdc);
 
-		m_Font = CreateFont(lfHeight, 0, 0, 0, 0, FALSE, 0, 0, 0, 0, 0, 0, 0, L"Arial");
+		g_Font = CreateFont(lfHeight, 0, 0, 0, 0, FALSE, 0, 0, 0, 0, 0, 0, 0, L"Arial");
 
 		/*m_Font = CreateFont(
 			-MulDiv(9, GetDeviceCaps(hdc, LOGPIXELSY), 72),
@@ -83,25 +82,30 @@ void NetworkConnectWindow::Create()
 	int width = 200 + 20;
 	int height = 200;
 
-	m_LabelName = CreateWindowW(L"STATIC", L"Cheat name:",
+	/*m_LabelName = CreateWindowW(L"STATIC", L"Cheat name:",
 		WS_CHILD | WS_VISIBLE,
 		width, 20, 270, 20,
 		m_Hwnd, nullptr, nullptr, nullptr);
 
-	SendMessageW(m_LabelName, WM_SETFONT, (WPARAM)m_Font, TRUE);
+	SendMessageW(m_LabelName, WM_SETFONT, (WPARAM)m_Font, TRUE);*/
 
 	// Button
-	int button_x = 10;
-	int button_width = 80;
+	//int button_x = 10;
+	//int button_width = 80;
 
-	m_ButtonAdd = CreateWindowW(L"BUTTON", L"Add",
-		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-		button_x, 10, button_width, 30, // x, y, width, height
-		m_Hwnd, (HMENU)m_ControlAddButtonId, nullptr, nullptr);
+	//m_ButtonAdd = CreateWindowW(L"BUTTON", L"Add",
+	//	WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
+	//	button_x, 10, button_width, 30, // x, y, width, height
+	//	m_Hwnd, (HMENU)m_ControlAddButtonId, nullptr, nullptr);
 
-	SendMessageW(m_ButtonAdd, WM_SETFONT, (WPARAM)m_Font, TRUE);
+	//SendMessageW(m_ButtonAdd, WM_SETFONT, (WPARAM)g_Font, TRUE);
 
 
+	// New thing
+	RootComponent = Container({
+		Label("Cheat Name:"),
+		Button("Add")
+	});
 }
 
 void NetworkConnectWindow::Destroy()
@@ -196,4 +200,59 @@ void NetworkConnectWindow::WindowCreate(const std::string& title, int width, int
 
 	// Show window
 	ShowWindow(m_Hwnd, SW_SHOWNORMAL);
+}
+
+ContainerComponent* NetworkConnectWindow::Container(std::vector<BaseComponent*> components)
+{
+	auto ptr = new ContainerComponent();
+
+	for (auto component : components)
+	{
+		component->SetParent(ptr);
+		ptr->AddChild(component);
+	}
+
+	return ptr;
+}
+
+TextComponent* NetworkConnectWindow::Label(const std::string& text)
+{
+	auto ptr = new TextComponent(*this, "Cheat name:");
+
+	return ptr;
+}
+
+ButtonComponent* NetworkConnectWindow::Button(const std::string& text)
+{
+	auto ptr = new ButtonComponent(*this, "Add");
+
+	return ptr;
+}
+
+TextComponent::TextComponent(const NetworkConnectWindow& window, const std::string& text)
+{
+	int width = 200 + 20;
+	int height = 200;
+
+	m_Hwnd = CreateWindowW(L"STATIC", L"Cheat name",
+		WS_CHILD | WS_VISIBLE,
+		width, 20, 270, 20,
+		window.GetHwnd(), nullptr, nullptr, nullptr);
+
+	SendMessageW(m_Hwnd, WM_SETFONT, (WPARAM)g_Font, TRUE);
+}
+
+ButtonComponent::ButtonComponent(const NetworkConnectWindow& window, const std::string& text)
+{
+	int button_x = 0;
+	int button_y = 0;
+	int button_width = 80;
+	int button_height = 30;
+
+	m_Hwnd = CreateWindowW(L"BUTTON", L"Add",
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
+		button_x, button_y, button_width, button_height, // x, y, width, height
+		window.GetHwnd(), (HMENU)m_ControlId, nullptr, nullptr);
+
+	SendMessageW(m_Hwnd, WM_SETFONT, (WPARAM)g_Font, TRUE);
 }
