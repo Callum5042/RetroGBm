@@ -11,6 +11,8 @@
 #include "Render/RenderTarget.h"
 #include "Render/RenderTexture.h"
 
+#include <Windows/NetworkConnectWindow.h>
+
 class Application;
 
 class MainWindow
@@ -33,6 +35,8 @@ public:
 	void SetStatusBarTitle(const std::string& text);
 	void SetStatusBarStats(const std::string& text);
 	void SetStatusBarState(const std::string& text);
+
+	void DisableNetworkConnectMenu();
 
 protected:
 	void OnClose();
@@ -139,4 +143,7 @@ private:
 	// ROM Directories
 	std::filesystem::path m_RomPath = "ROMS";
 	void RefreshRomList();
+
+	// Window
+	std::unique_ptr<NetworkConnectWindow> m_NetworkWindow = nullptr;
 };

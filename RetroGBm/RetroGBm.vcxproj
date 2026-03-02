@@ -161,6 +161,7 @@
     <ClCompile Include="Source\Render\RenderShader.cpp" />
     <ClCompile Include="Source\Render\RenderTarget.cpp" />
     <ClCompile Include="Source\Render\RenderTexture.cpp" />
+    <ClCompile Include="Source\Windows\NetworkConnectWindow.cpp" />
     <ClCompile Include="Source\Windows\TileWindow.cpp" />
     <ClCompile Include="Source\Utilities\Utilities.cpp" />
     <ClCompile Include="Source\Windows\Window.cpp" />
@@ -183,6 +184,7 @@
     <ClInclude Include="Include\Render\RenderShader.h" />
     <ClInclude Include="Include\Render\RenderTarget.h" />
     <ClInclude Include="Include\Render\RenderTexture.h" />
+    <ClInclude Include="Include\Windows\NetworkConnectWindow.h" />
     <ClInclude Include="Include\Windows\TileWindow.h" />
     <ClInclude Include="Include\Utilities\Utilities.h" />
     <ClInclude Include="Include\Windows\Window.h" />
