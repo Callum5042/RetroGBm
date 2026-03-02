@@ -4,57 +4,6 @@
 #include <string>
 #include <vector>
 
-class NetworkConnectWindow;
-
-class BaseComponent
-{
-public:
-	void SetParent(BaseComponent* parent)
-	{
-		this->parent = parent;
-	}
-
-	inline BaseComponent* GetParent() const
-	{
-		return parent;
-	}
-
-	BaseComponent* AddChild(BaseComponent* child)
-	{
-		children.push_back(child);
-		return child;
-	}
-
-protected:
-	BaseComponent* parent = nullptr;
-	std::vector<BaseComponent*> children;
-};
-
-class ContainerComponent : public BaseComponent
-{
-public:
-
-};
-
-class TextComponent : public BaseComponent
-{
-public:
-	TextComponent(const NetworkConnectWindow& window, const std::string& text);
-
-private:
-	HWND m_Hwnd = NULL;
-};
-
-class ButtonComponent : public BaseComponent
-{
-public:
-	ButtonComponent(const NetworkConnectWindow& window, const std::string& text);
-
-private:
-	HWND m_Hwnd = NULL;
-	const int m_ControlId = 2001;
-};
-
 class NetworkConnectWindow
 {
 public:
@@ -83,12 +32,17 @@ private:
 	HWND m_ButtonAdd;
 	const int m_ControlAddButtonId = 2001;
 
+	// Font
+	HFONT m_Font;
 
-	// Components
+	// Label
+	HWND m_LabelHwnd = NULL;
 
-	ContainerComponent* Container(std::vector<BaseComponent*> components);
-	TextComponent* Label(const std::string& text);
-	ButtonComponent* Button(const std::string& text);
+	// Textbox
+	HWND m_TextboxHwnd = NULL;
+	int m_ControlTextboxId = 1001;
 
-	BaseComponent* RootComponent = nullptr;
+	// Buttons
+	HWND m_ButtonConnectHwnd = NULL;
+	int m_ControlId = 2000;
 };

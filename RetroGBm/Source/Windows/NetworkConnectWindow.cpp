@@ -1,5 +1,6 @@
 #include "Windows/NetworkConnectWindow.h"
 #include "Utilities/Utilities.h"
+#include "Application.h"
 
 #include <sstream>
 #include <string>
@@ -43,8 +44,6 @@ namespace
 
 		return window->HandleMessage(hwnd, msg, wParam, lParam);
 	}
-
-	static HFONT g_Font;
 }
 
 NetworkConnectWindow::NetworkConnectWindow()
@@ -58,7 +57,7 @@ NetworkConnectWindow::~NetworkConnectWindow()
 
 void NetworkConnectWindow::Create()
 {
-	this->WindowCreate("Connect to Network", 400, 200);
+	this->WindowCreate("Connect to Network", 300, 115);
 
 	// Initialize common controls
 	INITCOMMONCONTROLSEX icex = { sizeof(INITCOMMONCONTROLSEX), ICC_LISTVIEW_CLASSES };
@@ -70,7 +69,7 @@ void NetworkConnectWindow::Create()
 		long lfHeight = -MulDiv(12, GetDeviceCaps(hdc, LOGPIXELSY), 72);
 		ReleaseDC(NULL, hdc);
 
-		g_Font = CreateFont(lfHeight, 0, 0, 0, 0, FALSE, 0, 0, 0, 0, 0, 0, 0, L"Arial");
+		m_Font = CreateFont(lfHeight, 0, 0, 0, 0, FALSE, 0, 0, 0, 0, 0, 0, 0, L"Arial");
 
 		/*m_Font = CreateFont(
 			-MulDiv(9, GetDeviceCaps(hdc, LOGPIXELSY), 72),
@@ -79,33 +78,54 @@ void NetworkConnectWindow::Create()
 			CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Segoe UI"));*/
 	}
 
-	int width = 200 + 20;
-	int height = 200;
+	// Create components
+	const int container_padding = 10;
+	int position_y = container_padding;
 
-	/*m_LabelName = CreateWindowW(L"STATIC", L"Cheat name:",
-		WS_CHILD | WS_VISIBLE,
-		width, 20, 270, 20,
-		m_Hwnd, nullptr, nullptr, nullptr);
+	// Label component
+	{
+		int height = 20;
 
-	SendMessageW(m_LabelName, WM_SETFONT, (WPARAM)m_Font, TRUE);*/
+		m_LabelHwnd = CreateWindowW(L"STATIC", L"IP Address:",
+			WS_CHILD | WS_VISIBLE,
+			container_padding, position_y, 270, height,
+			this->GetHwnd(), nullptr, nullptr, nullptr);
 
-	// Button
-	//int button_x = 10;
-	//int button_width = 80;
+		position_y += height;
 
-	//m_ButtonAdd = CreateWindowW(L"BUTTON", L"Add",
-	//	WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-	//	button_x, 10, button_width, 30, // x, y, width, height
-	//	m_Hwnd, (HMENU)m_ControlAddButtonId, nullptr, nullptr);
+		SendMessageW(m_LabelHwnd, WM_SETFONT, (WPARAM)m_Font, TRUE);
+	}
 
-	//SendMessageW(m_ButtonAdd, WM_SETFONT, (WPARAM)g_Font, TRUE);
+	// Input component
+	{
+		int height = 25;
 
+		m_TextboxHwnd = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", nullptr,
+			WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_AUTOHSCROLL,
+			container_padding, position_y, 270, height,
+			m_Hwnd, (HMENU)m_ControlTextboxId, nullptr, nullptr);
 
-	// New thing
-	RootComponent = Container({
-		Label("Cheat Name:"),
-		Button("Add")
-	});
+		position_y += height;
+
+		SendMessageW(m_TextboxHwnd, WM_SETFONT, (WPARAM)m_Font, TRUE);
+	}
+
+	// Button component
+	{
+		int button_width = 80;
+		int button_height = 30;
+
+		position_y += 10;
+
+		m_ButtonConnectHwnd = CreateWindowW(L"BUTTON", L"Connect",
+			WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
+			container_padding, position_y, button_width, button_height, // x, y, width, height
+			this->GetHwnd(), (HMENU)m_ControlId, nullptr, nullptr);
+
+		position_y += button_height;
+
+		SendMessageW(m_ButtonConnectHwnd, WM_SETFONT, (WPARAM)m_Font, TRUE);
+	}
 }
 
 void NetworkConnectWindow::Destroy()
@@ -186,73 +206,22 @@ void NetworkConnectWindow::WindowCreate(const std::string& title, int width, int
 	// Create window
 	DWORD exStyle = WS_EX_DLGMODALFRAME;
 	DWORD dwStyle = (WS_OVERLAPPED | WS_CAPTION | WS_POPUP | WS_SYSMENU);
+	HWND parent_window = Application::Instance->GetMainWindow()->GetHwnd();
 
-	m_Hwnd = CreateWindow(wc.lpszClassName, window_title.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, window_width, window_height, NULL, NULL, hInstance, this);
+	// Get the dimensions of the parent window
+	RECT parentRect;
+	GetClientRect(parent_window, &parentRect);
+
+	// Calculate the position for the child window
+	int x = (parentRect.right - window_width) / 2;
+	int y = (parentRect.bottom - window_height) / 2;
+
+	m_Hwnd = CreateWindowEx(exStyle, wc.lpszClassName, window_title.c_str(), dwStyle, x, y, window_width, window_height, parent_window, NULL, hInstance, this);
 	if (m_Hwnd == NULL)
 	{
-		DWORD error = GetLastError();
-		std::stringstream ss;
-		ss << "CreateWindow Failed Error Code: " << error;
-		throw std::exception(ss.str().c_str());
-
 		throw std::exception("CreateWindow Failed");
 	}
 
 	// Show window
 	ShowWindow(m_Hwnd, SW_SHOWNORMAL);
-}
-
-ContainerComponent* NetworkConnectWindow::Container(std::vector<BaseComponent*> components)
-{
-	auto ptr = new ContainerComponent();
-
-	for (auto component : components)
-	{
-		component->SetParent(ptr);
-		ptr->AddChild(component);
-	}
-
-	return ptr;
-}
-
-TextComponent* NetworkConnectWindow::Label(const std::string& text)
-{
-	auto ptr = new TextComponent(*this, "Cheat name:");
-
-	return ptr;
-}
-
-ButtonComponent* NetworkConnectWindow::Button(const std::string& text)
-{
-	auto ptr = new ButtonComponent(*this, "Add");
-
-	return ptr;
-}
-
-TextComponent::TextComponent(const NetworkConnectWindow& window, const std::string& text)
-{
-	int width = 200 + 20;
-	int height = 200;
-
-	m_Hwnd = CreateWindowW(L"STATIC", L"Cheat name",
-		WS_CHILD | WS_VISIBLE,
-		width, 20, 270, 20,
-		window.GetHwnd(), nullptr, nullptr, nullptr);
-
-	SendMessageW(m_Hwnd, WM_SETFONT, (WPARAM)g_Font, TRUE);
-}
-
-ButtonComponent::ButtonComponent(const NetworkConnectWindow& window, const std::string& text)
-{
-	int button_x = 0;
-	int button_y = 0;
-	int button_width = 80;
-	int button_height = 30;
-
-	m_Hwnd = CreateWindowW(L"BUTTON", L"Add",
-		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-		button_x, button_y, button_width, button_height, // x, y, width, height
-		window.GetHwnd(), (HMENU)m_ControlId, nullptr, nullptr);
-
-	SendMessageW(m_Hwnd, WM_SETFONT, (WPARAM)g_Font, TRUE);
 }
