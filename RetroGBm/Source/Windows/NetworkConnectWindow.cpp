@@ -120,7 +120,7 @@ void NetworkConnectWindow::Create()
 		m_ButtonConnectHwnd = CreateWindowW(L"BUTTON", L"Connect",
 			WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
 			container_padding, position_y, button_width, button_height, // x, y, width, height
-			this->GetHwnd(), (HMENU)m_ControlId, nullptr, nullptr);
+			this->GetHwnd(), (HMENU)m_ControButtonConnectlId, nullptr, nullptr);
 
 		position_y += button_height;
 
@@ -169,6 +169,42 @@ LRESULT NetworkConnectWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, 
 		{
 			this->Destroy();
 			return 0;
+		}
+
+		case WM_COMMAND:
+		{
+			int wmId = LOWORD(wParam);
+
+			if (wmId == m_ControButtonConnectlId)
+			{
+				// Get name from the edit control
+				HWND control = GetDlgItem(hwnd, m_ControlTextboxId);
+				int length = GetWindowTextLength(control) + 1;
+
+				std::wstring name;
+				name.resize(static_cast<size_t>(length) - 1);
+				GetWindowText(control, const_cast<LPWSTR>(name.data()), length);
+
+				// Check if its valid
+				if (name.empty())
+				{
+					MessageBox(hwnd, L"Please enter a valid IP Address.", L"Error", MB_OK | MB_ICONERROR);
+					return 0;
+				}
+
+				// Connect
+				std::string ip(name.begin(), name.end());
+				if (Application::Instance->m_NetworkOutput->CreateClient(ip))
+				{
+					Application::Instance->GetMainWindow()->DisableNetworkConnectMenu();
+					this->Destroy();
+				}
+				else
+				{
+					MessageBox(hwnd, L"Failed to connect to the specified IP Address.", L"Error", MB_OK | MB_ICONERROR);
+					return 0;
+				}
+			}
 		}
 	}
 

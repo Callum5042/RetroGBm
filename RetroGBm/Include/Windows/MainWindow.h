@@ -36,6 +36,8 @@ public:
 	void SetStatusBarStats(const std::string& text);
 	void SetStatusBarState(const std::string& text);
 
+	void DisableNetworkConnectMenu();
+
 protected:
 	void OnClose();
 	void OnKeyPressed(UINT virtual_key_code);
@@ -143,5 +145,5 @@ private:
 	void RefreshRomList();
 
 	// Window
-	NetworkConnectWindow* m_NetworkWindow = nullptr;
+	std::unique_ptr<NetworkConnectWindow> m_NetworkWindow = nullptr;
 };

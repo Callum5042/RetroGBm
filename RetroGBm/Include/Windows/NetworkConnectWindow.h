@@ -21,16 +21,9 @@ public:
 	}
 
 private:
-
-
 	void WindowCreate(const std::string& title, int width, int height);
 	HWND m_Hwnd = NULL;
 	std::wstring m_RegisterClassName;
-
-	HWND m_LabelName;
-
-	HWND m_ButtonAdd;
-	const int m_ControlAddButtonId = 2001;
 
 	// Font
 	HFONT m_Font;
@@ -44,5 +37,5 @@ private:
 
 	// Buttons
 	HWND m_ButtonConnectHwnd = NULL;
-	int m_ControlId = 2000;
+	int m_ControButtonConnectlId = 2000;
 };
