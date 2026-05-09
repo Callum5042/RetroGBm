@@ -358,3 +358,11 @@ Java_com_retrogbm_EmulatorWrapper_linkCableData(JNIEnv *env, jobject thiz, jlong
     Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
     emulator->LinkCableData(data);
 }
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_retrogbm_EmulatorWrapper_restart(JNIEnv *env, jobject thiz, jlong emulator_ptr) {
+    Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+    if (emulator->IsRunning()) {
+        emulator->Restart();
+    }
+}

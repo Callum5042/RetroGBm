@@ -960,7 +960,7 @@ void MainWindow::RestartEmulation()
 {
 	if (m_Application->GetEmulator()->IsRunning())
 	{
-		m_Application->LoadRom(m_FilePath);
+		m_Application->GetEmulator()->Restart();
 	}
 }
 

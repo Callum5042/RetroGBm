@@ -19,6 +19,7 @@ Cpu::Cpu(BaseCartridge* cartridge) : m_Cartridge(cartridge)
 void Cpu::Init()
 {
 	ProgramCounter = 0x100;
+	StackPointer = 0;
 	SetRegister(RegisterType16::REG_SP, 0xFFFE);
 
 	if (m_Cartridge->IsColourModeDMG())

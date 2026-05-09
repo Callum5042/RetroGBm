@@ -91,6 +91,10 @@ class EmulatorWrapper {
         resume(emulatorPtr)
     }
 
+    fun restart() {
+        restart(emulatorPtr)
+    }
+
     fun getCheatCodes(): Array<CheatCode> {
         return getCheatCodes(emulatorPtr)
     }
@@ -122,6 +126,7 @@ class EmulatorWrapper {
 
     private external fun pause(emulatorPtr: Long)
     private external fun resume(emulatorPtr: Long)
+    private external fun restart(emulatorPtr: Long)
     private external fun setEmulationSpeedMultiplier(emulatorPtr: Long, speedMultiplier: Float)
 
     private external fun getCheatCodes(emulatorPtr: Long): Array<CheatCode>
