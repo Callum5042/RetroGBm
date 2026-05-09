@@ -224,20 +224,8 @@ class EmulatorActivity : ComponentActivity() {
                                 saveStateLauncher.launch(intent)
                             },
                             onRestart = {
-                                val currentActivity = context as? Activity
-                                currentActivity?.let { activity ->
-
-                                    if (viewModel.emulator.isRunning()) {
-                                        viewModel.emulator.stop()
-                                    }
-
-                                    activity.finish()
-                                    val intent = Intent(activity, activity::class.java).apply {
-                                        putExtra("ROM_TITLE", fileName)
-                                        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    }
-
-                                    activity.startActivity(intent)
+                                if (viewModel.emulator.isRunning()) {
+                                    viewModel.emulator.restart()
                                 }
                             },
                             onStop = {

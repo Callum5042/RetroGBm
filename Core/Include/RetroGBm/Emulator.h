@@ -82,6 +82,8 @@ public:
 	void Pause(bool pause);
 	inline bool IsPaused() const { return m_Paused; }
 
+	void Restart();
+
 	void SetEmulationSpeedMultipler(float multipler);
 
 	uint8_t GetOpCode() const;

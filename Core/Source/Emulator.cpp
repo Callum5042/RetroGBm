@@ -302,6 +302,26 @@ void Emulator::Pause(bool pause)
 	}
 }
 
+void Emulator::Restart()
+{
+	this->Pause(true);
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
+
+	m_Cpu->Init();
+	m_Timer->Init();
+
+	// m_Cartridge->Init(); // Do we want to reset the RAM?
+	m_Display->Init();
+	m_Ppu->Init();
+	
+	m_Dma->Reset();
+
+	m_Joypad = std::make_unique<Joypad>();
+	m_Apu = std::make_unique<Apu>(m_SoundOutput);
+
+	this->Pause(false);
+}
+
 void Emulator::ToggleTraceLog(bool enable)
 {
 	if (enable)
