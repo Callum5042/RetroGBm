@@ -151,7 +151,6 @@
     <ClCompile Include="Source\Networking\WinNetworkOutput.cpp" />
     <ClCompile Include="Source\ProfileParser.cpp" />
     <ClCompile Include="Source\Render\DisplayOutput.cpp" />
-    <ClCompile Include="Source\simdjson.cpp" />
     <ClCompile Include="Source\Windows\CartridgeInfoWindow.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Windows\CheatsWindow.cpp" />
