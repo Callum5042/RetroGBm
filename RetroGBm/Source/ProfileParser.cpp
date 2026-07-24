@@ -1,12 +1,9 @@
 #include "ProfileParser.h"
-#include "simdjson.h"
 #include "json.hpp"
 
 #include <RetroGBm/Logger.h>
 
 #include <fstream>
-
-using namespace simdjson;
 
 // JSON - Must be first
 void to_json(nlohmann::json& j, const ProfileCheats& p)
@@ -46,7 +43,6 @@ void to_json(nlohmann::json& j, const ProfileOptions& p)
 	};
 }
 
-// TODO: This whole simdjson needs to be replaced with nlohmann::json for consistency and ease of use
 ProfileData ParseProfile(const std::filesystem::path& path)
 {
 	ProfileData profile;
@@ -57,155 +53,68 @@ ProfileData ParseProfile(const std::filesystem::path& path)
 		return profile;
 	}
 
-	// Load profile.json
-	simdjson_result<padded_string> json_result = padded_string::load("profile.json");
-	if (json_result.error() != error_code::SUCCESS)
+	std::ifstream file("profile.json");
+	if (!file)
 	{
+		Logger::Error("Unable to open profile.json");
 		return profile;
 	}
 
-	const padded_string& json = json_result.value();
+	std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
-	ondemand::parser parser;
-	ondemand::document doc = parser.iterate(json);
-
-	// Parse array
-	simdjson_result<fallback::ondemand::value> gameData = doc.find_field("gameData");
-	if (gameData.error() != error_code::SUCCESS)
+	nlohmann::json doc;
+	try
 	{
-		Logger::Error("Unable to parse JSON 'gameData'");
+		doc = nlohmann::json::parse(content);
+	}
+	catch (const std::exception& e)
+	{
+		Logger::Error("Failed to parse profile.json: " + std::string(e.what()));
 		return profile;
 	}
 
-	std::vector<ProfileGameData> profileDataList;
-	for (auto game : gameData.get_array())
+	// Parse gameData
+	if (doc.contains("gameData") && doc["gameData"].is_array())
 	{
-		ProfileGameData profileData;
-
-		// cheats
-		auto cheatsJson = game.find_field("cheats");
-		if (cheatsJson.error() == error_code::SUCCESS)
+		for (const auto& game : doc["gameData"])
 		{
-			auto cheatsArray = cheatsJson.get_array();
+			ProfileGameData profileData;
 
-			for (auto cheatJson : cheatsArray)
+			if (game.contains("cheats") && game["cheats"].is_array())
 			{
-				auto codeField = cheatJson.find_field("code");
-				auto nameField = cheatJson.find_field("name");
-
-				std::string name, code;
-
-				if (nameField.error() == simdjson::SUCCESS && nameField.type() == simdjson::ondemand::json_type::string)
+				for (const auto& cheat : game["cheats"]) 
 				{
-					name = std::string(nameField.get_string().value());
+					ProfileCheats pc;
+					if (cheat.contains("name")) pc.name = cheat["name"].get<std::string>();
+					if (cheat.contains("code")) pc.code = cheat["code"].get<std::string>();
+					profileData.cheats.push_back(pc);
 				}
-
-				if (codeField.error() == simdjson::SUCCESS && codeField.type() == simdjson::ondemand::json_type::string)
-				{
-					code = std::string(codeField.get_string().value());
-				}
-
-				profileData.cheats.push_back({ name, code });
 			}
-		}
 
-		// checksum
-		auto checksumJson = game.find_field("checksum");
-		if (checksumJson.error() == error_code::SUCCESS)
-		{
-			auto& checksum = checksumJson.value();
-			if (checksum.is_string())
-			{
-				profileData.checksum = checksum.get_string().value();
-			}
-		}
-		else
-		{
-			Logger::Error("Unable to parse JSON 'checksum'");
-		}
+			if (game.contains("checksum")) profileData.checksum = game["checksum"].get<std::string>();
+			if (game.contains("fileName")) profileData.filename = game["fileName"].get<std::string>();
+			if (game.contains("lastPlayed")) profileData.lastPlayed = game["lastPlayed"].get<std::string>();
+			if (game.contains("totalPlayTimeMinutes")) profileData.totalPlayTimeMinutes = game["totalPlayTimeMinutes"].get<int>();
 
-		// fileName
-		auto fileNameJson = game.find_field("fileName");
-		if (fileNameJson.error() == error_code::SUCCESS)
-		{
-			auto& fileName = fileNameJson.value();
-			if (fileName.is_string())
-			{
-				profileData.filename = fileName.get_string().value();
-			}
+			profile.gameData.push_back(profileData);
 		}
-		else
-		{
-			Logger::Error("Unable to parse JSON 'fileName'");
-		}
-
-		// lastPlayed
-		auto lastPlayedJson = game.find_field("lastPlayed");
-		if (lastPlayedJson.error() == error_code::SUCCESS)
-		{
-			auto& lastPlayed = lastPlayedJson.value();
-			if (lastPlayed.is_string())
-			{
-				profileData.lastPlayed = lastPlayed.get_string().value();
-			}
-		}
-
-		// totalPlayTimeMinutes
-		auto totalPlayTimeMinutesJson = game.find_field("totalPlayTimeMinutes");
-		if (totalPlayTimeMinutesJson.error() == error_code::SUCCESS)
-		{
-			auto& totalPlayTimeMinutes = totalPlayTimeMinutesJson.value();
-			if (totalPlayTimeMinutes.is_integer())
-			{
-				profileData.totalPlayTimeMinutes = static_cast<int>(totalPlayTimeMinutes.get_int64().value());
-			}
-		}
-		else
-		{
-			Logger::Error("Unable to parse JSON 'totalPlayTimeMinutes'");
-		}
-
-		profileDataList.push_back(profileData);
 	}
 
 	// Options
-	ProfileOptions options;
-
-	simdjson_result<fallback::ondemand::value> optionsJson = doc.find_field("options");
-	if (optionsJson.error() == error_code::SUCCESS)
+	if (doc.contains("options") && doc["options"].is_object())
 	{
-		// Options rom directories
-		auto romDirectoriesJson = optionsJson.find_field("romDirectories");
-		if (romDirectoriesJson.error() == error_code::SUCCESS)
-		{
-			auto& romDirectories = romDirectoriesJson.value();
-			if (romDirectories.is_string())
-			{
-				options.rom_directories = romDirectories.get_string().value();
-			}
-		}
-		else
-		{
-			Logger::Error("Unable to parse JSON 'romDirectories'");
-		}
-
-		// Input
-		auto key_a_json = optionsJson.find_field("key_a");
-		if (key_a_json.error() == error_code::SUCCESS)
-		{
-			options.key_a = key_a_json.get_int64().value();
-		}
-
-		auto key_b_json = optionsJson.find_field("key_b");
-		if (key_b_json.error() == error_code::SUCCESS)
-		{
-			options.key_b = key_b_json.get_int64().value();
-		}
+		const auto& optionsJson = doc["options"];
+		if (optionsJson.contains("romDirectories")) profile.options.rom_directories = optionsJson["romDirectories"].get<std::string>();
+		if (optionsJson.contains("key_a")) profile.options.key_a = optionsJson["key_a"].get<int>();
+		if (optionsJson.contains("key_b")) profile.options.key_b = optionsJson["key_b"].get<int>();
+		if (optionsJson.contains("key_start")) profile.options.key_start = optionsJson["key_start"].get<int>();
+		if (optionsJson.contains("key_select")) profile.options.key_select = optionsJson["key_select"].get<int>();
+		if (optionsJson.contains("key_up")) profile.options.key_up = optionsJson["key_up"].get<int>();
+		if (optionsJson.contains("key_down")) profile.options.key_down = optionsJson["key_down"].get<int>();
+		if (optionsJson.contains("key_left")) profile.options.key_left = optionsJson["key_left"].get<int>();
+		if (optionsJson.contains("key_right")) profile.options.key_right = optionsJson["key_right"].get<int>();
 	}
 
-	// Return 
-	profile.options = options;
-	profile.gameData = profileDataList;
 	return profile;
 }
 
