@@ -180,7 +180,7 @@ namespace CoreTests
 		}
 
 
-		TEST_METHOD(Read_AddressWraps)
+		TEST_METHOD(Write_ObjectPaletteAtLastAddress_WrapsAddressAndPreservesAutoIncrement)
 		{
 			// Arrange
 			MockCartridge cartridge;
@@ -191,10 +191,9 @@ namespace CoreTests
 			display.Write(0xFF6A, 0x0);
 			display.Write(0xFF6B, 0x80);
 
+			// Act
 			display.Write(0xFF6A, 0xBF);
 			display.Write(0xFF6B, 0xBF);
-
-			// Act
 			int result = display.Read(0xFF6B);
 
 			// Assert

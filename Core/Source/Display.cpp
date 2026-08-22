@@ -319,7 +319,7 @@ void Display::Write(uint16_t address, uint8_t value)
 		if (m_AutoIncrementBackgroundAddress)
 		{
 			m_BackgroundPaletteAddress = (m_BackgroundPaletteAddress + 1) & 0x3F;
-			m_BackgroundPaletteIndex = (m_BackgroundPaletteIndex & 0x80) | m_BackgroundPaletteAddress;;
+			m_BackgroundPaletteIndex = (m_BackgroundPaletteIndex & 0x80) | m_BackgroundPaletteAddress;
 		}
 
 		return;
