@@ -116,5 +116,18 @@ namespace CoreTests
 			Assert::AreEqual(0xAA, static_cast<int>(result));
 			Assert::AreEqual(0xAA, static_cast<int>(ram.GetWorkRam()[8192]));
 		}
+
+		TEST_METHOD(ReadEchoRam_ReadsFromWorkRam)
+		{
+			// Arrange
+			Ram ram;
+
+			// Act
+			ram.WriteWorkRam(0xC000, 0xAA);
+			uint8_t result = ram.ReadEchoRam(0xE000);
+
+			// Assert
+			Assert::AreEqual(0xAA, static_cast<int>(result));
+		}
 	};
 }
