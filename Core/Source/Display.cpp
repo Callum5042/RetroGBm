@@ -122,13 +122,27 @@ uint8_t Display::Read(uint16_t address)
 		case 0xFF4B:
 			return m_Context.wx;
 		case 0xFF68:
-			return m_BackgroundPaletteIndex;
+			return m_BackgroundPaletteIndex | 0x40; // 6 bit is unused and always read as 1;
 		case 0xFF69:
+		{
+			if (IsLcdEnabled() && GetLcdMode() == LcdMode::PixelTransfer)
+			{
+				return 0xFF;
+			}
+
 			return m_BackgroundColourPalettes[m_BackgroundPaletteAddress];
+		}
 		case 0xFF6A:
-			return m_ObjectPaletteIndex;
+			return m_ObjectPaletteIndex | 0x40; // 6 bit is unused and always read as 1;
 		case 0xFF6B:
+		{
+			if (IsLcdEnabled() && GetLcdMode() == LcdMode::PixelTransfer)
+			{
+				return 0xFF;
+			}
+
 			return m_ObjectColourPalettes[m_ObjectPaletteAddress];
+		}
 		default:
 			return 0xFF;
 	}
@@ -306,19 +320,26 @@ void Display::Write(uint16_t address, uint8_t value)
 	}
 
 	// CGB Palettes
+	const bool paletteAccessible = !IsLcdEnabled() || GetLcdMode() != LcdMode::PixelTransfer;
+
 	if (address == 0xFF68)
 	{
-		m_BackgroundPaletteIndex = value;
+		m_BackgroundPaletteIndex = value | 0x40; // 6 bit is unused and always read as 1
 		m_AutoIncrementBackgroundAddress = (value >> 7) & 0x1;
 		m_BackgroundPaletteAddress = value & 0x3F;
 		return;
 	}
 	else if (address == 0xFF69)
 	{
-		m_BackgroundColourPalettes[m_BackgroundPaletteAddress] = value;
+		if (paletteAccessible)
+		{
+			m_BackgroundColourPalettes[m_BackgroundPaletteAddress] = value;
+		}
+
 		if (m_AutoIncrementBackgroundAddress)
 		{
 			m_BackgroundPaletteAddress = (m_BackgroundPaletteAddress + 1) & 0x3F;
+			m_BackgroundPaletteIndex = (m_BackgroundPaletteIndex & 0x80) | 0x40 | m_BackgroundPaletteAddress;
 		}
 
 		return;
@@ -326,18 +347,22 @@ void Display::Write(uint16_t address, uint8_t value)
 
 	if (address == 0xFF6A)
 	{
-		m_ObjectPaletteIndex = value;
+		m_ObjectPaletteIndex = value | 0x40; // 6 bit is unused and always read as 1
 		m_AutoIncrementObjectAddress = (value >> 7) & 0x1;
 		m_ObjectPaletteAddress = value & 0x3F;
 		return;
 	}
 	else if (address == 0xFF6B)
 	{
-		m_ObjectColourPalettes[m_ObjectPaletteAddress] = value;
+		if (paletteAccessible)
+		{
+			m_ObjectColourPalettes[m_ObjectPaletteAddress] = value;
+		}
+
 		if (m_AutoIncrementObjectAddress)
 		{
-			m_ObjectPaletteAddress++;
-			m_ObjectPaletteIndex = m_ObjectPaletteAddress;
+			m_ObjectPaletteAddress = (m_ObjectPaletteAddress + 1) & 0x3F;
+			m_ObjectPaletteIndex = (m_ObjectPaletteIndex & 0x80) | 0x40 | m_ObjectPaletteAddress;
 		}
 
 		return;
