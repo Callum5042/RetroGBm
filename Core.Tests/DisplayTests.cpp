@@ -179,6 +179,28 @@ namespace CoreTests
 			Assert::AreEqual(0x80, result);
 		}
 
+		TEST_METHOD(Write_BackgroundPaletteAtLastAddress_WrapsAddressAndPreservesAutoIncrement)
+		{
+			// Arrange
+			MockCartridge cartridge;
+			NullDisplayOutput display_output;
+			Display display(&cartridge, &display_output);
+			display.Init();
+
+			display.Write(0xFF68, 0x0);
+			display.Write(0xFF69, 0x80);
+
+			// Act
+			display.Write(0xFF68, 0xBF);
+			display.Write(0xFF69, 0xBF);
+			int result = display.Read(0xFF69);
+			int reg = display.Read(0xFF68);
+
+			// Assert
+			Assert::AreEqual(0x80, result);
+			Assert::AreEqual(0x80, reg);
+		}
+
 
 		TEST_METHOD(Write_ObjectPaletteAtLastAddress_WrapsAddressAndPreservesAutoIncrement)
 		{
@@ -195,9 +217,11 @@ namespace CoreTests
 			display.Write(0xFF6A, 0xBF);
 			display.Write(0xFF6B, 0xBF);
 			int result = display.Read(0xFF6B);
+			int reg = display.Read(0xFF6A);
 
 			// Assert
 			Assert::AreEqual(0x80, result);
+			Assert::AreEqual(0x80, reg);
 		}
 	};
 }
