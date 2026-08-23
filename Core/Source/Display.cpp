@@ -124,11 +124,25 @@ uint8_t Display::Read(uint16_t address)
 		case 0xFF68:
 			return m_BackgroundPaletteIndex;
 		case 0xFF69:
+		{
+			if (IsLcdEnabled() && GetLcdMode() == LcdMode::PixelTransfer)
+			{
+				return 0xFF;
+			}
+
 			return m_BackgroundColourPalettes[m_BackgroundPaletteAddress];
+		}
 		case 0xFF6A:
 			return m_ObjectPaletteIndex;
 		case 0xFF6B:
+		{
+			if (IsLcdEnabled() && GetLcdMode() == LcdMode::PixelTransfer)
+			{
+				return 0xFF;
+			}
+
 			return m_ObjectColourPalettes[m_ObjectPaletteAddress];
+		}
 		default:
 			return 0xFF;
 	}
@@ -306,6 +320,8 @@ void Display::Write(uint16_t address, uint8_t value)
 	}
 
 	// CGB Palettes
+	const bool paletteAccessible = !IsLcdEnabled() || GetLcdMode() != LcdMode::PixelTransfer;
+
 	if (address == 0xFF68)
 	{
 		m_BackgroundPaletteIndex = value;
@@ -315,7 +331,11 @@ void Display::Write(uint16_t address, uint8_t value)
 	}
 	else if (address == 0xFF69)
 	{
-		m_BackgroundColourPalettes[m_BackgroundPaletteAddress] = value;
+		if (paletteAccessible)
+		{
+			m_BackgroundColourPalettes[m_BackgroundPaletteAddress] = value;
+		}
+
 		if (m_AutoIncrementBackgroundAddress)
 		{
 			m_BackgroundPaletteAddress = (m_BackgroundPaletteAddress + 1) & 0x3F;
@@ -334,7 +354,11 @@ void Display::Write(uint16_t address, uint8_t value)
 	}
 	else if (address == 0xFF6B)
 	{
-		m_ObjectColourPalettes[m_ObjectPaletteAddress] = value;
+		if (paletteAccessible)
+		{
+			m_ObjectColourPalettes[m_ObjectPaletteAddress] = value;
+		}
+
 		if (m_AutoIncrementObjectAddress)
 		{
 			m_ObjectPaletteAddress = (m_ObjectPaletteAddress + 1) & 0x3F;
