@@ -55,13 +55,19 @@ jobs:
         distribution: temurin
         java-version: "17"
         cache: gradle
+        cache-dependency-path: |
+          Android/*.gradle.kts
+          Android/gradle/wrapper/gradle-wrapper.properties
 
     - name: Set up Android SDK
       uses: android-actions/setup-android@v3
 
     - name: Install Android native build tools
-      run: sdkmanager --install "cmake;3.22.1" "ndk;26.3.11579264"
+      run: sdkmanager --install "platforms;android-34" "cmake;3.22.1" "ndk;27.0.12077973"
+
+    - name: Make Gradle wrapper executable
+      run: chmod +x Android/gradlew
 
     - name: Build Android release APK
-      working-directory: android
+      working-directory: Android
       run: ./gradlew assembleRelease
