@@ -198,7 +198,7 @@ namespace CoreTests
 
 			// Assert
 			Assert::AreEqual(0x80, result);
-			Assert::AreEqual(0x80, reg);
+			Assert::AreEqual(0xC0, reg);  // 6 bit is unused and always read as 1
 		}
 
 
@@ -221,7 +221,7 @@ namespace CoreTests
 
 			// Assert
 			Assert::AreEqual(0x80, result);
-			Assert::AreEqual(0x80, reg);
+			Assert::AreEqual(0xC0, reg);  // 6 bit is unused and always read as 1
 		}
 	};
 }
