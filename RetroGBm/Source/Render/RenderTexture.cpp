@@ -103,12 +103,10 @@ void Render::RenderTexture::Update(void* video_buffer, int video_pitch)
 	uint8_t* src = static_cast<uint8_t*>(video_buffer);
 	uint8_t* dst = static_cast<uint8_t*>(resource.pData);
 
-	const size_t row_bytes = static_cast<size_t>(m_Width) * sizeof(uint32_t);
-
 	// Update the texture
 	for (int row = 0; row < m_Height; ++row)
 	{
-		std::memcpy(dst, src, row_bytes);
+		std::memcpy(dst, src, resource.RowPitch);
 		src += video_pitch;
 		dst += resource.RowPitch;
 	}
