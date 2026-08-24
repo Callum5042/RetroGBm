@@ -55,7 +55,7 @@
 - [ ] ppu/stat_irq_blocking
 - [ ] ppu/stat_lyc_onoff
 - [x] timer/div_write
-- [ ] timer/rapid_toggle
+- [x] timer/rapid_toggle
 - [x] timer/tim00
 - [x] timer/tim00_div_trigger
 - [x] timer/tim01
@@ -65,8 +65,8 @@
 - [x] timer/tim11
 - [x] timer/tim11_div_trigger
 - [x] timer/tima_reload
-- [ ] timer/tima_write_reloading
-- [ ] timer/tma_write_reloading
+- [x] timer/tima_write_reloading
+- [x] timer/tma_write_reloading
 
 **emulator-only/mbc1**
 
@@ -100,5 +100,7 @@
 - [x] dmg-acid2
 - [x] cgb-acid2
 
-![dmg-acid2](/Images/dmg_acid2.png)
-![cgb-acid2](/Images/cgb_acid2.png)
+| dmg-acid2 | cgb-acid2 |
+| :---: | :---: |
+|  ![dmg-acid2](./Images/dmg_acid2.png) | ![cgb-acid2](./Images/cgb_acid2.png) |
+
