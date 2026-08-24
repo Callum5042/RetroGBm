@@ -36,7 +36,11 @@ public:
 private:
 	TimerContext m_Context = {};
 
-	bool m_BitPreviousState = false;
 	bool m_TimerHasOverflown = false;
+	bool m_TimerReloading = false;
 	int m_TimerOverflowTicks = 0;
+
+	bool GetTimerInputState() const;
+	void IncrementTima();
+	void HandleTimerInputChange(bool previousState);
 };
