@@ -331,6 +331,11 @@ extern "C"
         Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
         emulator->SetBootRom(enabled);
     }
+
+    JNIEXPORT void JNICALL
+    Java_com_retrogbm_EmulatorWrapper_setDmgColourisation(JNIEnv*, jobject, jlong emulator_ptr, jboolean enabled) {
+        if (auto emulator = reinterpret_cast<Emulator*>(emulator_ptr)) emulator->SetDmgColourisation(enabled);
+    }
 }
 
 extern "C"

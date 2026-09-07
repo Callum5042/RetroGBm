@@ -48,12 +48,18 @@
 - [ ] interrupts/ie_push
 - [x] oam_dma/basic
 - [x] oam_dma/reg_read
-- [ ] ppu/intr_2_0_timing
-- [ ] ppu/intr_2_mode0_timing
-- [ ] ppu/intr_2_mode0_timing_sprites
-- [ ] ppu/intr_2_mode3_timing
-- [ ] ppu/stat_irq_blocking
-- [ ] ppu/stat_lyc_onoff
+- [x] ppu/intr_2_0_timing
+- [x] ppu/intr_2_mode0_timing
+- [x] ppu/intr_2_mode0_timing_sprites
+- [x] ppu/intr_2_mode3_timing
+- [x] ppu/stat_irq_blocking
+- [x] ppu/stat_lyc_onoff
+- [x] ppu/hblank_ly_scx_timing-GS
+- [x] ppu/intr_1_2_timing-GS
+- [x] ppu/intr_2_oam_ok_timing
+- [x] ppu/lcdon_timing-GS
+- [x] ppu/lcdon_write_timing-GS
+- [x] ppu/vblank_stat_intr-GS
 - [x] timer/div_write
 - [x] timer/rapid_toggle
 - [x] timer/tim00

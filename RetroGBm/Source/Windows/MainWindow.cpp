@@ -421,6 +421,16 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 
+		case m_MenuOptionsDmgColours:
+		{
+			auto& enabled = m_Application->ProfileDataList.options.dmg_colourisation;
+			enabled = !enabled;
+			if (auto emulator = m_Application->GetEmulator()) emulator->SetDmgColourisation(enabled);
+			CheckMenuItem(m_OptionsMenuItem, m_MenuOptionsDmgColours, MF_BYCOMMAND | (enabled ? MF_CHECKED : MF_UNCHECKED));
+			SaveProfile("profile.json", m_Application->ProfileDataList);
+			break;
+		}
+
 		case m_MenuOptionsNetworkHost:
 		{
 			UINT menu_state = GetMenuState(m_OptionsMenuItem, m_MenuOptionsNetworkHost, MF_BYCOMMAND);
@@ -1169,6 +1179,7 @@ void MainWindow::CreateMenuBar()
 	AppendMenuW(m_OptionsMenuItem, MF_UNCHECKED, m_MenuOptionsStretchDisplay, L"Stretch Display");
 	AppendMenuW(m_OptionsMenuItem, MF_CHECKED, m_MenuOptionsLinearFilter, L"Linear Filtering");
 	AppendMenuW(m_OptionsMenuItem, (m_Application->SkipBootRom ? MF_CHECKED : MF_UNCHECKED), m_MenuOptionsSkipBootRom, L"Skip Boot ROM");
+	AppendMenuW(m_OptionsMenuItem, (m_Application->ProfileDataList.options.dmg_colourisation ? MF_CHECKED : MF_UNCHECKED), m_MenuOptionsDmgColours, L"CGB Colours for DMG Games");
 	AppendMenuW(m_OptionsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_OptionsMenuItem, MF_UNCHECKED, m_MenuOptionsNetworkHost, L"Network Host");
 	AppendMenuW(m_OptionsMenuItem, MF_UNCHECKED, m_MenuOptionsNetworkConnect, L"Network Connect");

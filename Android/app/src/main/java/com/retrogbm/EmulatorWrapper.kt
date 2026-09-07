@@ -27,7 +27,7 @@ class EmulatorWrapper {
 
     private var emulatorPtr: Long = 0
 
-    fun loadRom(data: ByteArray, path: String, skipBootRom: Boolean) {
+    fun loadRom(data: ByteArray, path: String, skipBootRom: Boolean, dmgColourisation: Boolean = true) {
         emulatorPtr = createEmulator(
             displayOutput.nativePtr,
             soundOutput.nativePtr,
@@ -36,6 +36,7 @@ class EmulatorWrapper {
 
         setBatteryPath(emulatorPtr, path)
         setBootRom(emulatorPtr, !skipBootRom)
+        setDmgColourisation(emulatorPtr, dmgColourisation)
         loadRomFromByteArray(emulatorPtr, data)
 
         // Connect
@@ -49,6 +50,10 @@ class EmulatorWrapper {
 
     fun tick() {
         tick(emulatorPtr)
+    }
+
+    fun setDmgColourisation(enabled: Boolean) {
+        if (emulatorPtr != 0L) setDmgColourisation(emulatorPtr, enabled)
     }
 
     fun getVideoBuffer(): IntArray {
@@ -133,6 +138,7 @@ class EmulatorWrapper {
     private external fun setCheatCodes(emulatorPtr: Long, codes: Array<CheatCode>)
 
     private external fun setBootRom(emulatorPtr: Long, enabled: Boolean)
+    private external fun setDmgColourisation(emulatorPtr: Long, enabled: Boolean)
 
     private external fun linkCableData(emulatorPtr: Long, data: Byte)
 }

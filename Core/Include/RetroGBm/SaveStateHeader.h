@@ -6,7 +6,7 @@
 struct SaveStateHeader
 {
 	char identifier[8] = { 'R', 'E', 'T', 'R', 'O', 'G', 'B', 'M' };
-	int version = 1;
+	int version = 2;
 
 	int64_t date_created = 0;
 	int64_t date_modified = 0;

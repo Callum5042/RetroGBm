@@ -6,6 +6,7 @@
 
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Display.h>
+#include <RetroGBm/Ppu.h>
 
 #include <vector>
 
@@ -64,8 +65,8 @@ void TileWindow::UpdateTilemapTexture()
 			// Display tile (16 bytes big - 2bits per pixel)
 			for (int tileY = 0; tileY < 16; tileY += 2)
 			{
-				uint8_t byte1 = m_Application->GetEmulator()->ReadBus(address + (tile_number * 16) + tileY);
-				uint8_t byte2 = m_Application->GetEmulator()->ReadBus(address + (tile_number * 16) + tileY + 1);
+				uint8_t byte1 = m_Application->GetEmulator()->GetPpu()->ReadVideoRam(address + (tile_number * 16) + tileY, 0);
+				uint8_t byte2 = m_Application->GetEmulator()->GetPpu()->ReadVideoRam(address + (tile_number * 16) + tileY + 1, 0);
 
 				for (int bit = 7; bit >= 0; bit--)
 				{

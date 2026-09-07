@@ -11,8 +11,9 @@ A fast and lightweight Game Boy Color emulator written in C++ for Windows and An
 - Multiple save states with rotating quick saves
 - Adjustable emulation speed
 - Real-Time Clock (RTC) emulation
-- Cycle-accurate CPU and PPU timing
+- Dot-based PPU timing with variable pixel transfer and STAT interrupts
 - Audio emulation
+- CGB colours for DMG games, enabled by default, with a grayscale option on Windows and Android
 - Play time tracking
 - Link cable support
 - Gameshark cheat codes
@@ -34,6 +35,15 @@ A fast and lightweight Game Boy Color emulator written in C++ for Windows and An
 **Android**: Install Android Studios and open the `android` folder, then build with Android Studios.
 
 ## Compatibility
+
+The **CGB Colours for DMG Games** option selects the Game Boy Color compatibility
+palettes from the cartridge header (including Dr. Mario). Turn it off for DMG
+grayscale. Native CGB games always use their own palettes. DMG games retain DMG
+rendering rules in either setting. When the boot animation is enabled, DMG games
+use the DMG boot ROM with the selected display palettes.
+
+The new PPU uses save-state version 2. Older save states are rejected; battery
+saves are unaffected.
 
 [Compatibility](/Compatibility.md)
 

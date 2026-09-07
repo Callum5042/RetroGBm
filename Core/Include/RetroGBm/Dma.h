@@ -28,6 +28,7 @@ public:
 
 	void RunHDMA();
 	void RunGDMA(bool previous_active);
+	int TakeStallCycles() { int cycles = m_StallCycles; m_StallCycles = 0; return cycles; }
 
 	void Reset();
 
@@ -44,6 +45,8 @@ public:
 	void LoadState(std::fstream* file);
 
 private:
+	void TransferBlock();
+	int m_StallCycles = 0;
 	DmaContext context = {};
 
 	// Gameboy colour

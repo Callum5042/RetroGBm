@@ -68,6 +68,7 @@ namespace CoreTests
 			NullSoundOutput sound;
 			NullNetworkOutput network;
 			Emulator emulator(&display, &sound, &network);
+			emulator.SetFramePacingEnabled(false);
 
 			if (!emulator.LoadRom(romPath.string()))
 			{

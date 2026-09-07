@@ -461,7 +461,8 @@ class EmulatorActivity : ComponentActivity() {
 
         // Load ROM
         val batteryFilePath = batteryPath.let { "$it/$fileName.save" }
-        viewModel.emulator.loadRom(bytes, batteryFilePath, skipBootRom)
+        viewModel.emulator.loadRom(bytes, batteryFilePath, skipBootRom,
+            sharedPreferences.getBoolean("dmg_colourisation", true))
 
         // Store fileName
         this.fileName = fileName

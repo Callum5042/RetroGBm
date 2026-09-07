@@ -18,6 +18,7 @@
 #include "RetroGBm/Apu.h"
 #include "RetroGBm/HighTimer.h"
 #include "RetroGBm/SaveStateHeader.h"
+#include "RetroGBm/VideoState.h"
 #include "RetroGBm/Cheats.h"
 #include "RetroGBm/Bootrom.h"
 
@@ -45,7 +46,7 @@ Emulator::Emulator(IDisplayOutput* display_output, ISoundOutput* sound_output, I
 	m_Cpu = std::make_unique<Cpu>(m_Cartridge.get());
 	m_Timer = std::make_unique<Timer>();
 	m_Ram = std::make_unique<Ram>();
-	m_Display = std::make_unique<Display>(m_DisplayOutput);
+	m_Display = std::make_unique<Display>(m_Cartridge.get(), m_DisplayOutput);
 	m_Joypad = std::make_unique<Joypad>();
 
 	m_Ppu = std::make_unique<Ppu>(this, m_Cpu.get(), m_Display.get(), m_Cartridge.get());
@@ -68,8 +69,8 @@ Emulator::Emulator(std::unique_ptr<BaseCartridge> cartridge, ISoundOutput* sound
 	m_Cpu = std::make_unique<Cpu>(m_Cartridge.get());
 	m_Timer = std::make_unique<Timer>();
 	m_Ram = std::make_unique<Ram>();
-	m_Display = std::make_unique<Display>(m_DisplayOutput);
-	m_Ppu = std::make_unique<Ppu>();
+	m_Display = std::make_unique<Display>(m_Cartridge.get(), m_DisplayOutput);
+	m_Ppu = std::make_unique<Ppu>(this, m_Cpu.get(), m_Display.get(), m_Cartridge.get());
 	m_Dma = std::make_unique<Dma>();
 	m_Joypad = std::make_unique<Joypad>();
 	m_Apu = std::make_unique<Apu>(m_SoundOutput);
@@ -102,12 +103,18 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 {
 	Logger::Info("Attempting to load ROM data");
 
+	m_DoubleSpeedMode = 0;
+	m_Halted = false;
+	m_HaltBug = false;
+	m_HaltNoJump = false;
+	m_MapBootRom = true;
+
 	// Allocate memory
 	m_Cartridge = LoadCartridgeFromMemory(filedata);
 	m_Cpu = std::make_unique<Cpu>(m_Cartridge.get());
 	m_Timer = std::make_unique<Timer>();
 	m_Ram = std::make_unique<Ram>();
-	m_Display = std::make_unique<Display>(m_DisplayOutput);
+	m_Display = std::make_unique<Display>(m_Cartridge.get(), m_DisplayOutput);
 	m_Joypad = std::make_unique<Joypad>();
 
 	m_Ppu = std::make_unique<Ppu>(this, m_Cpu.get(), m_Display.get(), m_Cartridge.get());
@@ -120,6 +127,8 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	// Initialise subsystems
 	m_Cpu->Init();
 	m_Timer->Init();
+	m_Display->Init(m_EnableBootRom);
+	m_Display->SetDmgColourisation(m_DmgColourisation);
 	m_Ppu->Init();
 
 	// Run Boot ROM
@@ -257,7 +266,7 @@ void Emulator::Stop()
 
 void Emulator::SetSpeedMode()
 {
-	if (m_Cartridge->GetCartridgeData().colour_mode == ColourModeV2::CGB)
+	if (m_Cartridge && !m_Cartridge->IsColourModeDMG())
 	{
 		if ((m_DoubleSpeedMode & 0x1) == 1)
 		{
@@ -311,10 +320,20 @@ void Emulator::Restart()
 	m_Timer->Init();
 
 	// m_Cartridge->Init(); // Do we want to reset the RAM?
-	m_Display->Init();
+	m_DoubleSpeedMode = 0;
+	m_Halted = false;
+	m_HaltBug = false;
+	m_HaltNoJump = false;
+	m_MapBootRom = true;
+
+	m_Display->Init(m_EnableBootRom);
 	m_Ppu->Init();
 	
 	m_Dma->Reset();
+	if (m_EnableBootRom)
+	{
+		m_Cpu->ProgramCounter = 0;
+	}
 
 	m_Joypad = std::make_unique<Joypad>();
 	m_Apu = std::make_unique<Apu>(m_SoundOutput);
@@ -393,8 +412,6 @@ void Emulator::Tick()
 	}
 	else
 	{
-		Cycle(1);
-
 		// Check if we have interrupts
 		if (!m_Cpu->GetInterruptMasterFlag())
 		{
@@ -429,18 +446,31 @@ void Emulator::Cycle(int machine_cycles)
 				if (n & 1)
 				{
 					m_Ppu->Tick();
+					if (m_Ppu->ConsumeHBlank()) m_Dma->RunHDMA();
+					if (m_Ppu->ConsumeFrame() && m_FramePacingEnabled) m_Ppu->PaceFrame();
 					m_Apu->Tick();
 				}
 			}
 			else
 			{
 				m_Ppu->Tick();
+				if (m_Ppu->ConsumeHBlank()) m_Dma->RunHDMA();
+				if (m_Ppu->ConsumeFrame() && m_FramePacingEnabled) m_Ppu->PaceFrame();
 				m_Apu->Tick();
 			}
 		}
 
 		m_Dma->Tick();
+		// DMA owns pending bus time. Advance devices iteratively, never from inside Ppu::Tick.
+		machine_cycles += m_Dma->TakeStallCycles();
 	}
+}
+
+void Emulator::SetDmgColourisation(bool enabled)
+{
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
+	m_DmgColourisation = enabled;
+	if (m_Display) m_Display->SetDmgColourisation(enabled);
 }
 
 uint8_t Emulator::GetOpCode() const
@@ -480,7 +510,7 @@ uint8_t Emulator::ReadIO(uint16_t address)
 	}
 	else if (address == 0xFF4D)
 	{
-		if (m_Cartridge->GetCartridgeData().colour_mode == ColourModeV2::CGB)
+		if (m_Cartridge && !m_Cartridge->IsColourModeDMG())
 		{
 			return m_DoubleSpeedMode;
 		}
@@ -497,7 +527,7 @@ uint8_t Emulator::ReadIO(uint16_t address)
 	}
 	else if (address == 0xFF55)
 	{
-		return m_Dma->GetHDMA5();
+		return m_Display->IsColour() ? m_Dma->GetHDMA5() : 0xFF;
 	}
 	else if (address >= 0xFF68 && address <= 0xFF6B)
 	{
@@ -561,11 +591,12 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	else if (((address >= 0xFF40) && (address <= 0xFF4B)))
 	{
 		m_Display->Write(address, value);
+		if (address == 0xFF46) m_Dma->Start(value);
 		return;
 	}
 	else if (address == 0xFF4D)
 	{
-		if (m_Cartridge->GetCartridgeData().colour_mode == ColourModeV2::CGB)
+		if (m_Cartridge && !m_Cartridge->IsColourModeDMG())
 		{
 			m_DoubleSpeedMode |= value & 0x1;
 		}
@@ -584,17 +615,17 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 	}
 	else if (address == 0xFF51 || address == 0xFF52)
 	{
-		m_Dma->SetSource(address, value);
+		if (m_Display->IsColour()) m_Dma->SetSource(address, value);
 		return;
 	}
 	else if (address == 0xFF53 || address == 0xFF54)
 	{
-		m_Dma->SetDestination(address, value);
+		if (m_Display->IsColour()) m_Dma->SetDestination(address, value);
 		return;
 	}
 	else if (address == 0xFF55)
 	{
-		m_Dma->StartCGB(value);
+		if (m_Display->IsColour()) m_Dma->StartCGB(value);
 		return;
 	}
 	else if (address >= 0xFF68 && address <= 0xFF6B)
@@ -625,15 +656,14 @@ uint8_t Emulator::ReadBus(uint16_t address)
 		// Boot ROM mapping
 		if (m_EnableBootRom && m_MapBootRom)
 		{
-			// TODO: May want an option to use DMG boot rom for only DMG mode
-			/*if (m_Cartridge->GetCartridgeData().colour_mode == ColourModeV2::DMG)
+			if (m_Cartridge->IsColourModeDMG())
 			{
 				if (m_MapBootRom && address <= 0x00FF)
 				{
 					return dmg_boot[address];
 				}
 			}
-			else*/
+			else
 			{
 				if (address <= 0x00FF || (address >= 0x0200 && address < 0x0900))
 				{
@@ -867,6 +897,11 @@ void Emulator::SaveState(const std::string& filepath)
 	m_Display->SaveState(&file);
 	m_Ppu->SaveState(&file);
 	m_Dma->SaveState(&file);
+	VideoState::Write(file, m_DoubleSpeedMode);
+	VideoState::Write(file, m_Halted);
+	VideoState::Write(file, m_HaltBug);
+	VideoState::Write(file, m_HaltNoJump);
+	VideoState::Write(file, m_MapBootRom);
 
 	// Store timestamp data
 	m_StateTimestamps[filepath] = std::chrono::high_resolution_clock::now();
@@ -882,7 +917,11 @@ void Emulator::LoadState(const std::string& filepath)
 	SaveStateHeader header;
 	file.read(reinterpret_cast<char*>(&header), sizeof(SaveStateHeader));
 
-	// Only check identifier for version 1 for now. This will allow backwards comapitability for alpha builds
+	// Validate the format before any subsystem is changed.
+	if (!file || header.version != 2)
+	{
+		throw std::runtime_error("Unable to load savestate: Unsupported version (requires version 2)");
+	}
 	char identifier[8] = { 'R', 'E', 'T', 'R', 'O', 'G', 'B', 'M' };
 	if (!std::equal(std::begin(header.identifier), std::end(header.identifier), std::begin(identifier)))
 	{
@@ -906,6 +945,12 @@ void Emulator::LoadState(const std::string& filepath)
 	m_Display->LoadState(&file);
 	m_Ppu->LoadState(&file);
 	m_Dma->LoadState(&file);
+	VideoState::Read(file, m_DoubleSpeedMode);
+	VideoState::Read(file, m_Halted);
+	VideoState::Read(file, m_HaltBug);
+	VideoState::Read(file, m_HaltNoJump);
+	VideoState::Read(file, m_MapBootRom);
+	m_DmgColourisation = m_Display->GetDmgColourisation();
 
 	// Store current savestate start time
 	m_CurrentTimeStamp = std::chrono::high_resolution_clock::now();

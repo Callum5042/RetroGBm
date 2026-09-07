@@ -10,6 +10,7 @@
 struct ProfileOptions
 {
 	std::string rom_directories = "RomData";
+	bool dmg_colourisation = true;
 
 	int key_a = 'X';
 	int key_b = 'Z';

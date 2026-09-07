@@ -145,6 +145,7 @@ void Application::LoadRom(const std::string& file)
 
 	bool enable_bootrom = !SkipBootRom;
 	m_Emulator->SetBootRom(enable_bootrom);
+	m_Emulator->SetDmgColourisation(ProfileDataList.options.dmg_colourisation);
 
 	std::filesystem::path battery_path = "RomData";
 	std::filesystem::create_directories(battery_path);
