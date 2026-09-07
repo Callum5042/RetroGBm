@@ -764,7 +764,7 @@ void MainWindow::UpdateSaveStateDetails()
 			SaveStateHeader header;
 			file.read(reinterpret_cast<char*>(&header), sizeof(SaveStateHeader));
 
-			if (header.version == 1)
+			if (header.version == 1 || header.version == 2)
 			{
 				char identifier[8] = { 'R', 'E', 'T', 'R', 'O', 'G', 'B', 'M' };
 				if (!std::equal(std::begin(header.identifier), std::end(header.identifier), std::begin(identifier)))
