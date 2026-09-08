@@ -119,6 +119,9 @@ fun ListContent() {
     var skipBootRom by remember {
         mutableStateOf(sharedPreferences.getBoolean("skip_boot_rom", true))
     }
+    var dmgColourisation by remember {
+        mutableStateOf(sharedPreferences.getBoolean("dmg_colourisation", true))
+    }
 
     val absolutePath = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.absolutePath
     val romDirectory = absolutePath.let { "$it/ROMS" }
@@ -180,6 +183,16 @@ fun ListContent() {
                     sharedPreferences.edit {
                         putBoolean("skip_boot_rom", it)
                     }
+                }
+            )
+            OptionsDivider()
+            OptionsSwitch(
+                text = "CGB Colours for DMG Games",
+                value = dmgColourisation,
+                onChange = { enabled ->
+                    dmgColourisation = enabled
+                    sharedPreferences.edit { putBoolean("dmg_colourisation", enabled) }
+                    Emulator.emulator.setDmgColourisation(enabled)
                 }
             )
             OptionsDivider()

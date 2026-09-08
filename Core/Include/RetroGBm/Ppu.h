@@ -1,176 +1,63 @@
 #pragma once
-
-#include <cstdint>
-#include <vector>
 #include <array>
 #include <deque>
-
+#include <chrono>
+#include <cstdint>
+#include <fstream>
 #include "RetroGBm/Display.h"
-#include "RetroGBm/HighTimer.h"
-
 class IBus;
 class Cpu;
 class BaseCartridge;
-
-enum class FetchState
-{
-	Tile,
-	TileDataLow,
-	TileDataHigh,
-	Idle,
-};
-
-enum class FetchTileByte
-{
-	ByteLow,
-	ByteHigh
-};
-
-struct OamData
-{
-	uint8_t position_y;
-	uint8_t position_x;
-	uint8_t tile_id;
-
-	uint8_t gcb_palette : 3;
-	bool bank : 1;
-	uint8_t dmg_palette : 1;
-	bool flip_x : 1;
-	bool flip_y : 1;
-	bool priority : 1;
-};
-
-struct OamPipelineData
-{
-	OamData* oam = nullptr;
-	uint8_t byte_low = 0;
-	uint8_t byte_high = 0;
-};
-
-struct BackgroundWindowAttribute
-{
-	uint8_t colour_palette;
-	uint8_t bank;
-	bool flip_x;
-	bool flip_y;
-	bool priority;
-};
-
-struct PipelineContext
-{
-	FetchState pipeline_state = FetchState::Tile;
-	uint8_t line_x = 0;
-	uint8_t pushed_x = 0;
-	uint8_t fetch_x = 0;
-
-	BackgroundWindowAttribute background_window_attribute;
-	uint8_t background_window_tile = 0;
-	uint8_t background_window_byte_low = 0;
-	uint8_t background_window_byte_high = 0;
-
-	std::vector<OamPipelineData> fetched_entries;
-	std::deque<uint32_t> pixel_queue;
-	uint8_t fifo_x;
-
-	bool fetch_window = false;
-};
-
-struct PpuContext
-{
-	uint32_t dot_ticks = 0;
-	uint8_t window_line_counter = 0;
-
-	std::vector<uint8_t> video_ram;
-	std::array<OamData, 40> oam_ram;
-	std::vector<OamData> objects_per_line;
-
-	PipelineContext pipeline;
-};
-
+struct VideoPixel { uint8_t colour = 0, palette = 0, priority = 0, order = 255; int16_t objectX = 256; };
+struct LineObject { uint8_t y = 0, x = 0, tile = 0, flags = 0, order = 0; };
 class Ppu
 {
-	IBus* m_Bus = nullptr;
-	Cpu* m_Cpu = nullptr;
-	Display* m_Display = nullptr;
-	BaseCartridge* m_Cartridge = nullptr;
-
 public:
-	Ppu();
-	Ppu(IBus* bus, Cpu* cpu, Display* display, BaseCartridge* cartridge);
-	virtual ~Ppu() = default;
-
-	void Init();
-	void Tick();
-
-	void SetSpeedMultipler(float speed);
-
-	// OAM
-	void WriteOam(uint16_t address, uint8_t value);
-	uint8_t ReadOam(uint16_t address);
-
-	// VRAM
-	void WriteVideoRam(uint16_t address, uint8_t value);
-	uint8_t ReadVideoRam(uint16_t address);
-	uint8_t ReadVideoRam(uint16_t address, uint8_t bank);
-
-	void SetVideoRamBank(uint8_t value);
-	inline uint8_t GetVideoRamBank() const { return m_VramBank; }
-
-	inline PpuContext* GetContext() { return &m_Context; }
-
-	inline int GetFPS() { return m_FramesPerSecond; }
-
-	// Save state
-	void SaveState(std::fstream* file);
-	void LoadState(std::fstream* file);
-
+    Ppu() = default;
+    Ppu(IBus* bus, Cpu* cpu, Display* display, BaseCartridge* cartridge);
+    void Init();
+    void Tick();
+    void LcdEnableChanged();
+    void UpdateStat();
+    uint8_t ReadVideoRam(uint16_t address) const;
+    uint8_t ReadVideoRam(uint16_t address, uint8_t bank) const;
+    void WriteVideoRam(uint16_t address, uint8_t value);
+    void WriteVideoRamDma(uint16_t address, uint8_t value);
+    uint8_t ReadOam(uint16_t address) const;
+    void WriteOam(uint16_t address, uint8_t value);
+    void WriteOamDma(uint16_t address, uint8_t value);
+    uint8_t GetVideoRamBank() const;
+    void SetVideoRamBank(uint8_t value);
+    bool ConsumeHBlank() { bool value = m_HBlank; m_HBlank = false; return value; }
+    bool ConsumeFrame() { bool value = m_Frame; m_Frame = false; return value; }
+    void SetSpeedMultipler(float value);
+    void PaceFrame();
+    int GetFPS() const { return m_Fps; }
+    uint16_t GetDot() const { return m_Dot; }
+    void SaveState(std::fstream* file);
+    void LoadState(std::fstream* file);
 private:
-	PpuContext m_Context = {};
-
-	const uint16_t m_LinesPerFrame = 154;
-	const uint16_t m_DotTicksPerLine = 456;
-
-	// Modes
-	void UpdateOam();
-	void PixelTransfer();
-	void VBlank();
-	void HBlank();
-
-	// Pipeline
-	void PipelineProcess();
-	bool PipelineAddPixel();
-
-	void FetchBackgroundTileId();
-	void FetchWindowTileId();
-	void FetchObjectTileId();
-
-	void FetchTileData(FetchTileByte tile_byte);
-	void FetchObjectData(FetchTileByte tile_byte);
-
-	uint32_t FetchSpritePixels(uint32_t color, bool background_pixel_transparent);
-
-	void PixelFetcher();
-	void PushPixelToVideoBuffer();
-
-	bool IsWindowInView(int pixel_x);
-	void IncrementLY();
-
-	// Limit frame rate
-	void LimitFrameRate();
-	double m_TargetFrameTime = 1.0f / 60.0f;
-	int m_FramesPerSecond = 0;
-	int m_TotalFrames = 0;
-
-	HighTimer m_Timer;
-
-	int m_FrameCount = 0;
-	float m_TimeElapsed = 0.0f;
-
-	float m_SpeedMultipler = 1.0f;
-
-	// Bank
-	uint8_t m_VramBank = 0;
-
-	// WY Register cannot change mid scanline
-	int m_WindowY = 0;
+    void BeginLine(); void BeginTransfer(); void Transfer(); void Fetch(); void MergeObject();
+    void SetMode(LcdMode mode); void ResetClock();
+    Display* m_Display = nullptr;
+    Cpu* m_Cpu = nullptr;
+    std::array<uint8_t, 0x4000> m_Vram{};
+    std::array<uint8_t, 160> m_Oam{};
+    std::array<LineObject, 10> m_Objects{};
+    std::array<uint8_t, 10> m_Fetched{};
+    std::deque<VideoPixel> m_BackgroundFifo;
+    std::array<VideoPixel, 8> m_ObjectFifo{};
+    uint16_t m_Dot = 0, m_TransferDots = 0;
+    uint8_t m_Line = 0, m_Bank = 0, m_Count = 0, m_WindowLine = 0;
+    uint8_t m_FirstLine = 0;
+    uint8_t m_WindowTriggered = 0, m_WindowActive = 0, m_WindowUsed = 0, m_StatLine = 0;
+    uint8_t m_FetchPhase = 0, m_FetchX = 0, m_Tile = 0, m_Attribute = 0, m_Low = 0, m_High = 0;
+    uint16_t m_TileAddress = 0;
+    int16_t m_X = 0;
+    int16_t m_LastObjectTile = -1;
+    uint8_t m_Discard = 0, m_Startup = 0, m_ObjectStall = 0, m_CurrentObject = 0;
+    bool m_HBlank = false, m_Frame = false;
+    double m_Speed = 1;
+    int m_Fps = 0, m_FrameCount = 0;
+    std::chrono::steady_clock::time_point m_Deadline{}, m_FpsStart{};
 };

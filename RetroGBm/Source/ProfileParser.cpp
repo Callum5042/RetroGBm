@@ -32,6 +32,7 @@ void to_json(nlohmann::json& j, const ProfileOptions& p)
 	j = nlohmann::json
 	{
 		{"romDirectories", p.rom_directories},
+		{"dmgColourisation", p.dmg_colourisation},
 		{"key_a", p.key_a},
 		{"key_b", p.key_b},
 		{"key_start", p.key_start},
@@ -104,6 +105,8 @@ ProfileData ParseProfile(const std::filesystem::path& path)
 	if (doc.contains("options") && doc["options"].is_object())
 	{
 		const auto& optionsJson = doc["options"];
+		if (optionsJson.contains("dmgColourisation") && optionsJson["dmgColourisation"].is_boolean())
+			profile.options.dmg_colourisation = optionsJson["dmgColourisation"].get<bool>();
 		if (optionsJson.contains("romDirectories")) profile.options.rom_directories = optionsJson["romDirectories"].get<std::string>();
 		if (optionsJson.contains("key_a")) profile.options.key_a = optionsJson["key_a"].get<int>();
 		if (optionsJson.contains("key_b")) profile.options.key_b = optionsJson["key_b"].get<int>();

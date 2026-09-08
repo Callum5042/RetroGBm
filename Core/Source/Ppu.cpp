@@ -1,731 +1,696 @@
 #include "RetroGBm/Pch.h"
 #include "RetroGBm/Ppu.h"
 #include "RetroGBm/Cpu.h"
-#include "RetroGBm/Display.h"
-#include "RetroGBm/Emulator.h"
-#include "RetroGBm/Cartridge/BaseCartridge.h"
-#include "RetroGBm/HighTimer.h"
-#include "RetroGBm/Dma.h"
-#include "RetroGBm/Ram.h"
-#include "RetroGBm/Cheats.h"
+#include "RetroGBm/VideoState.h"
+#include <cmath>
 
-#include <algorithm>
-#include <chrono>
-#include <thread>
-
-Ppu::Ppu()
+Ppu::Ppu(IBus*, Cpu* cpu, Display* display, BaseCartridge*) : m_Display(display), m_Cpu(cpu)
 {
-	m_Bus = Emulator::Instance;
-	m_Cpu = Emulator::Instance->GetCpu();
-	m_Display = Emulator::Instance->GetDisplay();
-	m_Cartridge = Emulator::Instance->GetCartridge();
+	if (m_Display)
+	{
+		m_Display->AttachPpu(this);
+	}
+
+	Init();
 }
 
-Ppu::Ppu(IBus* bus, Cpu* cpu, Display* display, BaseCartridge* cartridge) : m_Bus(bus), m_Cpu(cpu), m_Display(display), m_Cartridge(cartridge)
+void Ppu::ResetClock()
 {
+	m_Deadline = m_FpsStart = std::chrono::steady_clock::now();
+	m_Fps = m_FrameCount = 0;
 }
 
 void Ppu::Init()
 {
-	m_Context.video_ram.resize(16384);
-	std::fill(m_Context.video_ram.begin(), m_Context.video_ram.end(), 0x0);
+	m_Vram.fill(0);
+	m_Oam.fill(0);
+	m_Bank = 0;
+	m_Dot = 0;
+	m_Line = 0;
+	m_WindowLine = 0;
+	m_WindowTriggered = 0;
+	m_StatLine = 0;
+	m_FirstLine = 0;
+	m_HBlank = false;
+	m_Frame = false;
+	m_BackgroundFifo.clear();
+	m_ObjectFifo = {};
+	m_Objects = {};
+	m_Fetched = {};
+	m_Count = 0;
+	m_WindowActive = 0;
+	m_WindowUsed = 0;
+	m_ObjectStall = 0;
+	m_TransferDots = 0;
+	m_TileAddress = 0;
+	m_FetchPhase = 0;
+	m_FetchX = 0;
+	m_Tile = 0;
+	m_Attribute = 0;
+	m_Low = 0;
+	m_High = 0;
+	m_X = 0;
+	m_Discard = 0;
+	m_Startup = 0;
+	m_CurrentObject = 0;
 
-	m_Display->Init();
-	m_Display->SetLcdMode(LcdMode::OAM);
+	if (m_Display)
+	{
+		SetMode(m_Display->IsLcdEnabled() ? LcdMode::OAM : LcdMode::HBlank);
+		BeginLine();
+	}
 
-	m_Timer.Start();
+	ResetClock();
 }
 
-void Ppu::Tick()
+void Ppu::LcdEnableChanged()
 {
-	// Each dot increment is synced to the CPU to increase at roughly the same rate (4.194 MHz)
-	// Meaning the dot should increase 4 times per M-cycles or 1 per T-cycle
-	// This is not affected by double speed and should only increase 2 per M-cycle for double speed
+	m_Dot = 0;
+	m_Line = 0;
+	m_WindowLine = 0;
+	m_WindowTriggered = 0;
+	m_FirstLine = m_Display->IsLcdEnabled();
+	m_BackgroundFifo.clear();
+	m_ObjectFifo = {};
+	m_ObjectStall = 0;
+	m_HBlank = false;
+	m_Frame = false;
+	m_Display->SetStatus(LcdMode::HBlank, 0, m_Display->IsLcdEnabled());
+	if (m_Display->IsLcdEnabled())
+	{
+		UpdateStat();
+	}
+	else
+	{
+		m_StatLine = (m_Display->Read(0xFF41) & 0x44) == 0x44;
+	}
 
+	BeginLine();
 	if (!m_Display->IsLcdEnabled())
 	{
-		m_Context.dot_ticks = 0;
+		m_Display->Blank();
+	}
+
+	ResetClock();
+}
+
+void Ppu::UpdateStat()
+{
+	if (!m_Display || !m_Display->IsLcdEnabled())
+	{
 		return;
 	}
 
-	m_Context.dot_ticks++;
-
-	switch (m_Display->GetLcdMode())
+	auto mode = m_Display->GetLcdMode();
+	uint8_t ly = m_Line == 153 && m_Dot >= 4 ? 0 : uint8_t(m_Line + (m_Dot >= 452 && m_Line < 153));
+	m_Display->SetStatus(mode, ly, true, m_Dot >= 452 && m_Line < 153);
+	uint8_t stat = m_Display->Read(0xFF41);
+	bool signal = m_Display->IsLcdEnabled() &&
+		(((stat & 0x40) && (stat & 4)) ||
+			(mode == LcdMode::HBlank && (stat & 8)) ||
+			(mode == LcdMode::VBlank && (stat & 0x10)) ||
+			(mode == LcdMode::OAM && (stat & 0x20)) ||
+			(!m_Display->IsColour() && m_Line == 144 && m_Dot < 4 && (stat & 0x20)));
+	if (signal && !m_StatLine && m_Cpu)
 	{
-		case LcdMode::OAM:
-			UpdateOam();
-			break;
-		case LcdMode::PixelTransfer:
-			PixelTransfer();
-			break;
-		case LcdMode::HBlank:
-			HBlank();
-			break;
-		case LcdMode::VBlank:
-			VBlank();
-			break;
+		m_Cpu->RequestInterrupt(InterruptFlag::STAT);
+	}
+
+	m_StatLine = signal;
+}
+
+void Ppu::SetMode(LcdMode mode)
+{
+	m_Display->SetStatus(mode, m_Line);
+	UpdateStat();
+}
+
+void Ppu::BeginLine()
+{
+	m_Count = 0;
+	m_Fetched.fill(0);
+	m_WindowUsed = 0;
+	m_WindowActive = 0;
+
+	if (m_Line == m_Display->Read(0xFF4A))
+	{
+		m_WindowTriggered = 1;
 	}
 }
 
-void Ppu::WriteOam(uint16_t address, uint8_t value)
+uint8_t Ppu::ReadVideoRam(uint16_t address, uint8_t bank) const
 {
-	if (address >= 0xFE00)
-	{
-		address -= 0xFE00;
-	}
-
-	uint8_t* ptr = reinterpret_cast<uint8_t*>(m_Context.oam_ram.data());
-	ptr[address] = value;
+	return m_Vram[(bank & 1) * 0x2000 + (address & 0x1FFF)];
 }
 
-uint8_t Ppu::ReadOam(uint16_t address)
+uint8_t Ppu::ReadVideoRam(uint16_t address) const
 {
-	if (address >= 0xFE00)
+	if (m_Display && m_Display->IsLcdEnabled() && (m_Display->GetLcdMode() == LcdMode::PixelTransfer ||
+		(!m_FirstLine && m_Line < 144 && m_Dot >= 76 && m_Dot < 80)))
 	{
-		address -= 0xFE00;
+		return 0xFF;
 	}
 
-	uint8_t* ptr = reinterpret_cast<uint8_t*>(m_Context.oam_ram.data());
-	return ptr[address];
+	return ReadVideoRam(address, m_Bank);
 }
 
 void Ppu::WriteVideoRam(uint16_t address, uint8_t value)
 {
-	m_Context.video_ram[(address - 0x8000) + (m_VramBank * 8192)] = value;
+	if (m_Display && m_Display->IsLcdEnabled() && m_Display->GetLcdMode() == LcdMode::PixelTransfer)
+	{
+		return;
+	}
+
+	WriteVideoRamDma(address, value);
 }
 
-uint8_t Ppu::ReadVideoRam(uint16_t address)
+void Ppu::WriteVideoRamDma(uint16_t address, uint8_t value)
 {
-	return m_Context.video_ram[(address - 0x8000) + (m_VramBank * 8192)];
+	m_Vram[m_Bank * 0x2000 + (address & 0x1FFF)] = value;
 }
 
-uint8_t Ppu::ReadVideoRam(uint16_t address, uint8_t bank)
+uint8_t Ppu::ReadOam(uint16_t address) const
 {
-	return m_Context.video_ram[(address - 0x8000) + (bank * 8192)];
+	if (m_Display && m_Display->IsLcdEnabled() && ((uint8_t(m_Display->GetLcdMode()) & 2) || (m_Line < 144 && m_Dot >= 452)))
+	{
+		return 0xFF;
+	}
+
+	auto offset = address >= 0xFE00 ? address - 0xFE00 : address;
+	return offset < 160 ? m_Oam[offset] : 0xFF;
+}
+
+void Ppu::WriteOam(uint16_t address, uint8_t value)
+{
+	// OAM reads are blocked before the scan; writes remain possible until mode 2.
+	if (m_Display && m_Display->IsLcdEnabled() && (m_Display->GetLcdMode() == LcdMode::PixelTransfer ||
+		(m_Display->GetLcdMode() == LcdMode::OAM && m_Dot < 76)))
+	{
+		return;
+	}
+
+	WriteOamDma(address, value);
+}
+
+void Ppu::WriteOamDma(uint16_t address, uint8_t value)
+{
+	auto offset = address >= 0xFE00 ? address - 0xFE00 : address;
+	if (offset < 160)
+	{
+		m_Oam[offset] = value;
+	}
+}
+
+uint8_t Ppu::GetVideoRamBank() const
+{
+	return m_Display && m_Display->IsColour() ? uint8_t(0xFE | m_Bank) : 0xFF;
 }
 
 void Ppu::SetVideoRamBank(uint8_t value)
 {
-	m_VramBank = value & 0b1;
+	m_Bank = m_Display && m_Display->IsColour() ? value & 1 : 0;
 }
 
-void Ppu::UpdateOam()
+void Ppu::Tick()
 {
-	// Searching for objects takes 80 ticks
-	if (m_Context.dot_ticks >= 80)
+	if (!m_Display || !m_Display->IsLcdEnabled())
 	{
-		m_Context.pipeline = PipelineContext();
-		m_Display->SetLcdMode(LcdMode::PixelTransfer);
+		return;
 	}
 
-	// Search and order OAMA per line
-	if (m_Context.dot_ticks == 1)
+	if (m_Line < 144)
 	{
-		m_WindowY = m_Display->GetContext()->wy;
-
-		m_Context.objects_per_line.clear();
-
-		// Find all objects on the current scan line
-		uint8_t sprite_height = m_Display->GetObjectHeight();
-		for (auto& oam : m_Context.oam_ram)
+		if (m_Dot < (m_FirstLine ? 78 : 80))
 		{
-			if ((oam.position_y + sprite_height > m_Display->m_Context.ly + 16) && (oam.position_y <= m_Display->m_Context.ly + 16))
+			if ((m_Dot & 1) && m_Count < 10)
 			{
-				m_Context.objects_per_line.push_back(oam);
-			}
-		}
-
-		// Sort by priority and X position
-		if (m_Cartridge->IsColourModeDMG() || m_Display->IsObjectPriorityModeSet())
-		{
-			std::sort(m_Context.objects_per_line.begin(), m_Context.objects_per_line.end(), [](const OamData& lhs, const OamData& rhs)
-			{
-				return (lhs.position_x < rhs.position_x);
-			});
-		}
-
-		// Limit to 10 per row
-		if (m_Context.objects_per_line.size() > 10)
-		{
-			m_Context.objects_per_line.erase(m_Context.objects_per_line.begin() + 10, m_Context.objects_per_line.end());
-		}
-	}
-}
-
-void Ppu::PixelTransfer()
-{
-	// This whole thing is 1 M-cycle too fast
-
-	PipelineProcess();
-
-	if (m_Context.pipeline.pushed_x >= m_Display->ScreenResolutionX)
-	{
-		m_Display->SetLcdMode(LcdMode::HBlank);
-		if (m_Display->IsStatInterruptHBlank())
-		{
-			m_Cpu->RequestInterrupt(InterruptFlag::STAT);
-		}
-
-		Emulator::Instance->GetDma()->RunHDMA();
-	}
-}
-
-void Ppu::VBlank()
-{
-	if (m_Display->m_Context.ly == 153)
-	{
-		if (m_Context.dot_ticks == 4)
-		{
-			m_Display->m_Context.ly = 0;
-			if (m_Display->m_Context.ly == m_Display->m_Context.lyc)
-			{
-				m_Display->m_Context.stat |= 0b100;
-				if (m_Display->IsStatInterruptLYC())
+				int i = m_Dot / 2, y = int(m_Oam[i * 4]) - 16;
+				int height = (m_Display->Read(0xFF40) & 4) ? 16 : 8;
+				if (m_Line >= y && m_Line < y + height)
 				{
-					m_Cpu->RequestInterrupt(InterruptFlag::STAT);
+					m_Objects[m_Count++] = { m_Oam[i * 4], m_Oam[i * 4 + 1], m_Oam[i * 4 + 2], m_Oam[i * 4 + 3], uint8_t(i) };
 				}
 			}
-			else
-			{
-				m_Display->m_Context.stat &= ~0b100;
-			}
+		}
+		else if (m_Display->GetLcdMode() == LcdMode::PixelTransfer)
+		{
+			Transfer();
 		}
 	}
-
-	if (m_Context.dot_ticks >= m_DotTicksPerLine)
+	++m_Dot;
+	if (m_Line < 144 && m_Dot == (m_FirstLine ? 78 : 80))
 	{
-		// Keep increasing LY register until we reach the lines per frame
-		if (m_Display->m_Context.ly == 0)
-		{
-			m_Context.dot_ticks = 0;
-			IncrementLY();
-
-			LimitFrameRate();
-			m_Display->SetLcdMode(LcdMode::OAM);
-
-			if (m_Display->IsStatInterruptOAM())
-			{
-				m_Cpu->RequestInterrupt(InterruptFlag::STAT);
-			}
-
-			m_Display->m_Context.ly = 0;
-			m_Context.window_line_counter = 0;
-		}
-		else
-		{
-			m_Context.dot_ticks = 0;
-			IncrementLY();
-		}
+		BeginTransfer();
 	}
-}
-
-void Ppu::HBlank()
-{
-	if (m_Context.dot_ticks >= m_DotTicksPerLine)
+	if (m_Dot == 452 || ((m_Line == 153 || m_Line == 144) && m_Dot == 4))
 	{
-		IncrementLY();
+		UpdateStat();
+	}
 
-		// Enter VBlank if all the scanlines have been drawn
-		if (m_Display->m_Context.ly >= m_Display->ScreenResolutionY)
+	if (m_Dot == 456)
+	{
+		m_Dot = 0;
+		m_FirstLine = 0;
+		if (m_Line < 144 && m_WindowUsed)
 		{
-			m_Display->SetLcdMode(LcdMode::VBlank);
-			m_Cpu->RequestInterrupt(InterruptFlag::VBlank);
+			++m_WindowLine;
+		}
 
-			if (m_Display->IsStatInterruptVBlank())
+		++m_Line;
+		if (m_Line == 144)
+		{
+			SetMode(LcdMode::VBlank);
+			if (m_Cpu)
 			{
-				m_Cpu->RequestInterrupt(InterruptFlag::STAT);
+				m_Cpu->RequestInterrupt(InterruptFlag::VBlank);
 			}
 
-			// Push pixels
 			m_Display->UpdateDisplay();
-
-			// Gameshark
-			Emulator::Instance->ApplyCheats();
+			m_Frame = true;
+			++m_FrameCount;
+			auto now = std::chrono::steady_clock::now();
+			double elapsed = std::chrono::duration<double>(now - m_FpsStart).count();
+			if (elapsed >= 1)
+			{
+				m_Fps = int(m_FrameCount / elapsed);
+				m_FrameCount = 0;
+				m_FpsStart = now;
+			}
+		}
+		else if (m_Line == 154)
+		{
+			m_Line = 0;
+			m_WindowLine = 0;
+			m_WindowTriggered = 0;
+			BeginLine();
+			SetMode(LcdMode::OAM);
+		}
+		else if (m_Line < 144)
+		{
+			BeginLine();
+			SetMode(LcdMode::OAM);
 		}
 		else
 		{
-			m_Display->SetLcdMode(LcdMode::OAM);
-
-			if (m_Display->IsStatInterruptOAM())
-			{
-				m_Cpu->RequestInterrupt(InterruptFlag::STAT);
-			}
+			UpdateStat();
 		}
-
-		m_Context.dot_ticks = 0;
 	}
 }
 
-void Ppu::PipelineProcess()
+void Ppu::BeginTransfer()
 {
-	static bool fetch_pixel = true;
-
-	if (m_Context.pipeline.pipeline_state == FetchState::Idle)
-	{
-		PixelFetcher();
-	}
-	else
-	{
-		if (fetch_pixel)
-		{
-			PixelFetcher();
-		}
-
-		fetch_pixel = !fetch_pixel;
-	}
-
-	PushPixelToVideoBuffer();
+	m_X = 0;
+	m_TransferDots = 0;
+	m_Discard = m_Display->Read(0xFF43) & 7;
+	m_Startup = 12;
+	m_FetchPhase = 0;
+	m_FetchX = 0;
+	m_ObjectStall = 0;
+	m_BackgroundFifo.clear();
+	m_ObjectFifo = {};
+	SetMode(LcdMode::PixelTransfer);
+	m_LastObjectTile = -1;
 }
 
-void Ppu::IncrementLY()
+void Ppu::Fetch()
 {
-	// Increment LY register every 
-	m_Display->m_Context.ly++;
-	if (m_Display->m_Context.ly == m_Display->m_Context.lyc)
+	uint8_t lcdc = m_Display->Read(0xFF40);
+	if (m_FetchPhase == 0)
 	{
-		m_Display->m_Context.stat |= 0b100;
-		if (m_Display->IsStatInterruptLYC())
+		uint8_t y = m_WindowActive ? m_WindowLine : uint8_t(m_Line + m_Display->Read(0xFF42));
+		uint8_t x = m_WindowActive ? m_FetchX : uint8_t((m_Display->Read(0xFF43) >> 3) + m_FetchX);
+		uint16_t map = (lcdc & (m_WindowActive ? 0x40 : 8)) ? 0x9C00 : 0x9800;
+		uint16_t address = map + (y >> 3) * 32 + (x & 31);
+		m_Tile = ReadVideoRam(address, 0);
+		m_Attribute = m_Display->IsColour() ? ReadVideoRam(address, 1) : 0;
+		uint8_t row = y & 7;
+		if (m_Attribute & 0x40)
 		{
-			m_Cpu->RequestInterrupt(InterruptFlag::STAT);
+			row = 7 - row;
 		}
+
+		m_TileAddress = uint16_t(
+			(lcdc & 0x10 ? 0x8000 + m_Tile * 16 : 0x9000 + int8_t(m_Tile) * 16) + row * 2);
 	}
-	else
+	if (m_FetchPhase == 2)
 	{
-		m_Display->m_Context.stat &= ~0b100;
+		m_Low = ReadVideoRam(m_TileAddress, (m_Attribute >> 3) & 1);
+	}
+	if (m_FetchPhase == 4)
+	{
+		m_High = ReadVideoRam(m_TileAddress + 1, (m_Attribute >> 3) & 1);
+	}
+	if (m_FetchPhase == 5)
+	{
+		if (m_BackgroundFifo.size() > 8)
+		{
+			return;
+		}
+
+		for (int i = 0; i < 8; ++i)
+		{
+			int bit = (m_Attribute & 0x20) ? i : 7 - i;
+			m_BackgroundFifo.push_back(
+				{ uint8_t(((m_Low >> bit) & 1) | (((m_High >> bit) & 1) << 1)),
+				  uint8_t(m_Attribute & 7),
+				  uint8_t(m_Attribute >> 7) });
+		}
+		++m_FetchX;
 	}
 
-	// Internal window line is used for the window tiles Y offset and only incremented when the window is visible
-	if (m_Display->IsWindowVisible() && (m_Display->m_Context.ly > m_WindowY) && (m_Display->m_Context.ly <= m_WindowY + m_Display->ScreenResolutionY))
-	{
-		m_Context.window_line_counter++;
-	}
+	m_FetchPhase = (m_FetchPhase + 1) & 7;
 }
 
-uint32_t Ppu::FetchSpritePixels(uint32_t color, bool background_pixel_transparent)
+void Ppu::MergeObject()
 {
-	for (int i = 0; i < m_Context.pipeline.fetched_entries.size(); i++)
+	const auto& obj = m_Objects[m_CurrentObject];
+	int height = (m_Display->Read(0xFF40) & 4) ? 16 : 8;
+	int row = m_Line + 16 - obj.y;
+	if (obj.flags & 0x40)
 	{
-		// Object always have priority if the background is transparent
-		if (!background_pixel_transparent)
-		{
-			if (!m_Display->IsBackgroundEnabled())
-			{
-				goto draw;
-			}
+		row = height - 1 - row;
+	}
 
-			if (!m_Context.pipeline.fetched_entries[i].oam->priority && !m_Context.pipeline.background_window_attribute.priority)
-			{
-				goto draw;
-			}
-
-			continue;
-		}
-
-	draw:
-
-		// Past pixel point already
-		int sprite_x = (m_Context.pipeline.fetched_entries[i].oam->position_x - 8) + ((m_Display->m_Context.scx % 8));
-		if (sprite_x + 8 < m_Context.pipeline.fifo_x)
-		{
-			continue;
-		}
-
-		int offset = m_Context.pipeline.fifo_x - sprite_x;
-
-		uint8_t bit = (7 - offset);
-		if (m_Context.pipeline.fetched_entries[i].oam->flip_x)
-		{
-			bit = offset;
-		}
-
-		uint8_t high = (static_cast<bool>(m_Context.pipeline.fetched_entries[i].byte_low & (1 << bit))) << 0;
-		uint8_t low = (static_cast<bool>(m_Context.pipeline.fetched_entries[i].byte_high & (1 << bit))) << 1;
-		uint8_t palette_index = high | low;
-
-		// Transparent
-		if (palette_index == 0)
+	uint8_t tile = height == 16 ? obj.tile & 0xFE : obj.tile;
+	uint16_t address = uint16_t(0x8000 + tile * 16 + row * 2);
+	uint8_t bank = m_Display->IsColour() ? (obj.flags >> 3) & 1 : 0;
+	uint8_t low = ReadVideoRam(address, bank);
+	uint8_t high = ReadVideoRam(address + 1, bank);
+	for (int i = 0; i < 8; ++i)
+	{
+		int dest = int(obj.x) - 8 + i - m_X;
+		if (dest < 0 || dest >= 8)
 		{
 			continue;
 		}
 
-		// Select pixel colour
-		if (Emulator::Instance->GetCartridge()->IsColourModeDMG())
+		int bit = obj.flags & 0x20 ? i : 7 - i;
+		uint8_t colour = uint8_t(((low >> bit) & 1) | (((high >> bit) & 1) << 1));
+		auto& pixel = m_ObjectFifo[dest];
+		bool ahead = m_Display->CoordinatePriority()
+			? (obj.x < pixel.objectX || (obj.x == pixel.objectX && obj.order < pixel.order))
+			: obj.order < pixel.order;
+		if (colour && (!pixel.colour || ahead))
 		{
-			uint8_t palette = m_Context.pipeline.fetched_entries[i].oam->dmg_palette;
-			return m_Display->GetColourFromObjectPalette(palette, palette_index);
+			pixel = {
+				colour,
+				uint8_t(m_Display->IsColour() ? obj.flags & 7 : (obj.flags >> 4) & 1),
+				uint8_t(obj.flags >> 7),
+				obj.order,
+				obj.x
+			};
+		}
+	}
+}
+
+void Ppu::Transfer()
+{
+	++m_TransferDots;
+	if (m_ObjectStall)
+	{
+		if (--m_ObjectStall == 0)
+		{
+			MergeObject();
+		}
+
+		return;
+	}
+
+	if (m_Startup)
+	{
+		Fetch();
+		--m_Startup;
+		return;
+	}
+
+	uint8_t lcdc = m_Display->Read(0xFF40);
+	int wx = int(m_Display->Read(0xFF4B)) - 7;
+	bool windowEnabled = (lcdc & 0x20) && (m_Display->IsColour() || (lcdc & 1));
+
+	if (!m_WindowActive && m_WindowTriggered && windowEnabled && wx < 160 && m_X >= wx && !m_Discard)
+	{
+		m_WindowActive = 1;
+		m_WindowUsed = 1;
+		m_FetchX = 0;
+		m_FetchPhase = 0;
+		m_BackgroundFifo.clear();
+		m_Discard = uint8_t(std::max(0, -wx));
+	}
+
+	if (!m_Discard && ((lcdc & 2) || m_Display->IsColour()))
+	{
+		int selected = -1;
+		for (int i = 0; i < m_Count; ++i)
+		{
+			if (!m_Fetched[i] && m_Objects[i].x < 168 && int(m_Objects[i].x) - 8 <= m_X &&
+				(selected < 0 || m_Objects[i].x < m_Objects[selected].x))
+			{
+				selected = i;
+			}
+		}
+
+		if (selected >= 0)
+		{
+			m_Fetched[selected] = 1;
+			m_CurrentObject = uint8_t(selected);
+			int position = m_Objects[selected].x + m_Display->Read(0xFF43);
+			int tile = position / 8;
+			int alignmentDelay = tile == m_LastObjectTile ? 0 : std::max(0, 5 - (position & 7));
+			// The first object fetch overlaps the initial background pipeline by three dots.
+			int overlap = m_LastObjectTile < 0 ? 3 : 0;
+			m_LastObjectTile = int16_t(tile);
+			m_ObjectStall = uint8_t(5 + alignmentDelay - overlap);
+			return;
+		}
+	}
+
+	if (!m_BackgroundFifo.empty())
+	{
+		auto bg = m_BackgroundFifo.front();
+		m_BackgroundFifo.pop_front();
+		if (m_Discard)
+		{
+			--m_Discard;
 		}
 		else
 		{
-			uint8_t palette = m_Context.pipeline.fetched_entries[i].oam->gcb_palette;
-			return m_Display->GetColourFromObjectPalette(palette, palette_index);
-		}
-	}
-
-	return color;
-}
-
-bool Ppu::PipelineAddPixel()
-{
-	// Check if the queue is full - max of 8 pixels
-	if (m_Context.pipeline.pixel_queue.size() > 8)
-	{
-		return false;
-	}
-
-	// Discard pixels that are not on the screen
-	int pixel_x = m_Context.pipeline.fetch_x - (8 - (m_Display->m_Context.scx % 8));
-	if (pixel_x < 0)
-	{
-		return false;
-	}
-
-	for (int bit = 7; bit >= 0; bit--)
-	{
-		// Check for flip X
-		uint8_t offset = bit;
-		if (m_Context.pipeline.background_window_attribute.flip_x)
-		{
-			offset = 7 - bit;
-		}
-
-		// Decode and get pixel colour from palette
-		uint8_t data_high = (static_cast<bool>(m_Context.pipeline.background_window_byte_low & (1 << (offset)))) << 0;
-		uint8_t data_low = (static_cast<bool>(m_Context.pipeline.background_window_byte_high & (1 << (offset)))) << 1;
-		uint8_t palette_index = data_high | data_low;
-
-		// uint32_t colour = m_Display->m_Context.background_palette[palette_index];
-		uint8_t palette = m_Context.pipeline.background_window_attribute.colour_palette;
-		uint32_t colour = m_Display->GetColourFromBackgroundPalette(palette, palette_index);
-
-		if (m_Display->IsObjectEnabled())
-		{
-			bool background_transparent = (palette_index == 0);
-			colour = FetchSpritePixels(colour, background_transparent);
-		}
-
-		m_Context.pipeline.pixel_queue.push_back(colour);
-		m_Context.pipeline.fifo_x++;
-	}
-
-	return true;
-}
-
-void Ppu::FetchObjectData(FetchTileByte tile_byte)
-{
-	int current_ly = m_Display->m_Context.ly;
-	uint8_t sprite_height = m_Display->GetObjectHeight();
-
-	for (int i = 0; i < m_Context.pipeline.fetched_entries.size(); i++)
-	{
-		// Check Y orientation for which direction to load the pixels
-		uint8_t tile_y = ((current_ly + 16) - m_Context.pipeline.fetched_entries[i].oam->position_y) * 2;
-		if (m_Context.pipeline.fetched_entries[i].oam->flip_y)
-		{
-			tile_y = ((sprite_height * 2) - 2) - tile_y;
-		}
-
-		uint8_t tile_index = m_Context.pipeline.fetched_entries[i].oam->tile_id;
-		if (sprite_height == 16)
-		{
-			// Remove last bit
-			tile_index &= ~(1);
-		}
-
-
-		if (tile_byte == FetchTileByte::ByteLow)
-		{
-			m_Context.pipeline.fetched_entries[i].byte_low = this->ReadVideoRam(0x8000 + (tile_index * 16) + tile_y + 0, m_Context.pipeline.fetched_entries[i].oam->bank);
-		}
-		else if (tile_byte == FetchTileByte::ByteHigh)
-		{
-			m_Context.pipeline.fetched_entries[i].byte_high = this->ReadVideoRam(0x8000 + (tile_index * 16) + tile_y + 1, m_Context.pipeline.fetched_entries[i].oam->bank);
-		}
-	}
-}
-
-void Ppu::PixelFetcher()
-{
-	switch (m_Context.pipeline.pipeline_state)
-	{
-		case FetchState::Tile:
-		{
-			m_Context.pipeline.fetched_entries.clear();
-
-			FetchBackgroundTileId();
-			FetchWindowTileId();
-			FetchObjectTileId();
-
-			m_Context.pipeline.pipeline_state = FetchState::TileDataLow;
-			m_Context.pipeline.fetch_x += 8;
-			break;
-		}
-
-		case FetchState::TileDataLow:
-		{
-			FetchTileData(FetchTileByte::ByteLow);
-			FetchObjectData(FetchTileByte::ByteLow);
-
-			m_Context.pipeline.pipeline_state = FetchState::TileDataHigh;
-			break;
-		}
-
-		case FetchState::TileDataHigh:
-		{
-			FetchTileData(FetchTileByte::ByteHigh);
-			FetchObjectData(FetchTileByte::ByteHigh);
-
-			m_Context.pipeline.pipeline_state = FetchState::Idle;
-			break;
-		}
-
-		case FetchState::Idle:
-		{
-			if (PipelineAddPixel())
+			if (!m_Display->IsColour() && !(lcdc & 1))
 			{
-				m_Context.pipeline.pipeline_state = FetchState::Tile;
+				bg.colour = 0;
 			}
 
-			break;
-		}
-	}
-}
-
-void Ppu::FetchBackgroundTileId()
-{
-	if ((m_Cartridge->IsColourModeDMG() && m_Display->IsBackgroundEnabled()) || !m_Cartridge->IsColourModeDMG())
-	{
-		uint16_t base_address = m_Display->GetBackgroundTileBaseAddress();
-
-		// Get address
-		int position_y = (m_Display->m_Context.ly + m_Display->m_Context.scy) & 0xFF;
-		int position_x = (m_Context.pipeline.fetch_x + m_Display->m_Context.scx) & 0xFF;
-
-		uint16_t address = base_address + (position_x / 8) + (position_y / 8) * 32;
-
-		// Fetch tile
-		m_Context.pipeline.background_window_tile = this->ReadVideoRam(address, 0);
-
-		if (m_Display->GetBackgroundAndWindowTileData() == 0x8800)
-		{
-			m_Context.pipeline.background_window_tile += 128;
-		}
-
-		// Fetch attributes
-		uint8_t attribute = this->ReadVideoRam(address, 1);
-
-		m_Context.pipeline.background_window_attribute.colour_palette = static_cast<uint8_t>(attribute & 0b111);
-		m_Context.pipeline.background_window_attribute.bank = static_cast<uint8_t>((attribute >> 3) & 0x1);
-		m_Context.pipeline.background_window_attribute.flip_x = static_cast<bool>((attribute >> 5) & 0x1);
-		m_Context.pipeline.background_window_attribute.flip_y = static_cast<bool>((attribute >> 6) & 0x1);
-		m_Context.pipeline.background_window_attribute.priority = static_cast<bool>((attribute >> 7) & 0x1);
-	}
-}
-
-void Ppu::FetchWindowTileId()
-{
-	if ((m_Cartridge->IsColourModeDMG() && m_Display->IsBackgroundEnabled()) || !m_Cartridge->IsColourModeDMG())
-	{
-		if (m_Display->IsWindowVisible())
-		{
-			if (IsWindowInView(m_Context.pipeline.fetch_x))
+			auto obj = m_ObjectFifo[0];
+			bool backgroundWins = bg.colour && (obj.priority || (m_Display->IsColour() && bg.priority));
+			if (m_Display->IsColour() && !(lcdc & 1))
 			{
-				uint16_t base_address = m_Display->GetWindowTileBaseAddress();
+				backgroundWins = false;
+			}
 
-				// Divide by 8
-				uint8_t position_x = (m_Context.pipeline.fetch_x - m_Display->m_Context.wx + 7) & 0xFF;
-				uint8_t position_y = m_Context.window_line_counter & 0xFF;
+			uint32_t colour = (lcdc & 2) && obj.colour && !backgroundWins
+				? m_Display->GetColourFromObjectPalette(obj.palette, obj.colour)
+				: m_Display->GetColourFromBackgroundPalette(bg.palette, bg.colour);
+			m_Display->SetVideoBufferPixel(m_X++, m_Line, colour);
+			for (int i = 0; i < 7; ++i)
+			{
+				m_ObjectFifo[i] = m_ObjectFifo[i + 1];
+			}
 
-				uint16_t address = base_address + (position_x / 8) + (position_y / 8) * 32;
-
-				// Fetch tile
-				m_Context.pipeline.background_window_tile = this->ReadVideoRam(address, 0);
-
-				// Check if we are getting tiles from block 1
-				if (m_Display->GetBackgroundAndWindowTileData() == 0x8800)
-				{
-					m_Context.pipeline.background_window_tile += 128;
-				}
-
-				// Fetch attributes
-				uint8_t attribute = this->ReadVideoRam(address, 1);
-
-				m_Context.pipeline.background_window_attribute.colour_palette = static_cast<uint8_t>(attribute & 0b111);
-				m_Context.pipeline.background_window_attribute.bank = static_cast<uint8_t>((attribute >> 3) & 0x1);
-				m_Context.pipeline.background_window_attribute.flip_x = static_cast<bool>((attribute >> 5) & 0x1);
-				m_Context.pipeline.background_window_attribute.flip_y = static_cast<bool>((attribute >> 6) & 0x1);
-				m_Context.pipeline.background_window_attribute.priority = static_cast<bool>((attribute >> 7) & 0x1);
+			m_ObjectFifo[7] = {};
+			if (m_X == 160)
+			{
+				SetMode(LcdMode::HBlank);
+				m_HBlank = true;
+				return;
 			}
 		}
 	}
+
+	Fetch();
 }
 
-void Ppu::FetchObjectTileId()
+void Ppu::SetSpeedMultipler(float value)
 {
-	if (m_Display->IsObjectEnabled())
+	if (std::isfinite(value) && value > 0)
 	{
-		for (auto& oam : m_Context.objects_per_line)
-		{
-			int obj_x = (oam.position_x - 8) + (m_Display->m_Context.scx % 8);
-
-			int fetch_x = m_Context.pipeline.fetch_x;
-			if ((obj_x >= fetch_x && obj_x < fetch_x + 8) || ((obj_x + 8) >= fetch_x && (obj_x + 8) < fetch_x + 8))
-			{
-				OamPipelineData data;
-				data.oam = &oam;
-
-				m_Context.pipeline.fetched_entries.push_back(data);
-			}
-
-			// Max checking 3 sprites on pixels
-			if (m_Context.pipeline.fetched_entries.size() >= 3)
-			{
-				break;
-			}
-		}
+		m_Speed = value;
+		ResetClock();
 	}
 }
 
-void Ppu::PushPixelToVideoBuffer()
+void Ppu::PaceFrame()
 {
-	if (m_Context.pipeline.pixel_queue.size() > 8)
+	auto period = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double>(70224.0 / 4194304.0 * m_Speed));
+	m_Deadline += period;
+	auto now = std::chrono::steady_clock::now();
+	if (m_Deadline > now)
 	{
-		uint32_t pixel_data = (m_Context.pipeline.pixel_queue.front());
-
-		// We don't have an alpha channel so mask this as FF
-		pixel_data = 0xFF000000 | pixel_data;
-
-		m_Context.pipeline.pixel_queue.pop_front();
-
-		if (m_Context.pipeline.fetch_window)
-		{
-			m_Display->SetVideoBufferPixel(m_Context.pipeline.pushed_x, m_Display->GetContext()->ly, pixel_data);
-			m_Context.pipeline.pushed_x++;
-		}
-		else
-		{
-			if (m_Context.pipeline.line_x >= (m_Display->m_Context.scx % 8))
-			{
-				m_Display->SetVideoBufferPixel(m_Context.pipeline.pushed_x, m_Display->GetContext()->ly, pixel_data);
-				m_Context.pipeline.pushed_x++;
-			}
-		}
-
-		m_Context.pipeline.line_x++;
+		std::this_thread::sleep_until(m_Deadline);
 	}
-}
-
-bool Ppu::IsWindowInView(int pixel_x)
-{
-	const int ScreenResolutionX = 160;
-	const int ScreenResolutionY = 144;
-
-	if (m_Display->m_Context.ly >= m_WindowY && m_Display->m_Context.ly < m_WindowY + ScreenResolutionY)
+	else if (now - m_Deadline > period * 4)
 	{
-		if ((pixel_x >= m_Display->m_Context.wx - 7) && (pixel_x <= m_Display->m_Context.wx + ScreenResolutionX - 7))
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
-void Ppu::FetchTileData(FetchTileByte tile_byte)
-{
-	// Calculate tile offset
-	uint16_t offset_x = (m_Context.pipeline.background_window_tile << 4);
-	uint16_t offset_y = ((m_Display->m_Context.ly + m_Display->m_Context.scy) % 8) * 2;
-
-	if (m_Display->IsWindowVisible() && IsWindowInView(m_Context.pipeline.fetch_x))
-	{
-		offset_y = ((m_Context.window_line_counter & 0x7) << 1);
-	}
-
-	// Flip y
-	if (m_Context.pipeline.background_window_attribute.flip_y)
-	{
-		offset_y = 16 - offset_y - 2;
-	}
-
-	// Fetch tile data
-	uint16_t base_address = m_Display->GetBackgroundAndWindowTileData();
-	if (tile_byte == FetchTileByte::ByteLow)
-	{
-		m_Context.pipeline.background_window_byte_low = this->ReadVideoRam(base_address + offset_x + offset_y, m_Context.pipeline.background_window_attribute.bank);
-	}
-	else if (tile_byte == FetchTileByte::ByteHigh)
-	{
-		m_Context.pipeline.background_window_byte_high = this->ReadVideoRam(base_address + offset_x + offset_y + 1, m_Context.pipeline.background_window_attribute.bank);
-	}
-}
-
-void Ppu::LimitFrameRate()
-{
-	m_Timer.Tick();
-	m_FrameCount++;
-
-	// Compute averages over one second period
-	if ((m_Timer.TotalTime() - m_TimeElapsed) >= 1.0f)
-	{
-		m_FramesPerSecond = m_FrameCount;
-		float mspf = 1000.0f / m_FramesPerSecond;
-
-		// Set total frame count
-		m_TotalFrames += m_FrameCount;
-
-		// Reset for next average.
-		m_FrameCount = 0;
-		m_TimeElapsed += 1.0f;
-	}
-
-	// VPS lock
-	double frame_goal = (m_TargetFrameTime * m_SpeedMultipler);
-	double excution_time_seconds = m_Timer.DeltaTime();
-	if (excution_time_seconds < frame_goal)
-	{
-		m_Timer.Stop();
-
-		// Calculate current execution time in seconds
-		double elapsed_seconds = (frame_goal - excution_time_seconds);
-
-		// Specify the wait time
-		auto wait_time = std::chrono::duration<double, std::milli>(elapsed_seconds * 1000.0f);
-
-		// Record the start time
-		auto start_time = std::chrono::high_resolution_clock::now();
-
-		// Busy-wait until the required time has passed
-		while (std::chrono::high_resolution_clock::now() - start_time < wait_time)
-		{
-			// Do nothing
-			std::this_thread::yield();
-		}
-
-		m_Timer.Start();
+		m_Deadline = now;
 	}
 }
 
 void Ppu::SaveState(std::fstream* file)
 {
-	size_t videoram_size = m_Context.video_ram.size();
-	file->write(reinterpret_cast<const char*>(&videoram_size), sizeof(size_t));
-	file->write(reinterpret_cast<const char*>(m_Context.video_ram.data()), videoram_size * sizeof(uint8_t));
+	using VideoState::Write;
+	for (auto value : m_Vram)
+	{
+		Write(*file, value);
+	}
 
-	file->write(reinterpret_cast<const char*>(&m_VramBank), sizeof(m_VramBank));
+	for (auto value : m_Oam)
+	{
+		Write(*file, value);
+	}
+
+	for (auto value : m_Fetched)
+	{
+		Write(*file, value);
+	}
+
+	for (auto o : m_Objects)
+	{
+		Write(*file, o.y);
+		Write(*file, o.x);
+		Write(*file, o.tile);
+		Write(*file, o.flags);
+		Write(*file, o.order);
+	}
+
+	auto pixel = [&](VideoPixel p)
+	{
+		Write(*file, p.colour);
+		Write(*file, p.palette);
+		Write(*file, p.priority);
+		Write(*file, p.order);
+		Write(*file, p.objectX);
+	};
+
+	Write(*file, uint8_t(m_BackgroundFifo.size()));
+	for (auto p : m_BackgroundFifo)
+	{
+		pixel(p);
+	}
+
+	for (auto p : m_ObjectFifo)
+	{
+		pixel(p);
+	}
+
+	Write(*file, m_Dot);
+	Write(*file, m_TransferDots);
+	Write(*file, m_Line);
+	Write(*file, m_FirstLine);
+	Write(*file, m_Bank);
+	Write(*file, m_Count);
+	Write(*file, m_WindowLine);
+	Write(*file, m_WindowTriggered);
+	Write(*file, m_WindowActive);
+	Write(*file, m_WindowUsed);
+	Write(*file, m_StatLine);
+	Write(*file, m_FetchPhase);
+	Write(*file, m_FetchX);
+	Write(*file, m_Tile);
+	Write(*file, m_Attribute);
+	Write(*file, m_Low);
+	Write(*file, m_High);
+	Write(*file, m_TileAddress);
+	Write(*file, m_X);
+	Write(*file, m_LastObjectTile);
+	Write(*file, m_Discard);
+	Write(*file, m_Startup);
+	Write(*file, m_ObjectStall);
+	Write(*file, m_CurrentObject);
+	Write(*file, m_HBlank);
+	Write(*file, m_Frame);
 }
 
 void Ppu::LoadState(std::fstream* file)
 {
-	size_t videoram_size = 0;
-	file->read(reinterpret_cast<char*>(&videoram_size), sizeof(size_t));
+	using VideoState::Read;
+	for (auto& value : m_Vram)
+	{
+		Read(*file, value);
+	}
 
-	m_Context.video_ram.resize(videoram_size);
-	file->read(reinterpret_cast<char*>(m_Context.video_ram.data()), videoram_size * sizeof(uint8_t));
+	for (auto& value : m_Oam)
+	{
+		Read(*file, value);
+	}
 
-	file->read(reinterpret_cast<char*>(&m_VramBank), sizeof(m_VramBank));
-}
+	for (auto& value : m_Fetched)
+	{
+		Read(*file, value);
+	}
 
-void Ppu::SetSpeedMultipler(float speed)
-{
-	m_SpeedMultipler = speed;
+	for (auto& o : m_Objects)
+	{
+		Read(*file, o.y);
+		Read(*file, o.x);
+		Read(*file, o.tile);
+		Read(*file, o.flags);
+		Read(*file, o.order);
+	}
+
+	auto pixel = [&](VideoPixel& p)
+	{
+		Read(*file, p.colour);
+		Read(*file, p.palette);
+		Read(*file, p.priority);
+		Read(*file, p.order);
+		Read(*file, p.objectX);
+	};
+
+	uint8_t size;
+	Read(*file, size);
+	if (size > 16)
+	{
+		throw std::runtime_error("Invalid video FIFO state");
+	}
+
+	m_BackgroundFifo.resize(size);
+	for (auto& p : m_BackgroundFifo)
+	{
+		pixel(p);
+	}
+
+	for (auto& p : m_ObjectFifo)
+	{
+		pixel(p);
+	}
+
+	Read(*file, m_Dot);
+	Read(*file, m_TransferDots);
+	Read(*file, m_Line);
+	Read(*file, m_FirstLine);
+	Read(*file, m_Bank);
+	Read(*file, m_Count);
+	Read(*file, m_WindowLine);
+	Read(*file, m_WindowTriggered);
+	Read(*file, m_WindowActive);
+	Read(*file, m_WindowUsed);
+	Read(*file, m_StatLine);
+	Read(*file, m_FetchPhase);
+	Read(*file, m_FetchX);
+	Read(*file, m_Tile);
+	Read(*file, m_Attribute);
+	Read(*file, m_Low);
+	Read(*file, m_High);
+	Read(*file, m_TileAddress);
+	Read(*file, m_X);
+	Read(*file, m_LastObjectTile);
+	Read(*file, m_Discard);
+	Read(*file, m_Startup);
+	Read(*file, m_ObjectStall);
+	Read(*file, m_CurrentObject);
+	Read(*file, m_HBlank);
+	Read(*file, m_Frame);
+	if (m_Dot >= 456 || m_Line >= 154 || m_Bank > 1 || m_Count > 10 || m_CurrentObject >= 10 || m_FetchPhase > 7 || m_X < 0 || m_X > 160)
+	{
+		throw std::runtime_error("Invalid PPU state");
+	}
+
+	ResetClock();
 }

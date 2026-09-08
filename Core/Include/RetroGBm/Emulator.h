@@ -116,7 +116,9 @@ public:
 	void* GetVideoBuffer();
 	int GetVideoPitch();
 
-	inline bool IsDoubleSpeedMode() const { return m_DoubleSpeedMode; }
+	inline bool IsDoubleSpeedMode() const { return (m_DoubleSpeedMode & 0x80) != 0; }
+	void SetFramePacingEnabled(bool enabled) { m_FramePacingEnabled = enabled; }
+	void SetDmgColourisation(bool enabled);
 
 	// Trace log
 	void ToggleTraceLog(bool enable);
@@ -156,6 +158,8 @@ public:
 	void LinkCableData(uint8_t data);
 
 private:
+	bool m_FramePacingEnabled = true;
+	bool m_DmgColourisation = true;
 	std::mutex m_EmulatorMutex;
 	bool m_Paused = false;
 

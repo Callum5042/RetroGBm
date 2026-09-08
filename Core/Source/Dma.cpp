@@ -3,6 +3,7 @@
 #include "RetroGBm/Emulator.h"
 #include "RetroGBm/Display.h"
 #include "RetroGBm/Ppu.h"
+#include "RetroGBm/VideoState.h"
 
 Dma::Dma()
 {
@@ -35,8 +36,6 @@ void Dma::StartCGB(uint8_t value)
 	{
 		if ((value & 0x80) == 0)
 		{
-			m_LengthStart = 0x7F;
-			m_Length = 0;
 			m_HBlankMode = false;
 			m_Active = false;
 		}
@@ -47,6 +46,9 @@ void Dma::StartCGB(uint8_t value)
 
 void Dma::Reset()
 {
+	context = {};
+	m_Length = 0;
+	m_StallCycles = 0;
 	m_Source = 0;
 	m_Destination = 0;
 	m_HBlankMode = false;
@@ -70,7 +72,7 @@ void Dma::Tick()
 		return;
 	}
 
-	m_Ppu->WriteOam(context.byte, m_Bus->ReadBus((context.value * 0x100) + context.byte));
+	m_Ppu->WriteOamDma(context.byte, m_Bus->ReadBus((context.value * 0x100) + context.byte));
 
 	context.byte++;
 	context.active = context.byte < 0xA0;
@@ -80,20 +82,26 @@ void Dma::RunHDMA()
 {
 	if (m_Active && m_HBlankMode)
 	{
-		if (m_Length <= 0)
-		{
-			Reset();
-		}
-		else
-		{
-			for (int i = 0; i < 16; i++)
-			{
-				uint8_t data = m_Bus->ReadBus(m_DmaSrc++);
-				m_Ppu->WriteVideoRam(0x8000 + m_DmaDest++, data);
-			}
+		TransferBlock();
+	}
+}
 
-			m_Length -= 16;
-		}
+void Dma::TransferBlock()
+{
+	for (int i = 0; i < 16; ++i)
+	{
+		m_Ppu->WriteVideoRamDma(0x8000 | (m_DmaDest & 0x1FFF), m_Bus->ReadBus(m_DmaSrc++));
+		m_DmaDest = (m_DmaDest + 1) & 0x1FFF;
+	}
+
+	m_Length -= 16;
+	m_Source = m_DmaSrc;
+	m_Destination = m_DmaDest;
+	m_StallCycles += Emulator::Instance->IsDoubleSpeedMode() ? 16 : 8;
+
+	if (!m_Length)
+	{
+		m_Active = false;
 	}
 }
 
@@ -105,15 +113,13 @@ void Dma::RunGDMA(bool previous_active)
 		m_DmaDest = m_Destination;
 
 		// Peform a general purpose DMA right now
-		if (!m_HBlankMode)
+		if (!m_HBlankMode || !Emulator::Instance->GetDisplay()->IsLcdEnabled())
 		{
-			for (int i = 0; i < m_Length; i++)
-			{
-				uint8_t data = m_Bus->ReadBus(m_DmaSrc++);
-				m_Ppu->WriteVideoRam(0x8000 + m_DmaDest++, data);
-			}
-
-			Reset();
+			while (m_Active) TransferBlock();
+		}
+		else if (Emulator::Instance->GetDisplay()->GetLcdMode() == LcdMode::HBlank && Emulator::Instance->GetDisplay()->Read(0xFF44) < 144)
+		{
+			RunHDMA();
 		}
 	}
 }
@@ -154,11 +160,16 @@ uint8_t Dma::GetHDMA5() const
 		return (m_Length / 16) - 1;
 	}
 
-	return 0xFF;
+	return m_Length ? uint8_t(0x80 | ((m_Length / 16) - 1)) : 0xFF;
 }
 
 void Dma::SaveState(std::fstream* file)
 {
+	VideoState::Write(*file, context.active);
+	VideoState::Write(*file, context.byte);
+	VideoState::Write(*file, context.value);
+	VideoState::Write(*file, context.start_delay);
+	VideoState::Write(*file, int32_t(m_StallCycles));
 	file->write(reinterpret_cast<const char*>(&m_Source), sizeof(m_Source));
 	file->write(reinterpret_cast<const char*>(&m_Destination), sizeof(m_Destination));
 
@@ -173,6 +184,14 @@ void Dma::SaveState(std::fstream* file)
 
 void Dma::LoadState(std::fstream* file)
 {
+	VideoState::Read(*file, context.active);
+	VideoState::Read(*file, context.byte);
+	VideoState::Read(*file, context.value);
+	VideoState::Read(*file, context.start_delay);
+	int32_t stalls;
+	VideoState::Read(*file, stalls);
+	if (stalls < 0 || stalls > 2048) throw std::runtime_error("Invalid DMA state");
+	m_StallCycles = stalls;
 	file->read(reinterpret_cast<char*>(&m_Source), sizeof(m_Source));
 	file->read(reinterpret_cast<char*>(&m_Destination), sizeof(m_Destination));
 
