@@ -36,15 +36,6 @@ A fast and lightweight Game Boy Color emulator written in C++ for Windows and An
 
 ## Compatibility
 
-The **CGB Colours for DMG Games** option selects the Game Boy Color compatibility
-palettes from the cartridge header (including Dr. Mario). Turn it off for DMG
-grayscale. Native CGB games always use their own palettes. DMG games retain DMG
-rendering rules in either setting. When the boot animation is enabled, DMG games
-use the DMG boot ROM with the selected display palettes.
-
-The new PPU uses save-state version 2. Older save states are rejected; battery
-saves are unaffected.
-
 [Compatibility](/Compatibility.md)
 
 ## Test roms
