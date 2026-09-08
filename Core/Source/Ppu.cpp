@@ -519,7 +519,7 @@ void Ppu::SetSpeedMultipler(float value)
 
 void Ppu::PaceFrame()
 {
-	auto period = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double>(70224.0 / 4194304.0 / m_Speed));
+	auto period = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double>(70224.0 / 4194304.0 * m_Speed));
 	m_Deadline += period;
 	auto now = std::chrono::steady_clock::now();
 	if (m_Deadline > now)
