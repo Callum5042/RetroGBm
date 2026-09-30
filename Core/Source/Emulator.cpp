@@ -357,13 +357,14 @@ void Emulator::ToggleTraceLog(bool enable)
 
 void Emulator::Tick()
 {
-	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
-
+	// Sleep outside the lock so the UI thread isn't blocked while paused
 	if (m_Paused)
 	{
 		std::this_thread::sleep_for(100ms);
 		return;
 	}
+
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
 
 	// Fetch
 	uint16_t current_pc = m_Cpu->ProgramCounter;
@@ -441,26 +442,31 @@ void Emulator::Cycle(int machine_cycles)
 		{
 			m_Timer->Tick();
 
-			if (IsDoubleSpeedMode())
-			{
-				if (n & 1)
-				{
-					m_Ppu->Tick();
-					if (m_Ppu->ConsumeHBlank()) m_Dma->RunHDMA();
-					if (m_Ppu->ConsumeFrame() && m_FramePacingEnabled) m_Ppu->PaceFrame();
-					m_Apu->Tick();
-				}
-			}
-			else
+			// In double speed mode the PPU and APU run at half the CPU rate
+			if (!IsDoubleSpeedMode() || (n & 1))
 			{
 				m_Ppu->Tick();
-				if (m_Ppu->ConsumeHBlank()) m_Dma->RunHDMA();
-				if (m_Ppu->ConsumeFrame() && m_FramePacingEnabled) m_Ppu->PaceFrame();
+				if (m_Ppu->ConsumeHBlank())
+				{
+					m_Dma->RunHDMA();
+				}
+
+				if (m_Ppu->ConsumeFrame())
+				{
+					// Gameshark codes are applied once per frame at the start of VBlank
+					ApplyCheats();
+					if (m_FramePacingEnabled)
+					{
+						m_Ppu->PaceFrame();
+					}
+				}
+
 				m_Apu->Tick();
 			}
 		}
 
 		m_Dma->Tick();
+
 		// DMA owns pending bus time. Advance devices iteratively, never from inside Ppu::Tick.
 		machine_cycles += m_Dma->TakeStallCycles();
 	}
@@ -1004,6 +1010,61 @@ void Emulator::ApplyCheats()
 
 	// Restore the bank to previous value
 	m_Ram->SetWorkRamBank(bank);
+}
+
+std::vector<CheatCode> Emulator::GetGamesharkCodes() const
+{
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
+	return m_GamesharkCodes;
+}
+
+void Emulator::SetGamesharkCodes(const std::vector<CheatCode>& codes)
+{
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
+	m_GamesharkCodes = codes;
+}
+
+void Emulator::AddGamesharkCode(const CheatCode& code)
+{
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
+	m_GamesharkCodes.push_back(code);
+}
+
+bool Emulator::UpdateGamesharkCode(size_t index, const std::string& name, const std::vector<std::string>& code)
+{
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
+	if (index >= m_GamesharkCodes.size())
+	{
+		return false;
+	}
+
+	m_GamesharkCodes[index].name = name;
+	m_GamesharkCodes[index].code = code;
+	return true;
+}
+
+bool Emulator::RemoveGamesharkCode(size_t index)
+{
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
+	if (index >= m_GamesharkCodes.size())
+	{
+		return false;
+	}
+
+	m_GamesharkCodes.erase(m_GamesharkCodes.begin() + index);
+	return true;
+}
+
+bool Emulator::SetGamesharkCodeEnabled(size_t index, bool enabled)
+{
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
+	if (index >= m_GamesharkCodes.size())
+	{
+		return false;
+	}
+
+	m_GamesharkCodes[index].enabled = enabled;
+	return true;
 }
 
 void Emulator::LinkCableData(uint8_t data)

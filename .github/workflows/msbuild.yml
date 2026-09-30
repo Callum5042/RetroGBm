@@ -61,9 +61,8 @@ jobs:
 
     - name: Set up Android SDK
       uses: android-actions/setup-android@v3
-
-    - name: Install Android native build tools
-      run: sdkmanager --install "platforms;android-34" "cmake;3.22.1" "ndk;27.0.12077973"
+      with:
+        packages: platform-tools platforms;android-34 cmake;3.22.1 ndk;27.0.12077973
 
     - name: Make Gradle wrapper executable
       run: chmod +x Android/gradlew

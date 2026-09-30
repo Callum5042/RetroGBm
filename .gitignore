@@ -368,3 +368,6 @@ FodyWeavers.xsd
 !testroms/*.gb
 !testroms/*.gbc
 *.sav
+
+# Ignore HLSL files
+*.hlsl.h

@@ -6,7 +6,7 @@ GamesharkToken ParseGamesharkCode(const std::string& code)
 {
 	// Convert string to hex value
 	char* endptr;
-	long value = strtol(code.c_str(), &endptr, 16);
+	uint32_t value = static_cast<uint32_t>(strtoul(code.c_str(), &endptr, 16));
 
 	// Extract the values
 	GamesharkToken token;
