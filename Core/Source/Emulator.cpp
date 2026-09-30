@@ -441,26 +441,31 @@ void Emulator::Cycle(int machine_cycles)
 		{
 			m_Timer->Tick();
 
-			if (IsDoubleSpeedMode())
-			{
-				if (n & 1)
-				{
-					m_Ppu->Tick();
-					if (m_Ppu->ConsumeHBlank()) m_Dma->RunHDMA();
-					if (m_Ppu->ConsumeFrame() && m_FramePacingEnabled) m_Ppu->PaceFrame();
-					m_Apu->Tick();
-				}
-			}
-			else
+			// In double speed mode the PPU and APU run at half the CPU rate
+			if (!IsDoubleSpeedMode() || (n & 1))
 			{
 				m_Ppu->Tick();
-				if (m_Ppu->ConsumeHBlank()) m_Dma->RunHDMA();
-				if (m_Ppu->ConsumeFrame() && m_FramePacingEnabled) m_Ppu->PaceFrame();
+				if (m_Ppu->ConsumeHBlank())
+				{
+					m_Dma->RunHDMA();
+				}
+
+				if (m_Ppu->ConsumeFrame())
+				{
+					// Gameshark codes are applied once per frame at the start of VBlank
+					ApplyCheats();
+					if (m_FramePacingEnabled)
+					{
+						m_Ppu->PaceFrame();
+					}
+				}
+
 				m_Apu->Tick();
 			}
 		}
 
 		m_Dma->Tick();
+
 		// DMA owns pending bus time. Advance devices iteratively, never from inside Ppu::Tick.
 		machine_cycles += m_Dma->TakeStallCycles();
 	}
