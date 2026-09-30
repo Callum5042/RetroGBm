@@ -474,7 +474,7 @@ void Application::SetDefaultCheatCodes()
 
 	if (default_codes.find(Checksum) != default_codes.end())
 	{
-		if (m_Emulator->m_GamesharkCodes.empty())
+		if (m_Emulator->GetGamesharkCodes().empty())
 		{
 			m_Emulator->SetGamesharkCodes(default_codes[Checksum]);
 		}

@@ -7,6 +7,7 @@
 #include <string>
 #include <fstream>
 #include <mutex>
+#include <atomic>
 #include <ctime>
 #include <chrono>
 #include <map>
@@ -137,19 +138,13 @@ public:
 	// TCP Client and Listener
 	char m_SerialData[2] = { 0, 0 };
 
-	// Cheat codes
-	void ApplyCheats();
-	std::vector<CheatCode> m_GamesharkCodes;
-
-	inline std::vector<CheatCode> GetGamesharkCodes() const
-	{
-		return m_GamesharkCodes;
-	}
-
-	inline void SetGamesharkCodes(const std::vector<CheatCode>& codes)
-	{
-		m_GamesharkCodes = codes;
-	}
+	// Cheat codes - these lock the emulator so they are safe to call from the UI thread
+	std::vector<CheatCode> GetGamesharkCodes() const;
+	void SetGamesharkCodes(const std::vector<CheatCode>& codes);
+	void AddGamesharkCode(const CheatCode& code);
+	bool UpdateGamesharkCode(size_t index, const std::string& name, const std::vector<std::string>& code);
+	bool RemoveGamesharkCode(size_t index);
+	bool SetGamesharkCodeEnabled(size_t index, bool enabled);
 
 	inline bool GetBootRomEnabled() const { return m_EnableBootRom; }
 	inline void SetBootRom(bool enable) { m_EnableBootRom = enable; }
@@ -160,8 +155,12 @@ public:
 private:
 	bool m_FramePacingEnabled = true;
 	bool m_DmgColourisation = true;
-	std::mutex m_EmulatorMutex;
-	bool m_Paused = false;
+	mutable std::mutex m_EmulatorMutex;
+	std::atomic<bool> m_Paused = false;
+
+	// Cheat codes - must be called with m_EmulatorMutex held
+	void ApplyCheats();
+	std::vector<CheatCode> m_GamesharkCodes;
 
 	uint8_t m_CurrentOpCode = 0x0;
 

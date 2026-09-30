@@ -320,10 +320,10 @@ extern "C"
             env->DeleteLocalRef(jName);
             env->DeleteLocalRef(jCodeArray);
             env->DeleteLocalRef(cheatObj);
-
-            Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
-            emulator->SetGamesharkCodes(cppCodes);
         }
+
+        Emulator* emulator = reinterpret_cast<Emulator*>(emulator_ptr);
+        emulator->SetGamesharkCodes(cppCodes);
     }
 
     JNIEXPORT void JNICALL

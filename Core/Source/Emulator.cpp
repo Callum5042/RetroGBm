@@ -357,13 +357,14 @@ void Emulator::ToggleTraceLog(bool enable)
 
 void Emulator::Tick()
 {
-	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
-
+	// Sleep outside the lock so the UI thread isn't blocked while paused
 	if (m_Paused)
 	{
 		std::this_thread::sleep_for(100ms);
 		return;
 	}
+
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
 
 	// Fetch
 	uint16_t current_pc = m_Cpu->ProgramCounter;
@@ -1009,6 +1010,61 @@ void Emulator::ApplyCheats()
 
 	// Restore the bank to previous value
 	m_Ram->SetWorkRamBank(bank);
+}
+
+std::vector<CheatCode> Emulator::GetGamesharkCodes() const
+{
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
+	return m_GamesharkCodes;
+}
+
+void Emulator::SetGamesharkCodes(const std::vector<CheatCode>& codes)
+{
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
+	m_GamesharkCodes = codes;
+}
+
+void Emulator::AddGamesharkCode(const CheatCode& code)
+{
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
+	m_GamesharkCodes.push_back(code);
+}
+
+bool Emulator::UpdateGamesharkCode(size_t index, const std::string& name, const std::vector<std::string>& code)
+{
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
+	if (index >= m_GamesharkCodes.size())
+	{
+		return false;
+	}
+
+	m_GamesharkCodes[index].name = name;
+	m_GamesharkCodes[index].code = code;
+	return true;
+}
+
+bool Emulator::RemoveGamesharkCode(size_t index)
+{
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
+	if (index >= m_GamesharkCodes.size())
+	{
+		return false;
+	}
+
+	m_GamesharkCodes.erase(m_GamesharkCodes.begin() + index);
+	return true;
+}
+
+bool Emulator::SetGamesharkCodeEnabled(size_t index, bool enabled)
+{
+	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
+	if (index >= m_GamesharkCodes.size())
+	{
+		return false;
+	}
+
+	m_GamesharkCodes[index].enabled = enabled;
+	return true;
 }
 
 void Emulator::LinkCableData(uint8_t data)

@@ -167,9 +167,10 @@ void CheatsWindow::Create()
 	ListView_InsertColumn(m_ListHwnd, 0, &lvc);
 
 	// Add some items
-	for (int i = 0; i < Emulator::Instance->m_GamesharkCodes.size(); ++i)
+	const std::vector<CheatCode> gameshark_codes = Emulator::Instance->GetGamesharkCodes();
+	for (int i = 0; i < gameshark_codes.size(); ++i)
 	{
-		const CheatCode& gameshark = Emulator::Instance->m_GamesharkCodes[i];
+		const CheatCode& gameshark = gameshark_codes[i];
 		bool enabled = gameshark.enabled; // Have to cache it because it will change when setting the item otherwise...
 
 		std::wstring codeName = ConvertToWString(gameshark.name);
@@ -391,13 +392,13 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 
 				LVITEM lvi = { 0 };
 				lvi.mask = LVIF_TEXT;
-				lvi.iItem = Emulator::Instance->m_GamesharkCodes.size();
+				lvi.iItem = static_cast<int>(Emulator::Instance->GetGamesharkCodes().size());
 				lvi.iSubItem = 0;
 				lvi.pszText = const_cast<wchar_t*>(cheat_name.c_str());
 				ListView_InsertItem(m_ListHwnd, &lvi);
 
 				std::vector<std::string> codes = SplitString(ConvertToString(cheat_code));
-				Emulator::Instance->m_GamesharkCodes.push_back({ ConvertToString(cheat_name), codes, false });
+				Emulator::Instance->AddGamesharkCode({ ConvertToString(cheat_name), codes, false });
 
 				// Enable/disable buttons
 				EnableWindow(m_ButtonAdd, TRUE);
@@ -434,8 +435,10 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 				}
 
 				// Update the selected cheat code
-				Emulator::Instance->m_GamesharkCodes[m_SelectedCheatCodeIndex].name = ConvertToString(cheat_name);
-				Emulator::Instance->m_GamesharkCodes[m_SelectedCheatCodeIndex].code = SplitString(ConvertToString(cheat_code));
+				if (!Emulator::Instance->UpdateGamesharkCode(m_SelectedCheatCodeIndex, ConvertToString(cheat_name), SplitString(ConvertToString(cheat_code))))
+				{
+					return 0;
+				}
 
 				ListView_SetItemText(m_ListHwnd, m_SelectedCheatCodeIndex, 0, const_cast<wchar_t*>(cheat_name.c_str()));
 
@@ -443,7 +446,10 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 			else if (wmId == m_ControlDeleteButtonId)
 			{
 				// Remove item
-				Emulator::Instance->m_GamesharkCodes.erase(Emulator::Instance->m_GamesharkCodes.begin() + m_SelectedCheatCodeIndex);
+				if (!Emulator::Instance->RemoveGamesharkCode(m_SelectedCheatCodeIndex))
+				{
+					return 0;
+				}
 
 				// Update UI
 				ListView_DeleteItem(m_ListHwnd, m_SelectedCheatCodeIndex);
@@ -483,8 +489,14 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 								m_SelectedCheatCodeIndex = pnm->iItem;
 
 								// Display the selected cheat code in the edit controls
-								std::wstring name = ConvertToWString(Emulator::Instance->m_GamesharkCodes[m_SelectedCheatCodeIndex].name);
-								std::wstring code = ConvertCodeToMultiline(Emulator::Instance->m_GamesharkCodes[m_SelectedCheatCodeIndex].code);
+								const std::vector<CheatCode> gameshark_codes = Emulator::Instance->GetGamesharkCodes();
+								if (m_SelectedCheatCodeIndex < 0 || m_SelectedCheatCodeIndex >= gameshark_codes.size())
+								{
+									break;
+								}
+
+								std::wstring name = ConvertToWString(gameshark_codes[m_SelectedCheatCodeIndex].name);
+								std::wstring code = ConvertCodeToMultiline(gameshark_codes[m_SelectedCheatCodeIndex].code);
 
 								SetWindowText(m_EditName, name.c_str());
 								SetWindowText(m_EditCode, code.c_str());
@@ -503,11 +515,9 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 
 							int iItem = pnm->iItem;
 
-							if (iItem >= 0 && iItem < Emulator::Instance->m_GamesharkCodes.size())
+							if (iItem >= 0 && Emulator::Instance->SetGamesharkCodeEnabled(iItem, isChecked))
 							{
-								Emulator::Instance->m_GamesharkCodes[iItem].enabled = isChecked;
-
-								std::string cheat_name = Emulator::Instance->m_GamesharkCodes[iItem].name;
+								std::string cheat_name = Emulator::Instance->GetGamesharkCodes()[iItem].name;
 								Logger::Info("Toggled cheat: " + cheat_name + " to " + std::to_string(isChecked));
 
 								//if (!wasChecked && isChecked)
