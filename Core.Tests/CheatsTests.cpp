@@ -27,6 +27,17 @@ namespace CheatsTests
 			Assert::AreEqual(static_cast<uint16_t>(0xD204), token.address);
 		}
 
+		TEST_METHOD(ParseGamesharkCode_HighBankByte_ReturnsToken)
+		{
+			// Act
+			GamesharkToken token = ParseGamesharkCode("910730D2");
+
+			// Assert
+			Assert::AreEqual(static_cast<uint8_t>(0x91), token.bank);
+			Assert::AreEqual(static_cast<uint8_t>(0x07), token.value);
+			Assert::AreEqual(static_cast<uint16_t>(0xD230), token.address);
+		}
+
 		TEST_METHOD(Tick_EnabledCheat_AppliedEachFrame)
 		{
 			// Arrange - ROM only cartridge filled with NOPs
