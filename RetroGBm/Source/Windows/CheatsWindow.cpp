@@ -104,6 +104,20 @@ namespace
 
 		return ConvertToWString(result);
 	}
+
+	int CountCodes(const std::vector<std::string>& codes)
+	{
+		int count = 0;
+		for (const auto& code : codes)
+		{
+			if (!code.empty())
+			{
+				++count;
+			}
+		}
+
+		return count;
+	}
 }
 
 CheatsWindow::CheatsWindow(Application* application) : m_Application(application)
@@ -128,61 +142,91 @@ void CheatsWindow::Create()
 		m_Font = CreateFontIndirect(&metrics.lfMessageFont);
 	}
 
-	int width = 200 + 20;
-	int height = 200;
-
-	/*m_ListHwnd = CreateWindow(WC_LISTVIEW, L"",
-		WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL | LVS_NOSORTHEADER,
-		0, 0, width, height, m_Hwnd, reinterpret_cast<HMENU>((UINT_PTR)m_ListMenuId), hInstance, this);*/
-
 	// Initialize common controls
 	INITCOMMONCONTROLSEX icex = { sizeof(INITCOMMONCONTROLSEX), ICC_LISTVIEW_CLASSES };
 	InitCommonControlsEx(&icex);
 
+	/// The List /////////////////////////////////////////
+	//////////////////////////////////////////////////////
+
+	const int list_x = 12;
+	const int list_width = 236;
+	const int buttons_y = m_ClientHeight - m_FooterHeight - 12 - 24;
+
+	// Label: "Cheats for this game:"
+	m_LabelList = CreateWindowW(L"STATIC", L"Cheats for this game:",
+		WS_CHILD | WS_VISIBLE,
+		list_x, 8, 150, 16,
+		m_Hwnd, nullptr, nullptr, nullptr);
+
+	SendMessageW(m_LabelList, WM_SETFONT, (WPARAM)m_Font, TRUE);
+
+	// Label: "2 of 4 on"
+	m_LabelSummary = CreateWindowW(L"STATIC", L"",
+		WS_CHILD | WS_VISIBLE | SS_RIGHT,
+		list_x + list_width - 80, 8, 80, 16,
+		m_Hwnd, nullptr, nullptr, nullptr);
+
+	SendMessageW(m_LabelSummary, WM_SETFONT, (WPARAM)m_Font, TRUE);
+
 	// Create ListView control
 	m_ListHwnd = CreateWindowEx(
 		WS_EX_CLIENTEDGE, WC_LISTVIEW, L"",
-		WS_CHILD | WS_VISIBLE | WS_TABSTOP | LVS_REPORT | LVS_SINGLESEL,
-		10, 10, 200, 300 - 20,
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP | LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_NOSORTHEADER,
+		list_x, 30, list_width, buttons_y - 6 - 30,
 		m_Hwnd, (HMENU)m_ControlListViewId, GetModuleHandle(NULL), NULL);
 
 	SendMessageW(m_ListHwnd, WM_SETFONT, (WPARAM)m_Font, TRUE);
 
-	// Enable checkboxes
-	ListView_SetExtendedListViewStyle(m_ListHwnd, LVS_EX_FULLROWSELECT | LVS_EX_CHECKBOXES);
+	// Explorer theme gives the light blue selection
+	SetWindowTheme(m_ListHwnd, L"Explorer", NULL);
+	ListView_SetExtendedListViewStyle(m_ListHwnd, LVS_EX_FULLROWSELECT | LVS_EX_CHECKBOXES | LVS_EX_DOUBLEBUFFER);
 
-	// Add a dummy column (required for LVS_REPORT layout)
+	// Columns are sized to fit by UpdateListColumns, so stop them being dragged
+	HWND header = ListView_GetHeader(m_ListHwnd);
+	SetWindowLongPtr(header, GWL_STYLE, GetWindowLongPtr(header, GWL_STYLE) | HDS_NOSIZING);
+
 	LVCOLUMN lvc = { 0 };
 	lvc.mask = LVCF_WIDTH | LVCF_TEXT;
-	lvc.cx = 160; // width of column
-	lvc.pszText = (LPWSTR)L"Cheats"; // column header text
+	lvc.cx = 160;
+	lvc.pszText = const_cast<LPWSTR>(L"Name");
 	ListView_InsertColumn(m_ListHwnd, 0, &lvc);
 
-	// Add some items
+	lvc.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_FMT;
+	lvc.fmt = LVCFMT_RIGHT;
+	lvc.cx = m_CodesColumnWidth;
+	lvc.pszText = const_cast<LPWSTR>(L"Codes");
+	ListView_InsertColumn(m_ListHwnd, 1, &lvc);
+
 	const std::vector<CheatCode> gameshark_codes = Emulator::Instance->GetGamesharkCodes();
 	for (int i = 0; i < gameshark_codes.size(); ++i)
 	{
-		const CheatCode& gameshark = gameshark_codes[i];
-		bool enabled = gameshark.enabled; // Have to cache it because it will change when setting the item otherwise...
-
-		std::wstring codeName = ConvertToWString(gameshark.name);
-
-		LVITEM lvi = { 0 };
-		lvi.mask = LVIF_TEXT;
-		lvi.iItem = i;
-		lvi.iSubItem = 0;
-		lvi.pszText =  const_cast<wchar_t*>(codeName.c_str());
-		ListView_InsertItem(m_ListHwnd, &lvi);
-
-		// Check the checkbox by default
-		ListView_SetCheckState(m_ListHwnd, i, (enabled ? TRUE : FALSE));
+		InsertListItem(i, gameshark_codes[i]);
 	}
 
+	UpdateListColumns();
+	UpdateEnabledSummary();
+
+	// Button: New
+	m_ButtonNew = CreateWindowW(L"BUTTON", L"New",
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
+		list_x, buttons_y, 75, 24,
+		m_Hwnd, (HMENU)m_ControlNewButtonId, nullptr, nullptr);
+
+	SendMessageW(m_ButtonNew, WM_SETFONT, (WPARAM)m_Font, TRUE);
+
+	// Button: Delete
+	m_ButtonDelete = CreateWindowW(L"BUTTON", L"Delete",
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
+		list_x + 75 + 6, buttons_y, 75, 24,
+		m_Hwnd, (HMENU)m_ControlDeleteButtonId, nullptr, nullptr);
+
+	SendMessageW(m_ButtonDelete, WM_SETFONT, (WPARAM)m_Font, TRUE);
 
 	/// The Form Controls ////////////////////////////////
 	//////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////
+
+	int width = list_x + list_width + 16;
 
 	// Label: "Cheat name"
 	m_LabelName = CreateWindowW(L"STATIC", L"Cheat name:",
@@ -217,7 +261,7 @@ void CheatsWindow::Create()
 	SendMessageW(m_EditCode, WM_SETFONT, (WPARAM)m_Font, TRUE);
 
 	// Button: Add
-	int button_x = 220;
+	int button_x = width;
 	int button_width = 80;
 
 	m_ButtonAdd = CreateWindowW(L"BUTTON", L"Add",
@@ -236,16 +280,6 @@ void CheatsWindow::Create()
 		m_Hwnd, (HMENU)m_ControlUpdateButtonId, nullptr, nullptr);
 
 	SendMessageW(m_ButtonUpdate, WM_SETFONT, (WPARAM)m_Font, TRUE);
-
-	// Button: Delete
-	button_x += button_width;
-
-	m_ButtonDelete = CreateWindowW(L"BUTTON", L"Delete",
-		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-		button_x, 235, button_width, 30,
-		m_Hwnd, (HMENU)m_ControlDeleteButtonId, nullptr, nullptr);
-
-	SendMessageW(m_ButtonDelete, WM_SETFONT, (WPARAM)m_Font, TRUE);
 
 	// Disable Update and Delete buttons initially
 	EnableWindow(m_ButtonUpdate, FALSE);
@@ -293,6 +327,86 @@ void CheatsWindow::Destroy()
 void CheatsWindow::Focus()
 {
 	SetForegroundWindow(m_Hwnd);
+}
+
+void CheatsWindow::InsertListItem(int index, const CheatCode& cheat)
+{
+	std::wstring name = ConvertToWString(cheat.name);
+	std::wstring count = std::to_wstring(CountCodes(cheat.code));
+
+	LVITEM lvi = { 0 };
+	lvi.mask = LVIF_TEXT;
+	lvi.iItem = index;
+	lvi.iSubItem = 0;
+	lvi.pszText = const_cast<wchar_t*>(name.c_str());
+	ListView_InsertItem(m_ListHwnd, &lvi);
+
+	ListView_SetItemText(m_ListHwnd, index, 1, const_cast<wchar_t*>(count.c_str()));
+	ListView_SetCheckState(m_ListHwnd, index, (cheat.enabled ? TRUE : FALSE));
+}
+
+void CheatsWindow::UpdateListColumns()
+{
+	// Name takes whatever the Codes column and the scroll bar (when shown) leave
+	RECT client;
+	GetClientRect(m_ListHwnd, &client);
+	ListView_SetColumnWidth(m_ListHwnd, 0, (client.right - client.left) - m_CodesColumnWidth);
+}
+
+void CheatsWindow::UpdateEnabledSummary()
+{
+	const std::vector<CheatCode> codes = Emulator::Instance->GetGamesharkCodes();
+
+	std::wstring summary = L"none";
+	if (!codes.empty())
+	{
+		size_t enabled = 0;
+		for (const auto& code : codes)
+		{
+			if (code.enabled)
+			{
+				++enabled;
+			}
+		}
+
+		summary = std::to_wstring(enabled) + L" of " + std::to_wstring(codes.size()) + L" on";
+	}
+
+	SetWindowText(m_LabelSummary, summary.c_str());
+}
+
+void CheatsWindow::StartNew()
+{
+	// Deselecting disables Update and Delete
+	ListView_SetItemState(m_ListHwnd, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
+	m_SelectedCheatCodeIndex = -1;
+
+	SetWindowText(m_EditName, L"");
+	SetWindowText(m_EditCode, L"");
+	SetFocus(m_EditName);
+}
+
+void CheatsWindow::DeleteSelected()
+{
+	if (m_SelectedCheatCodeIndex < 0 || !Emulator::Instance->RemoveGamesharkCode(m_SelectedCheatCodeIndex))
+	{
+		return;
+	}
+
+	// Update UI
+	ListView_DeleteItem(m_ListHwnd, m_SelectedCheatCodeIndex);
+	UpdateListColumns();
+	UpdateEnabledSummary();
+
+	// Clear form control
+	m_SelectedCheatCodeIndex = -1;
+	SetWindowText(m_EditName, L"");
+	SetWindowText(m_EditCode, L"");
+
+	// Enable/disable buttons
+	EnableWindow(m_ButtonAdd, TRUE);
+	EnableWindow(m_ButtonUpdate, FALSE);
+	EnableWindow(m_ButtonDelete, FALSE);
 }
 
 bool CheatsWindow::HandleDialogMessage(MSG* msg)
@@ -421,6 +535,12 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 				return (LONG_PTR)GetSysColorBrush(COLOR_BTNFACE);
 			}
 
+			if (reinterpret_cast<HWND>(lParam) == m_LabelSummary)
+			{
+				SetTextColor(hdc, RGB(92, 92, 92));
+				return (LONG_PTR)GetSysColorBrush(COLOR_WINDOW);
+			}
+
 			SetTextColor(hdc, GetSysColor(COLOR_WINDOWTEXT));
 			return (LONG_PTR)GetSysColorBrush(COLOR_WINDOW);
 		}
@@ -472,23 +592,18 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 					return 0;
 				}
 
-				// Add to the list
-				// int itemCount = ListView_GetItemCount(m_ListHwnd);
+				// Add to the emulator, then the list
+				CheatCode cheat = { ConvertToString(cheat_name), SplitString(ConvertToString(cheat_code)), false };
+				Emulator::Instance->AddGamesharkCode(cheat);
 
-				LVITEM lvi = { 0 };
-				lvi.mask = LVIF_TEXT;
-				lvi.iItem = static_cast<int>(Emulator::Instance->GetGamesharkCodes().size());
-				lvi.iSubItem = 0;
-				lvi.pszText = const_cast<wchar_t*>(cheat_name.c_str());
-				ListView_InsertItem(m_ListHwnd, &lvi);
+				int index = static_cast<int>(Emulator::Instance->GetGamesharkCodes().size()) - 1;
+				InsertListItem(index, cheat);
+				UpdateListColumns();
+				UpdateEnabledSummary();
 
-				std::vector<std::string> codes = SplitString(ConvertToString(cheat_code));
-				Emulator::Instance->AddGamesharkCode({ ConvertToString(cheat_name), codes, false });
-
-				// Enable/disable buttons
-				EnableWindow(m_ButtonAdd, TRUE);
-				EnableWindow(m_ButtonUpdate, TRUE);
-				EnableWindow(m_ButtonDelete, TRUE);
+				// Select the new cheat, which loads it into the form and enables Update/Delete
+				ListView_SetItemState(m_ListHwnd, index, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+				ListView_EnsureVisible(m_ListHwnd, index, FALSE);
 			}
 			else if (wmId == m_ControlUpdateButtonId)
 			{
@@ -520,34 +635,23 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 				}
 
 				// Update the selected cheat code
-				if (!Emulator::Instance->UpdateGamesharkCode(m_SelectedCheatCodeIndex, ConvertToString(cheat_name), SplitString(ConvertToString(cheat_code))))
+				std::vector<std::string> codes = SplitString(ConvertToString(cheat_code));
+				if (!Emulator::Instance->UpdateGamesharkCode(m_SelectedCheatCodeIndex, ConvertToString(cheat_name), codes))
 				{
 					return 0;
 				}
 
+				std::wstring count = std::to_wstring(CountCodes(codes));
 				ListView_SetItemText(m_ListHwnd, m_SelectedCheatCodeIndex, 0, const_cast<wchar_t*>(cheat_name.c_str()));
-
+				ListView_SetItemText(m_ListHwnd, m_SelectedCheatCodeIndex, 1, const_cast<wchar_t*>(count.c_str()));
+			}
+			else if (wmId == m_ControlNewButtonId)
+			{
+				StartNew();
 			}
 			else if (wmId == m_ControlDeleteButtonId)
 			{
-				// Remove item
-				if (!Emulator::Instance->RemoveGamesharkCode(m_SelectedCheatCodeIndex))
-				{
-					return 0;
-				}
-
-				// Update UI
-				ListView_DeleteItem(m_ListHwnd, m_SelectedCheatCodeIndex);
-
-				// Clear form control
-				m_SelectedCheatCodeIndex = -1;
-				SetWindowText(m_EditName, L"");
-				SetWindowText(m_EditCode, L"");
-
-				// Enable/disable buttons
-				EnableWindow(m_ButtonAdd, TRUE);
-				EnableWindow(m_ButtonUpdate, FALSE);
-				EnableWindow(m_ButtonDelete, FALSE);
+				DeleteSelected();
 			}
 
 			break;
@@ -591,12 +695,23 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 								EnableWindow(m_ButtonUpdate, TRUE);
 								EnableWindow(m_ButtonDelete, TRUE);
 							}
+							else
+							{
+								// Item was deselected, e.g. by clicking empty space in the list
+								m_SelectedCheatCodeIndex = -1;
+								EnableWindow(m_ButtonUpdate, FALSE);
+								EnableWindow(m_ButtonDelete, FALSE);
+							}
 						}
 
-						if (pnm->uChanged & LVIF_STATE)
+						// Only act when the checkbox itself changes. Selection changes also arrive here, and
+						// an old image of 0 is the checkbox being created when an item is inserted.
+						UINT old_image = pnm->uOldState & LVIS_STATEIMAGEMASK;
+						UINT new_image = pnm->uNewState & LVIS_STATEIMAGEMASK;
+
+						if ((pnm->uChanged & LVIF_STATE) && old_image != 0 && new_image != old_image)
 						{
-							BOOL wasChecked = (pnm->uOldState & INDEXTOSTATEIMAGEMASK(2)) != 0;
-							BOOL isChecked = (pnm->uNewState & INDEXTOSTATEIMAGEMASK(2)) != 0;
+							BOOL isChecked = new_image == INDEXTOSTATEIMAGEMASK(2);
 
 							int iItem = pnm->iItem;
 
@@ -605,17 +720,19 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 								std::string cheat_name = Emulator::Instance->GetGamesharkCodes()[iItem].name;
 								Logger::Info("Toggled cheat: " + cheat_name + " to " + std::to_string(isChecked));
 
-								//if (!wasChecked && isChecked)
-								//{
-								//	// Enable the codes
-								//	Emulator::Instance->m_GamesharkCodes[iItem].enabled = true;
-								//}
-								//else
-								//{
-								//	// Disable the codes
-								//	Emulator::Instance->m_GamesharkCodes[iItem].enabled = false;
-								//}
+								UpdateEnabledSummary();
 							}
+						}
+
+						break;
+					}
+
+					case LVN_KEYDOWN:
+					{
+						NMLVKEYDOWN* key = reinterpret_cast<NMLVKEYDOWN*>(lParam);
+						if (key->wVKey == VK_DELETE)
+						{
+							DeleteSelected();
 						}
 
 						break;

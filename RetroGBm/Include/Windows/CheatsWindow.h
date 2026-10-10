@@ -4,6 +4,7 @@
 #include <string>
 
 class Application;
+struct CheatCode;
 
 class CheatsWindow
 {
@@ -44,7 +45,21 @@ private:
 	HWND m_LabelFooter = NULL;
 	HWND m_ButtonClose = NULL;
 
-	// UI
+	// List
+	HWND m_LabelList = NULL;
+	HWND m_LabelSummary = NULL;
+	HWND m_ButtonNew = NULL;
+	HWND m_ButtonDelete = NULL;
+
+	static const int m_CodesColumnWidth = 52;
+
+	void InsertListItem(int index, const CheatCode& cheat);
+	void UpdateListColumns();
+	void UpdateEnabledSummary();
+	void StartNew();
+	void DeleteSelected();
+
+	// Form
 	HWND m_LabelName = NULL;
 	HWND m_EditName = NULL;
 
@@ -53,7 +68,6 @@ private:
 
 	HWND m_ButtonAdd = NULL;
 	HWND m_ButtonUpdate = NULL;
-	HWND m_ButtonDelete = NULL;
 
 	const int m_ControlListViewId = 1000;
 	const int m_ControlEditNameId = 1001;
@@ -61,10 +75,10 @@ private:
 	const int m_ControlAddButtonId = 2001;
 	const int m_ControlUpdateButtonId = 2002;
 	const int m_ControlDeleteButtonId = 2003;
+	const int m_ControlNewButtonId = 2004;
 
 	// ListView
 	HWND m_ListHwnd = NULL;
-	static const UINT m_ListMenuId = 5001;
 
 	// Cheat codes
 	int m_SelectedCheatCodeIndex = -1;
