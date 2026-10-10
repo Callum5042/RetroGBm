@@ -296,6 +296,12 @@ void Application::Run()
 				m_Running = false;
 			}
 
+			// Let the cheats window handle Tab, Enter and Esc
+			if (CheatsWindow != nullptr && CheatsWindow->HandleDialogMessage(&msg))
+			{
+				continue;
+			}
+
 			TranslateMessage(&msg);
 			DispatchMessageW(&msg);
 		}

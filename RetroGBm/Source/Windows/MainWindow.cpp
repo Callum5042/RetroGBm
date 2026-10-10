@@ -551,8 +551,15 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 		case m_MenuToolsCheats:
 		{
-			m_Application->CheatsWindow = std::make_unique<CheatsWindow>(m_Application);
-			m_Application->CheatsWindow->Create();
+			if (m_Application->CheatsWindow != nullptr && m_Application->CheatsWindow->IsOpen())
+			{
+				m_Application->CheatsWindow->Focus();
+			}
+			else
+			{
+				m_Application->CheatsWindow = std::make_unique<CheatsWindow>(m_Application);
+				m_Application->CheatsWindow->Create();
+			}
 			break;
 		}
 	}

@@ -119,23 +119,13 @@ void CheatsWindow::Create()
 {
 	HINSTANCE hInstance = GetModuleHandle(NULL);
 
-	this->WindowCreate("Cheats", 500, 300);
+	this->WindowCreate("Cheats", m_ClientWidth, m_ClientHeight);
 
-	static HFONT m_Font;
-
-	// Create font
+	// Use the system message font (Segoe UI 9pt on Windows 10/11)
 	{
-		HDC hdc = GetDC(NULL);
-		long lfHeight = -MulDiv(12, GetDeviceCaps(hdc, LOGPIXELSY), 72);
-		ReleaseDC(NULL, hdc);
-
-		m_Font = CreateFont(lfHeight, 0, 0, 0, 0, FALSE, 0, 0, 0, 0, 0, 0, 0, L"Arial");
-
-		/*m_Font = CreateFont(
-			-MulDiv(9, GetDeviceCaps(hdc, LOGPIXELSY), 72),
-			0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
-			DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-			CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Segoe UI"));*/
+		NONCLIENTMETRICS metrics = { sizeof(NONCLIENTMETRICS) };
+		SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(metrics), &metrics, 0);
+		m_Font = CreateFontIndirect(&metrics.lfMessageFont);
 	}
 
 	int width = 200 + 20;
@@ -152,9 +142,11 @@ void CheatsWindow::Create()
 	// Create ListView control
 	m_ListHwnd = CreateWindowEx(
 		WS_EX_CLIENTEDGE, WC_LISTVIEW, L"",
-		WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL,
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP | LVS_REPORT | LVS_SINGLESEL,
 		10, 10, 200, 300 - 20,
 		m_Hwnd, (HMENU)m_ControlListViewId, GetModuleHandle(NULL), NULL);
+
+	SendMessageW(m_ListHwnd, WM_SETFONT, (WPARAM)m_Font, TRUE);
 
 	// Enable checkboxes
 	ListView_SetExtendedListViewStyle(m_ListHwnd, LVS_EX_FULLROWSELECT | LVS_EX_CHECKBOXES);
@@ -218,7 +210,7 @@ void CheatsWindow::Create()
 
 	// Multi-line Edit: Cheat code
 	m_EditCode = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", nullptr,
-		WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL,
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | WS_VSCROLL,
 		width, 105, 270, 120,
 		m_Hwnd, (HMENU)m_ControlEditCodeId, nullptr, nullptr);
 
@@ -258,22 +250,82 @@ void CheatsWindow::Create()
 	// Disable Update and Delete buttons initially
 	EnableWindow(m_ButtonUpdate, FALSE);
 	EnableWindow(m_ButtonDelete, FALSE);
+
+	// Footer
+	const int footer_top = m_ClientHeight - m_FooterHeight;
+
+	m_LabelFooter = CreateWindowW(L"STATIC", L"Ticked cheats apply immediately.",
+		WS_CHILD | WS_VISIBLE | SS_LEFT | SS_CENTERIMAGE,
+		12, footer_top + 1, 480, m_FooterHeight - 1,
+		m_Hwnd, nullptr, nullptr, nullptr);
+
+	SendMessageW(m_LabelFooter, WM_SETFONT, (WPARAM)m_Font, TRUE);
+
+	// Uses IDCANCEL so the Esc key and the button share the same path
+	m_ButtonClose = CreateWindowW(L"BUTTON", L"Close",
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
+		m_ClientWidth - 12 - 75, footer_top + (m_FooterHeight - 24) / 2, 75, 24,
+		m_Hwnd, (HMENU)IDCANCEL, nullptr, nullptr);
+
+	SendMessageW(m_ButtonClose, WM_SETFONT, (WPARAM)m_Font, TRUE);
+
+	SetFocus(m_ListHwnd);
 }
 
 void CheatsWindow::Destroy()
 {
+	// WM_DESTROY clears m_Hwnd
+	if (m_Hwnd != NULL)
+	{
+		DestroyWindow(m_Hwnd);
+	}
+
 	HINSTANCE hInstance = GetModuleHandle(NULL);
 	UnregisterClass(m_RegisterClassName.c_str(), hInstance);
 
-	DestroyWindow(m_Hwnd);
+	if (m_Font != NULL)
+	{
+		DeleteObject(m_Font);
+		m_Font = NULL;
+	}
+}
+
+void CheatsWindow::Focus()
+{
+	SetForegroundWindow(m_Hwnd);
+}
+
+bool CheatsWindow::HandleDialogMessage(MSG* msg)
+{
+	return m_Hwnd != NULL && IsDialogMessage(m_Hwnd, msg);
+}
+
+void CheatsWindow::PaintBackground(HDC hdc)
+{
+	RECT client;
+	GetClientRect(m_Hwnd, &client);
+
+	// White content area
+	RECT content = client;
+	content.bottom -= m_FooterHeight;
+	FillRect(hdc, &content, GetSysColorBrush(COLOR_WINDOW));
+
+	// 1px divider above the footer
+	RECT divider = client;
+	divider.top = content.bottom;
+	divider.bottom = divider.top + 1;
+	SetDCBrushColor(hdc, RGB(223, 223, 223));
+	FillRect(hdc, &divider, reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+
+	// Grey footer
+	RECT footer = client;
+	footer.top = divider.bottom;
+	FillRect(hdc, &footer, GetSysColorBrush(COLOR_BTNFACE));
 }
 
 void CheatsWindow::WindowCreate(const std::string& title, int width, int height)
 {
 	HINSTANCE hInstance = GetModuleHandle(NULL);
-
-
-	m_BrushBackground = CreateSolidBrush(RGB(255, 255, 255));
 
 	// Convert to wstring
 	const std::wstring window_title = ConvertToWString(title);
@@ -291,23 +343,33 @@ void CheatsWindow::WindowCreate(const std::string& title, int width, int height)
 	RegisterClass(&wc);
 
 	// Compute window rectangle dimensions based on requested client area dimensions.
+	DWORD exStyle = WS_EX_DLGMODALFRAME | WS_EX_CONTROLPARENT;
+	DWORD dwStyle = (WS_CAPTION | WS_POPUP | WS_SYSMENU);
+
 	RECT window_rect = { 0, 0, width, height };
-	AdjustWindowRect(&window_rect, WS_OVERLAPPEDWINDOW, false);
+	AdjustWindowRectEx(&window_rect, dwStyle, FALSE, exStyle);
 	int window_width = window_rect.right - window_rect.left;
 	int window_height = window_rect.bottom - window_rect.top;
 
-	// Create window
-	DWORD exStyle = WS_EX_DLGMODALFRAME;
-	DWORD dwStyle = (WS_OVERLAPPED | WS_CAPTION | WS_POPUP | WS_SYSMENU);
+	// Centre over the main window, kept inside the monitor's work area
 	HWND parent_window = m_Application->GetMainWindow()->GetHwnd();
 
-	// Get the dimensions of the parent window
 	RECT parentRect;
-	GetClientRect(parent_window, &parentRect);
+	GetWindowRect(parent_window, &parentRect);
 
-	// Calculate the position for the child window
-	int x = (parentRect.right - window_width) / 2;
-	int y = (parentRect.bottom - window_height) / 2;
+	int x = parentRect.left + ((parentRect.right - parentRect.left) - window_width) / 2;
+	int y = parentRect.top + ((parentRect.bottom - parentRect.top) - window_height) / 2;
+
+	MONITORINFO monitor = { sizeof(MONITORINFO) };
+	if (GetMonitorInfo(MonitorFromWindow(parent_window, MONITOR_DEFAULTTONEAREST), &monitor))
+	{
+		if (x + window_width > monitor.rcWork.right) x = monitor.rcWork.right - window_width;
+		if (y + window_height > monitor.rcWork.bottom) y = monitor.rcWork.bottom - window_height;
+		if (x < monitor.rcWork.left) x = monitor.rcWork.left;
+		if (y < monitor.rcWork.top) y = monitor.rcWork.top;
+	}
+
+	// Create window
 
 	m_Hwnd = CreateWindowEx(exStyle, wc.lpszClassName, window_title.c_str(), dwStyle, x, y, window_width, window_height, parent_window, NULL, hInstance, this);
 	if (m_Hwnd == NULL)
@@ -323,42 +385,65 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 {
 	switch (msg)
 	{
-		case WM_CREATE:
-		{
-
-
-			break;
-		}
-
 		case WM_CLOSE:
-			Destroy();
+			DestroyWindow(hwnd);
 			return 0;
+
+		case WM_DESTROY:
+			m_Hwnd = NULL;
+			m_LastFocus = NULL;
+			return 0;
+
+		case WM_ACTIVATE:
+		{
+			// Remember which control had focus so it is restored when switching back
+			if (LOWORD(wParam) == WA_INACTIVE)
+			{
+				HWND focus = GetFocus();
+				m_LastFocus = IsChild(hwnd, focus) ? focus : NULL;
+			}
+			else
+			{
+				SetFocus(m_LastFocus != NULL ? m_LastFocus : m_ListHwnd);
+			}
+
+			return 0;
+		}
 
 		case WM_CTLCOLORSTATIC:
 		{
 			HDC hdc = (HDC)wParam;
-			SetTextColor(hdc, RGB(0, 0, 0));
 			SetBkMode(hdc, TRANSPARENT);
+
+			if (reinterpret_cast<HWND>(lParam) == m_LabelFooter)
+			{
+				SetTextColor(hdc, RGB(76, 76, 76));
+				return (LONG_PTR)GetSysColorBrush(COLOR_BTNFACE);
+			}
+
+			SetTextColor(hdc, GetSysColor(COLOR_WINDOWTEXT));
 			return (LONG_PTR)GetSysColorBrush(COLOR_WINDOW);
 		}
 
-		case WM_PAINT:
-		{
-			PAINTSTRUCT ps;
-			HDC hdc = BeginPaint(hwnd, &ps);
+		case WM_ERASEBKGND:
+			PaintBackground(reinterpret_cast<HDC>(wParam));
+			return 1;
 
-			// Fill screen with colour to avoid horrible effect
-			FillRect(hdc, &ps.rcPaint, reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1));
+		case WM_PRINTCLIENT:
+			// Themed buttons ask the parent to draw the background behind their rounded corners
+			PaintBackground(reinterpret_cast<HDC>(wParam));
+			return 0;
 
-			EndPaint(hwnd, &ps);
-
-			break;
-		}
 		case WM_COMMAND:
 		{
 			int wmId = LOWORD(wParam);
 
-			if (wmId == m_ControlAddButtonId)
+			if (wmId == IDCANCEL)
+			{
+				DestroyWindow(hwnd);
+				return 0;
+			}
+			else if (wmId == m_ControlAddButtonId)
 			{
 				std::wstring cheat_name;
 				std::wstring cheat_code;
