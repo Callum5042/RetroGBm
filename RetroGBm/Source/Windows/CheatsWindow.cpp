@@ -9,6 +9,7 @@
 #include <RetroGBm/Logger.h>
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Cheats.h>
+#include <RetroGBm/Cartridge/BaseCartridge.h>
 
 #include <stdio.h>
 #include <string>
@@ -149,6 +150,29 @@ void CheatsWindow::Create()
 
 	this->WindowCreate("Cheats", m_ClientWidth, m_ClientHeight);
 
+	// Show the game in the title, e.g. "Cheats - POKEMON RED". The class name stays "Cheats".
+	{
+		std::wstring game_title;
+		for (char c : Emulator::Instance->GetCartridge()->GetCartridgeData().title)
+		{
+			// Header titles can be padded with spaces or junk bytes
+			if (c >= 0x20 && c <= 0x7E)
+			{
+				game_title += static_cast<wchar_t>(c);
+			}
+		}
+
+		while (!game_title.empty() && game_title.back() == L' ')
+		{
+			game_title.pop_back();
+		}
+
+		if (!game_title.empty())
+		{
+			SetWindowText(m_Hwnd, (L"Cheats \x2014 " + game_title).c_str());
+		}
+	}
+
 	// Use the system message font (Segoe UI 9pt on Windows 10/11)
 	{
 		NONCLIENTMETRICS metrics = { sizeof(NONCLIENTMETRICS) };
@@ -281,6 +305,7 @@ void CheatsWindow::Create()
 		m_Hwnd, (HMENU)m_ControlEditNameId, nullptr, nullptr);
 
 	SendMessageW(m_EditName, WM_SETFONT, (WPARAM)m_Font, TRUE);
+	Edit_SetCueBannerTextFocused(m_EditName, L"e.g. Infinite health", TRUE);
 
 	// Label: "GameShark codes (one per line):"
 	m_LabelCode = CreateWindowW(L"STATIC", L"GameShark codes (one per line):",
@@ -341,14 +366,18 @@ void CheatsWindow::Create()
 
 	SendMessageW(m_ButtonClose, WM_SETFONT, (WPARAM)m_Font, TRUE);
 
-	// Start on the first cheat, or a new one when there are none
+	// Start on the first cheat, or ready to type a new one when there are none
 	if (ListView_GetItemCount(m_ListHwnd) > 0)
 	{
 		ListView_SetItemState(m_ListHwnd, 0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+		UpdateFormState();
+		SetFocus(m_ListHwnd);
 	}
-
-	UpdateFormState();
-	SetFocus(m_ListHwnd);
+	else
+	{
+		UpdateFormState();
+		SetFocus(m_EditName);
+	}
 }
 
 void CheatsWindow::Destroy()
@@ -881,6 +910,15 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 						}
 
 						break;
+					}
+
+					case LVN_GETEMPTYMARKUP:
+					{
+						// Text shown in the list when there are no cheats
+						NMLVEMPTYMARKUP* markup = reinterpret_cast<NMLVEMPTYMARKUP*>(lParam);
+						markup->dwFlags = EMF_CENTERED;
+						wcscpy_s(markup->szMarkup, L"No cheats for this game yet.\nAdd one using the form on the right.");
+						return TRUE;
 					}
 
 					case LVN_KEYDOWN:
