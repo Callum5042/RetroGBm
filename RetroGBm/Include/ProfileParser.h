@@ -26,6 +26,7 @@ struct ProfileCheats
 {
 	std::string name;
 	std::string code;
+	bool enabled = false;
 };
 
 struct ProfileGameData
