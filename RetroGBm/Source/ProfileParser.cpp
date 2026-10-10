@@ -11,7 +11,8 @@ void to_json(nlohmann::json& j, const ProfileCheats& p)
 	j = nlohmann::json
 	{
 		{"name", p.name},
-		{"code", p.code}
+		{"code", p.code},
+		{"enabled", p.enabled}
 	};
 }
 
@@ -88,6 +89,9 @@ ProfileData ParseProfile(const std::filesystem::path& path)
 					ProfileCheats pc;
 					if (cheat.contains("name")) pc.name = cheat["name"].get<std::string>();
 					if (cheat.contains("code")) pc.code = cheat["code"].get<std::string>();
+
+					// Older profiles don't have "enabled", so those cheats load switched off
+					if (cheat.contains("enabled") && cheat["enabled"].is_boolean()) pc.enabled = cheat["enabled"].get<bool>();
 					profileData.cheats.push_back(pc);
 				}
 			}

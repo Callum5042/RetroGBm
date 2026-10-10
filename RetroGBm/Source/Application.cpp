@@ -174,7 +174,16 @@ void Application::LoadRom(const std::string& file)
 			{
 				CheatCode code;
 				code.name = cheat.name;
-				code.code = SplitString(cheat.code);
+				code.enabled = cheat.enabled;
+
+				// Skip blank lines, which would otherwise be applied as an empty code
+				for (const std::string& line : SplitString(cheat.code))
+				{
+					if (line.find_first_not_of(" \t") != std::string::npos)
+					{
+						code.code.push_back(line);
+					}
+				}
 
 				codes.push_back(code);
 			}
@@ -274,6 +283,7 @@ void Application::StopEmulator()
 				ProfileCheats cheat;
 				cheat.name = code.name;
 				cheat.code = Utilities::ConvertToString(ConvertCodeToMultiline(code.code));
+				cheat.enabled = code.enabled;
 
 				cheats.push_back(cheat);
 			}

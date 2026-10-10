@@ -351,7 +351,7 @@ void CheatsWindow::Create()
 	// Footer
 	const int footer_top = m_ClientHeight - m_FooterHeight;
 
-	m_LabelFooter = CreateWindowW(L"STATIC", L"Ticked cheats apply immediately.",
+	m_LabelFooter = CreateWindowW(L"STATIC", L"Ticked cheats apply immediately and are saved with this game's profile.",
 		WS_CHILD | WS_VISIBLE | SS_LEFT | SS_CENTERIMAGE,
 		12, footer_top + 1, 480, m_FooterHeight - 1,
 		m_Hwnd, nullptr, nullptr, nullptr);
