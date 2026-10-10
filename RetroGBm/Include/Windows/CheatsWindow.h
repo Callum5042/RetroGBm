@@ -53,8 +53,6 @@ private:
 	HWND m_ButtonNew = NULL;
 	HWND m_ButtonDelete = NULL;
 
-	static const int m_CodesColumnWidth = 52;
-
 	void InsertListItem(int index, const CheatCode& cheat);
 	void UpdateListColumns();
 	void UpdateEnabledSummary();

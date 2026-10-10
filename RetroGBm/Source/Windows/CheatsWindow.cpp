@@ -120,19 +120,6 @@ namespace
 		return text;
 	}
 
-	int CountCodes(const std::vector<std::string>& codes)
-	{
-		int count = 0;
-		for (const auto& code : codes)
-		{
-			if (!code.empty())
-			{
-				++count;
-			}
-		}
-
-		return count;
-	}
 }
 
 CheatsWindow::CheatsWindow(Application* application) : m_Application(application)
@@ -212,7 +199,7 @@ void CheatsWindow::Create()
 	// Create ListView control
 	m_ListHwnd = CreateWindowEx(
 		WS_EX_CLIENTEDGE, WC_LISTVIEW, L"",
-		WS_CHILD | WS_VISIBLE | WS_TABSTOP | LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_NOSORTHEADER,
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP | LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_NOCOLUMNHEADER,
 		list_x, 30, list_width, buttons_y - 6 - 30,
 		m_Hwnd, (HMENU)m_ControlListViewId, GetModuleHandle(NULL), NULL);
 
@@ -222,21 +209,11 @@ void CheatsWindow::Create()
 	SetWindowTheme(m_ListHwnd, L"Explorer", NULL);
 	ListView_SetExtendedListViewStyle(m_ListHwnd, LVS_EX_FULLROWSELECT | LVS_EX_CHECKBOXES | LVS_EX_DOUBLEBUFFER);
 
-	// Columns are sized to fit by UpdateListColumns, so stop them being dragged
-	HWND header = ListView_GetHeader(m_ListHwnd);
-	SetWindowLongPtr(header, GWL_STYLE, GetWindowLongPtr(header, GWL_STYLE) | HDS_NOSIZING);
-
+	// One hidden-header column for the name, sized to fit by UpdateListColumns
 	LVCOLUMN lvc = { 0 };
-	lvc.mask = LVCF_WIDTH | LVCF_TEXT;
-	lvc.cx = 160;
-	lvc.pszText = const_cast<LPWSTR>(L"Name");
+	lvc.mask = LVCF_WIDTH;
+	lvc.cx = list_width;
 	ListView_InsertColumn(m_ListHwnd, 0, &lvc);
-
-	lvc.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_FMT;
-	lvc.fmt = LVCFMT_RIGHT;
-	lvc.cx = m_CodesColumnWidth;
-	lvc.pszText = const_cast<LPWSTR>(L"Codes");
-	ListView_InsertColumn(m_ListHwnd, 1, &lvc);
 
 	const std::vector<CheatCode> gameshark_codes = Emulator::Instance->GetGamesharkCodes();
 	for (int i = 0; i < gameshark_codes.size(); ++i)
@@ -396,7 +373,6 @@ void CheatsWindow::Focus()
 void CheatsWindow::InsertListItem(int index, const CheatCode& cheat)
 {
 	std::wstring name = ConvertToWString(cheat.name);
-	std::wstring count = std::to_wstring(CountCodes(cheat.code));
 
 	LVITEM lvi = { 0 };
 	lvi.mask = LVIF_TEXT;
@@ -405,16 +381,15 @@ void CheatsWindow::InsertListItem(int index, const CheatCode& cheat)
 	lvi.pszText = const_cast<wchar_t*>(name.c_str());
 	ListView_InsertItem(m_ListHwnd, &lvi);
 
-	ListView_SetItemText(m_ListHwnd, index, 1, const_cast<wchar_t*>(count.c_str()));
 	ListView_SetCheckState(m_ListHwnd, index, (cheat.enabled ? TRUE : FALSE));
 }
 
 void CheatsWindow::UpdateListColumns()
 {
-	// Name takes whatever the Codes column and the scroll bar (when shown) leave
+	// Fill the list, less the scroll bar when it's shown, so there's never a horizontal scroll bar
 	RECT client;
 	GetClientRect(m_ListHwnd, &client);
-	ListView_SetColumnWidth(m_ListHwnd, 0, (client.right - client.left) - m_CodesColumnWidth);
+	ListView_SetColumnWidth(m_ListHwnd, 0, client.right - client.left);
 }
 
 void CheatsWindow::UpdateEnabledSummary()
@@ -589,9 +564,7 @@ void CheatsWindow::SaveForm()
 			return;
 		}
 
-		std::wstring count = std::to_wstring(CountCodes(codes));
 		ListView_SetItemText(m_ListHwnd, m_SelectedCheatCodeIndex, 0, const_cast<wchar_t*>(cheat_name.c_str()));
-		ListView_SetItemText(m_ListHwnd, m_SelectedCheatCodeIndex, 1, const_cast<wchar_t*>(count.c_str()));
 
 		// Reload so the form matches what was saved, e.g. without blank lines
 		LoadForm();
