@@ -307,6 +307,7 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			m_Application->StopEmulator();
 			EnableMenuItem(m_ToolsMenuItem, m_MenuToolsCartridgeInfo, MF_DISABLED);
+			EnableMenuItem(m_ToolsMenuItem, m_MenuToolsCheats, MF_DISABLED);
 			this->SetStatusBarTitle("");
 			this->SetStatusBarStats("");
 			this->SetStatusBarState("");
@@ -551,6 +552,11 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 		case m_MenuToolsCheats:
 		{
+			if (!m_Application->GetEmulator()->IsRunning())
+			{
+				break;
+			}
+
 			if (m_Application->CheatsWindow != nullptr && m_Application->CheatsWindow->IsOpen())
 			{
 				m_Application->CheatsWindow->Focus();
@@ -734,6 +740,7 @@ void MainWindow::LoadRom(const std::string& path)
 	m_FilePath = path;
 	m_Application->LoadRom(path);
 	EnableMenuItem(m_ToolsMenuItem, m_MenuToolsCartridgeInfo, MF_ENABLED);
+	EnableMenuItem(m_ToolsMenuItem, m_MenuToolsCheats, MF_ENABLED);
 
 	std::string filename = std::filesystem::path(m_FilePath).filename().string();
 
@@ -1195,7 +1202,7 @@ void MainWindow::CreateMenuBar()
 
 	// Tools menu
 	m_ToolsMenuItem = CreateMenu();
-	AppendMenuW(m_ToolsMenuItem, MF_STRING, m_MenuToolsCheats, L"Cheats");
+	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsCheats, L"Cheats");
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsCpuRegisters, L"CPU Registers");
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);

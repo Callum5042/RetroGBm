@@ -209,6 +209,12 @@ void Application::LoadRom(const std::string& file)
 
 void Application::StopEmulator()
 {
+	// The cheats window edits the running game's cheats, so close it with the game
+	if (CheatsWindow != nullptr)
+	{
+		CheatsWindow->Destroy();
+	}
+
 	// Stop the emulator
 	if (!m_Emulator->IsRunning())
 	{
