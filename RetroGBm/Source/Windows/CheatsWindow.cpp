@@ -9,7 +9,7 @@
 #include <RetroGBm/Logger.h>
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Cheats.h>
-#include <RetroGBm/Cartridge/BaseCartridge.h>
+#include <filesystem>
 
 #include <stdio.h>
 #include <string>
@@ -150,26 +150,13 @@ void CheatsWindow::Create()
 
 	this->WindowCreate("Cheats", m_ClientWidth, m_ClientHeight);
 
-	// Show the game in the title, e.g. "Cheats - POKEMON RED". The class name stays "Cheats".
+	// Show the ROM file name without its extension in the title, e.g. "Cheats - Pokemon Red (UE)".
+	// The class name stays "Cheats". CurrentFilename is in the ANSI code page, which path converts back.
 	{
-		std::wstring game_title;
-		for (char c : Emulator::Instance->GetCartridge()->GetCartridgeData().title)
+		const std::wstring rom_name = std::filesystem::path(m_Application->CurrentFilename).stem().wstring();
+		if (!rom_name.empty())
 		{
-			// Header titles can be padded with spaces or junk bytes
-			if (c >= 0x20 && c <= 0x7E)
-			{
-				game_title += static_cast<wchar_t>(c);
-			}
-		}
-
-		while (!game_title.empty() && game_title.back() == L' ')
-		{
-			game_title.pop_back();
-		}
-
-		if (!game_title.empty())
-		{
-			SetWindowText(m_Hwnd, (L"Cheats \x2014 " + game_title).c_str());
+			SetWindowText(m_Hwnd, (L"Cheats \x2014 " + rom_name).c_str());
 		}
 	}
 
