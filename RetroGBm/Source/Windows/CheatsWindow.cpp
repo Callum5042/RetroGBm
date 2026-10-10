@@ -105,6 +105,37 @@ namespace
 		return ConvertToWString(result);
 	}
 
+	std::wstring GetEditText(HWND edit)
+	{
+		std::wstring text(static_cast<size_t>(GetWindowTextLength(edit)), L'\0');
+		GetWindowText(edit, text.data(), static_cast<int>(text.size()) + 1);
+		return text;
+	}
+
+	void SetTextIfChanged(HWND control, const std::wstring& text)
+	{
+		// Avoids repainting (and flickering) on every keystroke
+		if (GetEditText(control) != text)
+		{
+			SetWindowText(control, text.c_str());
+		}
+	}
+
+	bool IsBlank(const std::wstring& text)
+	{
+		return text.find_first_not_of(L" \t\r\n") == std::wstring::npos;
+	}
+
+	std::wstring ToUpper(std::wstring text)
+	{
+		for (auto& c : text)
+		{
+			c = towupper(c);
+		}
+
+		return text;
+	}
+
 	int CountCodes(const std::vector<std::string>& codes)
 	{
 		int count = 0;
@@ -140,6 +171,21 @@ void CheatsWindow::Create()
 		NONCLIENTMETRICS metrics = { sizeof(NONCLIENTMETRICS) };
 		SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(metrics), &metrics, 0);
 		m_Font = CreateFontIndirect(&metrics.lfMessageFont);
+
+		LOGFONT heading = metrics.lfMessageFont;
+		heading.lfWeight = FW_SEMIBOLD;
+		m_HeadingFont = CreateFontIndirect(&heading);
+
+		// Consolas 10pt for codes
+		HDC hdc = GetDC(NULL);
+		LOGFONT code = {};
+		code.lfHeight = -MulDiv(10, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+		code.lfWeight = FW_NORMAL;
+		code.lfQuality = CLEARTYPE_QUALITY;
+		code.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
+		wcscpy_s(code.lfFaceName, L"Consolas");
+		m_CodeFont = CreateFontIndirect(&code);
+		ReleaseDC(NULL, hdc);
 	}
 
 	// Initialize common controls
@@ -226,12 +272,21 @@ void CheatsWindow::Create()
 	/// The Form Controls ////////////////////////////////
 	//////////////////////////////////////////////////////
 
-	int width = list_x + list_width + 16;
+	const int form_x = list_x + list_width + 16;
+	const int form_width = m_ClientWidth - 12 - form_x;
 
-	// Label: "Cheat name"
-	m_LabelName = CreateWindowW(L"STATIC", L"Cheat name:",
+	// Label: "Edit cheat" / "New cheat"
+	m_LabelHeading = CreateWindowW(L"STATIC", L"",
 		WS_CHILD | WS_VISIBLE,
-		width, 20, 270, 20,
+		form_x, 8, form_width, 16,
+		m_Hwnd, nullptr, nullptr, nullptr);
+
+	SendMessageW(m_LabelHeading, WM_SETFONT, (WPARAM)m_HeadingFont, TRUE);
+
+	// Label: "Name:"
+	m_LabelName = CreateWindowW(L"STATIC", L"Name:",
+		WS_CHILD | WS_VISIBLE,
+		form_x, 30, form_width, 16,
 		m_Hwnd, nullptr, nullptr, nullptr);
 
 	SendMessageW(m_LabelName, WM_SETFONT, (WPARAM)m_Font, TRUE);
@@ -239,51 +294,43 @@ void CheatsWindow::Create()
 	// Single-line Edit: Cheat name
 	m_EditName = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", nullptr,
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_AUTOHSCROLL,
-		width, 45, 270, 25,
+		form_x, 50, form_width, 23,
 		m_Hwnd, (HMENU)m_ControlEditNameId, nullptr, nullptr);
 
 	SendMessageW(m_EditName, WM_SETFONT, (WPARAM)m_Font, TRUE);
 
-	// Label: "Cheat code"
-	m_LabelCode = CreateWindowW(L"STATIC", L"Cheat code:",
+	// Label: "GameShark codes (one per line):"
+	m_LabelCode = CreateWindowW(L"STATIC", L"GameShark codes (one per line):",
 		WS_CHILD | WS_VISIBLE,
-		width, 80, 270, 20,
+		form_x, 83, form_width, 16,
 		m_Hwnd, nullptr, nullptr, nullptr);
 
 	SendMessageW(m_LabelCode, WM_SETFONT, (WPARAM)m_Font, TRUE);
 
-	// Multi-line Edit: Cheat code
+	// Multi-line Edit: Cheat code. The space above the buttons is left for the status line.
+	const int code_y = 103;
 	m_EditCode = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", nullptr,
-		WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | WS_VSCROLL,
-		width, 105, 270, 120,
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | ES_UPPERCASE | WS_VSCROLL,
+		form_x, code_y, form_width, buttons_y - 8 - 18 - 6 - code_y,
 		m_Hwnd, (HMENU)m_ControlEditCodeId, nullptr, nullptr);
 
-	SendMessageW(m_EditCode, WM_SETFONT, (WPARAM)m_Font, TRUE);
+	SendMessageW(m_EditCode, WM_SETFONT, (WPARAM)m_CodeFont, TRUE);
 
-	// Button: Add
-	int button_x = width;
-	int button_width = 80;
-
-	m_ButtonAdd = CreateWindowW(L"BUTTON", L"Add",
+	// Button: Revert / Cancel
+	m_ButtonRevert = CreateWindowW(L"BUTTON", L"Revert",
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-		button_x, 235, button_width, 30, // x, y, width, height
-		m_Hwnd, (HMENU)m_ControlAddButtonId, nullptr, nullptr);
+		m_ClientWidth - 12 - 75 - 6 - 75, buttons_y, 75, 24,
+		m_Hwnd, (HMENU)m_ControlRevertButtonId, nullptr, nullptr);
 
-	SendMessageW(m_ButtonAdd, WM_SETFONT, (WPARAM)m_Font, TRUE);
+	SendMessageW(m_ButtonRevert, WM_SETFONT, (WPARAM)m_Font, TRUE);
 
-	// Button: Update
-	button_x += button_width;
+	// Button: Save / Add, the default button for Enter
+	m_ButtonSave = CreateWindowW(L"BUTTON", L"Save",
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
+		m_ClientWidth - 12 - 75, buttons_y, 75, 24,
+		m_Hwnd, (HMENU)m_ControlSaveButtonId, nullptr, nullptr);
 
-	m_ButtonUpdate = CreateWindowW(L"BUTTON", L"Update",
-		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-		button_x, 235, button_width, 30, // x, y, width, height
-		m_Hwnd, (HMENU)m_ControlUpdateButtonId, nullptr, nullptr);
-
-	SendMessageW(m_ButtonUpdate, WM_SETFONT, (WPARAM)m_Font, TRUE);
-
-	// Disable Update and Delete buttons initially
-	EnableWindow(m_ButtonUpdate, FALSE);
-	EnableWindow(m_ButtonDelete, FALSE);
+	SendMessageW(m_ButtonSave, WM_SETFONT, (WPARAM)m_Font, TRUE);
 
 	// Footer
 	const int footer_top = m_ClientHeight - m_FooterHeight;
@@ -303,6 +350,13 @@ void CheatsWindow::Create()
 
 	SendMessageW(m_ButtonClose, WM_SETFONT, (WPARAM)m_Font, TRUE);
 
+	// Start on the first cheat, or a new one when there are none
+	if (ListView_GetItemCount(m_ListHwnd) > 0)
+	{
+		ListView_SetItemState(m_ListHwnd, 0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+	}
+
+	UpdateFormState();
 	SetFocus(m_ListHwnd);
 }
 
@@ -317,10 +371,13 @@ void CheatsWindow::Destroy()
 	HINSTANCE hInstance = GetModuleHandle(NULL);
 	UnregisterClass(m_RegisterClassName.c_str(), hInstance);
 
-	if (m_Font != NULL)
+	for (HFONT* font : { &m_Font, &m_HeadingFont, &m_CodeFont })
 	{
-		DeleteObject(m_Font);
-		m_Font = NULL;
+		if (*font != NULL)
+		{
+			DeleteObject(*font);
+			*font = NULL;
+		}
 	}
 }
 
@@ -377,12 +434,11 @@ void CheatsWindow::UpdateEnabledSummary()
 
 void CheatsWindow::StartNew()
 {
-	// Deselecting disables Update and Delete
+	// Deselecting switches the form to New mode and remembers the cheat for Cancel
 	ListView_SetItemState(m_ListHwnd, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
 	m_SelectedCheatCodeIndex = -1;
 
-	SetWindowText(m_EditName, L"");
-	SetWindowText(m_EditCode, L"");
+	LoadForm();
 	SetFocus(m_EditName);
 }
 
@@ -393,20 +449,134 @@ void CheatsWindow::DeleteSelected()
 		return;
 	}
 
+	int index = m_SelectedCheatCodeIndex;
+	m_SelectedCheatCodeIndex = -1;
+
 	// Update UI
-	ListView_DeleteItem(m_ListHwnd, m_SelectedCheatCodeIndex);
+	ListView_DeleteItem(m_ListHwnd, index);
 	UpdateListColumns();
 	UpdateEnabledSummary();
 
-	// Clear form control
-	m_SelectedCheatCodeIndex = -1;
-	SetWindowText(m_EditName, L"");
-	SetWindowText(m_EditCode, L"");
+	m_CancelIndex = -1;
+	LoadForm();
+}
 
-	// Enable/disable buttons
-	EnableWindow(m_ButtonAdd, TRUE);
-	EnableWindow(m_ButtonUpdate, FALSE);
-	EnableWindow(m_ButtonDelete, FALSE);
+void CheatsWindow::LoadForm()
+{
+	std::wstring name;
+	std::wstring code;
+
+	const std::vector<CheatCode> gameshark_codes = Emulator::Instance->GetGamesharkCodes();
+	if (m_SelectedCheatCodeIndex >= 0 && m_SelectedCheatCodeIndex < gameshark_codes.size())
+	{
+		name = ConvertToWString(gameshark_codes[m_SelectedCheatCodeIndex].name);
+		code = ConvertCodeToMultiline(gameshark_codes[m_SelectedCheatCodeIndex].code);
+	}
+
+	SetWindowText(m_EditName, name.c_str());
+	SetWindowText(m_EditCode, code.c_str());
+	UpdateFormState();
+}
+
+void CheatsWindow::UpdateFormState()
+{
+	const bool is_new = m_SelectedCheatCodeIndex < 0;
+	const std::wstring name = GetEditText(m_EditName);
+	const std::wstring code = GetEditText(m_EditCode);
+
+	bool changed = false;
+	if (is_new)
+	{
+		changed = !name.empty() || !code.empty();
+	}
+	else
+	{
+		const std::vector<CheatCode> gameshark_codes = Emulator::Instance->GetGamesharkCodes();
+		if (m_SelectedCheatCodeIndex < gameshark_codes.size())
+		{
+			const CheatCode& cheat = gameshark_codes[m_SelectedCheatCodeIndex];
+			changed = name != ConvertToWString(cheat.name) || ToUpper(code) != ToUpper(ConvertCodeToMultiline(cheat.code));
+		}
+	}
+
+	const bool complete = !IsBlank(name) && !IsBlank(code);
+	const bool can_cancel_to = m_CancelIndex >= 0 && m_CancelIndex < ListView_GetItemCount(m_ListHwnd);
+
+	SetTextIfChanged(m_LabelHeading, is_new ? L"New cheat" : L"Edit cheat");
+	SetTextIfChanged(m_ButtonRevert, is_new ? L"Cancel" : L"Revert");
+	SetTextIfChanged(m_ButtonSave, is_new ? L"Add" : L"Save");
+
+	// Cancel can also go back to the previously selected cheat when nothing has been typed
+	SetButtonEnabled(m_ButtonRevert, changed || (is_new && can_cancel_to));
+	SetButtonEnabled(m_ButtonSave, changed && complete);
+	SetButtonEnabled(m_ButtonDelete, !is_new);
+}
+
+void CheatsWindow::SaveForm()
+{
+	// Also guards the Enter key, which arrives as IDOK whether or not Save is enabled
+	if (!IsWindowEnabled(m_ButtonSave))
+	{
+		return;
+	}
+
+	const std::wstring cheat_name = GetEditText(m_EditName);
+	const std::vector<std::string> codes = SplitString(ConvertToString(GetEditText(m_EditCode)));
+
+	if (m_SelectedCheatCodeIndex < 0)
+	{
+		// Add to the emulator, then the list
+		CheatCode cheat = { ConvertToString(cheat_name), codes, false };
+		Emulator::Instance->AddGamesharkCode(cheat);
+
+		int index = static_cast<int>(Emulator::Instance->GetGamesharkCodes().size()) - 1;
+		InsertListItem(index, cheat);
+		UpdateListColumns();
+		UpdateEnabledSummary();
+
+		// Selecting the new cheat loads it back into the form in Edit mode
+		ListView_SetItemState(m_ListHwnd, index, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+		ListView_EnsureVisible(m_ListHwnd, index, FALSE);
+	}
+	else
+	{
+		if (!Emulator::Instance->UpdateGamesharkCode(m_SelectedCheatCodeIndex, ConvertToString(cheat_name), codes))
+		{
+			return;
+		}
+
+		std::wstring count = std::to_wstring(CountCodes(codes));
+		ListView_SetItemText(m_ListHwnd, m_SelectedCheatCodeIndex, 0, const_cast<wchar_t*>(cheat_name.c_str()));
+		ListView_SetItemText(m_ListHwnd, m_SelectedCheatCodeIndex, 1, const_cast<wchar_t*>(count.c_str()));
+
+		// Reload so the form matches what was saved, e.g. without blank lines
+		LoadForm();
+	}
+}
+
+void CheatsWindow::RevertForm()
+{
+	if (m_SelectedCheatCodeIndex < 0 && m_CancelIndex >= 0 && m_CancelIndex < ListView_GetItemCount(m_ListHwnd))
+	{
+		// Cancel a new cheat by going back to the one selected before
+		ListView_SetItemState(m_ListHwnd, m_CancelIndex, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+		ListView_EnsureVisible(m_ListHwnd, m_CancelIndex, FALSE);
+		SetFocus(m_ListHwnd);
+		return;
+	}
+
+	LoadForm();
+}
+
+void CheatsWindow::SetButtonEnabled(HWND button, bool enabled)
+{
+	// A disabled button can't keep focus, so move it to the name box first
+	if (!enabled && GetFocus() == button)
+	{
+		SetFocus(m_EditName);
+	}
+
+	EnableWindow(button, enabled ? TRUE : FALSE);
 }
 
 bool CheatsWindow::HandleDialogMessage(MSG* msg)
@@ -563,87 +733,23 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 				DestroyWindow(hwnd);
 				return 0;
 			}
-			else if (wmId == m_ControlAddButtonId)
+			else if (wmId == IDOK)
 			{
-				std::wstring cheat_name;
-				std::wstring cheat_code;
-
-				HWND control = NULL;
-				int length = 0;
-
-				// Get cheat name from the edit control
-				control = GetDlgItem(hwnd, m_ControlEditNameId);
-				length = GetWindowTextLength(control) + 1;
-
-				cheat_name.resize(static_cast<size_t>(length) - 1);
-				GetWindowText(control, const_cast<LPWSTR>(cheat_name.data()), length);
-
-				// Get cheat code from the edit control
-				control = GetDlgItem(hwnd, m_ControlEditCodeId);
-				length = GetWindowTextLength(control) + 1;
-
-				cheat_code.resize(static_cast<size_t>(length) - 1);
-				GetWindowText(control, const_cast<LPWSTR>(cheat_code.data()), length);
-
-				// Check if its valid
-				if (cheat_name.empty() || cheat_code.empty())
-				{
-					MessageBox(hwnd, L"Please enter a valid cheat name and code.", L"Error", MB_OK | MB_ICONERROR);
-					return 0;
-				}
-
-				// Add to the emulator, then the list
-				CheatCode cheat = { ConvertToString(cheat_name), SplitString(ConvertToString(cheat_code)), false };
-				Emulator::Instance->AddGamesharkCode(cheat);
-
-				int index = static_cast<int>(Emulator::Instance->GetGamesharkCodes().size()) - 1;
-				InsertListItem(index, cheat);
-				UpdateListColumns();
-				UpdateEnabledSummary();
-
-				// Select the new cheat, which loads it into the form and enables Update/Delete
-				ListView_SetItemState(m_ListHwnd, index, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-				ListView_EnsureVisible(m_ListHwnd, index, FALSE);
+				// Enter key, sent by IsDialogMessage
+				SaveForm();
+				return 0;
 			}
-			else if (wmId == m_ControlUpdateButtonId)
+			else if (wmId == m_ControlSaveButtonId)
 			{
-				std::wstring cheat_name;
-				std::wstring cheat_code;
-
-				HWND control = NULL;
-				int length = 0;
-
-				// Get cheat name from the edit control
-				control = GetDlgItem(hwnd, m_ControlEditNameId);
-				length = GetWindowTextLength(control) + 1;
-
-				cheat_name.resize(static_cast<size_t>(length) - 1);
-				GetWindowText(control, const_cast<LPWSTR>(cheat_name.data()), length);
-
-				// Get cheat code from the edit control
-				control = GetDlgItem(hwnd, m_ControlEditCodeId);
-				length = GetWindowTextLength(control) + 1;
-
-				cheat_code.resize(static_cast<size_t>(length) - 1);
-				GetWindowText(control, const_cast<LPWSTR>(cheat_code.data()), length);
-
-				// Check if its valid
-				if (cheat_name.empty() || cheat_code.empty())
-				{
-					MessageBox(hwnd, L"Please enter a valid cheat name and code.", L"Error", MB_OK | MB_ICONERROR);
-					return 0;
-				}
-
-				// Update the selected cheat code
-				std::vector<std::string> codes = SplitString(ConvertToString(cheat_code));
-				if (!Emulator::Instance->UpdateGamesharkCode(m_SelectedCheatCodeIndex, ConvertToString(cheat_name), codes))
-				{
-					return 0;
-				}
-
-				std::wstring count = std::to_wstring(CountCodes(codes));
-				ListView_SetItemText(m_ListHwnd, m_SelectedCheatCodeIndex, 0, const_cast<wchar_t*>(cheat_name.c_str()));
-				ListView_SetItemText(m_ListHwnd, m_SelectedCheatCodeIndex, 1, const_cast<wchar_t*>(count.c_str()));
+				SaveForm();
+			}
+			else if (wmId == m_ControlRevertButtonId)
+			{
+				RevertForm();
+			}
+			else if ((wmId == m_ControlEditNameId || wmId == m_ControlEditCodeId) && HIWORD(wParam) == EN_CHANGE)
+			{
+				UpdateFormState();
 			}
 			else if (wmId == m_ControlNewButtonId)
 			{
@@ -674,33 +780,15 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 						{
 							if (pnm->uNewState & LVIS_SELECTED)
 							{
-								// Item was selected
 								m_SelectedCheatCodeIndex = pnm->iItem;
-
-								// Display the selected cheat code in the edit controls
-								const std::vector<CheatCode> gameshark_codes = Emulator::Instance->GetGamesharkCodes();
-								if (m_SelectedCheatCodeIndex < 0 || m_SelectedCheatCodeIndex >= gameshark_codes.size())
-								{
-									break;
-								}
-
-								std::wstring name = ConvertToWString(gameshark_codes[m_SelectedCheatCodeIndex].name);
-								std::wstring code = ConvertCodeToMultiline(gameshark_codes[m_SelectedCheatCodeIndex].code);
-
-								SetWindowText(m_EditName, name.c_str());
-								SetWindowText(m_EditCode, code.c_str());
-
-								// Enable/disable buttons
-								EnableWindow(m_ButtonAdd, TRUE);
-								EnableWindow(m_ButtonUpdate, TRUE);
-								EnableWindow(m_ButtonDelete, TRUE);
+								LoadForm();
 							}
 							else
 							{
-								// Item was deselected, e.g. by clicking empty space in the list
+								// Deselected, e.g. by clicking empty space in the list. Cancel can come back to it.
 								m_SelectedCheatCodeIndex = -1;
-								EnableWindow(m_ButtonUpdate, FALSE);
-								EnableWindow(m_ButtonDelete, FALSE);
+								m_CancelIndex = pnm->iItem;
+								LoadForm();
 							}
 						}
 

@@ -39,6 +39,8 @@ private:
 	static const int m_FooterHeight = 44;
 
 	HFONT m_Font = NULL;
+	HFONT m_HeadingFont = NULL;
+	HFONT m_CodeFont = NULL;
 	HWND m_LastFocus = NULL;
 
 	// Footer
@@ -60,26 +62,40 @@ private:
 	void DeleteSelected();
 
 	// Form
+	HWND m_LabelHeading = NULL;
 	HWND m_LabelName = NULL;
 	HWND m_EditName = NULL;
 
 	HWND m_LabelCode = NULL;
 	HWND m_EditCode = NULL;
 
-	HWND m_ButtonAdd = NULL;
-	HWND m_ButtonUpdate = NULL;
+	HWND m_ButtonRevert = NULL;
+	HWND m_ButtonSave = NULL;
+
+	// Loads the selected cheat into the form, or clears it when nothing is selected
+	void LoadForm();
+
+	// Updates the heading and buttons for New/Edit mode and whether there are changes
+	void UpdateFormState();
+
+	void SaveForm();
+	void RevertForm();
+	void SetButtonEnabled(HWND button, bool enabled);
 
 	const int m_ControlListViewId = 1000;
 	const int m_ControlEditNameId = 1001;
 	const int m_ControlEditCodeId = 1002;
-	const int m_ControlAddButtonId = 2001;
-	const int m_ControlUpdateButtonId = 2002;
+	const int m_ControlSaveButtonId = 2001;
+	const int m_ControlRevertButtonId = 2002;
 	const int m_ControlDeleteButtonId = 2003;
 	const int m_ControlNewButtonId = 2004;
 
 	// ListView
 	HWND m_ListHwnd = NULL;
 
-	// Cheat codes
+	// Cheat codes. -1 means no selection, so the form is adding a new cheat.
 	int m_SelectedCheatCodeIndex = -1;
+
+	// The cheat that was selected before starting a new one, reselected by Cancel
+	int m_CancelIndex = -1;
 };
