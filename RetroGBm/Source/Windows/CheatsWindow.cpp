@@ -8,6 +8,7 @@
 
 #include <RetroGBm/Logger.h>
 #include <RetroGBm/Emulator.h>
+#include <RetroGBm/Cheats.h>
 
 #include <stdio.h>
 #include <string>
@@ -64,24 +65,6 @@ namespace
 		int chars_converted = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int>(wstr.size()), buffer.data(), static_cast<int>(buffer.size()), NULL, NULL);
 
 		return std::string(buffer.data(), chars_converted);
-	}
-
-	std::vector<std::string> SplitString(std::string code)
-	{
-		std::vector<std::string> tokens;
-		size_t pos = 0;
-
-		std::string token;
-		const std::string delimiter = "\r\n";
-		while ((pos = code.find(delimiter)) != std::string::npos)
-		{
-			token = code.substr(0, pos);
-			tokens.push_back(token);
-			code.erase(0, pos + delimiter.length());
-		}
-
-		tokens.push_back(code);
-		return tokens;
 	}
 
 	std::wstring ConvertCodeToMultiline(std::vector<std::string> codes)
@@ -316,6 +299,14 @@ void CheatsWindow::Create()
 
 	SendMessageW(m_EditCode, WM_SETFONT, (WPARAM)m_CodeFont, TRUE);
 
+	// Label: "3 valid codes" / "Line 2: ..." under the code box
+	m_LabelStatus = CreateWindowW(L"STATIC", L"",
+		WS_CHILD | WS_VISIBLE | SS_LEFT | SS_ENDELLIPSIS,
+		form_x, buttons_y - 8 - 18 + 1, form_width, 18,
+		m_Hwnd, nullptr, nullptr, nullptr);
+
+	SendMessageW(m_LabelStatus, WM_SETFONT, (WPARAM)m_Font, TRUE);
+
 	// Button: Revert / Cancel
 	m_ButtonRevert = CreateWindowW(L"BUTTON", L"Revert",
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
@@ -499,7 +490,42 @@ void CheatsWindow::UpdateFormState()
 		}
 	}
 
-	const bool complete = !IsBlank(name) && !IsBlank(code);
+	// Check the codes and show the result under the code box
+	const GamesharkValidation validation = ValidateGamesharkCodes(ConvertToString(code));
+
+	std::wstring status;
+	COLORREF status_color;
+	if (validation.valid)
+	{
+		const size_t count = validation.codes.size();
+		status = std::to_wstring(count) + (count == 1 ? L" valid code" : L" valid codes");
+		status_color = RGB(15, 123, 15);
+
+		if (IsBlank(name))
+		{
+			status += L" \x2014 add a name to save";
+		}
+	}
+	else if (validation.error_line > 0)
+	{
+		status = L"Line " + std::to_wstring(validation.error_line) + L": \x201C" + ConvertToWString(validation.error_text) + L"\x201D is not an 8-digit hex code";
+		status_color = RGB(196, 43, 28);
+	}
+	else
+	{
+		status = L"Paste or type GameShark codes, e.g. 01FF47D3";
+		status_color = RGB(92, 92, 92);
+	}
+
+	if (status_color != m_StatusColor)
+	{
+		m_StatusColor = status_color;
+		InvalidateRect(m_LabelStatus, NULL, TRUE);
+	}
+
+	SetTextIfChanged(m_LabelStatus, status);
+
+	const bool complete = !IsBlank(name) && validation.valid;
 	const bool can_cancel_to = m_CancelIndex >= 0 && m_CancelIndex < ListView_GetItemCount(m_ListHwnd);
 
 	SetTextIfChanged(m_LabelHeading, is_new ? L"New cheat" : L"Edit cheat");
@@ -517,11 +543,13 @@ void CheatsWindow::SaveForm()
 	// Also guards the Enter key, which arrives as IDOK whether or not Save is enabled
 	if (!IsWindowEnabled(m_ButtonSave))
 	{
+		ShowCodeError();
 		return;
 	}
 
+	// Store the cleaned up codes: uppercase, no whitespace and no blank lines
 	const std::wstring cheat_name = GetEditText(m_EditName);
-	const std::vector<std::string> codes = SplitString(ConvertToString(GetEditText(m_EditCode)));
+	const std::vector<std::string> codes = ValidateGamesharkCodes(ConvertToString(GetEditText(m_EditCode))).codes;
 
 	if (m_SelectedCheatCodeIndex < 0)
 	{
@@ -566,6 +594,40 @@ void CheatsWindow::RevertForm()
 	}
 
 	LoadForm();
+}
+
+void CheatsWindow::ShowCodeError()
+{
+	const std::wstring code = GetEditText(m_EditCode);
+	const GamesharkValidation validation = ValidateGamesharkCodes(ConvertToString(code));
+	if (validation.error_line == 0)
+	{
+		return;
+	}
+
+	// Find the bad line by counting newlines, as EM_LINEINDEX counts wrapped lines
+	size_t start = 0;
+	for (size_t line = 1; line < validation.error_line; ++line)
+	{
+		start = code.find(L'\n', start) + 1;
+	}
+
+	size_t end = code.find(L'\r', start);
+	if (end == std::wstring::npos)
+	{
+		end = code.size();
+	}
+
+	SetFocus(m_EditCode);
+	SendMessage(m_EditCode, EM_SETSEL, start, end);
+
+	std::wstring title = L"Invalid code on line " + std::to_wstring(validation.error_line);
+
+	EDITBALLOONTIP tip = { sizeof(EDITBALLOONTIP) };
+	tip.pszTitle = title.c_str();
+	tip.pszText = L"Each line must be 8 hex digits (0-9, A-F), like 01FF47D3.";
+	tip.ttiIcon = TTI_ERROR;
+	Edit_ShowBalloonTip(m_EditCode, &tip);
 }
 
 void CheatsWindow::SetButtonEnabled(HWND button, bool enabled)
@@ -703,6 +765,12 @@ LRESULT CheatsWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 			{
 				SetTextColor(hdc, RGB(76, 76, 76));
 				return (LONG_PTR)GetSysColorBrush(COLOR_BTNFACE);
+			}
+
+			if (reinterpret_cast<HWND>(lParam) == m_LabelStatus)
+			{
+				SetTextColor(hdc, m_StatusColor);
+				return (LONG_PTR)GetSysColorBrush(COLOR_WINDOW);
 			}
 
 			if (reinterpret_cast<HWND>(lParam) == m_LabelSummary)

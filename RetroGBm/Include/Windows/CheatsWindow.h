@@ -72,6 +72,13 @@ private:
 	HWND m_ButtonRevert = NULL;
 	HWND m_ButtonSave = NULL;
 
+	// Result of checking the codes as they're typed
+	HWND m_LabelStatus = NULL;
+	COLORREF m_StatusColor = RGB(92, 92, 92);
+
+	// Selects the first invalid line and points a balloon tip at it
+	void ShowCodeError();
+
 	// Loads the selected cheat into the form, or clears it when nothing is selected
 	void LoadForm();
 
