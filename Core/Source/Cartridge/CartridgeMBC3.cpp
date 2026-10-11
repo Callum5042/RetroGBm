@@ -5,9 +5,6 @@
 #include <chrono>
 #include <cstdint>
 
-using namespace std::chrono_literals;
-using namespace std::chrono;
-
 CartridgeMBC3::CartridgeMBC3(CartridgeDataV2 cartridge_data) : BaseCartridge(cartridge_data)
 {
 	m_ExternalRam.resize(cartridge_data.ram_size);
@@ -16,7 +13,10 @@ CartridgeMBC3::CartridgeMBC3(CartridgeDataV2 cartridge_data) : BaseCartridge(car
 	m_RtcRegisters.resize(5);
 	std::fill(m_RtcRegisters.begin(), m_RtcRegisters.end(), 0x0);
 
-	m_RealTimeClockTimer.Start();
+	m_TimeSource = []
+	{
+		return std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	};
 }
 
 uint8_t CartridgeMBC3::Read(uint16_t address)
@@ -103,7 +103,7 @@ void CartridgeMBC3::Write(uint16_t address, uint8_t value)
 			else if (value == 0x1 && !m_RtcData.m_RtcLatched)
 			{
 				m_RtcData.m_RtcLatched = true;
-				this->SetRTC(m_RtcData.m_RtcSeconds, m_RtcData.m_RtcMinutes, m_RtcData.m_RtcHours, m_RtcData.m_RtcDays);
+				this->LatchRTC();
 			}
 		}
 	}
@@ -125,6 +125,9 @@ void CartridgeMBC3::Write(uint16_t address, uint8_t value)
 		{
 			if (m_RamBank >= 0x08 && m_RamBank <= 0x0C)
 			{
+				// Count the time up to now first, so halting or resuming the clock only applies from here
+				this->UpdateRTC();
+
 				uint8_t index = (m_RamBank - 0x08);
 				m_RtcRegisters[index] = value;
 			}
@@ -165,6 +168,11 @@ void CartridgeMBC3::LoadState(std::fstream* file)
 	file->read(reinterpret_cast<char*>(&m_RamBank), sizeof(m_RamBank));
 
 	// RTC
+	// The clock follows real time, so loading a state keeps the live clock and its halt and carry flags.
+	// The latch and the latched registers still come from the state, as they're what the game last read
+	const RtcData live_clock = m_RtcData;
+	const uint8_t live_flags = m_RtcRegisters[4] & 0xC0;
+
 	int rtc_size = 0;
 	file->read(reinterpret_cast<char*>(&rtc_size), sizeof(rtc_size));
 
@@ -173,45 +181,49 @@ void CartridgeMBC3::LoadState(std::fstream* file)
 
 	file->read(reinterpret_cast<char*>(&m_RtcData), sizeof(m_RtcData));
 
-	auto currentTime = std::chrono::system_clock::now();
-	auto lastTime = std::chrono::system_clock::from_time_t(m_RtcData.m_UnixEpoch);
+	const bool latched = m_RtcData.m_RtcLatched;
+	m_RtcData = live_clock;
+	m_RtcData.m_RtcLatched = latched;
 
-	Logger::Info("MBC3 - Last unix epoch: " + std::to_string(std::chrono::system_clock::to_time_t(lastTime)));
-	Logger::Info("MBC3 - Current unix epoch: " + std::to_string(std::chrono::system_clock::to_time_t(currentTime)));
+	m_RtcRegisters[4] = (m_RtcRegisters[4] & ~0xC0) | live_flags;
+}
 
-	auto duration = duration_cast<seconds>(currentTime - lastTime);
+void CartridgeMBC3::UpdateRTC()
+{
+	const time_t now = m_TimeSource();
+	const bool halted = (m_RtcRegisters[4] & 0x40) != 0;
 
-	auto d = duration_cast<days>(duration);
-	duration -= d;
+	// Start counting from now if the clock has never run, is halted, or the system clock went backwards
+	if (m_RtcData.m_UnixEpoch == 0 || halted || now < m_RtcData.m_UnixEpoch)
+	{
+		m_RtcData.m_UnixEpoch = now;
+		return;
+	}
 
-	auto h = duration_cast<hours>(duration);
-	duration -= h;
+	// Whole seconds only, the epoch moves by the same amount so no time is lost between updates
+	int64_t total = m_RtcData.m_RtcSeconds;
+	total += m_RtcData.m_RtcMinutes * 60LL;
+	total += m_RtcData.m_RtcHours * 3600LL;
+	total += m_RtcData.m_RtcDays * 86400LL;
+	total += static_cast<int64_t>(now - m_RtcData.m_UnixEpoch);
 
-	auto m = duration_cast<minutes>(duration);
-	duration -= m;
+	m_RtcData.m_RtcSeconds = static_cast<uint8_t>(total % 60);
+	total /= 60;
 
-	auto s = duration_cast<seconds>(duration);
+	m_RtcData.m_RtcMinutes = static_cast<uint8_t>(total % 60);
+	total /= 60;
 
-	int seconds = m_RtcData.m_RtcSeconds + (int)s.count();
-	int minutes = m_RtcData.m_RtcMinutes + (int)m.count();
-	int hours = m_RtcData.m_RtcHours + (int)h.count();
-	int days = m_RtcData.m_RtcDays + (int)d.count();
+	m_RtcData.m_RtcHours = static_cast<uint8_t>(total % 24);
+	total /= 24;
 
-	minutes += (seconds - (seconds % 60)) / 60;
-	seconds = (seconds % 60);
+	m_RtcData.m_RtcDays = static_cast<uint16_t>(total);
+	m_RtcData.m_UnixEpoch = now;
+}
 
-	hours += (minutes - (minutes % 60)) / 60;
-	minutes = minutes % 60;
-
-	days += (hours - (hours % 24)) / 24;
-	hours = hours % 24;
-
-	m_RtcData.m_RtcSeconds = seconds;
-	m_RtcData.m_RtcMinutes = minutes;
-	m_RtcData.m_RtcHours = hours;
-	m_RtcData.m_RtcDays = days;
-
-	SetRTC(seconds, minutes, hours, days);
+void CartridgeMBC3::LatchRTC()
+{
+	this->UpdateRTC();
+	this->SetRTC(m_RtcData.m_RtcSeconds, m_RtcData.m_RtcMinutes, m_RtcData.m_RtcHours, m_RtcData.m_RtcDays);
 }
 
 void CartridgeMBC3::SetRTC(uint8_t seconds, uint8_t minutes, uint8_t hours, uint16_t days)
@@ -225,78 +237,7 @@ void CartridgeMBC3::SetRTC(uint8_t seconds, uint8_t minutes, uint8_t hours, uint
 	m_RtcRegisters[4] |= ((days >> 8) & 0x1);
 }
 
-void CartridgeMBC3::SetRTC(std::chrono::seconds duration)
+void CartridgeMBC3::SetTimeSource(std::function<time_t()> time_source)
 {
-	auto d = duration_cast<days>(duration);
-	duration -= d;
-
-	auto h = duration_cast<hours>(duration);
-	duration -= h;
-
-	auto m = duration_cast<minutes>(duration);
-	duration -= m;
-
-	auto s = duration_cast<seconds>(duration);
-
-	int seconds = this->m_RtcData.m_RtcSeconds + (int)s.count();
-	int minutes = this->m_RtcData.m_RtcMinutes + (int)m.count();
-	int hours = this->m_RtcData.m_RtcHours + (int)h.count();
-	int days = this->m_RtcData.m_RtcDays + (int)d.count();
-
-	minutes += (seconds - (seconds % 60)) / 60;
-	seconds = (seconds % 60);
-
-	hours += (minutes - (minutes % 60)) / 60;
-	minutes = minutes % 60;
-
-	days += (hours - (hours % 24)) / 24;
-	hours = hours % 24;
-
-	this->m_RtcData.m_RtcSeconds = seconds;
-	this->m_RtcData.m_RtcMinutes = minutes;
-	this->m_RtcData.m_RtcHours = hours;
-	this->m_RtcData.m_RtcDays = days;
-
-	this->SetRTC(seconds, minutes, hours, days);
-}
-
-void CartridgeMBC3::TickRTC()
-{
-	m_RealTimeClockTimer.Tick();
-	if (m_RealTimeClockTimer.TotalTime() > 1.0f)
-	{
-		auto currentTime = std::chrono::system_clock::now();
-		m_RtcData.m_UnixEpoch = std::chrono::system_clock::to_time_t(currentTime);
-
-		// Seconds
-		m_RtcData.m_RtcSeconds++;
-
-		if (m_RtcData.m_RtcSeconds >= 60)
-		{
-			// Minutes
-			m_RtcData.m_RtcSeconds = 0;
-			m_RtcData.m_RtcMinutes++;
-
-			if (m_RtcData.m_RtcMinutes >= 60)
-			{
-				// Hours
-				m_RtcData.m_RtcMinutes = 0;
-				m_RtcData.m_RtcHours++;
-
-				if (m_RtcData.m_RtcHours >= 24)
-				{
-					// Days
-					m_RtcData.m_RtcHours = 0;
-					m_RtcData.m_RtcDays++;
-				}
-			}
-		}
-
-		m_RealTimeClockTimer.Reset();
-	}
-}
-
-bool CartridgeMBC3::IsRtcEnabled() const
-{
-	return (m_RtcEnabled && ((m_RtcRegisters[4] & 0x40) == 0) && !m_RtcData.m_RtcLatched);
+	m_TimeSource = time_source;
 }
