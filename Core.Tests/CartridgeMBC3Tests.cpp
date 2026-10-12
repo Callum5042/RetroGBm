@@ -532,5 +532,95 @@ namespace CoreTests
 			Assert::AreEqual(50, static_cast<int>(ReadClockRegister(*cartridge, 0x08)));
 			Assert::AreEqual(0, static_cast<int>(ReadClockRegister(*cartridge, 0x09)));
 		}
+
+		TEST_METHOD(WriteClock_SecondsWritten_ClockCountsOnFromWrittenValue)
+		{
+			// Arrange
+			time_t now = 1000;
+			auto cartridge = CreateRtcCartridge(&now);
+			LatchClock(*cartridge);
+
+			// Act
+			WriteClockRegister(*cartridge, 0x08, 30);
+			now += 5;
+			LatchClock(*cartridge);
+
+			// Assert
+			Assert::AreEqual(35, static_cast<int>(ReadClockRegister(*cartridge, 0x08)));
+		}
+
+		TEST_METHOD(WriteClock_AllRegistersWritten_ClockCountsOnFromWrittenTime)
+		{
+			// Arrange
+			time_t now = 1000;
+			auto cartridge = CreateRtcCartridge(&now);
+			LatchClock(*cartridge);
+
+			// Day 300, 23:59:58
+			WriteClockRegister(*cartridge, 0x08, 58);
+			WriteClockRegister(*cartridge, 0x09, 59);
+			WriteClockRegister(*cartridge, 0x0A, 23);
+			WriteClockRegister(*cartridge, 0x0B, 300 & 0xFF);
+			WriteClockRegister(*cartridge, 0x0C, 0x01);
+
+			// Act
+			now += 3;
+			LatchClock(*cartridge);
+
+			// Assert
+			Assert::AreEqual(1, static_cast<int>(ReadClockRegister(*cartridge, 0x08)));
+			Assert::AreEqual(0, static_cast<int>(ReadClockRegister(*cartridge, 0x09)));
+			Assert::AreEqual(0, static_cast<int>(ReadClockRegister(*cartridge, 0x0A)));
+			Assert::AreEqual(301 & 0xFF, static_cast<int>(ReadClockRegister(*cartridge, 0x0B)));
+			Assert::AreEqual(1, static_cast<int>(ReadClockRegister(*cartridge, 0x0C) & 0x1));
+		}
+
+		TEST_METHOD(WriteClock_HaltedWhileSettingTime_ClockStartsFromWrittenTimeWhenResumed)
+		{
+			// Arrange
+			time_t now = 1000;
+			auto cartridge = CreateRtcCartridge(&now);
+			LatchClock(*cartridge);
+
+			// Halt, set the time to 12:00:00 on day 0, then resume
+			WriteClockRegister(*cartridge, 0x0C, 0x40);
+			now += 100;
+			WriteClockRegister(*cartridge, 0x08, 0);
+			WriteClockRegister(*cartridge, 0x09, 0);
+			WriteClockRegister(*cartridge, 0x0A, 12);
+			WriteClockRegister(*cartridge, 0x0B, 0);
+			now += 100;
+			WriteClockRegister(*cartridge, 0x0C, 0x00);
+
+			// Act
+			now += 5;
+			LatchClock(*cartridge);
+
+			// Assert
+			Assert::AreEqual(5, static_cast<int>(ReadClockRegister(*cartridge, 0x08)));
+			Assert::AreEqual(0, static_cast<int>(ReadClockRegister(*cartridge, 0x09)));
+			Assert::AreEqual(12, static_cast<int>(ReadClockRegister(*cartridge, 0x0A)));
+			Assert::AreEqual(0, static_cast<int>(ReadClockRegister(*cartridge, 0x0B)));
+		}
+
+		TEST_METHOD(WriteClock_ValueHasUnusedBits_UnusedBitsAreDropped)
+		{
+			// Arrange
+			time_t now = 1000;
+			auto cartridge = CreateRtcCartridge(&now);
+			LatchClock(*cartridge);
+
+			// Act
+			WriteClockRegister(*cartridge, 0x08, 0xFF);
+			WriteClockRegister(*cartridge, 0x09, 0xFF);
+			WriteClockRegister(*cartridge, 0x0A, 0xFF);
+			WriteClockRegister(*cartridge, 0x0C, 0xFF);
+			
+			// Assert
+			Assert::AreEqual(0x3F, static_cast<int>(ReadClockRegister(*cartridge, 0x08)));
+			Assert::AreEqual(0x3F, static_cast<int>(ReadClockRegister(*cartridge, 0x09)));
+			Assert::AreEqual(0x1F, static_cast<int>(ReadClockRegister(*cartridge, 0x0A)));
+			Assert::AreEqual(0xC1, static_cast<int>(ReadClockRegister(*cartridge, 0x0C)));
+		}
 	};
 }

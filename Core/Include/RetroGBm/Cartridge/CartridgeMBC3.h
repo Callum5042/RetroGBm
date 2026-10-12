@@ -66,6 +66,9 @@ protected:
 	// Real-Time Clock (RTC)
 	std::function<time_t()> m_TimeSource;
 
+	// Sets clock register 0-4 (seconds to day high) on the running clock
+	void WriteRTC(uint8_t index, uint8_t value);
+
 public:
 	std::vector<uint8_t> m_RtcRegisters;
 	RtcData m_RtcData;

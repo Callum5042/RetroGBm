@@ -125,11 +125,8 @@ void CartridgeMBC3::Write(uint16_t address, uint8_t value)
 		{
 			if (m_RamBank >= 0x08 && m_RamBank <= 0x0C)
 			{
-				// Count the time up to now first, so halting or resuming the clock only applies from here
-				this->UpdateRTC();
-
 				uint8_t index = (m_RamBank - 0x08);
-				m_RtcRegisters[index] = value;
+				this->WriteRTC(index, value);
 			}
 		}
 	}
@@ -224,6 +221,38 @@ void CartridgeMBC3::LatchRTC()
 {
 	this->UpdateRTC();
 	this->SetRTC(m_RtcData.m_RtcSeconds, m_RtcData.m_RtcMinutes, m_RtcData.m_RtcHours, m_RtcData.m_RtcDays);
+}
+
+void CartridgeMBC3::WriteRTC(uint8_t index, uint8_t value)
+{
+	// Count the time up to now first, so the new value and any change to the halt flag only apply from here
+	this->UpdateRTC();
+
+	// Bits each register has: seconds, minutes, hours, day low, day high (bit 0 day bit 8, bit 6 halt, bit 7 carry)
+	static constexpr uint8_t masks[5] = { 0x3F, 0x3F, 0x1F, 0xFF, 0xC1 };
+	value &= masks[index];
+
+	switch (index)
+	{
+		case 0:
+			m_RtcData.m_RtcSeconds = value;
+			break;
+		case 1:
+			m_RtcData.m_RtcMinutes = value;
+			break;
+		case 2:
+			m_RtcData.m_RtcHours = value;
+			break;
+		case 3:
+			m_RtcData.m_RtcDays = static_cast<uint16_t>((m_RtcData.m_RtcDays & 0x100) | value);
+			break;
+		case 4:
+			m_RtcData.m_RtcDays = static_cast<uint16_t>((m_RtcData.m_RtcDays & 0xFF) | ((value & 0x1) << 8));
+			break;
+	}
+
+	// The game reads back what it wrote without having to latch again
+	m_RtcRegisters[index] = value;
 }
 
 void CartridgeMBC3::SetRTC(uint8_t seconds, uint8_t minutes, uint8_t hours, uint16_t days)
