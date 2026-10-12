@@ -190,6 +190,13 @@ void CartridgeMBC3::UpdateRTC()
 	const time_t now = m_TimeSource();
 	const bool halted = (m_RtcRegisters[4] & 0x40) != 0;
 
+	// Saves from before the day counter wrapped can hold more than 511 days. Keep the 9 bits the game has been
+	// reading so its time doesn't change, without setting the carry flag as no real overflow happened
+	if (m_RtcData.m_RtcDays > 0x1FF)
+	{
+		m_RtcData.m_RtcDays = static_cast<uint16_t>(m_RtcData.m_RtcDays & 0x1FF);
+	}
+
 	// Start counting from now if the clock has never run, is halted, or the system clock went backwards
 	if (m_RtcData.m_UnixEpoch == 0 || halted || now < m_RtcData.m_UnixEpoch)
 	{
@@ -212,6 +219,13 @@ void CartridgeMBC3::UpdateRTC()
 
 	m_RtcData.m_RtcHours = static_cast<uint8_t>(total % 24);
 	total /= 24;
+
+	// The day counter is 9 bits, so past day 511 it wraps to 0 and sets the carry flag until the game clears it
+	if (total > 0x1FF)
+	{
+		m_RtcRegisters[4] |= 0x80;
+		total %= 0x200;
+	}
 
 	m_RtcData.m_RtcDays = static_cast<uint16_t>(total);
 	m_RtcData.m_UnixEpoch = now;

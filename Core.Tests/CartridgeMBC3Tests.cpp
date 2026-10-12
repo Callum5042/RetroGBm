@@ -622,5 +622,71 @@ namespace CoreTests
 			Assert::AreEqual(0x1F, static_cast<int>(ReadClockRegister(*cartridge, 0x0A)));
 			Assert::AreEqual(0xC1, static_cast<int>(ReadClockRegister(*cartridge, 0x0C)));
 		}
+
+		TEST_METHOD(Latch_DayCounterPassesDay511_WrapsAndSetsCarry)
+		{
+			// Arrange
+			time_t now = 1000;
+			auto cartridge = CreateRtcCartridge(&now);
+			LatchClock(*cartridge);
+
+			// Day 510
+			WriteClockRegister(*cartridge, 0x0B, 510 & 0xFF);
+			WriteClockRegister(*cartridge, 0x0C, 0x01);
+
+			// Act
+			now += 3 * 86400;
+			LatchClock(*cartridge);
+
+			// Assert
+			Assert::AreEqual(1, static_cast<int>(ReadClockRegister(*cartridge, 0x0B)));
+			Assert::AreEqual(0x80, static_cast<int>(ReadClockRegister(*cartridge, 0x0C)));
+		}
+
+		TEST_METHOD(Latch_CarrySet_StaysSetUntilGameClearsIt)
+		{
+			// Arrange
+			time_t now = 1000;
+			auto cartridge = CreateRtcCartridge(&now);
+			LatchClock(*cartridge);
+
+			// Day 511, then wrap to day 0
+			WriteClockRegister(*cartridge, 0x0B, 511 & 0xFF);
+			WriteClockRegister(*cartridge, 0x0C, 0x01);
+			now += 86400;
+			LatchClock(*cartridge);
+
+			// Act
+			now += 86400;
+			LatchClock(*cartridge);
+			uint8_t day_high_before_clearing = ReadClockRegister(*cartridge, 0x0C);
+
+			WriteClockRegister(*cartridge, 0x0C, 0x00);
+			LatchClock(*cartridge);
+
+			// Assert
+			Assert::AreEqual(0x80, static_cast<int>(day_high_before_clearing));
+			Assert::AreEqual(0x00, static_cast<int>(ReadClockRegister(*cartridge, 0x0C)));
+			Assert::AreEqual(1, static_cast<int>(ReadClockRegister(*cartridge, 0x0B)));
+		}
+
+		TEST_METHOD(Latch_SaveFromBeforeDaysWrapped_KeepsDaysGameSawWithoutCarry)
+		{
+			// Arrange
+			time_t now = 1000;
+			auto cartridge = CreateRtcCartridge(&now);
+
+			// Battery saves from before the fix could count days since 1970, e.g. 20737 (0x5101)
+			cartridge->m_RtcData.m_RtcDays = 20737;
+			cartridge->m_RtcData.m_UnixEpoch = now - 10;
+
+			// Act
+			LatchClock(*cartridge);
+
+			// Assert
+			Assert::AreEqual(10, static_cast<int>(ReadClockRegister(*cartridge, 0x08)));
+			Assert::AreEqual(0x01, static_cast<int>(ReadClockRegister(*cartridge, 0x0B)));
+			Assert::AreEqual(0x01, static_cast<int>(ReadClockRegister(*cartridge, 0x0C)));
+		}
 	};
 }
