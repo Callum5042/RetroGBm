@@ -170,45 +170,10 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 				battery.read(reinterpret_cast<char*>(mbc3->m_RtcRegisters.data()), mbc3->m_RtcRegisters.size() * sizeof(uint8_t));
 				battery.read(reinterpret_cast<char*>(&mbc3->m_RtcData), sizeof(mbc3->m_RtcData));
 
-				auto currentTime = std::chrono::system_clock::now();
-				auto lastTime = std::chrono::system_clock::from_time_t(mbc3->m_RtcData.m_UnixEpoch);
+				Logger::Info("MBC3 - Last unix epoch: " + std::to_string(mbc3->m_RtcData.m_UnixEpoch));
 
-				Logger::Info("MBC3 - Last unix epoch: " + std::to_string(std::chrono::system_clock::to_time_t(lastTime)));
-				Logger::Info("MBC3 - Current unix epoch: " + std::to_string(std::chrono::system_clock::to_time_t(currentTime)));
-
-				auto duration = duration_cast<seconds>(currentTime - lastTime);
-
-				auto d = duration_cast<days>(duration);
-				duration -= d;
-
-				auto h = duration_cast<hours>(duration);
-				duration -= h;
-
-				auto m = duration_cast<minutes>(duration);
-				duration -= m;
-
-				auto s = duration_cast<seconds>(duration);
-
-				int seconds = mbc3->m_RtcData.m_RtcSeconds + (int)s.count();
-				int minutes = mbc3->m_RtcData.m_RtcMinutes + (int)m.count();
-				int hours = mbc3->m_RtcData.m_RtcHours + (int)h.count();
-				int days = mbc3->m_RtcData.m_RtcDays + (int)d.count();
-
-				minutes += (seconds - (seconds % 60)) / 60;
-				seconds = (seconds % 60);
-
-				hours += (minutes - (minutes % 60)) / 60;
-				minutes = minutes % 60;
-
-				days += (hours - (hours % 24)) / 24;
-				hours = hours % 24;
-
-				mbc3->m_RtcData.m_RtcSeconds = seconds;
-				mbc3->m_RtcData.m_RtcMinutes = minutes;
-				mbc3->m_RtcData.m_RtcHours = hours;
-				mbc3->m_RtcData.m_RtcDays = days;
-
-				mbc3->SetRTC(seconds, minutes, hours, days);
+				// Catch the clock up on the real time passed since it was saved
+				mbc3->LatchRTC();
 			}
 
 			battery.close();
@@ -294,21 +259,6 @@ int Emulator::GetFPS()
 void Emulator::Pause(bool pause)
 {
 	m_Paused = pause;
-
-	if (m_Paused)
-	{
-		m_PausedTimeStamp = std::chrono::system_clock::now();
-	}
-	else
-	{
-		CartridgeMBC3* mbc3 = dynamic_cast<CartridgeMBC3*>(m_Cartridge.get());
-		if (mbc3 != nullptr && CartridgeHasRTC(mbc3))
-		{
-			auto currentTime = std::chrono::system_clock::now();
-			auto duration = duration_cast<seconds>(currentTime - m_PausedTimeStamp);
-			mbc3->SetRTC(duration);
-		}
-	}
 }
 
 void Emulator::Restart()
@@ -400,16 +350,6 @@ void Emulator::Tick()
 		}
 
 		m_Cpu->Execute(&m_Context, opcode);
-
-		// Real-Time Clock (RTC)
-		if (CartridgeHasRTC(m_Cartridge.get()))
-		{
-			CartridgeMBC3* mbc3 = dynamic_cast<CartridgeMBC3*>(m_Cartridge.get());
-			if (mbc3 != nullptr && mbc3->IsRtcEnabled())
-			{
-				mbc3->TickRTC();
-			}
-		}
 	}
 	else
 	{

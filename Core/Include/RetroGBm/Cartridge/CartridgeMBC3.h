@@ -2,8 +2,8 @@
 
 #include "BaseCartridge.h"
 #include <cstdint>
-#include <chrono>
-#include "../HighTimer.h"
+#include <ctime>
+#include <functional>
 
 struct RtcData
 {
@@ -13,6 +13,8 @@ struct RtcData
 	uint16_t m_RtcDays = 0;
 
 	bool m_RtcLatched = false;
+
+	// Real time that the counters above were last brought up to date, 0 if never
 	time_t m_UnixEpoch = 0;
 };
 
@@ -29,11 +31,16 @@ public:
 	void SaveState(std::fstream* file) override;
 	void LoadState(std::fstream* file) override;
 
-	void TickRTC();
-	void SetRTC(uint8_t seconds, uint8_t minutes, uint8_t hours, uint16_t days);
-	void SetRTC(std::chrono::seconds duration);
+	// Adds the real time passed since the clock was last updated, unless the clock is halted
+	void UpdateRTC();
 
-	bool IsRtcEnabled() const;
+	// Updates the clock and copies it into the registers the game reads
+	void LatchRTC();
+
+	void SetRTC(uint8_t seconds, uint8_t minutes, uint8_t hours, uint16_t days);
+
+	// Replaces the system clock, used by tests
+	void SetTimeSource(std::function<time_t()> time_source);
 
 	inline bool IsRamEnabled() const
 	{
@@ -56,9 +63,11 @@ protected:
 	uint8_t m_RomBank = 1;
 	uint8_t m_RamBank = 0;
 
-
 	// Real-Time Clock (RTC)
-	HighTimer m_RealTimeClockTimer;
+	std::function<time_t()> m_TimeSource;
+
+	// Sets clock register 0-4 (seconds to day high) on the running clock
+	void WriteRTC(uint8_t index, uint8_t value);
 
 public:
 	std::vector<uint8_t> m_RtcRegisters;
