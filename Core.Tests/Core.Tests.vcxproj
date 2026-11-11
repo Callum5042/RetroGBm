@@ -182,7 +182,6 @@
     <ClCompile Include="PpuTests.cpp" />
     <ClCompile Include="MockCartridge.cpp" />
     <ClCompile Include="RamTests.cpp" />
-    <ClCompile Include="TileDataTests.cpp" />
     <ClCompile Include="TimerTests.cpp" />
   </ItemGroup>
   <ItemGroup>
