@@ -161,6 +161,7 @@
     <ClCompile Include="Source\Render\RenderTarget.cpp" />
     <ClCompile Include="Source\Render\RenderTexture.cpp" />
     <ClCompile Include="Source\Windows\NetworkConnectWindow.cpp" />
+    <ClCompile Include="Source\Windows\TileExportDialog.cpp" />
     <ClCompile Include="Source\Windows\TileSheetView.cpp" />
     <ClCompile Include="Source\Windows\TileWindow.cpp" />
     <ClCompile Include="Source\Utilities\Utilities.cpp" />
@@ -184,6 +185,7 @@
     <ClInclude Include="Include\Render\RenderTarget.h" />
     <ClInclude Include="Include\Render\RenderTexture.h" />
     <ClInclude Include="Include\Windows\NetworkConnectWindow.h" />
+    <ClInclude Include="Include\Windows\TileExportDialog.h" />
     <ClInclude Include="Include\Windows\TileSheetView.h" />
     <ClInclude Include="Include\Windows\TileWindow.h" />
     <ClInclude Include="Include\Utilities\Utilities.h" />

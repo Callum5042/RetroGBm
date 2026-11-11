@@ -28,4 +28,19 @@ namespace TileData
 	// Decodes a bank of tile data (BytesPerBank bytes, starting at $8000) into a
 	// SheetWidth x SheetHeight image of colour indices, row by row, 16 tiles per row.
 	std::vector<uint8_t> DecodeSheet(const uint8_t* bytes);
+
+	enum class SheetLayout { SideBySide, Stacked };
+
+	struct Image
+	{
+		int width = 0;
+		int height = 0;
+
+		// Row by row, in whatever 32-bit pixel format the sheets were given in
+		std::vector<uint32_t> pixels;
+	};
+
+	// Lays out sheets of SheetWidth x SheetHeight pixels next to or above each other, with each pixel
+	// scaled up to scale x scale. With grid, a 1px line of grid_colour separates the tiles and surrounds the image.
+	Image ComposeSheets(const std::vector<std::vector<uint32_t>>& sheets, SheetLayout layout, int scale, bool grid, uint32_t grid_colour);
 }

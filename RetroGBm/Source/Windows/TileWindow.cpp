@@ -202,6 +202,7 @@ void TileWindow::Destroy()
 
 void TileWindow::ReleaseResources()
 {
+	m_ExportDialog.reset();
 	m_SheetView.Destroy();
 
 	for (HFONT* font : { &m_Font, &m_HeadingFont, &m_BoldFont, &m_MonoFont, &m_MonoSmallFont })
@@ -376,11 +377,63 @@ void TileWindow::RenderSheets()
 
 	m_SheetView.SetSheets(sheets);
 	UpdateInspector();
+
+	if ((IsWindowEnabled(m_ButtonExport) != FALSE) != m_HasSnapshot)
+	{
+		EnableWindow(m_ButtonExport, m_HasSnapshot);
+	}
+}
+
+void TileWindow::OpenExportDialog()
+{
+	if (!m_HasSnapshot)
+	{
+		return;
+	}
+
+	// The dialog keeps its own copy, so the export matches its preview while the game runs on
+	TileExportDialog::Source source;
+	source.is_colour = m_IsColour;
+	source.vram = m_Vram;
+	source.palette = ComboBox_GetCurSel(m_ComboPalette);
+
+	const int count = ComboBox_GetCount(m_ComboPalette);
+	for (int i = 0; i < count; ++i)
+	{
+		std::wstring name(static_cast<size_t>(ComboBox_GetLBTextLen(m_ComboPalette, i)), L'\0');
+		ComboBox_GetLBText(m_ComboPalette, i, name.data());
+
+		const PaletteColours colours = PaletteFromItemData(ComboBox_GetItemData(m_ComboPalette, i));
+		source.palettes.push_back({ name, colours.colours, colours.transparent });
+	}
+
+	const std::vector<int> banks = VisibleBanks();
+	if (banks.size() == 2)
+	{
+		source.layout = TileExportDialog::Layout::SideBySide;
+	}
+	else
+	{
+		source.layout = banks[0] == 1 ? TileExportDialog::Layout::Bank1 : TileExportDialog::Layout::Bank0;
+	}
+
+	source.rom_name = std::filesystem::path(m_Application->CurrentFilename).stem().wstring();
+
+	if (m_ExportDialog == nullptr)
+	{
+		m_ExportDialog = std::make_unique<TileExportDialog>();
+	}
+
+	m_ExportDialog->Show(m_Hwnd, source);
 }
 
 TileWindow::PaletteColours TileWindow::SelectedPalette() const
 {
-	const LRESULT data = ComboBox_GetItemData(m_ComboPalette, ComboBox_GetCurSel(m_ComboPalette));
+	return PaletteFromItemData(ComboBox_GetItemData(m_ComboPalette, ComboBox_GetCurSel(m_ComboPalette)));
+}
+
+TileWindow::PaletteColours TileWindow::PaletteFromItemData(LRESULT data) const
+{
 	const PaletteKind kind = static_cast<PaletteKind>((data >> 8) & 0xFF);
 	const int index = static_cast<int>(data & 7);
 
@@ -638,6 +691,11 @@ void TileWindow::UpdateHoverStatus()
 
 bool TileWindow::HandleDialogMessage(MSG* msg)
 {
+	if (m_ExportDialog != nullptr && m_ExportDialog->HandleDialogMessage(msg))
+	{
+		return true;
+	}
+
 	return m_Hwnd != NULL && IsDialogMessage(m_Hwnd, msg);
 }
 
@@ -1126,6 +1184,12 @@ LRESULT TileWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 			if (id == m_ControlCopyId && code == BN_CLICKED)
 			{
 				CopySelectedBytes();
+				return 0;
+			}
+
+			if (id == m_ControlExportId && code == BN_CLICKED)
+			{
+				OpenExportDialog();
 				return 0;
 			}
 

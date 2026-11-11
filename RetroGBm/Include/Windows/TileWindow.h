@@ -3,10 +3,12 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
+#include "Windows/TileExportDialog.h"
 #include "Windows/TileSheetView.h"
 
 #include <array>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -75,6 +77,7 @@ private:
 		bool transparent = false;
 	};
 	PaletteColours SelectedPalette() const;
+	PaletteColours PaletteFromItemData(LRESULT data) const;
 
 	// Inspector: details of the selected tile
 	bool m_InspectorHasTile = false;
@@ -86,6 +89,10 @@ private:
 
 	// Status bar: the tile under the mouse
 	void UpdateHoverStatus();
+
+	// Export as PNG, from the current snapshot
+	std::unique_ptr<TileExportDialog> m_ExportDialog;
+	void OpenExportDialog();
 
 	// Layout
 	static const int m_ClientWidth = 1280;
