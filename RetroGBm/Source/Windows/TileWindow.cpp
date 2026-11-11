@@ -12,7 +12,9 @@
 #include <RetroGBm/Ppu.h>
 #include <RetroGBm/TileData.h>
 
+#include <algorithm>
 #include <filesystem>
+#include <format>
 #include <string>
 
 namespace
@@ -67,6 +69,35 @@ namespace
 		return text;
 	}
 
+	void SetTextIfChanged(HWND control, const std::wstring& text)
+	{
+		// Avoids repainting (and flickering) every frame
+		if (GetText(control) != text)
+		{
+			SetWindowText(control, text.c_str());
+		}
+	}
+
+	COLORREF ToColorRef(uint32_t colour)
+	{
+		return RGB((colour >> 16) & 0xFF, (colour >> 8) & 0xFF, colour & 0xFF);
+	}
+
+	void FillColour(HDC hdc, int x, int y, int width, int height, COLORREF colour)
+	{
+		RECT rect = { x, y, x + width, y + height };
+		SetDCBrushColor(hdc, colour);
+		FillRect(hdc, &rect, reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+	}
+
+	// Inspector preview: 8 x 8 pixels of 20px, with the palette beside it
+	const int PreviewPixelSize = 20;
+	const int PreviewSize = 8 * PreviewPixelSize;
+	const int PreviewHeight = PreviewSize;
+
+	const wchar_t* NoTileHint = L"Hover over a tile to see its address, or click one to pin it here.";
+	const wchar_t* TileHint = L"Click a tile to pin it here. The arrow keys move the selection and Ctrl+C copies its bytes.";
+
 	// Palette list entries store what they select as item data
 	enum class PaletteKind : int { Background = 0, Object = 1, Greyscale = 2 };
 
@@ -113,6 +144,22 @@ void TileWindow::Create()
 		heading.lfWeight = FW_SEMIBOLD;
 		heading.lfHeight = -MulDiv(15, GetDeviceCaps(hdc, LOGPIXELSY), 72);
 		m_HeadingFont = CreateFontIndirect(&heading);
+
+		LOGFONT bold = metrics.lfMessageFont;
+		bold.lfWeight = FW_SEMIBOLD;
+		m_BoldFont = CreateFontIndirect(&bold);
+
+		// Consolas for addresses and bytes
+		LOGFONT mono = {};
+		mono.lfHeight = -MulDiv(9, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+		mono.lfWeight = FW_NORMAL;
+		mono.lfQuality = CLEARTYPE_QUALITY;
+		mono.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
+		wcscpy_s(mono.lfFaceName, L"Consolas");
+		m_MonoFont = CreateFontIndirect(&mono);
+
+		mono.lfHeight = -MulDiv(8, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+		m_MonoSmallFont = CreateFontIndirect(&mono);
 		ReleaseDC(NULL, hdc);
 	}
 
@@ -157,7 +204,7 @@ void TileWindow::ReleaseResources()
 {
 	m_SheetView.Destroy();
 
-	for (HFONT* font : { &m_Font, &m_HeadingFont })
+	for (HFONT* font : { &m_Font, &m_HeadingFont, &m_BoldFont, &m_MonoFont, &m_MonoSmallFont })
 	{
 		if (*font != NULL)
 		{
@@ -290,22 +337,10 @@ void TileWindow::RenderSheets()
 		return;
 	}
 
-	// The palette's 4 colours. Colour 0 of an object palette is transparent and shown as a checkerboard.
-	const LRESULT data = ComboBox_GetItemData(m_ComboPalette, ComboBox_GetCurSel(m_ComboPalette));
-	const PaletteKind kind = static_cast<PaletteKind>((data >> 8) & 0xFF);
-	const int index = static_cast<int>(data & 7);
-
-	std::array<uint32_t, 4> colours = { 0xFFFFFF, 0xAAAAAA, 0x555555, 0x000000 };
-	if (kind == PaletteKind::Background)
-	{
-		colours = m_BackgroundColours[index];
-	}
-	else if (kind == PaletteKind::Object)
-	{
-		colours = m_ObjectColours[index];
-	}
-
-	const bool transparent = kind == PaletteKind::Object;
+	// Transparent colour 0 is shown as a checkerboard
+	const PaletteColours palette = SelectedPalette();
+	const std::array<uint32_t, 4>& colours = palette.colours;
+	const bool transparent = palette.transparent;
 
 	std::vector<TileSheetView::Sheet> sheets;
 	for (int bank : VisibleBanks())
@@ -340,6 +375,265 @@ void TileWindow::RenderSheets()
 	}
 
 	m_SheetView.SetSheets(sheets);
+	UpdateInspector();
+}
+
+TileWindow::PaletteColours TileWindow::SelectedPalette() const
+{
+	const LRESULT data = ComboBox_GetItemData(m_ComboPalette, ComboBox_GetCurSel(m_ComboPalette));
+	const PaletteKind kind = static_cast<PaletteKind>((data >> 8) & 0xFF);
+	const int index = static_cast<int>(data & 7);
+
+	PaletteColours palette;
+	palette.colours = { 0xFFFFFF, 0xAAAAAA, 0x555555, 0x000000 };
+	if (kind == PaletteKind::Background)
+	{
+		palette.colours = m_BackgroundColours[index];
+	}
+	else if (kind == PaletteKind::Object)
+	{
+		palette.colours = m_ObjectColours[index];
+		palette.transparent = true;
+	}
+
+	return palette;
+}
+
+void TileWindow::UpdateInspector()
+{
+	const TileSheetView::TileRef selection = m_SheetView.GetSelection();
+	const bool has_tile = selection.IsValid() && m_HasSnapshot && m_Vram[selection.bank].size() == TileData::BytesPerBank;
+
+	// Show the details only while a tile is selected
+	if (has_tile != m_InspectorHasTile)
+	{
+		m_InspectorHasTile = has_tile;
+
+		std::vector<HWND> details = { m_LabelTileSubtitle, m_TilePreview, m_LabelBytes, m_ButtonCopy, m_EditBytes };
+		details.insert(details.end(), m_PropertyLabels.begin(), m_PropertyLabels.end());
+		details.insert(details.end(), m_PropertyValues.begin(), m_PropertyValues.end());
+		for (HWND control : details)
+		{
+			ShowWindow(control, has_tile ? SW_SHOWNA : SW_HIDE);
+		}
+
+		SetTextIfChanged(m_LabelTileHint, has_tile ? TileHint : NoTileHint);
+		Layout();
+	}
+
+	if (!has_tile)
+	{
+		SetTextIfChanged(m_LabelTileHeading, L"No tile selected");
+		return;
+	}
+
+	const int tile = selection.tile;
+	const int id = tile & 0xFF;
+	const int address = 0x8000 + tile * TileData::BytesPerTile;
+	const int block = tile / 128;
+	const int block_start = 0x8000 + block * 0x800;
+	const int signed_id = id < 128 ? id : id - 256;
+
+	SetTextIfChanged(m_LabelTileHeading, std::format(L"Tile ${:02X}", id));
+	SetTextIfChanged(m_LabelTileSubtitle, m_IsColour
+		? std::format(L"#{} of 384 \x00B7 bank {}", tile, selection.bank)
+		: std::format(L"#{} of 384", tile));
+
+	// Tiles $00-$FF from $8000 are used by objects, and by the background when LCDC.4 is set.
+	// Tiles from $8800 are numbered -128 to 127 from $9000 and are used by the background when LCDC.4 is clear.
+	SetTextIfChanged(m_PropertyValues[0], std::format(L"${:04X}\x2013${:04X}", address, address + TileData::BytesPerTile - 1));
+	SetTextIfChanged(m_PropertyValues[1], m_IsColour ? std::to_wstring(selection.bank) : L"0 (DMG has one bank)");
+	SetTextIfChanged(m_PropertyValues[2], std::format(L"{}  ${:04X}\x2013${:04X}", block, block_start, block_start + 0x7FF));
+	SetTextIfChanged(m_PropertyValues[3], tile < 256 ? std::format(L"${:02X}", id) : L"\x2014  not reachable");
+	SetTextIfChanged(m_PropertyValues[4], tile >= 128 ? std::format(L"${:02X} ({})", id, signed_id) : L"\x2014  not reachable");
+
+	// Bytes, two rows of the tile per line
+	const uint8_t* bytes = m_Vram[selection.bank].data() + tile * TileData::BytesPerTile;
+	std::wstring text;
+	for (int line = 0; line < 4; ++line)
+	{
+		const int offset = line * 4;
+		text += std::format(L"+{:X}  {:02X} {:02X}    +{:X}  {:02X} {:02X}",
+			offset, bytes[offset], bytes[offset + 1], offset + 2, bytes[offset + 2], bytes[offset + 3]);
+		if (line < 3)
+		{
+			text += L"\r\n";
+		}
+	}
+	SetTextIfChanged(m_EditBytes, text);
+
+	// Preview pixels, with transparent pixels marked by the top byte
+	const PaletteColours palette = SelectedPalette();
+	const std::array<uint8_t, 64> indices = TileData::DecodeTile(bytes);
+	std::array<uint32_t, 64> pixels = {};
+	for (size_t i = 0; i < pixels.size(); ++i)
+	{
+		pixels[i] = (palette.transparent && indices[i] == 0) ? 0xFF000000 : palette.colours[indices[i]];
+	}
+
+	if (pixels != m_PreviewPixels || palette.colours != m_PreviewPalette.colours || palette.transparent != m_PreviewPalette.transparent)
+	{
+		m_PreviewPixels = pixels;
+		m_PreviewPalette = palette;
+		InvalidateRect(m_TilePreview, NULL, FALSE);
+	}
+}
+
+void TileWindow::DrawPreview(const DRAWITEMSTRUCT* item)
+{
+	const RECT& rect = item->rcItem;
+	const int width = rect.right - rect.left;
+	const int height = rect.bottom - rect.top;
+
+	// Draw off screen so the preview doesn't flicker when it changes every frame
+	HDC hdc = CreateCompatibleDC(item->hDC);
+	HBITMAP bitmap = CreateCompatibleBitmap(item->hDC, width, height);
+	HGDIOBJ previous_bitmap = SelectObject(hdc, bitmap);
+
+	FillColour(hdc, 0, 0, width, height, InspectorColour);
+
+	// Pixels, transparent ones as a checkerboard
+	for (int y = 0; y < 8; ++y)
+	{
+		for (int x = 0; x < 8; ++x)
+		{
+			const uint32_t pixel = m_PreviewPixels[y * 8 + x];
+			const int px = x * PreviewPixelSize;
+			const int py = y * PreviewPixelSize;
+			if (pixel & 0xFF000000)
+			{
+				const int half = PreviewPixelSize / 2;
+				FillColour(hdc, px, py, PreviewPixelSize, PreviewPixelSize, RGB(255, 255, 255));
+				FillColour(hdc, px, py, half, half, RGB(230, 230, 230));
+				FillColour(hdc, px + half, py + half, half, half, RGB(230, 230, 230));
+			}
+			else
+			{
+				FillColour(hdc, px, py, PreviewPixelSize, PreviewPixelSize, ToColorRef(pixel));
+			}
+		}
+	}
+
+	// Pixel grid, darkening what's under it
+	{
+		HPEN pen = CreatePen(PS_SOLID, 1, RGB(200, 200, 200));
+		HGDIOBJ previous_pen = SelectObject(hdc, pen);
+		const int previous_rop = SetROP2(hdc, R2_MASKPEN);
+		for (int i = 1; i < 8; ++i)
+		{
+			MoveToEx(hdc, i * PreviewPixelSize, 0, NULL);
+			LineTo(hdc, i * PreviewPixelSize, PreviewSize);
+			MoveToEx(hdc, 0, i * PreviewPixelSize, NULL);
+			LineTo(hdc, PreviewSize, i * PreviewPixelSize);
+		}
+		SetROP2(hdc, previous_rop);
+		SelectObject(hdc, previous_pen);
+		DeleteObject(pen);
+	}
+
+	RECT outline = { 0, 0, PreviewSize, PreviewSize };
+	SetDCBrushColor(hdc, RGB(200, 200, 200));
+	FrameRect(hdc, &outline, reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+
+	// Palette swatches
+	const int swatch_x = PreviewSize + 14;
+	SetBkMode(hdc, TRANSPARENT);
+	SelectObject(hdc, m_Font);
+	SetTextColor(hdc, SecondaryTextColour);
+	RECT label = { swatch_x, 0, width, 18 };
+	DrawTextW(hdc, L"Palette", -1, &label, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_NOPREFIX);
+
+	SelectObject(hdc, m_MonoSmallFont);
+	SetTextColor(hdc, GetSysColor(COLOR_WINDOWTEXT));
+	for (int i = 0; i < 4; ++i)
+	{
+		const int y = 24 + i * 28;
+		const bool transparent = i == 0 && m_PreviewPalette.transparent;
+		if (transparent)
+		{
+			FillColour(hdc, swatch_x, y, 20, 20, RGB(255, 255, 255));
+			FillColour(hdc, swatch_x, y, 10, 10, RGB(230, 230, 230));
+			FillColour(hdc, swatch_x + 10, y + 10, 10, 10, RGB(230, 230, 230));
+		}
+		else
+		{
+			FillColour(hdc, swatch_x, y, 20, 20, ToColorRef(m_PreviewPalette.colours[i]));
+		}
+
+		RECT swatch = { swatch_x, y, swatch_x + 20, y + 20 };
+		SetDCBrushColor(hdc, RGB(200, 200, 200));
+		FrameRect(hdc, &swatch, reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+
+		const std::wstring text = transparent
+			? std::format(L"{}  clear", i)
+			: std::format(L"{}  #{:06X}", i, m_PreviewPalette.colours[i] & 0xFFFFFF);
+		RECT text_rect = { swatch_x + 26, y, width, y + 20 };
+		DrawTextW(hdc, text.c_str(), -1, &text_rect, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+	}
+
+	BitBlt(item->hDC, rect.left, rect.top, width, height, hdc, 0, 0, SRCCOPY);
+
+	SelectObject(hdc, previous_bitmap);
+	DeleteObject(bitmap);
+	DeleteDC(hdc);
+}
+
+void TileWindow::CopySelectedBytes()
+{
+	const TileSheetView::TileRef selection = m_SheetView.GetSelection();
+	if (!m_InspectorHasTile || !selection.IsValid())
+	{
+		return;
+	}
+
+	// "3C 7E 42 42 ..."
+	const uint8_t* bytes = m_Vram[selection.bank].data() + selection.tile * TileData::BytesPerTile;
+	std::wstring text;
+	for (int i = 0; i < TileData::BytesPerTile; ++i)
+	{
+		if (i > 0)
+		{
+			text += L" ";
+		}
+
+		text += std::format(L"{:02X}", bytes[i]);
+	}
+
+	if (!OpenClipboard(m_Hwnd))
+	{
+		return;
+	}
+
+	EmptyClipboard();
+	const size_t size = (text.size() + 1) * sizeof(wchar_t);
+	HGLOBAL memory = GlobalAlloc(GMEM_MOVEABLE, size);
+	if (memory != NULL)
+	{
+		memcpy(GlobalLock(memory), text.c_str(), size);
+		GlobalUnlock(memory);
+		if (SetClipboardData(CF_UNICODETEXT, memory) == NULL)
+		{
+			GlobalFree(memory);
+		}
+	}
+
+	CloseClipboard();
+}
+
+void TileWindow::UpdateHoverStatus()
+{
+	const TileSheetView::TileRef hover = m_SheetView.GetHover();
+
+	std::wstring text;
+	if (hover.IsValid())
+	{
+		const int address = 0x8000 + hover.tile * TileData::BytesPerTile;
+		text = m_IsColour
+			? std::format(L"Bank {} \x00B7 tile ${:02X} \x00B7 ${:04X}", hover.bank, hover.tile & 0xFF, address)
+			: std::format(L"Tile ${:02X} \x00B7 ${:04X}", hover.tile & 0xFF, address);
+	}
+
+	SendMessageW(m_StatusBar, SB_SETTEXTW, 1, reinterpret_cast<LPARAM>(text.c_str()));
 }
 
 bool TileWindow::HandleDialogMessage(MSG* msg)
@@ -438,10 +732,36 @@ void TileWindow::CreateControls()
 	m_SheetView.Create(m_Hwnd, m_ControlSheetViewId);
 	m_SheetView.SetZoom(static_cast<int>(ComboBox_GetItemData(m_ComboZoom, ComboBox_GetCurSel(m_ComboZoom))));
 	m_SheetView.SetGrid(true);
+	m_SheetView.HoverChanged = [this]() { UpdateHoverStatus(); };
+	m_SheetView.SelectionChanged = [this]() { UpdateInspector(); };
+	m_SheetView.CopyRequested = [this]() { CopySelectedBytes(); };
 
-	// Inspector
+	// Inspector, with the details hidden until a tile is selected
 	m_LabelTileHeading = create(L"STATIC", L"No tile selected", SS_LEFT | SS_ENDELLIPSIS, 0, m_HeadingFont);
-	m_LabelTileHint = create(L"STATIC", L"Hover over a tile to see its address, or click one to pin it here.", SS_LEFT, 0, m_Font);
+	m_LabelTileSubtitle = create(L"STATIC", L"", SS_LEFT | SS_ENDELLIPSIS, 0, m_Font);
+	m_TilePreview = create(L"STATIC", L"", SS_OWNERDRAW, m_ControlPreviewId, m_Font);
+
+	const wchar_t* property_names[] = { L"Address", L"Bank", L"Block", L"ID, $8000 mode", L"ID, $8800 mode" };
+	for (size_t i = 0; i < m_PropertyLabels.size(); ++i)
+	{
+		m_PropertyLabels[i] = create(L"STATIC", property_names[i], SS_LEFT, 0, m_Font);
+		m_PropertyValues[i] = create(L"STATIC", L"", SS_LEFT | SS_ENDELLIPSIS, 0, m_MonoFont);
+	}
+
+	m_LabelBytes = create(L"STATIC", L"Bytes", SS_LEFT | SS_CENTERIMAGE, 0, m_BoldFont);
+	m_ButtonCopy = create(L"BUTTON", L"Copy", WS_TABSTOP | BS_PUSHBUTTON, m_ControlCopyId, m_Font);
+	m_EditBytes = create(L"EDIT", L"", WS_TABSTOP | WS_BORDER | ES_MULTILINE | ES_READONLY, m_ControlBytesId, m_MonoFont);
+
+	m_LabelTileHint = create(L"STATIC", NoTileHint, SS_LEFT, 0, m_Font);
+
+	std::vector<HWND> details = { m_LabelTileSubtitle, m_TilePreview, m_LabelBytes, m_ButtonCopy, m_EditBytes };
+	details.insert(details.end(), m_PropertyLabels.begin(), m_PropertyLabels.end());
+	details.insert(details.end(), m_PropertyValues.begin(), m_PropertyValues.end());
+	for (HWND control : details)
+	{
+		ShowWindow(control, SW_HIDE);
+	}
+	m_InspectorHasTile = false;
 
 	// Status bar
 	m_StatusBar = CreateWindowExW(0, STATUSCLASSNAME, L"", WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP,
@@ -483,6 +803,10 @@ void TileWindow::ApplyMode()
 
 	add(L"Greyscale (raw 0\x2013" L"3)", PaletteKind::Greyscale, 0);
 	ComboBox_SetCurSel(m_ComboPalette, 0);
+
+	// A different game, so the selected tile no longer means anything
+	m_SheetView.SetSelection({});
+	UpdateInspector();
 }
 
 void TileWindow::UpdateStatus()
@@ -526,7 +850,7 @@ void TileWindow::Layout()
 	int parts[] = { width - 280 > 0 ? width - 280 : 0, -1 };
 	SendMessageW(m_StatusBar, SB_SETPARTS, 2, reinterpret_cast<LPARAM>(parts));
 
-	HDWP defer = BeginDeferWindowPos(16);
+	HDWP defer = BeginDeferWindowPos(32);
 	auto place = [&defer](HWND control, int x, int y, int w, int h)
 	{
 		defer = DeferWindowPos(defer, control, NULL, x, y, w, h, SWP_NOZORDER | SWP_NOACTIVATE);
@@ -574,8 +898,36 @@ void TileWindow::Layout()
 	const int inspector_x = width - m_InspectorWidth + 1 + 16;
 	const int inspector_width = m_InspectorWidth - 1 - 32;
 	const int body_top = m_CommandBarHeight + 1;
-	place(m_LabelTileHeading, inspector_x, body_top + 16, inspector_width, 28);
-	place(m_LabelTileHint, inspector_x, body_top + 16 + 32, inspector_width, 48);
+	int y = body_top + 16;
+	place(m_LabelTileHeading, inspector_x, y, inspector_width, 28);
+	y += 30;
+
+	if (m_InspectorHasTile)
+	{
+		place(m_LabelTileSubtitle, inspector_x, y, inspector_width, 20);
+		y += 28;
+
+		place(m_TilePreview, inspector_x, y, inspector_width, PreviewHeight);
+		y += PreviewHeight + 16;
+
+		const int label_width = 104;
+		for (size_t i = 0; i < m_PropertyLabels.size(); ++i)
+		{
+			place(m_PropertyLabels[i], inspector_x, y, label_width, 20);
+			place(m_PropertyValues[i], inspector_x + label_width + 4, y, inspector_width - label_width - 4, 20);
+			y += 22;
+		}
+		y += 12;
+
+		place(m_LabelBytes, inspector_x, y, inspector_width - 72, 26);
+		place(m_ButtonCopy, inspector_x + inspector_width - 64, y + 1, 64, 24);
+		y += 30;
+
+		place(m_EditBytes, inspector_x, y, inspector_width, 78);
+		y += 78 + 12;
+	}
+
+	place(m_LabelTileHint, inspector_x, y, inspector_width, 48);
 
 	// Tile sheets fill the rest
 	const int body_height = client.bottom - status_height - body_top;
@@ -688,15 +1040,38 @@ LRESULT TileWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 			HWND control = reinterpret_cast<HWND>(lParam);
 			SetBkMode(hdc, TRANSPARENT);
 
-			if (control == m_LabelTileHeading || control == m_LabelTileHint)
+			if (control == m_EditBytes)
 			{
-				SetTextColor(hdc, control == m_LabelTileHint ? SecondaryTextColour : GetSysColor(COLOR_WINDOWTEXT));
+				// Read-only edits are grey by default
+				SetBkMode(hdc, OPAQUE);
+				SetBkColor(hdc, GetSysColor(COLOR_WINDOW));
+				SetTextColor(hdc, GetSysColor(COLOR_WINDOWTEXT));
+				return reinterpret_cast<LRESULT>(GetSysColorBrush(COLOR_WINDOW));
+			}
+
+			const bool secondary = control == m_LabelTileHint || control == m_LabelTileSubtitle ||
+				std::find(m_PropertyLabels.begin(), m_PropertyLabels.end(), control) != m_PropertyLabels.end();
+			const bool inspector = secondary || control == m_LabelTileHeading || control == m_LabelBytes ||
+				std::find(m_PropertyValues.begin(), m_PropertyValues.end(), control) != m_PropertyValues.end();
+
+			if (inspector)
+			{
+				SetTextColor(hdc, secondary ? SecondaryTextColour : GetSysColor(COLOR_WINDOWTEXT));
 				return reinterpret_cast<LRESULT>(m_InspectorBrush);
 			}
 
 			SetTextColor(hdc, control == m_CheckGrid ? GetSysColor(COLOR_WINDOWTEXT) : SecondaryTextColour);
 			return reinterpret_cast<LRESULT>(GetSysColorBrush(COLOR_BTNFACE));
 		}
+
+		case WM_DRAWITEM:
+			if (static_cast<int>(wParam) == m_ControlPreviewId)
+			{
+				DrawPreview(reinterpret_cast<const DRAWITEMSTRUCT*>(lParam));
+				return TRUE;
+			}
+
+			break;
 
 		case WM_ERASEBKGND:
 			PaintBackground(reinterpret_cast<HDC>(wParam));
@@ -745,6 +1120,12 @@ LRESULT TileWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 			if (id == m_ControlGridId && code == BN_CLICKED)
 			{
 				m_SheetView.SetGrid(Button_GetCheck(m_CheckGrid) == BST_CHECKED);
+				return 0;
+			}
+
+			if (id == m_ControlCopyId && code == BN_CLICKED)
+			{
+				CopySelectedBytes();
 				return 0;
 			}
 

@@ -2,6 +2,8 @@
 
 #include <RetroGBm/TileData.h>
 
+#include <windowsx.h>
+
 #include <algorithm>
 #include <format>
 
@@ -16,6 +18,15 @@ namespace
 	const COLORREF BlockColour = RGB(194, 65, 12);
 	const COLORREF BlockLineColour = RGB(232, 89, 12);
 	const COLORREF OutlineColour = RGB(200, 200, 200);
+	const COLORREF HoverColour = RGB(26, 26, 26);
+	const COLORREF SelectionColour = RGB(0, 95, 184);
+
+	void FrameColour(HDC hdc, RECT rect, int inset, COLORREF colour)
+	{
+		InflateRect(&rect, -inset, -inset);
+		SetDCBrushColor(hdc, colour);
+		FrameRect(hdc, &rect, reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+	}
 
 	static LRESULT CALLBACK SheetWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
@@ -87,7 +98,7 @@ void TileSheetView::Create(HWND parent, int id)
 		ReleaseDC(NULL, hdc);
 	}
 
-	m_Hwnd = CreateWindowEx(0, ClassName, L"", WS_CHILD | WS_VISIBLE | WS_HSCROLL | WS_VSCROLL | WS_CLIPSIBLINGS,
+	m_Hwnd = CreateWindowEx(0, ClassName, L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_HSCROLL | WS_VSCROLL | WS_CLIPSIBLINGS,
 		0, 0, 0, 0, parent, reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)), hInstance, this);
 	if (m_Hwnd == NULL)
 	{
@@ -253,6 +264,167 @@ void TileSheetView::ScrollTo(int x, int y)
 	SetScrollPos(m_Hwnd, SB_HORZ, m_ScrollX, TRUE);
 	SetScrollPos(m_Hwnd, SB_VERT, m_ScrollY, TRUE);
 	InvalidateRect(m_Hwnd, NULL, FALSE);
+
+	// The tile under the mouse moved
+	UpdateHoverFromCursor();
+}
+
+void TileSheetView::SetSelection(const TileRef& tile)
+{
+	if (tile != m_Selection)
+	{
+		m_Selection = tile;
+		InvalidateRect(m_Hwnd, NULL, FALSE);
+	}
+}
+
+int TileSheetView::SheetIndexOf(int bank) const
+{
+	for (size_t i = 0; i < m_Sheets.size(); ++i)
+	{
+		if (m_Sheets[i].bank == bank)
+		{
+			return static_cast<int>(i);
+		}
+	}
+
+	return -1;
+}
+
+TileSheetView::TileRef TileSheetView::HitTest(int x, int y) const
+{
+	const int cell = CellSize();
+	for (size_t i = 0; i < m_Sheets.size(); ++i)
+	{
+		const POINT origin = SheetOrigin(i);
+		const int column = x + m_ScrollX - origin.x;
+		const int row = y + m_ScrollY - origin.y;
+		if (column >= 0 && row >= 0 && column < TileData::SheetColumns * cell && row < TileData::SheetRows * cell)
+		{
+			return { m_Sheets[i].bank, (row / cell) * TileData::SheetColumns + column / cell };
+		}
+	}
+
+	return {};
+}
+
+RECT TileSheetView::TileRect(size_t sheet_index, int tile) const
+{
+	const POINT origin = SheetOrigin(sheet_index);
+	const int cell = CellSize();
+	const int x = origin.x - m_ScrollX + (tile % TileData::SheetColumns) * cell;
+	const int y = origin.y - m_ScrollY + (tile / TileData::SheetColumns) * cell;
+	return { x, y, x + cell, y + cell };
+}
+
+void TileSheetView::UpdateHoverFromCursor()
+{
+	if (!m_TrackingMouse)
+	{
+		return;
+	}
+
+	POINT cursor;
+	GetCursorPos(&cursor);
+	ScreenToClient(m_Hwnd, &cursor);
+	SetHover(HitTest(cursor.x, cursor.y));
+}
+
+void TileSheetView::SetHover(const TileRef& tile)
+{
+	if (tile == m_Hover)
+	{
+		return;
+	}
+
+	m_Hover = tile;
+	InvalidateRect(m_Hwnd, NULL, FALSE);
+
+	if (HoverChanged)
+	{
+		HoverChanged();
+	}
+}
+
+void TileSheetView::Select(const TileRef& tile)
+{
+	if (tile == m_Selection)
+	{
+		return;
+	}
+
+	m_Selection = tile;
+	EnsureVisible(tile);
+	InvalidateRect(m_Hwnd, NULL, FALSE);
+
+	if (SelectionChanged)
+	{
+		SelectionChanged();
+	}
+}
+
+void TileSheetView::MoveSelection(UINT key)
+{
+	if (m_Sheets.empty())
+	{
+		return;
+	}
+
+	// Start from the first tile when nothing shown is selected
+	int index = SheetIndexOf(m_Selection.bank);
+	if (!m_Selection.IsValid() || index < 0)
+	{
+		Select({ m_Sheets[0].bank, 0 });
+		return;
+	}
+
+	int column = m_Selection.tile % TileData::SheetColumns;
+	int row = m_Selection.tile / TileData::SheetColumns;
+	const int last_index = static_cast<int>(m_Sheets.size()) - 1;
+
+	// Left and right carry on into the other bank when both are shown
+	switch (key)
+	{
+		case VK_LEFT:
+			if (column > 0) --column;
+			else if (index > 0) { --index; column = TileData::SheetColumns - 1; }
+			break;
+		case VK_RIGHT:
+			if (column < TileData::SheetColumns - 1) ++column;
+			else if (index < last_index) { ++index; column = 0; }
+			break;
+		case VK_UP:
+			if (row > 0) --row;
+			break;
+		case VK_DOWN:
+			if (row < TileData::SheetRows - 1) ++row;
+			break;
+	}
+
+	Select({ m_Sheets[index].bank, row * TileData::SheetColumns + column });
+}
+
+void TileSheetView::EnsureVisible(const TileRef& tile)
+{
+	const int index = SheetIndexOf(tile.bank);
+	if (index < 0)
+	{
+		return;
+	}
+
+	RECT client;
+	GetClientRect(m_Hwnd, &client);
+	const RECT rect = TileRect(index, tile.tile);
+	const int margin = 8;
+
+	int x = m_ScrollX;
+	int y = m_ScrollY;
+	if (rect.left - margin < 0) x += rect.left - margin;
+	else if (rect.right + margin > client.right) x += rect.right + margin - client.right;
+	if (rect.top - margin < 0) y += rect.top - margin;
+	else if (rect.bottom + margin > client.bottom) y += rect.bottom + margin - client.bottom;
+
+	ScrollTo(x, y);
 }
 
 void TileSheetView::OnScroll(int bar, WORD request)
@@ -436,6 +608,32 @@ void TileSheetView::PaintSheet(size_t index)
 	// Block separators at $8800 and $9000
 	FillColour(m_BackDC, x, y + 8 * cell - 1, width, 2, BlockLineColour);
 	FillColour(m_BackDC, x, y + 16 * cell - 1, width, 2, BlockLineColour);
+
+	PaintHighlights(index);
+}
+
+void TileSheetView::PaintHighlights(size_t index)
+{
+	const int bank = m_Sheets[index].bank;
+
+	// Hover: white inside a dark outline, so it shows on any colour
+	if (m_Hover.bank == bank && m_Hover != m_Selection)
+	{
+		const RECT rect = TileRect(index, m_Hover.tile);
+		FrameColour(m_BackDC, rect, -1, HoverColour);
+		FrameColour(m_BackDC, rect, 0, RGB(255, 255, 255));
+		FrameColour(m_BackDC, rect, 1, RGB(255, 255, 255));
+	}
+
+	// Selection: blue inside a white outline
+	if (m_Selection.bank == bank)
+	{
+		const RECT rect = TileRect(index, m_Selection.tile);
+		FrameColour(m_BackDC, rect, -2, RGB(255, 255, 255));
+		FrameColour(m_BackDC, rect, -1, RGB(255, 255, 255));
+		FrameColour(m_BackDC, rect, 0, SelectionColour);
+		FrameColour(m_BackDC, rect, 1, SelectionColour);
+	}
 }
 
 void TileSheetView::BlendRect(int x, int y, int width, int height)
@@ -513,8 +711,60 @@ LRESULT TileSheetView::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			return 0;
 		}
 
+		case WM_MOUSEMOVE:
+		{
+			if (!m_TrackingMouse)
+			{
+				TRACKMOUSEEVENT track = { sizeof(TRACKMOUSEEVENT), TME_LEAVE, hwnd, 0 };
+				m_TrackingMouse = TrackMouseEvent(&track) != FALSE;
+			}
+
+			SetHover(HitTest(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)));
+			return 0;
+		}
+
+		case WM_MOUSELEAVE:
+			m_TrackingMouse = false;
+			SetHover({});
+			return 0;
+
+		case WM_LBUTTONDOWN:
+		{
+			SetFocus(hwnd);
+
+			const TileRef tile = HitTest(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+			if (tile.IsValid())
+			{
+				Select(tile);
+			}
+
+			return 0;
+		}
+
+		case WM_GETDLGCODE:
+			// Keep the arrow keys rather than letting the dialog manager move focus with them
+			return DLGC_WANTARROWS;
+
+		case WM_KEYDOWN:
+			if (wParam == VK_LEFT || wParam == VK_RIGHT || wParam == VK_UP || wParam == VK_DOWN)
+			{
+				MoveSelection(static_cast<UINT>(wParam));
+				return 0;
+			}
+
+			if (wParam == 'C' && (GetKeyState(VK_CONTROL) & 0x8000) && CopyRequested)
+			{
+				CopyRequested();
+				return 0;
+			}
+
+			break;
+
 		case WM_DESTROY:
 			m_Hwnd = NULL;
+			m_TrackingMouse = false;
+			m_Hover = {};
+			m_Selection = {};
 			return 0;
 	}
 

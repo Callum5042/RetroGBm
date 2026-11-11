@@ -4,6 +4,7 @@
 #include <Windows.h>
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -22,6 +23,16 @@ public:
 		bool operator==(const Sheet& other) const = default;
 	};
 
+	// A tile in a bank, or none when bank is -1
+	struct TileRef
+	{
+		int bank = -1;
+		int tile = -1;
+
+		bool IsValid() const { return bank >= 0 && tile >= 0; }
+		bool operator==(const TileRef& other) const = default;
+	};
+
 	TileSheetView() = default;
 	virtual ~TileSheetView();
 
@@ -37,6 +48,19 @@ public:
 
 	// Shown in the middle of the view when there are no sheets
 	void SetEmptyText(const std::wstring& text);
+
+	// The tile under the mouse, and the tile picked by clicking or the arrow keys
+	inline TileRef GetHover() const { return m_Hover; }
+	inline TileRef GetSelection() const { return m_Selection; }
+
+	// Sets the selection without raising SelectionChanged
+	void SetSelection(const TileRef& tile);
+
+	std::function<void()> HoverChanged;
+	std::function<void()> SelectionChanged;
+
+	// Ctrl+C while the view has focus
+	std::function<void()> CopyRequested;
 
 	LRESULT HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -85,7 +109,22 @@ private:
 	void EnsureBackBuffer(int width, int height);
 	void ReleaseBackBuffer();
 
+	// Hover and selection
+	TileRef m_Hover;
+	TileRef m_Selection;
+	bool m_TrackingMouse = false;
+
+	int SheetIndexOf(int bank) const;
+	TileRef HitTest(int x, int y) const;
+	RECT TileRect(size_t sheet_index, int tile) const;
+	void UpdateHoverFromCursor();
+	void SetHover(const TileRef& tile);
+	void Select(const TileRef& tile);
+	void MoveSelection(UINT key);
+	void EnsureVisible(const TileRef& tile);
+
 	void Paint(HDC hdc);
 	void PaintSheet(size_t index);
 	void BlendRect(int x, int y, int width, int height);
+	void PaintHighlights(size_t index);
 };

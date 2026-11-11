@@ -68,6 +68,25 @@ private:
 	void RenderSheets();
 	TileSheetView m_SheetView;
 
+	// The selected palette's 4 colours (0x00RRGGBB). Colour 0 of an object palette is transparent.
+	struct PaletteColours
+	{
+		std::array<uint32_t, 4> colours = {};
+		bool transparent = false;
+	};
+	PaletteColours SelectedPalette() const;
+
+	// Inspector: details of the selected tile
+	bool m_InspectorHasTile = false;
+	std::array<uint32_t, 64> m_PreviewPixels = {};
+	PaletteColours m_PreviewPalette;
+	void UpdateInspector();
+	void DrawPreview(const DRAWITEMSTRUCT* item);
+	void CopySelectedBytes();
+
+	// Status bar: the tile under the mouse
+	void UpdateHoverStatus();
+
 	// Layout
 	static const int m_ClientWidth = 1280;
 	static const int m_ClientHeight = 780;
@@ -76,6 +95,9 @@ private:
 
 	HFONT m_Font = NULL;
 	HFONT m_HeadingFont = NULL;
+	HFONT m_BoldFont = NULL;
+	HFONT m_MonoFont = NULL;
+	HFONT m_MonoSmallFont = NULL;
 	HBRUSH m_InspectorBrush = NULL;
 
 	// Command bar
@@ -93,6 +115,13 @@ private:
 
 	// Inspector
 	HWND m_LabelTileHeading = NULL;
+	HWND m_LabelTileSubtitle = NULL;
+	HWND m_TilePreview = NULL;
+	std::array<HWND, 5> m_PropertyLabels = {};
+	std::array<HWND, 5> m_PropertyValues = {};
+	HWND m_LabelBytes = NULL;
+	HWND m_ButtonCopy = NULL;
+	HWND m_EditBytes = NULL;
 	HWND m_LabelTileHint = NULL;
 
 	// Status bar: mode and live/paused on the left, the hovered tile on the right
@@ -108,4 +137,7 @@ private:
 	static const int m_ControlExportId = 1007;
 	static const int m_ControlStatusBarId = 1008;
 	static const int m_ControlSheetViewId = 1009;
+	static const int m_ControlCopyId = 1010;
+	static const int m_ControlPreviewId = 1011;
+	static const int m_ControlBytesId = 1012;
 };
