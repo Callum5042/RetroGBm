@@ -7,6 +7,7 @@
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Display.h>
 #include <RetroGBm/Ppu.h>
+#include <RetroGBm/TileData.h>
 
 #include <vector>
 
@@ -44,54 +45,35 @@ void TileWindow::Update()
 
 void TileWindow::UpdateTilemapTexture()
 {
+	// Tiles are drawn with a 1 pixel gap between them
 	const int debug_width = static_cast<int>((16 * 8) + (16));
-	const int debug_height = static_cast<int>((24 * 8) + (64));
+	const int debug_height = static_cast<int>((24 * 8) + (24));
 
 	std::vector<uint32_t> buffer;
 	buffer.resize(debug_width * debug_height);
 	std::fill(buffer.begin(), buffer.end(), 0x0);
 
-	int xDraw = 0;
-	int yDraw = 0;
-	int tile_number = 0;
-
-	const uint16_t address = 0x8000;
-
-	// 384 tiles, 24 x 16
-	for (int y = 0; y < 24; y++)
+	// Copy VRAM bank 0 tile data ($8000-$97FF)
+	std::vector<uint8_t> tile_data(TileData::BytesPerBank);
+	for (int i = 0; i < TileData::BytesPerBank; i++)
 	{
-		for (int x = 0; x < 16; x++)
+		tile_data[i] = m_Application->GetEmulator()->GetPpu()->ReadVideoRam(static_cast<uint16_t>(0x8000 + i), 0);
+	}
+
+	const std::vector<uint8_t> sheet = TileData::DecodeSheet(tile_data.data());
+
+	for (int y = 0; y < TileData::SheetHeight; y++)
+	{
+		for (int x = 0; x < TileData::SheetWidth; x++)
 		{
-			// Display tile (16 bytes big - 2bits per pixel)
-			for (int tileY = 0; tileY < 16; tileY += 2)
-			{
-				uint8_t byte1 = m_Application->GetEmulator()->GetPpu()->ReadVideoRam(address + (tile_number * 16) + tileY, 0);
-				uint8_t byte2 = m_Application->GetEmulator()->GetPpu()->ReadVideoRam(address + (tile_number * 16) + tileY + 1, 0);
+			const uint8_t colour_index = sheet[y * TileData::SheetWidth + x];
+			const uint32_t colour = m_Application->GetEmulator()->GetDisplay()->GetColourFromBackgroundPalette(0, colour_index);
 
-				for (int bit = 7; bit >= 0; bit--)
-				{
-					// Get pixel colour from palette
-					uint8_t high = (static_cast<bool>(byte1 & (1 << bit))) << 1;
-					uint8_t low = (static_cast<bool>(byte2 & (1 << bit))) << 0;
-					uint8_t colour_index = high | low;
-
-					uint32_t colour = m_Application->GetEmulator()->GetDisplay()->GetColourFromBackgroundPalette(0, colour_index);
-
-					// Calculate pixel position in buffer
-					int x1 = xDraw + (x)+((7 - bit));
-					int y1 = yDraw + (y)+(tileY / 2);
-					buffer[x1 + (y1 * debug_width)] = colour;
-				}
-			}
-
-			// Drawing 8 pixels at a time
-			xDraw += 8;
-			tile_number++;
+			// Offset each pixel by its tile column and row to leave the gap
+			const int x1 = x + (x / 8);
+			const int y1 = y + (y / 8);
+			buffer[x1 + (y1 * debug_width)] = colour;
 		}
-
-		// Drawing 8 pixels at a time
-		yDraw += 8;
-		xDraw = 0;
 	}
 
 	m_TileRenderTexture->Update(buffer.data(), debug_width * sizeof(uint32_t));

@@ -176,6 +176,7 @@
     <ClInclude Include="Include\RetroGBm\Pch.h" />
     <ClInclude Include="Include\RetroGBm\Ram.h" />
     <ClInclude Include="Include\RetroGBm\SaveStateHeader.h" />
+    <ClInclude Include="Include\RetroGBm\TileData.h" />
     <ClInclude Include="Include\RetroGBm\Timer.h" />
   </ItemGroup>
   <ItemGroup>
@@ -213,6 +214,7 @@
     </ClCompile>
     <ClCompile Include="Source\Ppu.cpp" />
     <ClCompile Include="Source\Ram.cpp" />
+    <ClCompile Include="Source\TileData.cpp" />
     <ClCompile Include="Source\Timer.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
