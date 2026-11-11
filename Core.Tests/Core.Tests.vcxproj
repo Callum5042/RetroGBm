@@ -173,6 +173,7 @@
     <ClCompile Include="CartridgeROMTests.cpp" />
     <ClCompile Include="CheatsTests.cpp" />
     <ClCompile Include="CpuTests.cpp" />
+    <ClCompile Include="DisassemblerTests.cpp" />
     <ClCompile Include="DisplayTests.cpp" />
     <ClCompile Include="InstructionsTests.cpp" />
     <ClCompile Include="JoypadTests.cpp" />

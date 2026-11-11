@@ -24,6 +24,9 @@
     <ClCompile Include="CpuTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DisassemblerTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="TimerTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

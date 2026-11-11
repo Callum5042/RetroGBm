@@ -12,14 +12,19 @@
 #include <RetroGBm/Joypad.h>
 #include <RetroGBm/SaveStateHeader.h>
 #include <RetroGBm/Cpu.h>
+#include <RetroGBm/Cartridge/BaseCartridge.h>
+#include <RetroGBm/Disassembler.h>
 
 #include <format>
 #include <string>
 #include <vector>
 #include <shobjidl.h>
+#include <wrl/client.h>
 #include <filesystem>
+#include <fstream>
 #include <chrono>
 #include <sstream>
+#include <stdexcept>
 
 #include <RetroGBm\Logger.h>
 
@@ -308,6 +313,7 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			m_Application->StopEmulator();
 			EnableMenuItem(m_ToolsMenuItem, m_MenuToolsCartridgeInfo, MF_DISABLED);
 			EnableMenuItem(m_ToolsMenuItem, m_MenuToolsCheats, MF_DISABLED);
+			EnableMenuItem(m_ToolsMenuItem, m_MenuToolsExportAssembly, MF_DISABLED);
 			this->SetStatusBarTitle("");
 			this->SetStatusBarStats("");
 			this->SetStatusBarState("");
@@ -540,6 +546,9 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		case m_MenuToolsTracelog:
 			ToggleTracelog();
 			break;
+		case m_MenuToolsExportAssembly:
+			ExportAssembly();
+			break;
 		case m_MenuToolsCartridgeInfo:
 			if (m_Application->GetEmulator()->IsRunning())
 			{
@@ -741,6 +750,7 @@ void MainWindow::LoadRom(const std::string& path)
 	m_Application->LoadRom(path);
 	EnableMenuItem(m_ToolsMenuItem, m_MenuToolsCartridgeInfo, MF_ENABLED);
 	EnableMenuItem(m_ToolsMenuItem, m_MenuToolsCheats, MF_ENABLED);
+	EnableMenuItem(m_ToolsMenuItem, m_MenuToolsExportAssembly, MF_ENABLED);
 
 	std::string filename = std::filesystem::path(m_FilePath).filename().string();
 
@@ -1209,6 +1219,8 @@ void MainWindow::CreateMenuBar()
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTilemap, L"Tiledata");
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTracelog, L"Tracelog");
 	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsCartridgeInfo, L"Cartridge Info");
+	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
+	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsExportAssembly, L"Export Assembly");
 	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_ToolsMenuItem), L"Tools");
 
 	// Assign menubar to window
@@ -1449,6 +1461,78 @@ void MainWindow::DisableNetworkConnectMenu()
 
 	// Enable the disconnect menu item
 	EnableMenuItem(m_OptionsMenuItem, m_MenuOptionsNetworkDisconnect, MF_ENABLED);
+}
+
+void MainWindow::ExportAssembly()
+{
+	Emulator* emulator = m_Application->GetEmulator();
+	if (emulator == nullptr || emulator->GetCartridge() == nullptr)
+	{
+		return;
+	}
+
+	const HRESULT initialized = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	if (FAILED(initialized) && initialized != RPC_E_CHANGED_MODE)
+	{
+		MessageBoxW(m_Hwnd, L"Could not open the save dialog.", L"Export Assembly", MB_OK | MB_ICONERROR);
+		return;
+	}
+
+	// Release the dialog and shell item before balancing COM initialization.
+	{
+		Microsoft::WRL::ComPtr<IFileSaveDialog> dialog;
+		HRESULT hr = CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_ALL, IID_PPV_ARGS(&dialog));
+		if (SUCCEEDED(hr))
+		{
+			const COMDLG_FILTERSPEC filters[] = { { L"Assembly listing", L"*.asm" } };
+			std::filesystem::path filename = std::filesystem::path(m_FilePath).filename();
+			filename.replace_extension(L".asm");
+			hr = dialog->SetFileTypes(1, filters);
+			if (SUCCEEDED(hr)) hr = dialog->SetDefaultExtension(L"asm");
+			if (SUCCEEDED(hr)) hr = dialog->SetFileName(filename.c_str());
+			if (SUCCEEDED(hr)) hr = dialog->SetTitle(L"Export Assembly");
+			if (SUCCEEDED(hr)) hr = dialog->SetOptions(FOS_FORCEFILESYSTEM | FOS_OVERWRITEPROMPT | FOS_PATHMUSTEXIST);
+			if (SUCCEEDED(hr)) hr = dialog->Show(m_Hwnd);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			Microsoft::WRL::ComPtr<IShellItem> item;
+			hr = dialog->GetResult(&item);
+			PWSTR path = nullptr;
+			if (SUCCEEDED(hr)) hr = item->GetDisplayName(SIGDN_FILESYSPATH, &path);
+			if (SUCCEEDED(hr))
+			{
+				try
+				{
+					const std::filesystem::path destination(path);
+					std::error_code error;
+					if (std::filesystem::equivalent(destination, std::filesystem::path(m_FilePath), error))
+					{
+						throw std::runtime_error("Choose an assembly file other than the loaded ROM.");
+					}
+
+					std::ofstream output;
+					output.exceptions(std::ios::failbit | std::ios::badbit);
+					output.open(destination);
+					Disassembler::Export(output, emulator->GetCartridge()->GetCartridgeData().data);
+					output.close();
+					MessageBoxW(m_Hwnd, L"Assembly exported successfully.", L"Export Assembly", MB_OK | MB_ICONINFORMATION);
+				}
+				catch (const std::exception& exception)
+				{
+					MessageBoxA(m_Hwnd, exception.what(), "Export Assembly", MB_OK | MB_ICONERROR);
+				}
+			}
+			CoTaskMemFree(path);
+		}
+
+		if (FAILED(hr) && hr != HRESULT_FROM_WIN32(ERROR_CANCELLED))
+		{
+			MessageBoxW(m_Hwnd, L"Could not select an assembly file.", L"Export Assembly", MB_OK | MB_ICONERROR);
+		}
+	}
+	if (SUCCEEDED(initialized)) CoUninitialize();
 }
 
 void MainWindow::TakeScreenshot()

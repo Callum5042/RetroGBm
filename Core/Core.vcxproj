@@ -165,6 +165,7 @@
     <ClInclude Include="Include\RetroGBm\Cartridge\CartridgeMBC5.h" />
     <ClInclude Include="Include\RetroGBm\Cartridge\CartridgeROM.h" />
     <ClInclude Include="Include\RetroGBm\Cpu.h" />
+    <ClInclude Include="Include\RetroGBm\Disassembler.h" />
     <ClInclude Include="Include\RetroGBm\Display.h" />
     <ClInclude Include="Include\RetroGBm\Dma.h" />
     <ClInclude Include="Include\RetroGBm\Emulator.h" />
@@ -201,6 +202,7 @@
     <ClCompile Include="Source\Dma.cpp" />
     <ClCompile Include="Source\ExtendedInstructions.cpp" />
     <ClCompile Include="Source\Cpu.cpp" />
+    <ClCompile Include="Source\Disassembler.cpp" />
     <ClCompile Include="Source\Emulator.cpp" />
     <ClCompile Include="Source\Instructions.cpp" />
     <ClCompile Include="Source\HighTimer.cpp" />
