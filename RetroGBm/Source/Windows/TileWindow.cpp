@@ -9,6 +9,8 @@
 
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Display.h>
+#include <RetroGBm/Ppu.h>
+#include <RetroGBm/TileData.h>
 
 #include <filesystem>
 #include <string>
@@ -73,6 +75,12 @@ namespace
 		return (static_cast<int>(kind) << 8) | index;
 	}
 
+	// Display colours are 0xAABBGGRR, the sheet view wants 0x00RRGGBB
+	uint32_t ToSheetColour(uint32_t colour)
+	{
+		return ((colour & 0xFF) << 16) | (colour & 0xFF00) | ((colour >> 16) & 0xFF);
+	}
+
 	const COLORREF DividerColour = RGB(223, 223, 223);
 	const COLORREF InspectorColour = RGB(250, 250, 250);
 	const COLORREF SecondaryTextColour = RGB(92, 92, 92);
@@ -115,15 +123,9 @@ void TileWindow::Create()
 
 	this->WindowCreate(m_ClientWidth, m_ClientHeight);
 
-	// Show the ROM file name without its extension in the title, e.g. "Tile Data - Pokemon Red (UE)"
-	{
-		const std::wstring rom_name = std::filesystem::path(m_Application->CurrentFilename).stem().wstring();
-		if (!rom_name.empty())
-		{
-			SetWindowText(m_Hwnd, (L"Tile Data \x2014 " + rom_name).c_str());
-		}
-	}
-
+	// A new window starts with the plain title
+	m_TitleFilename.clear();
+	this->UpdateTitle();
 	this->CreateControls();
 
 	Emulator* emulator = m_Application->GetEmulator();
@@ -131,6 +133,8 @@ void TileWindow::Create()
 	this->ApplyMode();
 
 	this->Layout();
+	this->CaptureSnapshot();
+	this->RenderSheets();
 	this->UpdateStatus();
 
 	ShowWindow(m_Hwnd, SW_SHOWNORMAL);
@@ -146,6 +150,12 @@ void TileWindow::Destroy()
 	}
 
 	UnregisterClass(ClassName, GetModuleHandle(NULL));
+	ReleaseResources();
+}
+
+void TileWindow::ReleaseResources()
+{
+	m_SheetView.Destroy();
 
 	for (HFONT* font : { &m_Font, &m_HeadingFont })
 	{
@@ -187,9 +197,149 @@ void TileWindow::Update()
 	{
 		m_IsColour = is_colour;
 		this->ApplyMode();
+		this->CaptureSnapshot();
+		this->RenderSheets();
 	}
 
+	if (Button_GetCheck(m_ButtonPause) != BST_CHECKED)
+	{
+		this->CaptureSnapshot();
+		this->RenderSheets();
+	}
+
+	this->UpdateTitle();
 	this->UpdateStatus();
+}
+
+void TileWindow::UpdateTitle()
+{
+	if (m_TitleFilename == m_Application->CurrentFilename)
+	{
+		return;
+	}
+
+	m_TitleFilename = m_Application->CurrentFilename;
+
+	// Show the ROM file name without its extension, e.g. "Tile Data - Pokemon Red (UE)".
+	// CurrentFilename is in the ANSI code page, which path converts back.
+	const std::wstring rom_name = std::filesystem::path(m_TitleFilename).stem().wstring();
+	const std::wstring title = rom_name.empty() ? L"Tile Data" : L"Tile Data \x2014 " + rom_name;
+	SetWindowText(m_Hwnd, title.c_str());
+}
+
+void TileWindow::CaptureSnapshot()
+{
+	Emulator* emulator = m_Application->GetEmulator();
+	if (emulator == nullptr || !emulator->IsRunning())
+	{
+		return;
+	}
+
+	Ppu* ppu = emulator->GetPpu();
+	Display* display = emulator->GetDisplay();
+
+	const int banks = m_IsColour ? 2 : 1;
+	for (int bank = 0; bank < 2; ++bank)
+	{
+		if (bank >= banks)
+		{
+			m_Vram[bank].clear();
+			continue;
+		}
+
+		m_Vram[bank].resize(TileData::BytesPerBank);
+		for (int i = 0; i < TileData::BytesPerBank; ++i)
+		{
+			m_Vram[bank][i] = ppu->ReadVideoRam(static_cast<uint16_t>(0x8000 + i), static_cast<uint8_t>(bank));
+		}
+	}
+
+	for (uint8_t palette = 0; palette < 8; ++palette)
+	{
+		for (uint8_t index = 0; index < 4; ++index)
+		{
+			m_BackgroundColours[palette][index] = ToSheetColour(display->GetColourFromBackgroundPalette(palette, index));
+			m_ObjectColours[palette][index] = ToSheetColour(display->GetColourFromObjectPalette(palette, index));
+		}
+	}
+
+	m_HasSnapshot = true;
+}
+
+std::vector<int> TileWindow::VisibleBanks() const
+{
+	if (!m_IsColour || Button_GetCheck(m_ButtonBank0) == BST_CHECKED)
+	{
+		return { 0 };
+	}
+
+	if (Button_GetCheck(m_ButtonBank1) == BST_CHECKED)
+	{
+		return { 1 };
+	}
+
+	return { 0, 1 };
+}
+
+void TileWindow::RenderSheets()
+{
+	if (!m_HasSnapshot)
+	{
+		m_SheetView.SetEmptyText(L"Load a game to see its tiles.");
+		m_SheetView.SetSheets({});
+		return;
+	}
+
+	// The palette's 4 colours. Colour 0 of an object palette is transparent and shown as a checkerboard.
+	const LRESULT data = ComboBox_GetItemData(m_ComboPalette, ComboBox_GetCurSel(m_ComboPalette));
+	const PaletteKind kind = static_cast<PaletteKind>((data >> 8) & 0xFF);
+	const int index = static_cast<int>(data & 7);
+
+	std::array<uint32_t, 4> colours = { 0xFFFFFF, 0xAAAAAA, 0x555555, 0x000000 };
+	if (kind == PaletteKind::Background)
+	{
+		colours = m_BackgroundColours[index];
+	}
+	else if (kind == PaletteKind::Object)
+	{
+		colours = m_ObjectColours[index];
+	}
+
+	const bool transparent = kind == PaletteKind::Object;
+
+	std::vector<TileSheetView::Sheet> sheets;
+	for (int bank : VisibleBanks())
+	{
+		if (m_Vram[bank].size() != TileData::BytesPerBank)
+		{
+			continue;
+		}
+
+		const std::vector<uint8_t> indices = TileData::DecodeSheet(m_Vram[bank].data());
+
+		TileSheetView::Sheet sheet;
+		sheet.bank = bank;
+		sheet.pixels.resize(indices.size());
+		for (int y = 0; y < TileData::SheetHeight; ++y)
+		{
+			for (int x = 0; x < TileData::SheetWidth; ++x)
+			{
+				const size_t i = static_cast<size_t>(y) * TileData::SheetWidth + x;
+				if (transparent && indices[i] == 0)
+				{
+					sheet.pixels[i] = (((x >> 2) + (y >> 2)) & 1) ? 0xE6E6E6 : 0xFFFFFF;
+				}
+				else
+				{
+					sheet.pixels[i] = colours[indices[i]];
+				}
+			}
+		}
+
+		sheets.push_back(std::move(sheet));
+	}
+
+	m_SheetView.SetSheets(sheets);
 }
 
 bool TileWindow::HandleDialogMessage(MSG* msg)
@@ -284,6 +434,11 @@ void TileWindow::CreateControls()
 	m_ButtonPause = create(L"BUTTON", L"Pause updates", WS_TABSTOP | BS_AUTOCHECKBOX | BS_PUSHLIKE, m_ControlPauseId, m_Font);
 	m_ButtonExport = create(L"BUTTON", L"Export PNG\x2026", WS_TABSTOP | BS_PUSHBUTTON | WS_DISABLED, m_ControlExportId, m_Font);
 
+	// Tile sheets
+	m_SheetView.Create(m_Hwnd, m_ControlSheetViewId);
+	m_SheetView.SetZoom(static_cast<int>(ComboBox_GetItemData(m_ComboZoom, ComboBox_GetCurSel(m_ComboZoom))));
+	m_SheetView.SetGrid(true);
+
 	// Inspector
 	m_LabelTileHeading = create(L"STATIC", L"No tile selected", SS_LEFT | SS_ENDELLIPSIS, 0, m_HeadingFont);
 	m_LabelTileHint = create(L"STATIC", L"Hover over a tile to see its address, or click one to pin it here.", SS_LEFT, 0, m_Font);
@@ -364,6 +519,9 @@ void TileWindow::Layout()
 
 	// Status bar sizes itself to the bottom of the window
 	SendMessageW(m_StatusBar, WM_SIZE, 0, 0);
+	RECT status_rect;
+	GetWindowRect(m_StatusBar, &status_rect);
+	const int status_height = status_rect.bottom - status_rect.top;
 
 	int parts[] = { width - 280 > 0 ? width - 280 : 0, -1 };
 	SendMessageW(m_StatusBar, SB_SETPARTS, 2, reinterpret_cast<LPARAM>(parts));
@@ -418,6 +576,10 @@ void TileWindow::Layout()
 	const int body_top = m_CommandBarHeight + 1;
 	place(m_LabelTileHeading, inspector_x, body_top + 16, inspector_width, 28);
 	place(m_LabelTileHint, inspector_x, body_top + 16 + 32, inspector_width, 48);
+
+	// Tile sheets fill the rest
+	const int body_height = client.bottom - status_height - body_top;
+	place(m_SheetView.GetHwnd(), 0, body_top, width - m_InspectorWidth, body_height > 0 ? body_height : 0);
 
 	EndDeferWindowPos(defer);
 
@@ -480,6 +642,11 @@ LRESULT TileWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 			}
 
 			return 0;
+
+		case WM_NCDESTROY:
+			// The controls are gone, so their fonts can go too
+			ReleaseResources();
+			return DefWindowProc(hwnd, msg, wParam, lParam);
 
 		case WM_SIZE:
 			if (wParam != SIZE_MINIMIZED)
@@ -550,9 +717,34 @@ LRESULT TileWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 				return 0;
 			}
 
-			if (id == m_ControlPauseId && HIWORD(wParam) == BN_CLICKED)
+			const int code = HIWORD(wParam);
+			if (id == m_ControlPauseId && code == BN_CLICKED)
 			{
 				UpdateStatus();
+				return 0;
+			}
+
+			if ((id == m_ControlBank0Id || id == m_ControlBank1Id || id == m_ControlBankBothId) && code == BN_CLICKED)
+			{
+				RenderSheets();
+				return 0;
+			}
+
+			if (id == m_ControlPaletteId && code == CBN_SELCHANGE)
+			{
+				RenderSheets();
+				return 0;
+			}
+
+			if (id == m_ControlZoomId && code == CBN_SELCHANGE)
+			{
+				m_SheetView.SetZoom(static_cast<int>(ComboBox_GetItemData(m_ComboZoom, ComboBox_GetCurSel(m_ComboZoom))));
+				return 0;
+			}
+
+			if (id == m_ControlGridId && code == BN_CLICKED)
+			{
+				m_SheetView.SetGrid(Button_GetCheck(m_CheckGrid) == BST_CHECKED);
 				return 0;
 			}
 

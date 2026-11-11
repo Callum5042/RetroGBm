@@ -3,7 +3,12 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
+#include "Windows/TileSheetView.h"
+
+#include <array>
+#include <cstdint>
 #include <string>
+#include <vector>
 
 class Application;
 
@@ -39,10 +44,29 @@ private:
 	void Layout();
 	void PaintBackground(HDC hdc);
 
+	// Fonts and brushes, released once the window and its controls are gone
+	void ReleaseResources();
+
 	// CGB has two VRAM banks and 8 BG + 8 OBJ palettes, DMG has one bank and BGP, OBP0 and OBP1
 	bool m_IsColour = false;
 	void ApplyMode();
 	void UpdateStatus();
+
+	// Title shows the loaded ROM, which can change while the window is open
+	std::string m_TitleFilename;
+	void UpdateTitle();
+
+	// Copy of VRAM and the palettes, taken every frame unless updates are paused
+	bool m_HasSnapshot = false;
+	std::array<std::vector<uint8_t>, 2> m_Vram;
+	std::array<std::array<uint32_t, 4>, 8> m_BackgroundColours = {};
+	std::array<std::array<uint32_t, 4>, 8> m_ObjectColours = {};
+	void CaptureSnapshot();
+
+	// Draws the snapshot with the selected banks and palette
+	std::vector<int> VisibleBanks() const;
+	void RenderSheets();
+	TileSheetView m_SheetView;
 
 	// Layout
 	static const int m_ClientWidth = 1280;
@@ -83,4 +107,5 @@ private:
 	static const int m_ControlPauseId = 1006;
 	static const int m_ControlExportId = 1007;
 	static const int m_ControlStatusBarId = 1008;
+	static const int m_ControlSheetViewId = 1009;
 };
