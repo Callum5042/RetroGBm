@@ -88,6 +88,7 @@ private:
 	static const UINT m_MenuToolsCartridgeInfo = 203;
 	static const UINT m_MenuToolsCpuRegisters = 204;
 	static const UINT m_MenuToolsCheats = 205;
+	static const UINT m_MenuToolsExportAssembly = 206;
 
 	HMENU m_EmulationMenuItem = NULL;
 	static const UINT m_MenuEmulationPausePlay = 301;
@@ -126,6 +127,7 @@ private:
 	bool OpenFileDialog(std::string* filepath);
 	bool OpenFileDialogRomDirectory(std::string* filepath);
 	void ToggleTracelog();
+	void ExportAssembly();
 	void Refresh();
 
 	void ToggleEmulationPaused();
