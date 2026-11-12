@@ -9,8 +9,10 @@
 
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Display.h>
+#include <RetroGBm/Ppu.h>
 
 #include <filesystem>
+#include <format>
 #include <string>
 
 namespace
@@ -65,8 +67,18 @@ namespace
 		return text;
 	}
 
+	// Display colours are 0xAABBGGRR, the map view wants 0x00RRGGBB
+	uint32_t ToViewColour(uint32_t colour)
+	{
+		return ((colour & 0xFF) << 16) | (colour & 0xFF00) | ((colour >> 16) & 0xFF);
+	}
+
+	// VRAM is copied from $8000 to $9FFF
+	constexpr int VramSize = 0x2000;
+
 	const COLORREF DividerColour = RGB(223, 223, 223);
 	const COLORREF InspectorColour = RGB(250, 250, 250);
+	const COLORREF SecondaryTextColour = RGB(92, 92, 92);
 }
 
 TileMapWindow::TileMapWindow(Application* application) : m_Application(application)
@@ -106,10 +118,12 @@ void TileMapWindow::Create()
 	m_IsColour = emulator != nullptr && emulator->IsRunning() && emulator->GetDisplay()->IsColour();
 
 	this->Layout();
+	this->CaptureSnapshot();
+	this->RenderMap();
 	this->UpdateStatus();
 
 	ShowWindow(m_Hwnd, SW_SHOWNORMAL);
-	SetFocus(m_ButtonPause);
+	SetFocus(m_ComboMap);
 }
 
 void TileMapWindow::Destroy()
@@ -126,6 +140,8 @@ void TileMapWindow::Destroy()
 
 void TileMapWindow::ReleaseResources()
 {
+	m_MapView.Destroy();
+
 	if (m_Font != NULL)
 	{
 		DeleteObject(m_Font);
@@ -158,7 +174,19 @@ void TileMapWindow::Update()
 
 	// A game may have been loaded, or swapped for one of the other type, while the window was open
 	Emulator* emulator = m_Application->GetEmulator();
-	m_IsColour = emulator != nullptr && emulator->IsRunning() && emulator->GetDisplay()->IsColour();
+	const bool is_colour = emulator != nullptr && emulator->IsRunning() && emulator->GetDisplay()->IsColour();
+	if (is_colour != m_IsColour)
+	{
+		m_IsColour = is_colour;
+		this->CaptureSnapshot();
+		this->RenderMap();
+	}
+
+	if (Button_GetCheck(m_ButtonPause) != BST_CHECKED)
+	{
+		this->CaptureSnapshot();
+		this->RenderMap();
+	}
 
 	this->UpdateTitle();
 	this->UpdateStatus();
@@ -178,6 +206,113 @@ void TileMapWindow::UpdateTitle()
 	const std::wstring rom_name = std::filesystem::path(m_TitleFilename).stem().wstring();
 	const std::wstring title = rom_name.empty() ? L"Tile Map" : L"Tile Map \x2014 " + rom_name;
 	SetWindowText(m_Hwnd, title.c_str());
+}
+
+void TileMapWindow::CaptureSnapshot()
+{
+	Emulator* emulator = m_Application->GetEmulator();
+	if (emulator == nullptr || !emulator->IsRunning())
+	{
+		return;
+	}
+
+	Ppu* ppu = emulator->GetPpu();
+	Display* display = emulator->GetDisplay();
+
+	const int banks = m_IsColour ? 2 : 1;
+	for (int bank = 0; bank < 2; ++bank)
+	{
+		if (bank >= banks)
+		{
+			m_Snapshot.vram[bank].clear();
+			continue;
+		}
+
+		m_Snapshot.vram[bank].resize(VramSize);
+		for (int i = 0; i < VramSize; ++i)
+		{
+			m_Snapshot.vram[bank][i] = ppu->ReadVideoRam(static_cast<uint16_t>(0x8000 + i), static_cast<uint8_t>(bank));
+		}
+	}
+
+	m_Snapshot.lcdc = display->Read(0xFF40);
+	m_Snapshot.scy = display->Read(0xFF42);
+	m_Snapshot.scx = display->Read(0xFF43);
+	m_Snapshot.wy = display->Read(0xFF4A);
+	m_Snapshot.wx = display->Read(0xFF4B);
+
+	for (uint8_t palette = 0; palette < 8; ++palette)
+	{
+		for (uint8_t index = 0; index < 4; ++index)
+		{
+			m_Snapshot.colours[palette][index] = ToViewColour(display->GetColourFromBackgroundPalette(palette, index));
+		}
+	}
+
+	m_HasSnapshot = true;
+}
+
+TileMapWindow::MapChoice TileMapWindow::SelectedMap() const
+{
+	return static_cast<MapChoice>(ComboBox_GetItemData(m_ComboMap, ComboBox_GetCurSel(m_ComboMap)));
+}
+
+uint16_t TileMapWindow::MapAddress() const
+{
+	switch (SelectedMap())
+	{
+		case MapChoice::Background: return TileMap::BackgroundMap(m_Snapshot.lcdc);
+		case MapChoice::Window: return TileMap::WindowMap(m_Snapshot.lcdc);
+		case MapChoice::High: return TileMap::HighMap;
+		default: return TileMap::LowMap;
+	}
+}
+
+TileMap::Addressing TileMapWindow::Addressing() const
+{
+	switch (static_cast<AddressingChoice>(ComboBox_GetCurSel(m_ComboAddressing)))
+	{
+		case AddressingChoice::Unsigned: return TileMap::Addressing::Unsigned;
+		case AddressingChoice::Signed: return TileMap::Addressing::Signed;
+		default: return TileMap::AddressingFromLcdc(m_Snapshot.lcdc);
+	}
+}
+
+void TileMapWindow::RenderMap()
+{
+	if (!m_HasSnapshot || m_Snapshot.vram[0].size() != VramSize)
+	{
+		m_MapView.SetEmptyText(L"Load a game to see its tile maps.");
+		m_MapView.SetImage({});
+		return;
+	}
+
+	const uint16_t address = MapAddress();
+	const bool background = address == TileMap::BackgroundMap(m_Snapshot.lcdc);
+	const bool window = address == TileMap::WindowMap(m_Snapshot.lcdc) && (m_Snapshot.lcdc & 0x20) != 0;
+	std::wstring description;
+	if (background && window) description = L"background and window";
+	else if (background) description = L"background";
+	else if (window) description = L"window";
+	else description = L"not in use";
+	m_MapView.SetMapAddress(address, description);
+
+	// Attributes are in bank 1 at the same address as the IDs
+	const size_t offset = address - 0x8000;
+	const bool colour = m_Snapshot.vram[1].size() == VramSize;
+	const uint8_t* ids = m_Snapshot.vram[0].data() + offset;
+	const uint8_t* attributes = colour ? m_Snapshot.vram[1].data() + offset : nullptr;
+	const uint8_t* bank1 = colour ? m_Snapshot.vram[1].data() : nullptr;
+
+	const TileMap::Image image = TileMap::Decode(ids, attributes, m_Snapshot.vram[0].data(), bank1, Addressing());
+
+	std::vector<uint32_t> pixels(image.colours.size());
+	for (size_t i = 0; i < pixels.size(); ++i)
+	{
+		pixels[i] = m_Snapshot.colours[image.palettes[i]][image.colours[i]];
+	}
+
+	m_MapView.SetImage(pixels);
 }
 
 bool TileMapWindow::HandleDialogMessage(MSG* msg)
@@ -243,8 +378,53 @@ void TileMapWindow::CreateControls()
 		return control;
 	};
 
+	// Map: the ones LCDC picks for the background and window follow it as the game changes LCDC
+	m_LabelMap = create(L"STATIC", L"Map", SS_CENTERIMAGE, 0, m_Font);
+	m_ComboMap = create(WC_COMBOBOX, L"", WS_TABSTOP | WS_GROUP | CBS_DROPDOWNLIST, m_ControlMapId, m_Font);
+	const std::pair<const wchar_t*, MapChoice> maps[] =
+	{
+		{ L"Background (LCDC.3)", MapChoice::Background },
+		{ L"Window (LCDC.6)", MapChoice::Window },
+		{ L"$9800", MapChoice::Low },
+		{ L"$9C00", MapChoice::High },
+	};
+	for (const auto& [text, choice] : maps)
+	{
+		const int index = ComboBox_AddString(m_ComboMap, text);
+		ComboBox_SetItemData(m_ComboMap, index, static_cast<int>(choice));
+	}
+	ComboBox_SetCurSel(m_ComboMap, 0);
+
+	// Tile data addressing
+	m_LabelAddressing = create(L"STATIC", L"Tile data", SS_CENTERIMAGE, 0, m_Font);
+	m_ComboAddressing = create(WC_COMBOBOX, L"", WS_TABSTOP | CBS_DROPDOWNLIST, m_ControlAddressingId, m_Font);
+	for (const wchar_t* text : { L"Auto (LCDC.4)", L"$8000, unsigned", L"$8800, signed" })
+	{
+		ComboBox_AddString(m_ComboAddressing, text);
+	}
+	ComboBox_SetCurSel(m_ComboAddressing, 0);
+
+	// Zoom
+	m_LabelZoom = create(L"STATIC", L"Zoom", SS_CENTERIMAGE, 0, m_Font);
+	m_ComboZoom = create(WC_COMBOBOX, L"", WS_TABSTOP | CBS_DROPDOWNLIST, m_ControlZoomId, m_Font);
+	for (int zoom : { 1, 2, 3, 4 })
+	{
+		const std::wstring text = std::to_wstring(zoom) + L"\x00D7";
+		const int index = ComboBox_AddString(m_ComboZoom, text.c_str());
+		ComboBox_SetItemData(m_ComboZoom, index, zoom);
+	}
+	ComboBox_SetCurSel(m_ComboZoom, 1);
+
+	// Grid
+	m_CheckGrid = create(L"BUTTON", L"Grid", WS_TABSTOP | BS_AUTOCHECKBOX, m_ControlGridId, m_Font);
+
 	// Pause updates, on the right
 	m_ButtonPause = create(L"BUTTON", L"Pause updates", WS_TABSTOP | BS_AUTOCHECKBOX | BS_PUSHLIKE, m_ControlPauseId, m_Font);
+
+	// Map
+	m_MapView.Create(m_Hwnd, m_ControlMapViewId);
+	m_MapView.SetZoom(static_cast<int>(ComboBox_GetItemData(m_ComboZoom, ComboBox_GetCurSel(m_ComboZoom))));
+	m_MapView.SetGrid(false);
 
 	// Status bar
 	m_StatusBar = CreateWindowExW(0, STATUSCLASSNAME, L"", WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP,
@@ -259,13 +439,17 @@ void TileMapWindow::UpdateStatus()
 	const bool paused = Button_GetCheck(m_ButtonPause) == BST_CHECKED;
 
 	std::wstring text;
-	if (!running)
+	if (!running || !m_HasSnapshot)
 	{
 		text = L"No game loaded";
 	}
 	else
 	{
-		text = m_IsColour ? L"CGB" : L"DMG";
+		// "CGB · LCDC $91 · BG $9800 · window $9C00 · tiles $8000 · Live, updates every frame"
+		const uint8_t lcdc = m_Snapshot.lcdc;
+		text = std::format(L"{} \x00B7 LCDC ${:02X} \x00B7 BG ${:04X} \x00B7 window ${:04X}{} \x00B7 tiles ${:04X}",
+			m_IsColour ? L"CGB" : L"DMG", lcdc, TileMap::BackgroundMap(lcdc), TileMap::WindowMap(lcdc),
+			(lcdc & 0x20) ? L"" : L" (off)", TileMap::AddressingFromLcdc(lcdc) == TileMap::Addressing::Unsigned ? 0x8000 : 0x8800);
 		text += paused ? L" \x00B7 Paused, showing a snapshot" : L" \x00B7 Live, updates every frame";
 	}
 
@@ -286,6 +470,9 @@ void TileMapWindow::Layout()
 
 	// Status bar sizes itself to the bottom of the window
 	SendMessageW(m_StatusBar, WM_SIZE, 0, 0);
+	RECT status_rect;
+	GetWindowRect(m_StatusBar, &status_rect);
+	const int status_height = status_rect.bottom - status_rect.top;
 
 	int parts[] = { width - 280 > 0 ? width - 280 : 0, -1 };
 	SendMessageW(m_StatusBar, SB_SETPARTS, 2, reinterpret_cast<LPARAM>(parts));
@@ -299,9 +486,38 @@ void TileMapWindow::Layout()
 	// Command bar
 	const int button_height = 26;
 	const int button_y = (m_CommandBarHeight - button_height) / 2;
+	const int combo_y = (m_CommandBarHeight - 23) / 2;
+	const int group_gap = 20;
+
+	int x = 12;
+	auto label = [&](HWND control)
+	{
+		const int w = MeasureText(m_Font, GetText(control));
+		place(control, x, button_y, w, button_height);
+		x += w + 8;
+	};
+
+	label(m_LabelMap);
+	place(m_ComboMap, x, combo_y, 160, 200);
+	x += 160 + group_gap;
+
+	label(m_LabelAddressing);
+	place(m_ComboAddressing, x, combo_y, 128, 200);
+	x += 128 + group_gap;
+
+	label(m_LabelZoom);
+	place(m_ComboZoom, x, combo_y, 56, 200);
+	x += 56 + group_gap;
+
+	place(m_CheckGrid, x, button_y, MeasureText(m_Font, GetText(m_CheckGrid)) + 24, button_height);
 
 	const int pause_width = MeasureText(m_Font, GetText(m_ButtonPause)) + 28;
 	place(m_ButtonPause, width - 12 - pause_width, button_y, pause_width, button_height);
+
+	// Map fills the rest, left of the inspector
+	const int body_top = m_CommandBarHeight + 1;
+	const int body_height = client.bottom - status_height - body_top;
+	place(m_MapView.GetHwnd(), 0, body_top, width - m_InspectorWidth, body_height > 0 ? body_height : 0);
 
 	EndDeferWindowPos(defer);
 
@@ -398,10 +614,20 @@ LRESULT TileMapWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			}
 			else
 			{
-				SetFocus(m_LastFocus != NULL ? m_LastFocus : m_ButtonPause);
+				SetFocus(m_LastFocus != NULL ? m_LastFocus : m_ComboMap);
 			}
 
 			return 0;
+		}
+
+		case WM_CTLCOLORSTATIC:
+		{
+			HDC hdc = reinterpret_cast<HDC>(wParam);
+			HWND control = reinterpret_cast<HWND>(lParam);
+			SetBkMode(hdc, TRANSPARENT);
+
+			SetTextColor(hdc, control == m_CheckGrid ? GetSysColor(COLOR_WINDOWTEXT) : SecondaryTextColour);
+			return reinterpret_cast<LRESULT>(GetSysColorBrush(COLOR_BTNFACE));
 		}
 
 		case WM_ERASEBKGND:
@@ -427,6 +653,24 @@ LRESULT TileMapWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			if (id == m_ControlPauseId && code == BN_CLICKED)
 			{
 				UpdateStatus();
+				return 0;
+			}
+
+			if ((id == m_ControlMapId || id == m_ControlAddressingId) && code == CBN_SELCHANGE)
+			{
+				RenderMap();
+				return 0;
+			}
+
+			if (id == m_ControlZoomId && code == CBN_SELCHANGE)
+			{
+				m_MapView.SetZoom(static_cast<int>(ComboBox_GetItemData(m_ComboZoom, ComboBox_GetCurSel(m_ComboZoom))));
+				return 0;
+			}
+
+			if (id == m_ControlGridId && code == BN_CLICKED)
+			{
+				m_MapView.SetGrid(Button_GetCheck(m_CheckGrid) == BST_CHECKED);
 				return 0;
 			}
 
