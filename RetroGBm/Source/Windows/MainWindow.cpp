@@ -528,18 +528,33 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 
 			break;
 		}
-		case m_MenuToolsTilemap:
+		case m_MenuToolsTileData:
 		{
-			UINT menu_state = GetMenuState(m_ToolsMenuItem, m_MenuToolsTilemap, MF_BYCOMMAND);
+			UINT menu_state = GetMenuState(m_ToolsMenuItem, m_MenuToolsTileData, MF_BYCOMMAND);
 			if (menu_state & MF_CHECKED)
 			{
-				CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTilemap, MF_BYCOMMAND | MF_UNCHECKED);
+				CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTileData, MF_BYCOMMAND | MF_UNCHECKED);
 				m_Application->CloseTileWindow();
 			}
 			else
 			{
-				CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTilemap, MF_BYCOMMAND | MF_CHECKED);
+				CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTileData, MF_BYCOMMAND | MF_CHECKED);
 				m_Application->CreateTileWindow();
+			}
+			break;
+		}
+		case m_MenuToolsTileMap:
+		{
+			UINT menu_state = GetMenuState(m_ToolsMenuItem, m_MenuToolsTileMap, MF_BYCOMMAND);
+			if (menu_state & MF_CHECKED)
+			{
+				CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTileMap, MF_BYCOMMAND | MF_UNCHECKED);
+				m_Application->CloseTileMapWindow();
+			}
+			else
+			{
+				CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTileMap, MF_BYCOMMAND | MF_CHECKED);
+				m_Application->CreateTileMapWindow();
 			}
 			break;
 		}
@@ -664,12 +679,17 @@ void MainWindow::ToggleTileWindowMenuItem(bool checked)
 {
 	if (checked)
 	{
-		CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTilemap, MF_BYCOMMAND | MF_CHECKED);
+		CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTileData, MF_BYCOMMAND | MF_CHECKED);
 	}
 	else
 	{
-		CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTilemap, MF_BYCOMMAND | MF_UNCHECKED);
+		CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTileData, MF_BYCOMMAND | MF_UNCHECKED);
 	}
+}
+
+void MainWindow::ToggleTileMapWindowMenuItem(bool checked)
+{
+	CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTileMap, MF_BYCOMMAND | (checked ? MF_CHECKED : MF_UNCHECKED));
 }
 
 void MainWindow::ToggleCpuRegistersWindowMenuItem(bool checked)
@@ -1216,7 +1236,8 @@ void MainWindow::CreateMenuBar()
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsCpuRegisters, L"CPU Registers");
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
-	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTilemap, L"Tile Data");
+	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTileData, L"Tile Data");
+	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTileMap, L"Tile Map");
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTracelog, L"Tracelog");
 	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsCartridgeInfo, L"Cartridge Info");
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);

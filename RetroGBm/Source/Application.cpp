@@ -324,6 +324,12 @@ void Application::Run()
 				continue;
 			}
 
+			// Let the tile map window handle Tab and Esc
+			if (m_TileMapWindow != nullptr && m_TileMapWindow->HandleDialogMessage(&msg))
+			{
+				continue;
+			}
+
 			TranslateMessage(&msg);
 			DispatchMessageW(&msg);
 		}
@@ -352,6 +358,12 @@ void Application::Run()
 				if (m_TileWindow != nullptr)
 				{
 					m_TileWindow->Update();
+				}
+
+				// Tile map window
+				if (m_TileMapWindow != nullptr)
+				{
+					m_TileMapWindow->Update();
 				}
 
 				// CPU register window
@@ -453,6 +465,28 @@ void Application::CloseTileWindow()
 {
 	m_TileWindow.reset();
 	m_TileWindow = nullptr;
+}
+
+void Application::CreateTileMapWindow()
+{
+	if (m_TileMapWindow == nullptr)
+	{
+		m_TileMapWindow = std::make_unique<TileMapWindow>(this);
+	}
+
+	if (m_TileMapWindow->IsOpen())
+	{
+		m_TileMapWindow->Focus();
+	}
+	else
+	{
+		m_TileMapWindow->Create();
+	}
+}
+
+void Application::CloseTileMapWindow()
+{
+	m_TileMapWindow.reset();
 }
 
 void Application::CreateCartridgeInfoWindow()
