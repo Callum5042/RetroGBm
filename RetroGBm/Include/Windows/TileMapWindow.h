@@ -103,6 +103,9 @@ private:
 	// Status bar: the entry under the mouse
 	void UpdateHoverStatus();
 
+	// Opens the selected entry's tile in the Tile Data window
+	void OpenSelectedTile();
+
 	// Layout
 	static const int m_ClientWidth = 1000;
 	static const int m_ClientHeight = 720;

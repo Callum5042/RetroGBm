@@ -63,6 +63,9 @@ public:
 	std::function<void()> HoverChanged;
 	std::function<void()> SelectionChanged;
 
+	// Double-click or Enter on the selected entry
+	std::function<void()> ActivateRequested;
+
 	LRESULT HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 private:

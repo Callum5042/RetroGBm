@@ -30,6 +30,9 @@ public:
 	// Called every frame while the emulator is running
 	void Update();
 
+	// Pins a tile (0-383) in a bank, showing that bank if it's hidden
+	void SelectTile(int bank, int tile);
+
 	// Handles Tab for this window. Returns true if the message was consumed.
 	bool HandleDialogMessage(MSG* msg);
 

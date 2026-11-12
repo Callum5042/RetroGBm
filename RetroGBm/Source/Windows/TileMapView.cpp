@@ -68,6 +68,7 @@ void TileMapView::Create(HWND parent, int id)
 	HINSTANCE hInstance = GetModuleHandle(NULL);
 
 	WNDCLASS wc = {};
+	wc.style = CS_DBLCLKS;
 	wc.lpfnWndProc = MapWndProc;
 	wc.hInstance = hInstance;
 	wc.hCursor = LoadCursor(0, IDC_ARROW);
@@ -875,14 +876,40 @@ LRESULT TileMapView::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 			return 0;
 		}
 
+		case WM_LBUTTONDBLCLK:
+		{
+			const int entry = HitTest(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+			if (entry >= 0)
+			{
+				Select(entry);
+				if (ActivateRequested)
+				{
+					ActivateRequested();
+				}
+			}
+
+			return 0;
+		}
+
 		case WM_GETDLGCODE:
-			// Keep the arrow keys rather than letting the dialog manager move focus with them
+			// Keep the arrow keys and Enter rather than letting the dialog manager use them
+			if (lParam != 0 && reinterpret_cast<const MSG*>(lParam)->message == WM_KEYDOWN && reinterpret_cast<const MSG*>(lParam)->wParam == VK_RETURN)
+			{
+				return DLGC_WANTARROWS | DLGC_WANTMESSAGE;
+			}
+
 			return DLGC_WANTARROWS;
 
 		case WM_KEYDOWN:
 			if (wParam == VK_LEFT || wParam == VK_RIGHT || wParam == VK_UP || wParam == VK_DOWN)
 			{
 				MoveSelection(static_cast<UINT>(wParam));
+				return 0;
+			}
+
+			if (wParam == VK_RETURN && m_Selection >= 0 && ActivateRequested)
+			{
+				ActivateRequested();
 				return 0;
 			}
 

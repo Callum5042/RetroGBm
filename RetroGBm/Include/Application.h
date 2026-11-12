@@ -47,6 +47,9 @@ public:
 	void CreateTileMapWindow();
 	void CloseTileMapWindow();
 
+	// Opens or focuses the Tile Data window with a tile pinned
+	void ShowTileInTileWindow(int bank, int tile);
+
 	void CreateCartridgeInfoWindow();
 	void ReleaseCartridgeInfoWindow();
 

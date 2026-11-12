@@ -489,6 +489,13 @@ void Application::CloseTileMapWindow()
 	m_TileMapWindow.reset();
 }
 
+void Application::ShowTileInTileWindow(int bank, int tile)
+{
+	CreateTileWindow();
+	m_MainWindow->ToggleTileWindowMenuItem(true);
+	m_TileWindow->SelectTile(bank, tile);
+}
+
 void Application::CreateCartridgeInfoWindow()
 {
 	if (m_CartridgeInfoWindow == nullptr)

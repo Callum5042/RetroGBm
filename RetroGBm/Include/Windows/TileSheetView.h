@@ -56,6 +56,9 @@ public:
 	// Sets the selection without raising SelectionChanged
 	void SetSelection(const TileRef& tile);
 
+	// Scrolls so a tile is in view
+	void EnsureVisible(const TileRef& tile);
+
 	std::function<void()> HoverChanged;
 	std::function<void()> SelectionChanged;
 
@@ -121,7 +124,6 @@ private:
 	void SetHover(const TileRef& tile);
 	void Select(const TileRef& tile);
 	void MoveSelection(UINT key);
-	void EnsureVisible(const TileRef& tile);
 
 	void Paint(HDC hdc);
 	void PaintSheet(size_t index);

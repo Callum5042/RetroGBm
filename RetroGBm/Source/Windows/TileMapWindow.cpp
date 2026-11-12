@@ -101,7 +101,7 @@ namespace
 	const int PreviewSize = 8 * PreviewPixelSize;
 
 	const wchar_t* NoEntryHint = L"Hover over the map to see an entry's address, or click one to pin it here.";
-	const wchar_t* EntryHint = L"Click an entry to pin it here. The arrow keys move the selection.";
+	const wchar_t* EntryHint = L"Click an entry to pin it here. The arrow keys move the selection, and double-click or Enter opens its tile in Tile Data.";
 
 	// Display colours are 0xAABBGGRR, the map view wants 0x00RRGGBB
 	uint32_t ToViewColour(uint32_t colour)
@@ -715,6 +715,22 @@ void TileMapWindow::ExportPng()
 	}
 }
 
+void TileMapWindow::OpenSelectedTile()
+{
+	const int entry = m_MapView.GetSelection();
+	if (entry < 0 || !m_HasSnapshot || m_Snapshot.vram[0].size() != VramSize)
+	{
+		return;
+	}
+
+	const size_t offset = MapAddress() + entry - 0x8000;
+	const uint8_t id = m_Snapshot.vram[0][offset];
+	const bool colour = m_Snapshot.vram[1].size() == VramSize;
+	const int bank = colour ? TileMap::DecodeAttributes(m_Snapshot.vram[1][offset]).bank : 0;
+
+	m_Application->ShowTileInTileWindow(bank, TileMap::TileIndex(id, Addressing()));
+}
+
 void TileMapWindow::UpdateHoverStatus()
 {
 	const int entry = m_MapView.GetHover();
@@ -845,6 +861,7 @@ void TileMapWindow::CreateControls()
 	m_MapView.SetGrid(false);
 	m_MapView.HoverChanged = [this]() { UpdateHoverStatus(); };
 	m_MapView.SelectionChanged = [this]() { UpdateInspector(); };
+	m_MapView.ActivateRequested = [this]() { OpenSelectedTile(); };
 
 	// Inspector, with the details hidden until an entry is selected
 	m_LabelHeading = create(L"STATIC", L"No entry selected", SS_LEFT | SS_ENDELLIPSIS, 0, m_HeadingFont);
@@ -989,7 +1006,7 @@ void TileMapWindow::Layout()
 		y += 12;
 	}
 
-	place(m_LabelHint, inspector_x, y, inspector_width, 48);
+	place(m_LabelHint, inspector_x, y, inspector_width, 64);
 
 	// Map fills the rest, left of the inspector
 	const int body_height = client.bottom - status_height - body_top;
