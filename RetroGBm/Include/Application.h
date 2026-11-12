@@ -8,6 +8,7 @@
 #include "Windows/MainWindow.h"
 #include "Windows/TileWindow.h"
 #include "Windows/TileMapWindow.h"
+#include "Windows/OamWindow.h"
 #include "Windows/CartridgeInfoWindow.h"
 #include "Windows/CpuRegistersWindow.h"
 #include "Windows/CheatsWindow.h"
@@ -46,6 +47,9 @@ public:
 
 	void CreateTileMapWindow();
 	void CloseTileMapWindow();
+
+	void CreateOamWindow();
+	void CloseOamWindow();
 
 	// Opens or focuses the Tile Data window with a tile pinned
 	void ShowTileInTileWindow(int bank, int tile);
@@ -97,6 +101,9 @@ private:
 
 	// Tile map window
 	std::unique_ptr<TileMapWindow> m_TileMapWindow = nullptr;
+
+	// OAM window
+	std::unique_ptr<OamWindow> m_OamWindow = nullptr;
 
 	// Cartridge window
 	std::unique_ptr<CartridgeInfoWindow> m_CartridgeInfoWindow = nullptr;

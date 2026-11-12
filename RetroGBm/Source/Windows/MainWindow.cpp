@@ -558,6 +558,20 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 		}
+		case m_MenuToolsOam:
+		{
+			const bool checked = (GetMenuState(m_ToolsMenuItem, m_MenuToolsOam, MF_BYCOMMAND) & MF_CHECKED) != 0;
+			ToggleOamWindowMenuItem(!checked);
+			if (checked)
+			{
+				m_Application->CloseOamWindow();
+			}
+			else
+			{
+				m_Application->CreateOamWindow();
+			}
+			break;
+		}
 		case m_MenuToolsExportAssembly:
 			ExportAssembly();
 			break;
@@ -687,6 +701,11 @@ void MainWindow::ToggleTileWindowMenuItem(bool checked)
 void MainWindow::ToggleTileMapWindowMenuItem(bool checked)
 {
 	CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTileMap, MF_BYCOMMAND | (checked ? MF_CHECKED : MF_UNCHECKED));
+}
+
+void MainWindow::ToggleOamWindowMenuItem(bool checked)
+{
+	CheckMenuItem(m_ToolsMenuItem, m_MenuToolsOam, MF_BYCOMMAND | (checked ? MF_CHECKED : MF_UNCHECKED));
 }
 
 void MainWindow::ToggleCpuRegistersWindowMenuItem(bool checked)
@@ -1220,6 +1239,7 @@ void MainWindow::CreateMenuBar()
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTileData, L"Tile Data");
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTileMap, L"Tile Map");
+	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsOam, L"OAM");
 	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsCartridgeInfo, L"Cartridge Info");
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsExportAssembly, L"Export Assembly");

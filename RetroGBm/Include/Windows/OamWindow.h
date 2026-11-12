@@ -1,0 +1,111 @@
+#pragma once
+
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+
+#include "Windows/OamGridView.h"
+
+#include <RetroGBm/Oam.h>
+
+#include <array>
+#include <cstdint>
+#include <string>
+#include <vector>
+
+class Application;
+
+// Tools > OAM: the 40 objects in OAM, with which ones the 10-objects-per-line limit drops
+class OamWindow
+{
+public:
+	OamWindow(Application* application);
+	virtual ~OamWindow();
+
+	void Create();
+	void Destroy();
+
+	inline bool IsOpen() const { return m_Hwnd != NULL; }
+	void Focus();
+
+	// Called every frame while the emulator is running
+	void Update();
+
+	// Handles Tab and Esc for this window. Returns true if the message was consumed.
+	bool HandleDialogMessage(MSG* msg);
+
+	LRESULT HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+private:
+	Application* m_Application = nullptr;
+
+	HWND m_Hwnd = NULL;
+	HWND m_LastFocus = NULL;
+
+	void WindowCreate(int width, int height);
+	void CreateControls();
+	void Layout();
+	void PaintBackground(HDC hdc);
+
+	// Fonts, released once the window and its controls are gone
+	void ReleaseResources();
+
+	// CGB has a second VRAM bank and 8 object palettes, picked by different attribute bits
+	bool m_IsColour = false;
+	void UpdateStatus();
+
+	// Title shows the loaded ROM, which can change while the window is open
+	std::string m_TitleFilename;
+	void UpdateTitle();
+
+	// Copy of OAM, the tile data in VRAM ($8000-$97FF), LCDC and the object palettes,
+	// taken every frame unless updates are paused
+	struct Snapshot
+	{
+		std::array<uint8_t, Oam::Size> oam = {};
+		std::array<std::vector<uint8_t>, 2> tiles;
+		uint8_t lcdc = 0;
+		std::array<std::array<uint32_t, 4>, 8> colours = {};
+	};
+
+	bool m_HasSnapshot = false;
+	Snapshot m_Snapshot;
+	void CaptureSnapshot();
+
+	// What the Size list picks, resolved against LCDC.2
+	enum class SizeChoice : int { Auto = 0, Small = 1, Tall = 2 };
+	int ObjectHeight() const;
+
+	// Which lines each object is dropped from, for the snapshot and size
+	Oam::LineScan m_LineScan;
+
+	// Builds the grid's cells from the snapshot
+	void RenderObjects();
+	OamGridView m_GridView;
+
+	// Palette the object uses: its CGB palette (0-7), or OBP0 or OBP1 on DMG
+	int PaletteOf(const Oam::Object& object) const;
+	std::wstring PaletteName(const Oam::Object& object) const;
+
+	// Status bar: the object under the mouse
+	void UpdateHoverStatus();
+
+	// Layout
+	static const int m_ClientWidth = 1000;
+	static const int m_ClientHeight = 720;
+	static const int m_CommandBarHeight = 48;
+
+	HFONT m_Font = NULL;
+
+	// Command bar
+	HWND m_LabelSize = NULL;
+	HWND m_ComboSize = NULL;
+	HWND m_ButtonPause = NULL;
+
+	// Status bar: mode, object count and line limit on the left, the hovered object on the right
+	HWND m_StatusBar = NULL;
+
+	static const int m_ControlPauseId = 1000;
+	static const int m_ControlStatusBarId = 1001;
+	static const int m_ControlSizeId = 1002;
+	static const int m_ControlGridId = 1003;
+};
