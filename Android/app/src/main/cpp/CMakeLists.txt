@@ -57,6 +57,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         ${EmulatorCoreSrcDir}/Cartridge/BaseCartridge.cpp
         ${EmulatorCoreSrcDir}/Cartridge/CartridgeROM.cpp
         ${EmulatorCoreSrcDir}/Cartridge/CartridgeMBC1.cpp
+        ${EmulatorCoreSrcDir}/Cartridge/CartridgeMBC2.cpp
         ${EmulatorCoreSrcDir}/Cartridge/CartridgeMBC3.cpp
         ${EmulatorCoreSrcDir}/Cartridge/CartridgeMBC5.cpp
         ${EmulatorCoreSrcDir}/Cpu.cpp
