@@ -163,6 +163,8 @@
     <ClCompile Include="Source\Windows\NetworkConnectWindow.cpp" />
     <ClCompile Include="Source\Windows\TileExportDialog.cpp" />
     <ClCompile Include="Source\Windows\TileSheetView.cpp" />
+    <ClCompile Include="Source\Windows\TileMapView.cpp" />
+    <ClCompile Include="Source\Windows\TileMapWindow.cpp" />
     <ClCompile Include="Source\Windows\TileWindow.cpp" />
     <ClCompile Include="Source\Utilities\Utilities.cpp" />
     <ClCompile Include="Source\Windows\Window.cpp" />
@@ -187,6 +189,8 @@
     <ClInclude Include="Include\Windows\NetworkConnectWindow.h" />
     <ClInclude Include="Include\Windows\TileExportDialog.h" />
     <ClInclude Include="Include\Windows\TileSheetView.h" />
+    <ClInclude Include="Include\Windows\TileMapView.h" />
+    <ClInclude Include="Include\Windows\TileMapWindow.h" />
     <ClInclude Include="Include\Windows\TileWindow.h" />
     <ClInclude Include="Include\Utilities\Utilities.h" />
     <ClInclude Include="Include\Windows\Window.h" />

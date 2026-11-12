@@ -259,6 +259,29 @@ void TileWindow::Update()
 	this->UpdateStatus();
 }
 
+void TileWindow::SelectTile(int bank, int tile)
+{
+	if (!IsOpen() || tile < 0 || tile >= TileData::TilesPerBank || bank < 0 || bank > (m_IsColour ? 1 : 0))
+	{
+		return;
+	}
+
+	// Show both banks when the one asked for is hidden
+	const std::vector<int> banks = VisibleBanks();
+	if (std::find(banks.begin(), banks.end(), bank) == banks.end())
+	{
+		Button_SetCheck(m_ButtonBank0, BST_UNCHECKED);
+		Button_SetCheck(m_ButtonBank1, BST_UNCHECKED);
+		Button_SetCheck(m_ButtonBankBoth, BST_CHECKED);
+		RenderSheets();
+	}
+
+	const TileSheetView::TileRef selection = { bank, tile };
+	m_SheetView.SetSelection(selection);
+	m_SheetView.EnsureVisible(selection);
+	UpdateInspector();
+}
+
 void TileWindow::UpdateTitle()
 {
 	if (m_TitleFilename == m_Application->CurrentFilename)

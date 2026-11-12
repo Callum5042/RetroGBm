@@ -45,6 +45,12 @@
     <ClCompile Include="Source\Windows\TileSheetView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Windows\TileMapView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Windows\TileMapWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Windows\TileWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -111,6 +117,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\Windows\TileSheetView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Windows\TileMapView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Windows\TileMapWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\Windows\TileWindow.h">
