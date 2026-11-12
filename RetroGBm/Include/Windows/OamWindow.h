@@ -112,6 +112,12 @@ private:
 	// Opens the selected object's first tile in the Tile Data window
 	void OpenSelectedTile();
 
+	// Whether hidden objects are in the grid, and so in the export
+	bool ShowHidden() const;
+
+	// Saves the objects in the grid as a PNG, 8 to a row at the current zoom, with transparent backgrounds
+	void ExportPng();
+
 	// Layout
 	static const int m_ClientWidth = 1000;
 	static const int m_ClientHeight = 720;
@@ -128,7 +134,11 @@ private:
 	// Command bar
 	HWND m_LabelSize = NULL;
 	HWND m_ComboSize = NULL;
+	HWND m_LabelZoom = NULL;
+	HWND m_ComboZoom = NULL;
+	HWND m_CheckShowHidden = NULL;
 	HWND m_ButtonPause = NULL;
+	HWND m_ButtonExport = NULL;
 
 	// Inspector
 	HWND m_LabelHeading = NULL;
@@ -150,4 +160,7 @@ private:
 	static const int m_ControlPreviewId = 1004;
 	static const int m_ControlWarningId = 1005;
 	static const int m_ControlOpenTileId = 1006;
+	static const int m_ControlZoomId = 1007;
+	static const int m_ControlShowHiddenId = 1008;
+	static const int m_ControlExportId = 1009;
 };

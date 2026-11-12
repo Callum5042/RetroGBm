@@ -4,7 +4,9 @@
 #include "../resource.h"
 
 #include <CommCtrl.h>
+#include <ShObjIdl.h>
 #include <windowsx.h>
+#include <wrl/client.h>
 #pragma comment(lib, "comctl32.lib")
 
 #include <RetroGBm/Emulator.h>
@@ -12,9 +14,13 @@
 #include <RetroGBm/Ppu.h>
 #include <RetroGBm/TileData.h>
 
+// The implementation is compiled in MainWindow.cpp
+#include "stb_image_write.h"
+
 #include <algorithm>
 #include <filesystem>
 #include <format>
+#include <fstream>
 #include <string>
 
 namespace
@@ -426,10 +432,12 @@ void OamWindow::RenderObjects()
 		m_GridView.SetCells({});
 		m_LineScan = {};
 		UpdateInspector();
+		EnableWindow(m_ButtonExport, FALSE);
 		return;
 	}
 
 	const int height = ObjectHeight();
+	const bool show_hidden = ShowHidden();
 	m_LineScan = Oam::ScanLines(m_Snapshot.oam.data(), height);
 
 	std::vector<OamGridView::Cell> cells;
@@ -437,6 +445,10 @@ void OamWindow::RenderObjects()
 	for (int index = 0; index < Oam::Count; ++index)
 	{
 		const Oam::Object object = Oam::Decode(m_Snapshot.oam.data(), index);
+		if (!show_hidden && !Oam::IsVisible(object, height))
+		{
+			continue;
+		}
 
 		OamGridView::Cell cell;
 		cell.index = index;
@@ -451,8 +463,144 @@ void OamWindow::RenderObjects()
 		cells.push_back(std::move(cell));
 	}
 
+	// With hidden objects left out there may be nothing to show
+	m_GridView.SetEmptyText(L"No objects are on screen. Tick Show hidden to see all 40.");
 	m_GridView.SetCells(cells);
 	UpdateInspector();
+
+	const BOOL can_export = cells.empty() ? FALSE : TRUE;
+	if (IsWindowEnabled(m_ButtonExport) != can_export)
+	{
+		EnableWindow(m_ButtonExport, can_export);
+	}
+}
+
+bool OamWindow::ShowHidden() const
+{
+	return Button_GetCheck(m_CheckShowHidden) == BST_CHECKED;
+}
+
+void OamWindow::ExportPng()
+{
+	if (!m_HasSnapshot || m_Snapshot.tiles[0].size() != TileData::BytesPerBank)
+	{
+		return;
+	}
+
+	// Take the image now, so it matches what was on screen when Export was clicked.
+	// Objects are laid out 8 to a row in OAM order, one zoomed pixel apart.
+	const int zoom = static_cast<int>(ComboBox_GetItemData(m_ComboZoom, ComboBox_GetCurSel(m_ComboZoom)));
+	const int height = ObjectHeight();
+	const bool show_hidden = ShowHidden();
+
+	std::vector<std::vector<uint32_t>> objects;
+	for (int index = 0; index < Oam::Count; ++index)
+	{
+		const Oam::Object object = Oam::Decode(m_Snapshot.oam.data(), index);
+		if (show_hidden || Oam::IsVisible(object, height))
+		{
+			objects.push_back(ObjectPixels(object, height));
+		}
+	}
+
+	if (objects.empty())
+	{
+		return;
+	}
+
+	const int columns = (std::min)(8, static_cast<int>(objects.size()));
+	const int rows = (static_cast<int>(objects.size()) + columns - 1) / columns;
+	const int cell_width = 8 * zoom;
+	const int cell_height = height * zoom;
+	const int width = columns * cell_width + (columns - 1) * zoom;
+	const int image_height = rows * cell_height + (rows - 1) * zoom;
+
+	// RGBA bytes, transparent where no object pixel is drawn
+	std::vector<uint8_t> rgba(static_cast<size_t>(width) * image_height * 4);
+	for (size_t i = 0; i < objects.size(); ++i)
+	{
+		const int origin_x = static_cast<int>(i % columns) * (cell_width + zoom);
+		const int origin_y = static_cast<int>(i / columns) * (cell_height + zoom);
+		for (int y = 0; y < cell_height; ++y)
+		{
+			for (int x = 0; x < cell_width; ++x)
+			{
+				const uint32_t colour = objects[i][static_cast<size_t>(y / zoom) * 8 + x / zoom];
+				uint8_t* pixel = rgba.data() + (static_cast<size_t>(origin_y + y) * width + origin_x + x) * 4;
+				pixel[0] = static_cast<uint8_t>((colour >> 16) & 0xFF);
+				pixel[1] = static_cast<uint8_t>((colour >> 8) & 0xFF);
+				pixel[2] = static_cast<uint8_t>(colour & 0xFF);
+				pixel[3] = static_cast<uint8_t>((colour >> 24) & 0xFF);
+			}
+		}
+	}
+
+	const std::wstring title = L"Export Objects";
+	const HRESULT initialized = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	if (FAILED(initialized) && initialized != RPC_E_CHANGED_MODE)
+	{
+		MessageBoxW(m_Hwnd, L"Could not open the save dialog.", title.c_str(), MB_OK | MB_ICONERROR);
+		return;
+	}
+
+	// Release the dialog and shell item before balancing COM initialization
+	{
+		Microsoft::WRL::ComPtr<IFileSaveDialog> dialog;
+		HRESULT hr = CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_ALL, IID_PPV_ARGS(&dialog));
+		if (SUCCEEDED(hr))
+		{
+			// "Pokemon Red objects.png"
+			const std::wstring rom_name = std::filesystem::path(m_Application->CurrentFilename).stem().wstring();
+			const std::wstring filename = (rom_name.empty() ? L"Objects" : rom_name + L" objects") + L".png";
+
+			const COMDLG_FILTERSPEC filters[] = { { L"PNG image", L"*.png" } };
+			hr = dialog->SetFileTypes(1, filters);
+			if (SUCCEEDED(hr)) hr = dialog->SetDefaultExtension(L"png");
+			if (SUCCEEDED(hr)) hr = dialog->SetFileName(filename.c_str());
+			if (SUCCEEDED(hr)) hr = dialog->SetTitle(L"Save Objects");
+			if (SUCCEEDED(hr)) hr = dialog->SetOptions(FOS_FORCEFILESYSTEM | FOS_OVERWRITEPROMPT | FOS_PATHMUSTEXIST);
+			if (SUCCEEDED(hr)) hr = dialog->Show(m_Hwnd);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			Microsoft::WRL::ComPtr<IShellItem> item;
+			hr = dialog->GetResult(&item);
+			PWSTR path = nullptr;
+			if (SUCCEEDED(hr)) hr = item->GetDisplayName(SIGDN_FILESYSPATH, &path);
+			if (SUCCEEDED(hr))
+			{
+				std::vector<uint8_t> png;
+				auto write = [](void* context, void* data, int size)
+				{
+					std::vector<uint8_t>* output = static_cast<std::vector<uint8_t>*>(context);
+					const uint8_t* bytes = static_cast<const uint8_t*>(data);
+					output->insert(output->end(), bytes, bytes + size);
+				};
+				stbi_write_png_to_func(write, &png, width, image_height, 4, rgba.data(), width * 4);
+
+				std::ofstream output(std::filesystem::path(path), std::ios::binary | std::ios::trunc);
+				output.write(reinterpret_cast<const char*>(png.data()), static_cast<std::streamsize>(png.size()));
+				output.close();
+
+				if (png.empty() || !output)
+				{
+					MessageBoxW(m_Hwnd, L"Could not save the image.", title.c_str(), MB_OK | MB_ICONERROR);
+				}
+			}
+			CoTaskMemFree(path);
+		}
+
+		if (FAILED(hr) && hr != HRESULT_FROM_WIN32(ERROR_CANCELLED))
+		{
+			MessageBoxW(m_Hwnd, L"Could not choose a file to save to.", title.c_str(), MB_OK | MB_ICONERROR);
+		}
+	}
+
+	if (SUCCEEDED(initialized))
+	{
+		CoUninitialize();
+	}
 }
 
 std::wstring OamWindow::PositionText(const Oam::Object& object, int index) const
@@ -783,11 +931,28 @@ void OamWindow::CreateControls()
 	}
 	ComboBox_SetCurSel(m_ComboSize, 0);
 
-	// Pause updates, on the right
+	// Zoom
+	m_LabelZoom = create(L"STATIC", L"Zoom", SS_CENTERIMAGE, 0, m_Font);
+	m_ComboZoom = create(WC_COMBOBOX, L"", WS_TABSTOP | CBS_DROPDOWNLIST, m_ControlZoomId, m_Font);
+	for (int zoom : { 2, 3, 4, 6 })
+	{
+		const std::wstring text = std::to_wstring(zoom) + L"\x00D7";
+		const int index = ComboBox_AddString(m_ComboZoom, text.c_str());
+		ComboBox_SetItemData(m_ComboZoom, index, zoom);
+	}
+	ComboBox_SetCurSel(m_ComboZoom, 2);
+
+	// Hidden objects: off screen, or at X = 0
+	m_CheckShowHidden = create(L"BUTTON", L"Show hidden", WS_TABSTOP | BS_AUTOCHECKBOX, m_ControlShowHiddenId, m_Font);
+	Button_SetCheck(m_CheckShowHidden, BST_CHECKED);
+
+	// Pause updates and export, on the right
 	m_ButtonPause = create(L"BUTTON", L"Pause updates", WS_TABSTOP | BS_AUTOCHECKBOX | BS_PUSHLIKE, m_ControlPauseId, m_Font);
+	m_ButtonExport = create(L"BUTTON", L"Export PNG\x2026", WS_TABSTOP | BS_PUSHBUTTON | WS_DISABLED, m_ControlExportId, m_Font);
 
 	// Objects
 	m_GridView.Create(m_Hwnd, m_ControlGridId);
+	m_GridView.SetZoom(static_cast<int>(ComboBox_GetItemData(m_ComboZoom, ComboBox_GetCurSel(m_ComboZoom))));
 	m_GridView.HoverChanged = [this]() { UpdateHoverStatus(); };
 	m_GridView.SelectionChanged = [this]() { UpdateInspector(); };
 	m_GridView.ActivateRequested = [this]() { OpenSelectedTile(); };
@@ -905,14 +1070,30 @@ void OamWindow::Layout()
 	const int button_y = (m_CommandBarHeight - button_height) / 2;
 	const int combo_y = (m_CommandBarHeight - 23) / 2;
 
-	int x = 12;
-	const int label_width = MeasureText(m_Font, GetText(m_LabelSize));
-	place(m_LabelSize, x, button_y, label_width, button_height);
-	x += label_width + 8;
-	place(m_ComboSize, x, combo_y, 120, 200);
+	const int group_gap = 20;
 
+	int x = 12;
+	auto label = [&](HWND control)
+	{
+		const int w = MeasureText(m_Font, GetText(control));
+		place(control, x, button_y, w, button_height);
+		x += w + 8;
+	};
+
+	label(m_LabelSize);
+	place(m_ComboSize, x, combo_y, 120, 200);
+	x += 120 + group_gap;
+
+	label(m_LabelZoom);
+	place(m_ComboZoom, x, combo_y, 56, 200);
+	x += 56 + group_gap;
+
+	place(m_CheckShowHidden, x, button_y, MeasureText(m_Font, GetText(m_CheckShowHidden)) + 24, button_height);
+
+	const int export_width = MeasureText(m_Font, GetText(m_ButtonExport)) + 28;
 	const int pause_width = MeasureText(m_Font, GetText(m_ButtonPause)) + 28;
-	place(m_ButtonPause, width - 12 - pause_width, button_y, pause_width, button_height);
+	place(m_ButtonExport, width - 12 - export_width, button_y, export_width, button_height);
+	place(m_ButtonPause, width - 12 - export_width - 8 - pause_width, button_y, pause_width, button_height);
 
 	// Inspector
 	const int inspector_x = width - m_InspectorWidth + 1 + 16;
@@ -1069,7 +1250,7 @@ LRESULT OamWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				return reinterpret_cast<LRESULT>(m_InspectorBrush);
 			}
 
-			SetTextColor(hdc, SecondaryTextColour);
+			SetTextColor(hdc, control == m_CheckShowHidden ? GetSysColor(COLOR_WINDOWTEXT) : SecondaryTextColour);
 			return reinterpret_cast<LRESULT>(GetSysColorBrush(COLOR_BTNFACE));
 		}
 
@@ -1124,6 +1305,24 @@ LRESULT OamWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			if (id == m_ControlOpenTileId && code == BN_CLICKED)
 			{
 				OpenSelectedTile();
+				return 0;
+			}
+
+			if (id == m_ControlZoomId && code == CBN_SELCHANGE)
+			{
+				m_GridView.SetZoom(static_cast<int>(ComboBox_GetItemData(m_ComboZoom, ComboBox_GetCurSel(m_ComboZoom))));
+				return 0;
+			}
+
+			if (id == m_ControlShowHiddenId && code == BN_CLICKED)
+			{
+				RenderObjects();
+				return 0;
+			}
+
+			if (id == m_ControlExportId && code == BN_CLICKED)
+			{
+				ExportPng();
 				return 0;
 			}
 
