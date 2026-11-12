@@ -81,7 +81,6 @@ Emulator::Emulator(std::unique_ptr<BaseCartridge> cartridge, ISoundOutput* sound
 
 Emulator::~Emulator()
 {
-	m_TraceLog.close();
 }
 
 bool Emulator::LoadRom(const std::string& path)
@@ -291,20 +290,6 @@ void Emulator::Restart()
 	this->Pause(false);
 }
 
-void Emulator::ToggleTraceLog(bool enable)
-{
-	if (enable)
-	{
-		m_EnableTraceLog = true;
-		m_TraceLog.open("retrogbm-tracelog.txt");
-	}
-	else
-	{
-		m_EnableTraceLog = false;
-		m_TraceLog.close();
-	}
-}
-
 void Emulator::Tick()
 {
 	// Sleep outside the lock so the UI thread isn't blocked while paused
@@ -317,8 +302,6 @@ void Emulator::Tick()
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
 
 	// Fetch
-	uint16_t current_pc = m_Cpu->ProgramCounter;
-
 	const uint8_t opcode = this->ReadBus(m_Cpu->ProgramCounter);
 	Cycle(1);
 
@@ -327,22 +310,6 @@ void Emulator::Tick()
 	// Execute
 	if (!m_Halted)
 	{
-#ifdef _MSC_VER
-		if (IsTraceLogEnabled())
-		{
-			std::string debug_format = std::format("OP:{:X},PC:{:X},AF:{:X},BC:{:X},DE:{:X},HL:{:X},SP:{:X}",
-				opcode,
-				m_Context.cpu->ProgramCounter,
-				m_Context.cpu->GetRegister(RegisterType16::REG_AF),
-				m_Context.cpu->GetRegister(RegisterType16::REG_BC),
-				m_Context.cpu->GetRegister(RegisterType16::REG_DE),
-				m_Context.cpu->GetRegister(RegisterType16::REG_HL),
-				m_Context.cpu->StackPointer);
-
-			m_TraceLog << debug_format << std::endl;
-		}
-#endif
-
 		if (m_HaltBug)
 		{
 			m_Cpu->ProgramCounter -= 1;

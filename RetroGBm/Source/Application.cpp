@@ -139,7 +139,6 @@ int Application::Start()
 void Application::LoadRom(const std::string& file)
 {
 	StopEmulator();
-	bool tracelog = m_Emulator->IsTraceLogEnabled();
 
 	m_Emulator = std::make_unique<Emulator>(m_DisplayOutput.get(), SoundOutput.get(), m_NetworkOutput.get());
 
@@ -154,7 +153,6 @@ void Application::LoadRom(const std::string& file)
 
 	m_Emulator->SetBatteryPath(battery_path.string());
 	Logger::Info("Loading ROM file: " + file);
-	m_Emulator->ToggleTraceLog(tracelog);
 	m_Emulator->LoadRom(file);
 
 	// Set start time
