@@ -84,6 +84,10 @@ private:
 	// Draws the snapshot with the selected map and addressing
 	void RenderMap();
 	TileMapView m_MapView;
+	std::vector<uint32_t> m_MapPixels;
+
+	// Saves the map as shown, at the current zoom and with the grid if it's on
+	void ExportPng();
 
 	// Inspector: details of the selected map entry
 	bool m_InspectorHasEntry = false;
@@ -121,6 +125,7 @@ private:
 	HWND m_CheckGrid = NULL;
 	HWND m_CheckOverlay = NULL;
 	HWND m_ButtonPause = NULL;
+	HWND m_ButtonExport = NULL;
 
 	// Inspector
 	HWND m_LabelHeading = NULL;
@@ -142,4 +147,5 @@ private:
 	static const int m_ControlMapViewId = 1006;
 	static const int m_ControlOverlayId = 1007;
 	static const int m_ControlPreviewId = 1008;
+	static const int m_ControlExportId = 1009;
 };

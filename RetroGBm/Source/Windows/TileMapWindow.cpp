@@ -4,7 +4,9 @@
 #include "../resource.h"
 
 #include <CommCtrl.h>
+#include <ShObjIdl.h>
 #include <windowsx.h>
+#include <wrl/client.h>
 #pragma comment(lib, "comctl32.lib")
 
 #include <RetroGBm/Emulator.h>
@@ -12,9 +14,13 @@
 #include <RetroGBm/Ppu.h>
 #include <RetroGBm/TileData.h>
 
+// The implementation is compiled in MainWindow.cpp
+#include "stb_image_write.h"
+
 #include <algorithm>
 #include <filesystem>
 #include <format>
+#include <fstream>
 #include <string>
 
 namespace
@@ -338,7 +344,9 @@ void TileMapWindow::RenderMap()
 	{
 		m_MapView.SetEmptyText(L"Load a game to see its tile maps.");
 		m_MapView.SetImage({});
+		m_MapPixels.clear();
 		UpdateInspector();
+		EnableWindow(m_ButtonExport, FALSE);
 		return;
 	}
 
@@ -368,6 +376,12 @@ void TileMapWindow::RenderMap()
 	}
 
 	m_MapView.SetImage(pixels);
+	m_MapPixels = std::move(pixels);
+
+	if (IsWindowEnabled(m_ButtonExport) == FALSE)
+	{
+		EnableWindow(m_ButtonExport, TRUE);
+	}
 
 	// What of this map is on screen: the screen and the part the window hides on the background map,
 	// and the part shown as the window on the window map
@@ -592,6 +606,115 @@ void TileMapWindow::DrawPreview(const DRAWITEMSTRUCT* item)
 	DeleteDC(hdc);
 }
 
+void TileMapWindow::ExportPng()
+{
+	if (m_MapPixels.size() != static_cast<size_t>(TileMap::Width * TileMap::Height))
+	{
+		return;
+	}
+
+	// Take the image now, so it matches what was on screen when Export was clicked
+	const int zoom = static_cast<int>(ComboBox_GetItemData(m_ComboZoom, ComboBox_GetCurSel(m_ComboZoom)));
+	const bool grid = Button_GetCheck(m_CheckGrid) == BST_CHECKED;
+	const int width = TileMap::Width * zoom;
+	const int height = TileMap::Height * zoom;
+	const int cell = 8 * zoom;
+
+	// RGBA bytes, with grid lines darkening the pixels under them as the view does
+	std::vector<uint8_t> rgba(static_cast<size_t>(width) * height * 4);
+	for (int y = 0; y < height; ++y)
+	{
+		for (int x = 0; x < width; ++x)
+		{
+			uint32_t colour = m_MapPixels[static_cast<size_t>(y / zoom) * TileMap::Width + x / zoom];
+			uint32_t r = (colour >> 16) & 0xFF;
+			uint32_t g = (colour >> 8) & 0xFF;
+			uint32_t b = colour & 0xFF;
+
+			if (grid && ((x > 0 && x % cell == 0) || (y > 0 && y % cell == 0)))
+			{
+				r = (r * 184) >> 8;
+				g = (g * 184) >> 8;
+				b = (b * 184) >> 8;
+			}
+
+			uint8_t* pixel = rgba.data() + (static_cast<size_t>(y) * width + x) * 4;
+			pixel[0] = static_cast<uint8_t>(r);
+			pixel[1] = static_cast<uint8_t>(g);
+			pixel[2] = static_cast<uint8_t>(b);
+			pixel[3] = 0xFF;
+		}
+	}
+
+	const std::wstring title = L"Export Tile Map";
+	const HRESULT initialized = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	if (FAILED(initialized) && initialized != RPC_E_CHANGED_MODE)
+	{
+		MessageBoxW(m_Hwnd, L"Could not open the save dialog.", title.c_str(), MB_OK | MB_ICONERROR);
+		return;
+	}
+
+	// Release the dialog and shell item before balancing COM initialization
+	{
+		Microsoft::WRL::ComPtr<IFileSaveDialog> dialog;
+		HRESULT hr = CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_ALL, IID_PPV_ARGS(&dialog));
+		if (SUCCEEDED(hr))
+		{
+			// "Pokemon Red map $9800.png"
+			const std::wstring rom_name = std::filesystem::path(m_Application->CurrentFilename).stem().wstring();
+			const std::wstring map_name = std::format(L"map {:04X}", MapAddress());
+			const std::wstring filename = (rom_name.empty() ? L"Tile " + map_name : rom_name + L" " + map_name) + L".png";
+
+			const COMDLG_FILTERSPEC filters[] = { { L"PNG image", L"*.png" } };
+			hr = dialog->SetFileTypes(1, filters);
+			if (SUCCEEDED(hr)) hr = dialog->SetDefaultExtension(L"png");
+			if (SUCCEEDED(hr)) hr = dialog->SetFileName(filename.c_str());
+			if (SUCCEEDED(hr)) hr = dialog->SetTitle(L"Save Tile Map");
+			if (SUCCEEDED(hr)) hr = dialog->SetOptions(FOS_FORCEFILESYSTEM | FOS_OVERWRITEPROMPT | FOS_PATHMUSTEXIST);
+			if (SUCCEEDED(hr)) hr = dialog->Show(m_Hwnd);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			Microsoft::WRL::ComPtr<IShellItem> item;
+			hr = dialog->GetResult(&item);
+			PWSTR path = nullptr;
+			if (SUCCEEDED(hr)) hr = item->GetDisplayName(SIGDN_FILESYSPATH, &path);
+			if (SUCCEEDED(hr))
+			{
+				std::vector<uint8_t> png;
+				auto write = [](void* context, void* data, int size)
+				{
+					std::vector<uint8_t>* output = static_cast<std::vector<uint8_t>*>(context);
+					const uint8_t* bytes = static_cast<const uint8_t*>(data);
+					output->insert(output->end(), bytes, bytes + size);
+				};
+				stbi_write_png_to_func(write, &png, width, height, 4, rgba.data(), width * 4);
+
+				std::ofstream output(std::filesystem::path(path), std::ios::binary | std::ios::trunc);
+				output.write(reinterpret_cast<const char*>(png.data()), static_cast<std::streamsize>(png.size()));
+				output.close();
+
+				if (png.empty() || !output)
+				{
+					MessageBoxW(m_Hwnd, L"Could not save the image.", title.c_str(), MB_OK | MB_ICONERROR);
+				}
+			}
+			CoTaskMemFree(path);
+		}
+
+		if (FAILED(hr) && hr != HRESULT_FROM_WIN32(ERROR_CANCELLED))
+		{
+			MessageBoxW(m_Hwnd, L"Could not choose a file to save to.", title.c_str(), MB_OK | MB_ICONERROR);
+		}
+	}
+
+	if (SUCCEEDED(initialized))
+	{
+		CoUninitialize();
+	}
+}
+
 void TileMapWindow::UpdateHoverStatus()
 {
 	const int entry = m_MapView.GetHover();
@@ -712,8 +835,9 @@ void TileMapWindow::CreateControls()
 	m_CheckOverlay = create(L"BUTTON", L"Screen", WS_TABSTOP | BS_AUTOCHECKBOX, m_ControlOverlayId, m_Font);
 	Button_SetCheck(m_CheckOverlay, BST_CHECKED);
 
-	// Pause updates, on the right
+	// Pause updates and export, on the right
 	m_ButtonPause = create(L"BUTTON", L"Pause updates", WS_TABSTOP | BS_AUTOCHECKBOX | BS_PUSHLIKE, m_ControlPauseId, m_Font);
+	m_ButtonExport = create(L"BUTTON", L"Export PNG\x2026", WS_TABSTOP | BS_PUSHBUTTON | WS_DISABLED, m_ControlExportId, m_Font);
 
 	// Map
 	m_MapView.Create(m_Hwnd, m_ControlMapViewId);
@@ -834,8 +958,10 @@ void TileMapWindow::Layout()
 
 	place(m_CheckOverlay, x, button_y, MeasureText(m_Font, GetText(m_CheckOverlay)) + 24, button_height);
 
+	const int export_width = MeasureText(m_Font, GetText(m_ButtonExport)) + 28;
 	const int pause_width = MeasureText(m_Font, GetText(m_ButtonPause)) + 28;
-	place(m_ButtonPause, width - 12 - pause_width, button_y, pause_width, button_height);
+	place(m_ButtonExport, width - 12 - export_width, button_y, export_width, button_height);
+	place(m_ButtonPause, width - 12 - export_width - 8 - pause_width, button_y, pause_width, button_height);
 
 	// Inspector
 	const int inspector_x = width - m_InspectorWidth + 1 + 16;
@@ -1042,6 +1168,12 @@ LRESULT TileMapWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			if (id == m_ControlGridId && code == BN_CLICKED)
 			{
 				m_MapView.SetGrid(Button_GetCheck(m_CheckGrid) == BST_CHECKED);
+				return 0;
+			}
+
+			if (id == m_ControlExportId && code == BN_CLICKED)
+			{
+				ExportPng();
 				return 0;
 			}
 
