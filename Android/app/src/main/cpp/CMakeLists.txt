@@ -74,6 +74,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         ${EmulatorCoreSrcDir}/Apu.cpp
         ${EmulatorCoreSrcDir}/Logger.cpp
         ${EmulatorCoreSrcDir}/Cheats.cpp
+        ${EmulatorCoreSrcDir}/TileData.cpp
 
         ${EmulatorCoreSrcDir}/Audio/FrequencySweep.cpp
         ${EmulatorCoreSrcDir}/Audio/LengthCounter.cpp

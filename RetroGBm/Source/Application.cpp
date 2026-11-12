@@ -318,6 +318,12 @@ void Application::Run()
 				continue;
 			}
 
+			// Let the tile data window handle Tab and Esc
+			if (m_TileWindow != nullptr && m_TileWindow->HandleDialogMessage(&msg))
+			{
+				continue;
+			}
+
 			TranslateMessage(&msg);
 			DispatchMessageW(&msg);
 		}
@@ -342,7 +348,7 @@ void Application::Run()
 					SoundOutput->SetFrequencyRatio(1.0f);
 				}
 
-				// Render debug window
+				// Tile data window
 				if (m_TileWindow != nullptr)
 				{
 					m_TileWindow->Update();
@@ -428,12 +434,19 @@ void Application::CreateMainWindow()
 
 void Application::CreateTileWindow()
 {
-	m_TileWindow = std::make_unique<TileWindow>(this);
+	if (m_TileWindow == nullptr)
+	{
+		m_TileWindow = std::make_unique<TileWindow>(this);
+	}
 
-	const int window_width = static_cast<int>(16 * 8 * m_TileWindow->GetTileWindowScale());
-	const int window_height = static_cast<int>(24 * 8 * m_TileWindow->GetTileWindowScale());
-	m_TileWindow->Create("RetroGBm Tiledata", window_width, window_height);
-	m_TileWindow->CreateTilemapWindow();
+	if (m_TileWindow->IsOpen())
+	{
+		m_TileWindow->Focus();
+	}
+	else
+	{
+		m_TileWindow->Create();
+	}
 }
 
 void Application::CloseTileWindow()

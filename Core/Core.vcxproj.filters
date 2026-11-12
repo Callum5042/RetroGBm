@@ -48,6 +48,9 @@
     <ClInclude Include="Include\RetroGBm\Ram.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Include\RetroGBm\TileData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Include\RetroGBm\Timer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -507,6 +510,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\ExtendedInstructions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\TileData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Timer.cpp">
