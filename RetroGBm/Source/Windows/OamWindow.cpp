@@ -27,6 +27,9 @@ namespace
 {
 	const wchar_t* ClassName = L"RetroGBmOam";
 
+	// Matches the Tools menu item
+	const wchar_t* WindowTitle = L"Objects (OAM)";
+
 	static OamWindow* GetWindow(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		OamWindow* window = nullptr;
@@ -334,10 +337,10 @@ void OamWindow::UpdateTitle()
 
 	m_TitleFilename = m_Application->CurrentFilename;
 
-	// Show the ROM file name without its extension, e.g. "OAM - Pokemon Red (UE)".
+	// Show the ROM file name without its extension, e.g. "Objects (OAM) - Pokemon Red (UE)".
 	// CurrentFilename is in the ANSI code page, which path converts back.
 	const std::wstring rom_name = std::filesystem::path(m_TitleFilename).stem().wstring();
-	const std::wstring title = rom_name.empty() ? L"OAM" : L"OAM \x2014 " + rom_name;
+	const std::wstring title = rom_name.empty() ? WindowTitle : std::wstring(WindowTitle) + L" \x2014 " + rom_name;
 	SetWindowText(m_Hwnd, title.c_str());
 }
 
@@ -1048,7 +1051,7 @@ void OamWindow::WindowCreate(int width, int height)
 		if (y < work.top) y = work.top;
 	}
 
-	m_Hwnd = CreateWindowEx(exStyle, ClassName, L"OAM", dwStyle, x, y, window_width, window_height, owner, NULL, hInstance, this);
+	m_Hwnd = CreateWindowEx(exStyle, ClassName, WindowTitle, dwStyle, x, y, window_width, window_height, owner, NULL, hInstance, this);
 	if (m_Hwnd == NULL)
 	{
 		throw std::exception("CreateWindow Failed");

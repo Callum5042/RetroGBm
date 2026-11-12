@@ -1239,7 +1239,7 @@ void MainWindow::CreateMenuBar()
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTileData, L"Tile Data");
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTileMap, L"Tile Map");
-	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsOam, L"OAM");
+	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsOam, L"Objects (OAM)");
 	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsCartridgeInfo, L"Cartridge Info");
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsExportAssembly, L"Export Assembly");

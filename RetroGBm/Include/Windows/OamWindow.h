@@ -15,7 +15,7 @@
 
 class Application;
 
-// Tools > OAM: the 40 objects in OAM, with which ones the 10-objects-per-line limit drops
+// Tools > Objects (OAM): the 40 objects in OAM, with which ones the 10-objects-per-line limit drops
 class OamWindow
 {
 public:
