@@ -558,9 +558,6 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 		}
-		case m_MenuToolsTracelog:
-			ToggleTracelog();
-			break;
 		case m_MenuToolsExportAssembly:
 			ExportAssembly();
 			break;
@@ -701,21 +698,6 @@ void MainWindow::ToggleCpuRegistersWindowMenuItem(bool checked)
 	else
 	{
 		CheckMenuItem(m_ToolsMenuItem, m_MenuToolsCpuRegisters, MF_BYCOMMAND | MF_UNCHECKED);
-	}
-}
-
-void MainWindow::ToggleTracelog()
-{
-	UINT menu_state = GetMenuState(m_ToolsMenuItem, m_MenuToolsTracelog, MF_BYCOMMAND);
-	if (menu_state & MF_CHECKED)
-	{
-		CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTracelog, MF_BYCOMMAND | MF_UNCHECKED);
-		m_Application->GetEmulator()->ToggleTraceLog(false);
-	}
-	else
-	{
-		CheckMenuItem(m_ToolsMenuItem, m_MenuToolsTracelog, MF_BYCOMMAND | MF_CHECKED);
-		m_Application->GetEmulator()->ToggleTraceLog(true);
 	}
 }
 
@@ -1238,7 +1220,6 @@ void MainWindow::CreateMenuBar()
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTileData, L"Tile Data");
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTileMap, L"Tile Map");
-	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTracelog, L"Tracelog");
 	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsCartridgeInfo, L"Cartridge Info");
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsExportAssembly, L"Export Assembly");

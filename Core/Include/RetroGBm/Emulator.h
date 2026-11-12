@@ -121,10 +121,6 @@ public:
 	void SetFramePacingEnabled(bool enabled) { m_FramePacingEnabled = enabled; }
 	void SetDmgColourisation(bool enabled);
 
-	// Trace log
-	void ToggleTraceLog(bool enable);
-	inline bool IsTraceLogEnabled() const { return m_EnableTraceLog; }
-
 	// Save states
 	void SaveState(const std::string& filepath);
 	void LoadState(const std::string& filepath);
@@ -180,9 +176,6 @@ private:
 	bool m_Running = false;
 	bool m_Halted = false;
 	uint8_t m_DoubleSpeedMode = 0;
-
-	bool m_EnableTraceLog = false;
-	std::ofstream m_TraceLog;
 
 	std::string m_BatteryPath;
 
