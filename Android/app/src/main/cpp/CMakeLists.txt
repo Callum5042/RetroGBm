@@ -76,6 +76,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         ${EmulatorCoreSrcDir}/Cheats.cpp
         ${EmulatorCoreSrcDir}/TileData.cpp
         ${EmulatorCoreSrcDir}/TileMap.cpp
+        ${EmulatorCoreSrcDir}/Oam.cpp
 
         ${EmulatorCoreSrcDir}/Audio/FrequencySweep.cpp
         ${EmulatorCoreSrcDir}/Audio/LengthCounter.cpp

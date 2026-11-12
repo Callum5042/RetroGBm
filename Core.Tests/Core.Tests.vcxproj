@@ -179,6 +179,7 @@
     <ClCompile Include="JoypadTests.cpp" />
     <ClCompile Include="NullDisplayOutput.cpp" />
     <ClCompile Include="NullSoundOutput.cpp" />
+    <ClCompile Include="OamTests.cpp" />
     <ClCompile Include="PpuTests.cpp" />
     <ClCompile Include="MockCartridge.cpp" />
     <ClCompile Include="RamTests.cpp" />
