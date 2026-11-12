@@ -373,6 +373,21 @@ void OamWindow::CaptureSnapshot()
 	m_Snapshot.lcdc = display->Read(0xFF40);
 	m_Snapshot.coordinate_priority = display->CoordinatePriority();
 
+	// The last finished frame, which already has the objects in it
+	if (IsScreenView() && ShowBackground())
+	{
+		const uint32_t* frame = static_cast<const uint32_t*>(display->GetVideoBuffer());
+		m_Snapshot.frame.resize(static_cast<size_t>(display->GetVideoBufferSize()));
+		for (size_t i = 0; i < m_Snapshot.frame.size(); ++i)
+		{
+			m_Snapshot.frame[i] = ToViewColour(frame[i]);
+		}
+	}
+	else
+	{
+		m_Snapshot.frame.clear();
+	}
+
 	// DMG has two palettes, OBP0 and OBP1, coloured the same way the screen colours them
 	const int palettes = m_IsColour ? 8 : 2;
 	for (int palette = 0; palette < 8; ++palette)
@@ -523,6 +538,10 @@ void OamWindow::RenderScreen()
 
 	OamScreenView::Scene scene;
 	scene.lines = m_LineScan.objects;
+	if (ShowBackground())
+	{
+		scene.background = m_Snapshot.frame;
+	}
 	for (int index : visible)
 	{
 		OamScreenView::Object object;
@@ -566,14 +585,30 @@ void OamWindow::ShowView()
 	ShowWindow(m_GridView.GetHwnd(), screen ? SW_HIDE : SW_SHOWNA);
 	ShowWindow(m_ScreenView.GetHwnd(), screen ? SW_SHOWNA : SW_HIDE);
 
-	// Zoom, Show hidden and Export are for the grid
+	// Zoom, Show hidden and Export are for the grid, the rest for the screen
 	for (HWND control : { m_LabelZoom, m_ComboZoom, m_CheckShowHidden, m_ButtonExport })
 	{
 		ShowWindow(control, screen ? SW_HIDE : SW_SHOWNA);
 	}
 
+	for (HWND control : { m_CheckBackground, m_CheckOutlines, m_CheckLineLimit })
+	{
+		ShowWindow(control, screen ? SW_SHOWNA : SW_HIDE);
+	}
+
+	// The frame is only taken while the Screen view needs it. A paused snapshot is kept as it is.
+	if (Button_GetCheck(m_ButtonPause) != BST_CHECKED)
+	{
+		CaptureSnapshot();
+	}
+
 	RenderObjects();
 	Layout();
+}
+
+bool OamWindow::ShowBackground() const
+{
+	return Button_GetCheck(m_CheckBackground) == BST_CHECKED;
 }
 
 void OamWindow::SelectionChanged(int index)
@@ -1058,6 +1093,17 @@ void OamWindow::CreateControls()
 	m_CheckShowHidden = create(L"BUTTON", L"Show hidden", WS_TABSTOP | BS_AUTOCHECKBOX, m_ControlShowHiddenId, m_Font);
 	Button_SetCheck(m_CheckShowHidden, BST_CHECKED);
 
+	// Screen options, hidden until the Screen view is picked
+	m_CheckBackground = create(L"BUTTON", L"Background", WS_TABSTOP | BS_AUTOCHECKBOX, m_ControlBackgroundId, m_Font);
+	m_CheckOutlines = create(L"BUTTON", L"Outlines", WS_TABSTOP | BS_AUTOCHECKBOX, m_ControlOutlinesId, m_Font);
+	m_CheckLineLimit = create(L"BUTTON", L"Line limit", WS_TABSTOP | BS_AUTOCHECKBOX, m_ControlLineLimitId, m_Font);
+	Button_SetCheck(m_CheckOutlines, BST_CHECKED);
+	Button_SetCheck(m_CheckLineLimit, BST_CHECKED);
+	for (HWND control : { m_CheckBackground, m_CheckOutlines, m_CheckLineLimit })
+	{
+		ShowWindow(control, SW_HIDE);
+	}
+
 	// Pause updates and export, on the right
 	m_ButtonPause = create(L"BUTTON", L"Pause updates", WS_TABSTOP | BS_AUTOCHECKBOX | BS_PUSHLIKE, m_ControlPauseId, m_Font);
 	m_ButtonExport = create(L"BUTTON", L"Export PNG\x2026", WS_TABSTOP | BS_PUSHBUTTON | WS_DISABLED, m_ControlExportId, m_Font);
@@ -1218,6 +1264,15 @@ void OamWindow::Layout()
 		x += 56 + group_gap;
 
 		place(m_CheckShowHidden, x, button_y, MeasureText(m_Font, GetText(m_CheckShowHidden)) + 24, button_height);
+	}
+	else
+	{
+		for (HWND check : { m_CheckBackground, m_CheckOutlines, m_CheckLineLimit })
+		{
+			const int w = MeasureText(m_Font, GetText(check)) + 24;
+			place(check, x, button_y, w, button_height);
+			x += w + 8;
+		}
 	}
 
 	// Export is only for the grid, so Pause updates takes its place in the Screen view
@@ -1385,7 +1440,8 @@ LRESULT OamWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				return reinterpret_cast<LRESULT>(m_InspectorBrush);
 			}
 
-			SetTextColor(hdc, control == m_CheckShowHidden ? GetSysColor(COLOR_WINDOWTEXT) : SecondaryTextColour);
+			const bool checkbox = control == m_CheckShowHidden || control == m_CheckBackground || control == m_CheckOutlines || control == m_CheckLineLimit;
+			SetTextColor(hdc, checkbox ? GetSysColor(COLOR_WINDOWTEXT) : SecondaryTextColour);
 			return reinterpret_cast<LRESULT>(GetSysColorBrush(COLOR_BTNFACE));
 		}
 
@@ -1446,6 +1502,30 @@ LRESULT OamWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			if ((id == m_ControlObjectsId || id == m_ControlScreenId) && code == BN_CLICKED)
 			{
 				ShowView();
+				return 0;
+			}
+
+			if (id == m_ControlBackgroundId && code == BN_CLICKED)
+			{
+				// While paused there is only a frame if Background was on when the snapshot was taken
+				if (Button_GetCheck(m_ButtonPause) != BST_CHECKED)
+				{
+					CaptureSnapshot();
+				}
+
+				RenderObjects();
+				return 0;
+			}
+
+			if (id == m_ControlOutlinesId && code == BN_CLICKED)
+			{
+				m_ScreenView.SetShowOutlines(Button_GetCheck(m_CheckOutlines) == BST_CHECKED);
+				return 0;
+			}
+
+			if (id == m_ControlLineLimitId && code == BN_CLICKED)
+			{
+				m_ScreenView.SetShowLineLimit(Button_GetCheck(m_CheckLineLimit) == BST_CHECKED);
 				return 0;
 			}
 

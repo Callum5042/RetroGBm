@@ -70,6 +70,9 @@ private:
 		// Which object wins where they overlap: the one further left (DMG, or CGB set to it by OPRI),
 		// else the one earlier in OAM
 		bool coordinate_priority = true;
+
+		// Last frame as 0x00RRGGBB, only taken while the Screen view shows it as the background
+		std::vector<uint32_t> frame;
 	};
 
 	bool m_HasSnapshot = false;
@@ -92,6 +95,9 @@ private:
 	// Objects shows the grid, Screen shows where they are on screen
 	bool IsScreenView() const;
 	void ShowView();
+
+	// Whether the Screen view draws the game's last frame under the objects
+	bool ShowBackground() const;
 
 	// The selected object, shared by both views and the inspector
 	int m_Selection = -1;
@@ -154,6 +160,9 @@ private:
 	HWND m_LabelZoom = NULL;
 	HWND m_ComboZoom = NULL;
 	HWND m_CheckShowHidden = NULL;
+	HWND m_CheckBackground = NULL;
+	HWND m_CheckOutlines = NULL;
+	HWND m_CheckLineLimit = NULL;
 	HWND m_ButtonPause = NULL;
 	HWND m_ButtonExport = NULL;
 
@@ -183,4 +192,7 @@ private:
 	static const int m_ControlObjectsId = 1010;
 	static const int m_ControlScreenId = 1011;
 	static const int m_ControlScreenViewId = 1012;
+	static const int m_ControlBackgroundId = 1013;
+	static const int m_ControlOutlinesId = 1014;
+	static const int m_ControlLineLimitId = 1015;
 };
