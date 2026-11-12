@@ -48,6 +48,9 @@
     <ClCompile Include="Source\Windows\OamGridView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Windows\OamScreenView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Windows\OamWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -126,6 +129,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\Windows\OamGridView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Windows\OamScreenView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\Windows\OamWindow.h">

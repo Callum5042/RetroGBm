@@ -270,6 +270,7 @@ void OamWindow::Destroy()
 void OamWindow::ReleaseResources()
 {
 	m_GridView.Destroy();
+	m_ScreenView.Destroy();
 
 	for (HFONT* font : { &m_Font, &m_BoldFont, &m_HeadingFont, &m_MonoFont, &m_MonoSmallFont })
 	{
@@ -370,6 +371,7 @@ void OamWindow::CaptureSnapshot()
 	}
 
 	m_Snapshot.lcdc = display->Read(0xFF40);
+	m_Snapshot.coordinate_priority = display->CoordinatePriority();
 
 	// DMG has two palettes, OBP0 and OBP1, coloured the same way the screen colours them
 	const int palettes = m_IsColour ? 8 : 2;
@@ -430,6 +432,8 @@ void OamWindow::RenderObjects()
 	{
 		m_GridView.SetEmptyText(L"Load a game to see its objects.");
 		m_GridView.SetCells({});
+		m_ScreenView.SetEmptyText(L"Load a game to see its objects.");
+		m_ScreenView.SetEmpty(true);
 		m_LineScan = {};
 		UpdateInspector();
 		EnableWindow(m_ButtonExport, FALSE);
@@ -439,6 +443,14 @@ void OamWindow::RenderObjects()
 	const int height = ObjectHeight();
 	const bool show_hidden = ShowHidden();
 	m_LineScan = Oam::ScanLines(m_Snapshot.oam.data(), height);
+
+	// Only the view on show is kept up to date; switching views renders the other
+	if (IsScreenView())
+	{
+		RenderScreen();
+		UpdateInspector();
+		return;
+	}
 
 	std::vector<OamGridView::Cell> cells;
 	cells.reserve(Oam::Count);
@@ -473,6 +485,103 @@ void OamWindow::RenderObjects()
 	{
 		EnableWindow(m_ButtonExport, can_export);
 	}
+}
+
+void OamWindow::RenderScreen()
+{
+	const int height = ObjectHeight();
+
+	// Visible objects in OAM order, and the ones that use line slots without being seen
+	std::vector<Oam::Object> objects;
+	std::vector<int> visible;
+	std::vector<int> unseen;
+	for (int index = 0; index < Oam::Count; ++index)
+	{
+		objects.push_back(Oam::Decode(m_Snapshot.oam.data(), index));
+		if (Oam::IsVisible(objects.back(), height))
+		{
+			visible.push_back(index);
+		}
+		else if (Oam::IsOnLines(objects.back(), height))
+		{
+			unseen.push_back(index);
+		}
+	}
+
+	// Back to front. Where objects overlap, the one further left wins, then the one earlier in OAM,
+	// unless CGB is set to go by OAM order alone.
+	const bool by_x = m_Snapshot.coordinate_priority;
+	std::sort(visible.begin(), visible.end(), [&](int a, int b)
+	{
+		if (by_x && objects[a].x != objects[b].x)
+		{
+			return objects[a].x > objects[b].x;
+		}
+
+		return a > b;
+	});
+
+	OamScreenView::Scene scene;
+	scene.lines = m_LineScan.objects;
+	for (int index : visible)
+	{
+		OamScreenView::Object object;
+		object.index = index;
+		object.x = objects[index].ScreenX();
+		object.y = objects[index].ScreenY();
+		object.height = height;
+		object.pixels = ObjectPixels(objects[index], height);
+		object.dropped = m_LineScan.dropped[index];
+		scene.objects.push_back(std::move(object));
+	}
+
+	if ((m_Snapshot.lcdc & 0x02) == 0)
+	{
+		scene.note = L"Objects are turned off (LCDC.1), so the game isn't drawing any of these.";
+	}
+	else if (!unseen.empty())
+	{
+		std::wstring list;
+		for (int index : unseen)
+		{
+			list += (list.empty() ? L"" : L", ") + std::format(L"{:02}", index);
+		}
+
+		scene.note = std::format(L"Not shown: {} {}, off the left or right edge but still using a slot on {} lines.",
+			unseen.size() == 1 ? L"object" : L"objects", list, unseen.size() == 1 ? L"its" : L"their");
+	}
+
+	m_ScreenView.SetEmpty(false);
+	m_ScreenView.SetScene(scene);
+}
+
+bool OamWindow::IsScreenView() const
+{
+	return Button_GetCheck(m_ButtonScreen) == BST_CHECKED;
+}
+
+void OamWindow::ShowView()
+{
+	const bool screen = IsScreenView();
+	ShowWindow(m_GridView.GetHwnd(), screen ? SW_HIDE : SW_SHOWNA);
+	ShowWindow(m_ScreenView.GetHwnd(), screen ? SW_SHOWNA : SW_HIDE);
+
+	// Zoom, Show hidden and Export are for the grid
+	for (HWND control : { m_LabelZoom, m_ComboZoom, m_CheckShowHidden, m_ButtonExport })
+	{
+		ShowWindow(control, screen ? SW_HIDE : SW_SHOWNA);
+	}
+
+	RenderObjects();
+	Layout();
+}
+
+void OamWindow::SelectionChanged(int index)
+{
+	m_Selection = index;
+	m_GridView.SetSelection(index);
+	m_ScreenView.SetSelection(index);
+	UpdateInspector();
 }
 
 bool OamWindow::ShowHidden() const
@@ -627,7 +736,7 @@ std::wstring OamWindow::PositionText(const Oam::Object& object, int index) const
 
 void OamWindow::UpdateInspector()
 {
-	const int index = m_GridView.GetSelection();
+	const int index = m_Selection;
 	const bool has_object = index >= 0 && m_HasSnapshot && m_Snapshot.tiles[0].size() == TileData::BytesPerBank;
 	const bool has_warning = has_object && !m_LineScan.dropped[index].empty();
 
@@ -829,7 +938,7 @@ void OamWindow::DrawWarning(const DRAWITEMSTRUCT* item)
 
 void OamWindow::OpenSelectedTile()
 {
-	const int index = m_GridView.GetSelection();
+	const int index = m_Selection;
 	if (index < 0 || !m_HasSnapshot)
 	{
 		return;
@@ -840,10 +949,8 @@ void OamWindow::OpenSelectedTile()
 	m_Application->ShowTileInTileWindow(bank, Oam::FirstTile(object.tile, ObjectHeight()));
 }
 
-void OamWindow::UpdateHoverStatus()
+void OamWindow::UpdateHoverStatus(int index)
 {
-	const int index = m_GridView.GetHover();
-
 	std::wstring text;
 	if (index >= 0 && m_HasSnapshot)
 	{
@@ -922,6 +1029,11 @@ void OamWindow::CreateControls()
 		return control;
 	};
 
+	// View: the grid of objects, or where they are on screen
+	m_ButtonObjects = create(L"BUTTON", L"Objects", WS_TABSTOP | WS_GROUP | BS_AUTORADIOBUTTON | BS_PUSHLIKE, m_ControlObjectsId, m_Font);
+	m_ButtonScreen = create(L"BUTTON", L"Screen", BS_AUTORADIOBUTTON | BS_PUSHLIKE, m_ControlScreenId, m_Font);
+	Button_SetCheck(m_ButtonObjects, BST_CHECKED);
+
 	// Size: LCDC.2 by default, as the game changes it
 	m_LabelSize = create(L"STATIC", L"Size", SS_CENTERIMAGE, 0, m_Font);
 	m_ComboSize = create(WC_COMBOBOX, L"", WS_TABSTOP | WS_GROUP | CBS_DROPDOWNLIST, m_ControlSizeId, m_Font);
@@ -953,9 +1065,15 @@ void OamWindow::CreateControls()
 	// Objects
 	m_GridView.Create(m_Hwnd, m_ControlGridId);
 	m_GridView.SetZoom(static_cast<int>(ComboBox_GetItemData(m_ComboZoom, ComboBox_GetCurSel(m_ComboZoom))));
-	m_GridView.HoverChanged = [this]() { UpdateHoverStatus(); };
-	m_GridView.SelectionChanged = [this]() { UpdateInspector(); };
+	m_GridView.HoverChanged = [this]() { UpdateHoverStatus(m_GridView.GetHover()); };
+	m_GridView.SelectionChanged = [this]() { SelectionChanged(m_GridView.GetSelection()); };
 	m_GridView.ActivateRequested = [this]() { OpenSelectedTile(); };
+
+	// Screen, hidden until picked
+	m_ScreenView.Create(m_Hwnd, m_ControlScreenViewId);
+	m_ScreenView.HoverChanged = [this]() { UpdateHoverStatus(m_ScreenView.GetHover()); };
+	m_ScreenView.SelectionChanged = [this]() { SelectionChanged(m_ScreenView.GetSelection()); };
+	m_ScreenView.ActivateRequested = [this]() { OpenSelectedTile(); };
 
 	// Inspector, with the details hidden until an object is selected
 	m_LabelHeading = create(L"STATIC", L"No object selected", SS_LEFT | SS_ENDELLIPSIS, 0, m_HeadingFont);
@@ -1080,19 +1198,35 @@ void OamWindow::Layout()
 		x += w + 8;
 	};
 
+	// View buttons side by side
+	for (HWND button : { m_ButtonObjects, m_ButtonScreen })
+	{
+		const int w = MeasureText(m_Font, GetText(button)) + 28;
+		place(button, x, button_y, w, button_height);
+		x += w;
+	}
+	x += group_gap;
+
 	label(m_LabelSize);
 	place(m_ComboSize, x, combo_y, 120, 200);
 	x += 120 + group_gap;
 
-	label(m_LabelZoom);
-	place(m_ComboZoom, x, combo_y, 56, 200);
-	x += 56 + group_gap;
+	if (!IsScreenView())
+	{
+		label(m_LabelZoom);
+		place(m_ComboZoom, x, combo_y, 56, 200);
+		x += 56 + group_gap;
 
-	place(m_CheckShowHidden, x, button_y, MeasureText(m_Font, GetText(m_CheckShowHidden)) + 24, button_height);
+		place(m_CheckShowHidden, x, button_y, MeasureText(m_Font, GetText(m_CheckShowHidden)) + 24, button_height);
+	}
 
-	const int export_width = MeasureText(m_Font, GetText(m_ButtonExport)) + 28;
+	// Export is only for the grid, so Pause updates takes its place in the Screen view
+	const int export_width = IsScreenView() ? -8 : MeasureText(m_Font, GetText(m_ButtonExport)) + 28;
 	const int pause_width = MeasureText(m_Font, GetText(m_ButtonPause)) + 28;
-	place(m_ButtonExport, width - 12 - export_width, button_y, export_width, button_height);
+	if (!IsScreenView())
+	{
+		place(m_ButtonExport, width - 12 - export_width, button_y, export_width, button_height);
+	}
 	place(m_ButtonPause, width - 12 - export_width - 8 - pause_width, button_y, pause_width, button_height);
 
 	// Inspector
@@ -1136,6 +1270,7 @@ void OamWindow::Layout()
 	// Objects fill the rest, left of the inspector
 	const int body_height = client.bottom - status_height - body_top;
 	place(m_GridView.GetHwnd(), 0, body_top, width - m_InspectorWidth, body_height > 0 ? body_height : 0);
+	place(m_ScreenView.GetHwnd(), 0, body_top, width - m_InspectorWidth, body_height > 0 ? body_height : 0);
 
 	EndDeferWindowPos(defer);
 
@@ -1227,7 +1362,7 @@ LRESULT OamWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			}
 			else
 			{
-				SetFocus(m_LastFocus != NULL ? m_LastFocus : m_GridView.GetHwnd());
+				SetFocus(m_LastFocus != NULL ? m_LastFocus : (IsScreenView() ? m_ScreenView.GetHwnd() : m_GridView.GetHwnd()));
 			}
 
 			return 0;
@@ -1305,6 +1440,12 @@ LRESULT OamWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			if (id == m_ControlOpenTileId && code == BN_CLICKED)
 			{
 				OpenSelectedTile();
+				return 0;
+			}
+
+			if ((id == m_ControlObjectsId || id == m_ControlScreenId) && code == BN_CLICKED)
+			{
+				ShowView();
 				return 0;
 			}
 

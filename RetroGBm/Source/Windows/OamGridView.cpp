@@ -387,6 +387,16 @@ void OamGridView::Select(int index)
 	}
 }
 
+void OamGridView::SetSelection(int index)
+{
+	if (index != m_Selection)
+	{
+		m_Selection = index;
+		EnsureVisible(index);
+		InvalidateRect(m_Hwnd, NULL, FALSE);
+	}
+}
+
 void OamGridView::MoveSelection(UINT key)
 {
 	if (m_Cells.empty())

@@ -4,6 +4,7 @@
 #include <Windows.h>
 
 #include "Windows/OamGridView.h"
+#include "Windows/OamScreenView.h"
 
 #include <RetroGBm/Oam.h>
 
@@ -65,6 +66,10 @@ private:
 		std::array<std::vector<uint8_t>, 2> tiles;
 		uint8_t lcdc = 0;
 		std::array<std::array<uint32_t, 4>, 8> colours = {};
+
+		// Which object wins where they overlap: the one further left (DMG, or CGB set to it by OPRI),
+		// else the one earlier in OAM
+		bool coordinate_priority = true;
 	};
 
 	bool m_HasSnapshot = false;
@@ -78,9 +83,19 @@ private:
 	// Which lines each object is dropped from, for the snapshot and size
 	Oam::LineScan m_LineScan;
 
-	// Builds the grid's cells from the snapshot
+	// Builds the grid's cells, or the screen's scene, from the snapshot
 	void RenderObjects();
+	void RenderScreen();
 	OamGridView m_GridView;
+	OamScreenView m_ScreenView;
+
+	// Objects shows the grid, Screen shows where they are on screen
+	bool IsScreenView() const;
+	void ShowView();
+
+	// The selected object, shared by both views and the inspector
+	int m_Selection = -1;
+	void SelectionChanged(int index);
 
 	// Palette the object uses: its CGB palette (0-7), or OBP0 or OBP1 on DMG
 	int PaletteOf(const Oam::Object& object) const;
@@ -106,8 +121,8 @@ private:
 	// Where the object is, or why it can't be seen
 	std::wstring PositionText(const Oam::Object& object, int index) const;
 
-	// Status bar: the object under the mouse
-	void UpdateHoverStatus();
+	// Status bar: the object under the mouse in either view
+	void UpdateHoverStatus(int index);
 
 	// Opens the selected object's first tile in the Tile Data window
 	void OpenSelectedTile();
@@ -132,6 +147,8 @@ private:
 	HBRUSH m_InspectorBrush = NULL;
 
 	// Command bar
+	HWND m_ButtonObjects = NULL;
+	HWND m_ButtonScreen = NULL;
 	HWND m_LabelSize = NULL;
 	HWND m_ComboSize = NULL;
 	HWND m_LabelZoom = NULL;
@@ -163,4 +180,7 @@ private:
 	static const int m_ControlZoomId = 1007;
 	static const int m_ControlShowHiddenId = 1008;
 	static const int m_ControlExportId = 1009;
+	static const int m_ControlObjectsId = 1010;
+	static const int m_ControlScreenId = 1011;
+	static const int m_ControlScreenViewId = 1012;
 };

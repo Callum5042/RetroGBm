@@ -54,6 +54,9 @@ public:
 	inline int GetHover() const { return m_Hover; }
 	inline int GetSelection() const { return m_Selection; }
 
+	// Selects an object without raising SelectionChanged, to follow a selection made elsewhere
+	void SetSelection(int index);
+
 	std::function<void()> HoverChanged;
 	std::function<void()> SelectionChanged;
 
