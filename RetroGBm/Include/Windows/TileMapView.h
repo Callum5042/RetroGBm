@@ -6,6 +6,7 @@
 #include <RetroGBm/TileMap.h>
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -53,6 +54,14 @@ public:
 
 	// Shown in the middle of the view when there is no image
 	void SetEmptyText(const std::wstring& text);
+
+	// The entry under the mouse, and the entry picked by clicking or the arrow keys,
+	// as row * TileMap::Columns + column, or -1 for none
+	inline int GetHover() const { return m_Hover; }
+	inline int GetSelection() const { return m_Selection; }
+
+	std::function<void()> HoverChanged;
+	std::function<void()> SelectionChanged;
 
 	LRESULT HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -106,7 +115,21 @@ private:
 	void EnsureBackBuffer(int width, int height);
 	void ReleaseBackBuffer();
 
+	// Hover and selection
+	int m_Hover = -1;
+	int m_Selection = -1;
+	bool m_TrackingMouse = false;
+
+	int HitTest(int x, int y) const;
+	RECT EntryRect(int entry) const;
+	void UpdateHoverFromCursor();
+	void SetHover(int entry);
+	void Select(int entry);
+	void MoveSelection(UINT key);
+	void EnsureVisible(int entry);
+
 	void Paint(HDC hdc);
+	void PaintHighlights();
 	void PaintMap();
 	void PaintOverlay();
 	void PaintLegend();

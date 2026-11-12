@@ -10,7 +10,9 @@
 #include <RetroGBm/Emulator.h>
 #include <RetroGBm/Display.h>
 #include <RetroGBm/Ppu.h>
+#include <RetroGBm/TileData.h>
 
+#include <algorithm>
 #include <filesystem>
 #include <format>
 #include <string>
@@ -67,6 +69,34 @@ namespace
 		return text;
 	}
 
+	void SetTextIfChanged(HWND control, const std::wstring& text)
+	{
+		// Avoids repainting (and flickering) every frame
+		if (GetText(control) != text)
+		{
+			SetWindowText(control, text.c_str());
+		}
+	}
+
+	COLORREF ToColorRef(uint32_t colour)
+	{
+		return RGB((colour >> 16) & 0xFF, (colour >> 8) & 0xFF, colour & 0xFF);
+	}
+
+	void FillColour(HDC hdc, int x, int y, int width, int height, COLORREF colour)
+	{
+		RECT rect = { x, y, x + width, y + height };
+		SetDCBrushColor(hdc, colour);
+		FillRect(hdc, &rect, reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+	}
+
+	// Inspector preview: 8 x 8 pixels of 20px, with the palette beside it
+	const int PreviewPixelSize = 20;
+	const int PreviewSize = 8 * PreviewPixelSize;
+
+	const wchar_t* NoEntryHint = L"Hover over the map to see an entry's address, or click one to pin it here.";
+	const wchar_t* EntryHint = L"Click an entry to pin it here. The arrow keys move the selection.";
+
 	// Display colours are 0xAABBGGRR, the map view wants 0x00RRGGBB
 	uint32_t ToViewColour(uint32_t colour)
 	{
@@ -98,9 +128,30 @@ void TileMapWindow::Create()
 	}
 
 	// Use the system message font (Segoe UI 9pt on Windows 10/11)
-	NONCLIENTMETRICS metrics = { sizeof(NONCLIENTMETRICS) };
-	SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(metrics), &metrics, 0);
-	m_Font = CreateFontIndirect(&metrics.lfMessageFont);
+	{
+		NONCLIENTMETRICS metrics = { sizeof(NONCLIENTMETRICS) };
+		SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(metrics), &metrics, 0);
+		m_Font = CreateFontIndirect(&metrics.lfMessageFont);
+
+		HDC hdc = GetDC(NULL);
+		LOGFONT heading = metrics.lfMessageFont;
+		heading.lfWeight = FW_SEMIBOLD;
+		heading.lfHeight = -MulDiv(15, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+		m_HeadingFont = CreateFontIndirect(&heading);
+
+		// Consolas for addresses
+		LOGFONT mono = {};
+		mono.lfHeight = -MulDiv(9, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+		mono.lfWeight = FW_NORMAL;
+		mono.lfQuality = CLEARTYPE_QUALITY;
+		mono.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
+		wcscpy_s(mono.lfFaceName, L"Consolas");
+		m_MonoFont = CreateFontIndirect(&mono);
+
+		mono.lfHeight = -MulDiv(8, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+		m_MonoSmallFont = CreateFontIndirect(&mono);
+		ReleaseDC(NULL, hdc);
+	}
 
 	m_InspectorBrush = CreateSolidBrush(InspectorColour);
 
@@ -142,10 +193,13 @@ void TileMapWindow::ReleaseResources()
 {
 	m_MapView.Destroy();
 
-	if (m_Font != NULL)
+	for (HFONT* font : { &m_Font, &m_HeadingFont, &m_MonoFont, &m_MonoSmallFont })
 	{
-		DeleteObject(m_Font);
-		m_Font = NULL;
+		if (*font != NULL)
+		{
+			DeleteObject(*font);
+			*font = NULL;
+		}
 	}
 
 	if (m_InspectorBrush != NULL)
@@ -284,6 +338,7 @@ void TileMapWindow::RenderMap()
 	{
 		m_MapView.SetEmptyText(L"Load a game to see its tile maps.");
 		m_MapView.SetImage({});
+		UpdateInspector();
 		return;
 	}
 
@@ -334,6 +389,222 @@ void TileMapWindow::RenderMap()
 	}
 
 	m_MapView.SetOverlay(overlay);
+
+	UpdateInspector();
+}
+
+std::wstring TileMapWindow::ScreenPositionText(int entry) const
+{
+	const int column = entry % TileMap::Columns;
+	const int row = entry / TileMap::Columns;
+	const uint16_t address = MapAddress();
+	const uint8_t lcdc = m_Snapshot.lcdc;
+
+	std::wstring text;
+	auto add = [&text](const std::wstring& part)
+	{
+		text += text.empty() ? part : L", " + part;
+	};
+
+	if (address == TileMap::BackgroundMap(lcdc))
+	{
+		if (const auto position = TileMap::ScreenPosition(column, row, m_Snapshot.scx, m_Snapshot.scy))
+		{
+			add(std::format(L"on screen at {}, {}", position->x, position->y));
+		}
+	}
+
+	// The window map is drawn from its top left, at WX - 7, WY
+	const TileMap::Rect window = TileMap::WindowOnMap(lcdc, m_Snapshot.wx, m_Snapshot.wy);
+	if (address == TileMap::WindowMap(lcdc) && !window.IsEmpty())
+	{
+		const int x = column * 8 - window.x;
+		const int y = row * 8 - window.y;
+		if (x > -8 && x < window.width && y < window.height)
+		{
+			const TileMap::Rect screen = TileMap::WindowOnScreen(lcdc, m_Snapshot.wx, m_Snapshot.wy);
+			add(std::format(L"in the window at {}, {}", screen.x + x, screen.y + y));
+		}
+	}
+
+	return text.empty() ? L"off screen" : text;
+}
+
+void TileMapWindow::UpdateInspector()
+{
+	const int entry = m_MapView.GetSelection();
+	const bool has_entry = entry >= 0 && m_HasSnapshot && m_Snapshot.vram[0].size() == VramSize;
+
+	// Show the details only while an entry is selected
+	if (has_entry != m_InspectorHasEntry)
+	{
+		m_InspectorHasEntry = has_entry;
+
+		std::vector<HWND> details = { m_LabelSubtitle, m_Preview };
+		details.insert(details.end(), m_PropertyLabels.begin(), m_PropertyLabels.end());
+		details.insert(details.end(), m_PropertyValues.begin(), m_PropertyValues.end());
+		for (HWND control : details)
+		{
+			ShowWindow(control, has_entry ? SW_SHOWNA : SW_HIDE);
+		}
+
+		SetTextIfChanged(m_LabelHint, has_entry ? EntryHint : NoEntryHint);
+		Layout();
+	}
+
+	if (!has_entry)
+	{
+		SetTextIfChanged(m_LabelHeading, L"No entry selected");
+		return;
+	}
+
+	const int column = entry % TileMap::Columns;
+	const int row = entry / TileMap::Columns;
+	const uint16_t address = static_cast<uint16_t>(MapAddress() + entry);
+	const size_t offset = address - 0x8000;
+	const uint8_t id = m_Snapshot.vram[0][offset];
+	const bool colour = m_Snapshot.vram[1].size() == VramSize;
+	const uint8_t attribute_byte = colour ? m_Snapshot.vram[1][offset] : 0;
+	const TileMap::Attributes attributes = TileMap::DecodeAttributes(attribute_byte);
+	const TileMap::Addressing addressing = Addressing();
+	const uint16_t data = TileMap::TileAddress(id, addressing);
+
+	SetTextIfChanged(m_LabelHeading, std::format(L"Entry ({}, {})", column, row));
+	SetTextIfChanged(m_LabelSubtitle, ScreenPositionText(entry));
+
+	// In $8800 mode IDs are signed, counting from $9000
+	const std::wstring id_text = (addressing == TileMap::Addressing::Signed && id >= 128)
+		? std::format(L"${:02X} ({})", id, static_cast<int>(id) - 256)
+		: std::format(L"${:02X}", id);
+
+	std::wstring flip = L"None";
+	if (attributes.flip_x && attributes.flip_y) flip = L"X and Y";
+	else if (attributes.flip_x) flip = L"X";
+	else if (attributes.flip_y) flip = L"Y";
+
+	SetTextIfChanged(m_PropertyValues[0], std::format(L"${:04X}", address));
+	SetTextIfChanged(m_PropertyValues[1], id_text);
+	SetTextIfChanged(m_PropertyValues[2], colour
+		? std::format(L"${:04X}\x2013${:04X} \x00B7 bank {}", data, data + TileData::BytesPerTile - 1, attributes.bank)
+		: std::format(L"${:04X}\x2013${:04X}", data, data + TileData::BytesPerTile - 1));
+	SetTextIfChanged(m_PropertyValues[3], colour ? std::format(L"${:02X}", attribute_byte) : L"\x2014  none on DMG");
+	SetTextIfChanged(m_PropertyValues[4], colour ? std::format(L"BG {}", attributes.palette) : L"BGP");
+	SetTextIfChanged(m_PropertyValues[5], colour ? flip : L"\x2014");
+	SetTextIfChanged(m_PropertyValues[6], colour ? (attributes.priority ? L"Over objects" : L"Normal") : L"\x2014");
+
+	// Preview pixels, flipped as the entry draws them
+	const std::vector<uint8_t>& bank = (colour && attributes.bank == 1) ? m_Snapshot.vram[1] : m_Snapshot.vram[0];
+	const std::array<uint8_t, 64> indices = TileData::DecodeTile(bank.data() + (data - 0x8000));
+	const std::array<uint32_t, 4>& colours = m_Snapshot.colours[attributes.palette];
+
+	std::array<uint32_t, 64> pixels = {};
+	for (int y = 0; y < 8; ++y)
+	{
+		for (int x = 0; x < 8; ++x)
+		{
+			const int source_x = attributes.flip_x ? 7 - x : x;
+			const int source_y = attributes.flip_y ? 7 - y : y;
+			pixels[y * 8 + x] = colours[indices[source_y * 8 + source_x]];
+		}
+	}
+
+	const std::wstring palette_name = colour ? std::format(L"BG {}", attributes.palette) : L"BGP";
+	if (pixels != m_PreviewPixels || colours != m_PreviewColours || palette_name != m_PreviewPaletteName)
+	{
+		m_PreviewPixels = pixels;
+		m_PreviewColours = colours;
+		m_PreviewPaletteName = palette_name;
+		InvalidateRect(m_Preview, NULL, FALSE);
+	}
+}
+
+void TileMapWindow::DrawPreview(const DRAWITEMSTRUCT* item)
+{
+	const RECT& rect = item->rcItem;
+	const int width = rect.right - rect.left;
+	const int height = rect.bottom - rect.top;
+
+	// Draw off screen so the preview doesn't flicker when it changes every frame
+	HDC hdc = CreateCompatibleDC(item->hDC);
+	HBITMAP bitmap = CreateCompatibleBitmap(item->hDC, width, height);
+	HGDIOBJ previous_bitmap = SelectObject(hdc, bitmap);
+
+	FillColour(hdc, 0, 0, width, height, InspectorColour);
+
+	for (int y = 0; y < 8; ++y)
+	{
+		for (int x = 0; x < 8; ++x)
+		{
+			FillColour(hdc, x * PreviewPixelSize, y * PreviewPixelSize, PreviewPixelSize, PreviewPixelSize, ToColorRef(m_PreviewPixels[y * 8 + x]));
+		}
+	}
+
+	// Pixel grid, darkening what's under it
+	{
+		HPEN pen = CreatePen(PS_SOLID, 1, RGB(200, 200, 200));
+		HGDIOBJ previous_pen = SelectObject(hdc, pen);
+		const int previous_rop = SetROP2(hdc, R2_MASKPEN);
+		for (int i = 1; i < 8; ++i)
+		{
+			MoveToEx(hdc, i * PreviewPixelSize, 0, NULL);
+			LineTo(hdc, i * PreviewPixelSize, PreviewSize);
+			MoveToEx(hdc, 0, i * PreviewPixelSize, NULL);
+			LineTo(hdc, PreviewSize, i * PreviewPixelSize);
+		}
+		SetROP2(hdc, previous_rop);
+		SelectObject(hdc, previous_pen);
+		DeleteObject(pen);
+	}
+
+	RECT outline = { 0, 0, PreviewSize, PreviewSize };
+	SetDCBrushColor(hdc, RGB(200, 200, 200));
+	FrameRect(hdc, &outline, reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+
+	// Palette swatches
+	const int swatch_x = PreviewSize + 14;
+	SetBkMode(hdc, TRANSPARENT);
+	SelectObject(hdc, m_Font);
+	SetTextColor(hdc, SecondaryTextColour);
+	RECT label = { swatch_x, 0, width, 18 };
+	const std::wstring title = L"Palette " + m_PreviewPaletteName;
+	DrawTextW(hdc, title.c_str(), -1, &label, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_NOPREFIX);
+
+	SelectObject(hdc, m_MonoSmallFont);
+	SetTextColor(hdc, GetSysColor(COLOR_WINDOWTEXT));
+	for (int i = 0; i < 4; ++i)
+	{
+		const int y = 24 + i * 28;
+		FillColour(hdc, swatch_x, y, 20, 20, ToColorRef(m_PreviewColours[i]));
+
+		RECT swatch = { swatch_x, y, swatch_x + 20, y + 20 };
+		SetDCBrushColor(hdc, RGB(200, 200, 200));
+		FrameRect(hdc, &swatch, reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+
+		const std::wstring text = std::format(L"{}  #{:06X}", i, m_PreviewColours[i] & 0xFFFFFF);
+		RECT text_rect = { swatch_x + 26, y, width, y + 20 };
+		DrawTextW(hdc, text.c_str(), -1, &text_rect, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+	}
+
+	BitBlt(item->hDC, rect.left, rect.top, width, height, hdc, 0, 0, SRCCOPY);
+
+	SelectObject(hdc, previous_bitmap);
+	DeleteObject(bitmap);
+	DeleteDC(hdc);
+}
+
+void TileMapWindow::UpdateHoverStatus()
+{
+	const int entry = m_MapView.GetHover();
+
+	std::wstring text;
+	if (entry >= 0 && m_HasSnapshot && m_Snapshot.vram[0].size() == VramSize)
+	{
+		const uint16_t address = static_cast<uint16_t>(MapAddress() + entry);
+		text = std::format(L"({}, {}) \x00B7 ${:04X} \x00B7 tile ${:02X}",
+			entry % TileMap::Columns, entry / TileMap::Columns, address, m_Snapshot.vram[0][address - 0x8000]);
+	}
+
+	SendMessageW(m_StatusBar, SB_SETTEXTW, 1, reinterpret_cast<LPARAM>(text.c_str()));
 }
 
 bool TileMapWindow::HandleDialogMessage(MSG* msg)
@@ -448,6 +719,31 @@ void TileMapWindow::CreateControls()
 	m_MapView.Create(m_Hwnd, m_ControlMapViewId);
 	m_MapView.SetZoom(static_cast<int>(ComboBox_GetItemData(m_ComboZoom, ComboBox_GetCurSel(m_ComboZoom))));
 	m_MapView.SetGrid(false);
+	m_MapView.HoverChanged = [this]() { UpdateHoverStatus(); };
+	m_MapView.SelectionChanged = [this]() { UpdateInspector(); };
+
+	// Inspector, with the details hidden until an entry is selected
+	m_LabelHeading = create(L"STATIC", L"No entry selected", SS_LEFT | SS_ENDELLIPSIS, 0, m_HeadingFont);
+	m_LabelSubtitle = create(L"STATIC", L"", SS_LEFT | SS_ENDELLIPSIS, 0, m_Font);
+	m_Preview = create(L"STATIC", L"", SS_OWNERDRAW, m_ControlPreviewId, m_Font);
+
+	const wchar_t* property_names[] = { L"Map address", L"Tile ID", L"Tile data", L"Attributes", L"Palette", L"Flip", L"Priority" };
+	for (size_t i = 0; i < m_PropertyLabels.size(); ++i)
+	{
+		m_PropertyLabels[i] = create(L"STATIC", property_names[i], SS_LEFT, 0, m_Font);
+		m_PropertyValues[i] = create(L"STATIC", L"", SS_LEFT | SS_ENDELLIPSIS, 0, m_MonoFont);
+	}
+
+	m_LabelHint = create(L"STATIC", NoEntryHint, SS_LEFT, 0, m_Font);
+
+	std::vector<HWND> details = { m_LabelSubtitle, m_Preview };
+	details.insert(details.end(), m_PropertyLabels.begin(), m_PropertyLabels.end());
+	details.insert(details.end(), m_PropertyValues.begin(), m_PropertyValues.end());
+	for (HWND control : details)
+	{
+		ShowWindow(control, SW_HIDE);
+	}
+	m_InspectorHasEntry = false;
 
 	// Status bar
 	m_StatusBar = CreateWindowExW(0, STATUSCLASSNAME, L"", WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP,
@@ -541,8 +837,35 @@ void TileMapWindow::Layout()
 	const int pause_width = MeasureText(m_Font, GetText(m_ButtonPause)) + 28;
 	place(m_ButtonPause, width - 12 - pause_width, button_y, pause_width, button_height);
 
-	// Map fills the rest, left of the inspector
+	// Inspector
+	const int inspector_x = width - m_InspectorWidth + 1 + 16;
+	const int inspector_width = m_InspectorWidth - 1 - 32;
 	const int body_top = m_CommandBarHeight + 1;
+	int y = body_top + 16;
+	place(m_LabelHeading, inspector_x, y, inspector_width, 28);
+	y += 30;
+
+	if (m_InspectorHasEntry)
+	{
+		place(m_LabelSubtitle, inspector_x, y, inspector_width, 20);
+		y += 28;
+
+		place(m_Preview, inspector_x, y, inspector_width, PreviewSize);
+		y += PreviewSize + 16;
+
+		const int label_width = 96;
+		for (size_t i = 0; i < m_PropertyLabels.size(); ++i)
+		{
+			place(m_PropertyLabels[i], inspector_x, y, label_width, 20);
+			place(m_PropertyValues[i], inspector_x + label_width + 4, y, inspector_width - label_width - 4, 20);
+			y += 22;
+		}
+		y += 12;
+	}
+
+	place(m_LabelHint, inspector_x, y, inspector_width, 48);
+
+	// Map fills the rest, left of the inspector
 	const int body_height = client.bottom - status_height - body_top;
 	place(m_MapView.GetHwnd(), 0, body_top, width - m_InspectorWidth, body_height > 0 ? body_height : 0);
 
@@ -653,10 +976,30 @@ LRESULT TileMapWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			HWND control = reinterpret_cast<HWND>(lParam);
 			SetBkMode(hdc, TRANSPARENT);
 
+			const bool secondary = control == m_LabelHint || control == m_LabelSubtitle ||
+				std::find(m_PropertyLabels.begin(), m_PropertyLabels.end(), control) != m_PropertyLabels.end();
+			const bool inspector = secondary || control == m_LabelHeading ||
+				std::find(m_PropertyValues.begin(), m_PropertyValues.end(), control) != m_PropertyValues.end();
+
+			if (inspector)
+			{
+				SetTextColor(hdc, secondary ? SecondaryTextColour : GetSysColor(COLOR_WINDOWTEXT));
+				return reinterpret_cast<LRESULT>(m_InspectorBrush);
+			}
+
 			const bool checkbox = control == m_CheckGrid || control == m_CheckOverlay;
 			SetTextColor(hdc, checkbox ? GetSysColor(COLOR_WINDOWTEXT) : SecondaryTextColour);
 			return reinterpret_cast<LRESULT>(GetSysColorBrush(COLOR_BTNFACE));
 		}
+
+		case WM_DRAWITEM:
+			if (static_cast<int>(wParam) == m_ControlPreviewId)
+			{
+				DrawPreview(reinterpret_cast<const DRAWITEMSTRUCT*>(lParam));
+				return TRUE;
+			}
+
+			break;
 
 		case WM_ERASEBKGND:
 			PaintBackground(reinterpret_cast<HDC>(wParam));

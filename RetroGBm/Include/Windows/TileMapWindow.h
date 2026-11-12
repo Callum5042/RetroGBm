@@ -85,6 +85,20 @@ private:
 	void RenderMap();
 	TileMapView m_MapView;
 
+	// Inspector: details of the selected map entry
+	bool m_InspectorHasEntry = false;
+	std::array<uint32_t, 64> m_PreviewPixels = {};
+	std::array<uint32_t, 4> m_PreviewColours = {};
+	std::wstring m_PreviewPaletteName;
+	void UpdateInspector();
+	void DrawPreview(const DRAWITEMSTRUCT* item);
+
+	// Where a map entry is drawn on screen, if anywhere, as the background or the window
+	std::wstring ScreenPositionText(int entry) const;
+
+	// Status bar: the entry under the mouse
+	void UpdateHoverStatus();
+
 	// Layout
 	static const int m_ClientWidth = 1000;
 	static const int m_ClientHeight = 720;
@@ -92,6 +106,9 @@ private:
 	static const int m_InspectorWidth = 312;
 
 	HFONT m_Font = NULL;
+	HFONT m_HeadingFont = NULL;
+	HFONT m_MonoFont = NULL;
+	HFONT m_MonoSmallFont = NULL;
 	HBRUSH m_InspectorBrush = NULL;
 
 	// Command bar
@@ -105,6 +122,14 @@ private:
 	HWND m_CheckOverlay = NULL;
 	HWND m_ButtonPause = NULL;
 
+	// Inspector
+	HWND m_LabelHeading = NULL;
+	HWND m_LabelSubtitle = NULL;
+	HWND m_Preview = NULL;
+	std::array<HWND, 7> m_PropertyLabels = {};
+	std::array<HWND, 7> m_PropertyValues = {};
+	HWND m_LabelHint = NULL;
+
 	// Status bar: mode and live/paused on the left, the hovered entry on the right
 	HWND m_StatusBar = NULL;
 
@@ -116,4 +141,5 @@ private:
 	static const int m_ControlGridId = 1005;
 	static const int m_ControlMapViewId = 1006;
 	static const int m_ControlOverlayId = 1007;
+	static const int m_ControlPreviewId = 1008;
 };

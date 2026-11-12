@@ -18,6 +18,15 @@ namespace
 	const COLORREF OutlineColour = RGB(200, 200, 200);
 	const COLORREF ScreenColour = RGB(226, 75, 74);
 	const COLORREF WindowColour = RGB(83, 74, 183);
+	const COLORREF HoverColour = RGB(26, 26, 26);
+	const COLORREF SelectionColour = RGB(0, 95, 184);
+
+	void FrameColour(HDC hdc, RECT rect, int inset, COLORREF colour)
+	{
+		InflateRect(&rect, -inset, -inset);
+		SetDCBrushColor(hdc, colour);
+		FrameRect(hdc, &rect, reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+	}
 
 	static LRESULT CALLBACK MapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
@@ -281,6 +290,133 @@ void TileMapView::ScrollTo(int x, int y)
 	SetScrollPos(m_Hwnd, SB_HORZ, m_ScrollX, TRUE);
 	SetScrollPos(m_Hwnd, SB_VERT, m_ScrollY, TRUE);
 	InvalidateRect(m_Hwnd, NULL, FALSE);
+
+	// The entry under the mouse moved
+	UpdateHoverFromCursor();
+}
+
+int TileMapView::HitTest(int x, int y) const
+{
+	if (m_Pixels.empty())
+	{
+		return -1;
+	}
+
+	const POINT origin = MapOrigin();
+	const int cell = CellSize();
+	const int column = x - origin.x;
+	const int row = y - origin.y;
+	if (column < 0 || row < 0 || column >= TileMap::Columns * cell || row >= TileMap::Rows * cell)
+	{
+		return -1;
+	}
+
+	return (row / cell) * TileMap::Columns + column / cell;
+}
+
+RECT TileMapView::EntryRect(int entry) const
+{
+	const POINT origin = MapOrigin();
+	const int cell = CellSize();
+	const int x = origin.x + (entry % TileMap::Columns) * cell;
+	const int y = origin.y + (entry / TileMap::Columns) * cell;
+	return { x, y, x + cell, y + cell };
+}
+
+void TileMapView::UpdateHoverFromCursor()
+{
+	if (!m_TrackingMouse)
+	{
+		return;
+	}
+
+	POINT cursor;
+	GetCursorPos(&cursor);
+	ScreenToClient(m_Hwnd, &cursor);
+	SetHover(HitTest(cursor.x, cursor.y));
+}
+
+void TileMapView::SetHover(int entry)
+{
+	if (entry == m_Hover)
+	{
+		return;
+	}
+
+	m_Hover = entry;
+	InvalidateRect(m_Hwnd, NULL, FALSE);
+
+	if (HoverChanged)
+	{
+		HoverChanged();
+	}
+}
+
+void TileMapView::Select(int entry)
+{
+	if (entry == m_Selection)
+	{
+		return;
+	}
+
+	m_Selection = entry;
+	EnsureVisible(entry);
+	InvalidateRect(m_Hwnd, NULL, FALSE);
+
+	if (SelectionChanged)
+	{
+		SelectionChanged();
+	}
+}
+
+void TileMapView::MoveSelection(UINT key)
+{
+	if (m_Pixels.empty())
+	{
+		return;
+	}
+
+	// Start from the top left when nothing is selected
+	if (m_Selection < 0)
+	{
+		Select(0);
+		return;
+	}
+
+	// The map wraps, so the arrow keys do too
+	int column = m_Selection % TileMap::Columns;
+	int row = m_Selection / TileMap::Columns;
+	switch (key)
+	{
+		case VK_LEFT: column = (column + TileMap::Columns - 1) % TileMap::Columns; break;
+		case VK_RIGHT: column = (column + 1) % TileMap::Columns; break;
+		case VK_UP: row = (row + TileMap::Rows - 1) % TileMap::Rows; break;
+		case VK_DOWN: row = (row + 1) % TileMap::Rows; break;
+	}
+
+	Select(row * TileMap::Columns + column);
+}
+
+void TileMapView::EnsureVisible(int entry)
+{
+	if (entry < 0)
+	{
+		return;
+	}
+
+	RECT client;
+	GetClientRect(m_Hwnd, &client);
+	const RECT rect = EntryRect(entry);
+	const int margin = 8;
+
+	int x = m_ScrollX;
+	int y = m_ScrollY;
+	if (rect.left - margin < 0) x += rect.left - margin;
+	else if (rect.right + margin > client.right) x += rect.right + margin - client.right;
+	if (rect.top - margin < 0) y += rect.top - margin;
+	else if (rect.bottom + margin > client.bottom) y += rect.bottom + margin - client.bottom;
+
+	ScrollTo(x, y);
 }
 
 void TileMapView::OnScroll(int bar, WORD request)
@@ -474,6 +610,30 @@ void TileMapView::PaintMap()
 	{
 		PaintOverlay();
 		PaintLegend();
+	}
+
+	PaintHighlights();
+}
+
+void TileMapView::PaintHighlights()
+{
+	// Hover: white inside a dark outline, so it shows on any colour
+	if (m_Hover >= 0 && m_Hover != m_Selection)
+	{
+		const RECT rect = EntryRect(m_Hover);
+		FrameColour(m_BackDC, rect, -1, HoverColour);
+		FrameColour(m_BackDC, rect, 0, RGB(255, 255, 255));
+		FrameColour(m_BackDC, rect, 1, RGB(255, 255, 255));
+	}
+
+	// Selection: blue inside a white outline
+	if (m_Selection >= 0)
+	{
+		const RECT rect = EntryRect(m_Selection);
+		FrameColour(m_BackDC, rect, -2, RGB(255, 255, 255));
+		FrameColour(m_BackDC, rect, -1, RGB(255, 255, 255));
+		FrameColour(m_BackDC, rect, 0, SelectionColour);
+		FrameColour(m_BackDC, rect, 1, SelectionColour);
 	}
 }
 
@@ -685,12 +845,54 @@ LRESULT TileMapView::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 			return 0;
 		}
 
-		case WM_LBUTTONDOWN:
-			SetFocus(hwnd);
+		case WM_MOUSEMOVE:
+		{
+			if (!m_TrackingMouse)
+			{
+				TRACKMOUSEEVENT track = { sizeof(TRACKMOUSEEVENT), TME_LEAVE, hwnd, 0 };
+				m_TrackingMouse = TrackMouseEvent(&track) != FALSE;
+			}
+
+			SetHover(HitTest(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)));
 			return 0;
+		}
+
+		case WM_MOUSELEAVE:
+			m_TrackingMouse = false;
+			SetHover(-1);
+			return 0;
+
+		case WM_LBUTTONDOWN:
+		{
+			SetFocus(hwnd);
+
+			const int entry = HitTest(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+			if (entry >= 0)
+			{
+				Select(entry);
+			}
+
+			return 0;
+		}
+
+		case WM_GETDLGCODE:
+			// Keep the arrow keys rather than letting the dialog manager move focus with them
+			return DLGC_WANTARROWS;
+
+		case WM_KEYDOWN:
+			if (wParam == VK_LEFT || wParam == VK_RIGHT || wParam == VK_UP || wParam == VK_DOWN)
+			{
+				MoveSelection(static_cast<UINT>(wParam));
+				return 0;
+			}
+
+			break;
 
 		case WM_DESTROY:
 			m_Hwnd = NULL;
+			m_TrackingMouse = false;
+			m_Hover = -1;
+			m_Selection = -1;
 			return 0;
 	}
 
