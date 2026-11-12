@@ -3,15 +3,33 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
+#include <RetroGBm/TileMap.h>
+
 #include <cstdint>
 #include <string>
 #include <vector>
 
-// Draws a whole 32 x 32 tile map (256 x 256 pixels) with a title, the address of each row and an
-// optional grid. Scrolls when larger than the view.
+// Draws a whole 32 x 32 tile map (256 x 256 pixels) with a title, the address of each row, an
+// optional grid and the parts of it on screen. Scrolls when larger than the view.
 class TileMapView
 {
 public:
+	// Areas of the map on screen, in map pixels. The rectangles can run off the right and bottom
+	// edges, where they carry on from the other side.
+	struct Overlay
+	{
+		// The screen, at SCX and SCY, when this is the background map
+		TileMap::Rect screen;
+
+		// The part of the screen hidden under the window, when this is the background map
+		TileMap::Rect covered;
+
+		// The part of the map shown as the window, when this is the window map
+		TileMap::Rect window;
+
+		bool operator==(const Overlay& other) const = default;
+	};
+
 	TileMapView() = default;
 	virtual ~TileMapView();
 
@@ -29,6 +47,9 @@ public:
 
 	void SetZoom(int zoom);
 	void SetGrid(bool grid);
+
+	void SetOverlay(const Overlay& overlay);
+	void SetShowOverlay(bool show);
 
 	// Shown in the middle of the view when there is no image
 	void SetEmptyText(const std::wstring& text);
@@ -49,6 +70,8 @@ private:
 	std::wstring m_EmptyText;
 	int m_Zoom = 2;
 	bool m_Grid = false;
+	Overlay m_Overlay;
+	bool m_ShowOverlay = true;
 
 	// Layout, in content coordinates before scrolling
 	static const int m_PaddingX = 20;
@@ -57,6 +80,8 @@ private:
 	static const int m_HeaderGap = 8;
 	static const int m_GutterWidth = 48;
 	static const int m_GutterGap = 8;
+	static const int m_LegendGap = 10;
+	static const int m_LegendHeight = 18;
 
 	int CellSize() const { return 8 * m_Zoom; }
 	SIZE ContentSize() const;
@@ -83,5 +108,8 @@ private:
 
 	void Paint(HDC hdc);
 	void PaintMap();
+	void PaintOverlay();
+	void PaintLegend();
 	void BlendRect(int x, int y, int width, int height);
+	void LightenRect(int x, int y, int width, int height);
 };

@@ -16,6 +16,8 @@ namespace
 	const COLORREF SecondaryTextColour = RGB(92, 92, 92);
 	const COLORREF AddressColour = RGB(110, 110, 110);
 	const COLORREF OutlineColour = RGB(200, 200, 200);
+	const COLORREF ScreenColour = RGB(226, 75, 74);
+	const COLORREF WindowColour = RGB(83, 74, 183);
 
 	static LRESULT CALLBACK MapWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
@@ -174,6 +176,27 @@ void TileMapView::SetGrid(bool grid)
 	}
 }
 
+void TileMapView::SetOverlay(const Overlay& overlay)
+{
+	if (!(overlay == m_Overlay))
+	{
+		m_Overlay = overlay;
+		if (m_ShowOverlay)
+		{
+			InvalidateRect(m_Hwnd, NULL, FALSE);
+		}
+	}
+}
+
+void TileMapView::SetShowOverlay(bool show)
+{
+	if (show != m_ShowOverlay)
+	{
+		m_ShowOverlay = show;
+		InvalidateRect(m_Hwnd, NULL, FALSE);
+	}
+}
+
 void TileMapView::SetEmptyText(const std::wstring& text)
 {
 	if (text != m_EmptyText)
@@ -191,7 +214,7 @@ SIZE TileMapView::ContentSize() const
 	}
 
 	const int width = m_PaddingX * 2 + m_GutterWidth + m_GutterGap + TileMap::Columns * CellSize();
-	const int height = m_PaddingY * 2 + m_HeaderHeight + m_HeaderGap + TileMap::Rows * CellSize();
+	const int height = m_PaddingY * 2 + m_HeaderHeight + m_HeaderGap + TileMap::Rows * CellSize() + m_LegendGap + m_LegendHeight;
 	return { width, height };
 }
 
@@ -446,6 +469,123 @@ void TileMapView::PaintMap()
 			BlendRect(x, y + row * cell, width, 1);
 		}
 	}
+
+	if (m_ShowOverlay)
+	{
+		PaintOverlay();
+		PaintLegend();
+	}
+}
+
+void TileMapView::PaintOverlay()
+{
+	const POINT origin = MapOrigin();
+	const int scale = m_Zoom;
+	const int size = TileMap::Width * scale;
+
+	// The part under the window is lightened, so what the screen really shows stands out
+	GdiFlush();
+	for (const TileMap::Rect& piece : TileMap::Wrap(m_Overlay.covered))
+	{
+		LightenRect(origin.x + piece.x * scale, origin.y + piece.y * scale, piece.width * scale, piece.height * scale);
+	}
+
+	// Outlines are drawn whole at each of the four positions the wrapping can put them, clipped to
+	// the map, so a rectangle that runs off one edge carries on from the other without a line at the edge
+	const int saved = SaveDC(m_BackDC);
+	IntersectClipRect(m_BackDC, origin.x, origin.y, origin.x + size, origin.y + size);
+	SelectObject(m_BackDC, GetStockObject(NULL_BRUSH));
+
+	auto outline = [&](const TileMap::Rect& rect, COLORREF colour, bool dashed)
+	{
+		if (rect.IsEmpty())
+		{
+			return;
+		}
+
+		LOGBRUSH brush = { BS_SOLID, colour, 0 };
+		const DWORD style = PS_GEOMETRIC | PS_ENDCAP_FLAT | PS_JOIN_MITER | (dashed ? PS_DASH : PS_SOLID);
+		HPEN pen = ExtCreatePen(style, 2, &brush, 0, nullptr);
+		HGDIOBJ previous = SelectObject(m_BackDC, pen);
+
+		for (int dy : { 0, -TileMap::Height })
+		{
+			for (int dx : { 0, -TileMap::Width })
+			{
+				// The 2px pen is centred on the line, so pull it in by one to keep it inside the rectangle
+				const int left = origin.x + (rect.x + dx) * scale + 1;
+				const int top = origin.y + (rect.y + dy) * scale + 1;
+				const int right = left + rect.width * scale - 1;
+				const int bottom = top + rect.height * scale - 1;
+				Rectangle(m_BackDC, left, top, right, bottom);
+			}
+		}
+
+		SelectObject(m_BackDC, previous);
+		DeleteObject(pen);
+	};
+
+	outline(m_Overlay.covered, ScreenColour, true);
+	outline(m_Overlay.screen, ScreenColour, false);
+	outline(m_Overlay.window, WindowColour, false);
+
+	RestoreDC(m_BackDC, saved);
+}
+
+void TileMapView::PaintLegend()
+{
+	const bool screen = !m_Overlay.screen.IsEmpty();
+	const bool covered = !m_Overlay.covered.IsEmpty();
+	const bool window = !m_Overlay.window.IsEmpty();
+	if (!screen && !window)
+	{
+		return;
+	}
+
+	const POINT origin = MapOrigin();
+	int x = origin.x;
+	const int y = origin.y + TileMap::Rows * CellSize() + m_LegendGap;
+	const int middle = y + m_LegendHeight / 2;
+
+	SelectObject(m_BackDC, m_Font);
+	SetTextColor(m_BackDC, SecondaryTextColour);
+
+	auto item = [&](COLORREF colour, bool dashed, const std::wstring& text)
+	{
+		// A short line in the outline's style, then its label
+		if (dashed)
+		{
+			FillColour(m_BackDC, x, middle - 1, 5, 2, colour);
+			FillColour(m_BackDC, x + 9, middle - 1, 5, 2, colour);
+		}
+		else
+		{
+			FillColour(m_BackDC, x, middle - 1, 14, 2, colour);
+		}
+
+		x += 20;
+		RECT rect = { x, y, x + 400, y + m_LegendHeight };
+		DrawTextW(m_BackDC, text.c_str(), -1, &rect, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+
+		SIZE text_size = {};
+		GetTextExtentPoint32W(m_BackDC, text.c_str(), static_cast<int>(text.size()), &text_size);
+		x += text_size.cx + 20;
+	};
+
+	if (screen)
+	{
+		item(ScreenColour, false, std::format(L"Screen (SCX {}, SCY {})", m_Overlay.screen.x, m_Overlay.screen.y));
+	}
+
+	if (covered)
+	{
+		item(ScreenColour, true, L"Under the window");
+	}
+
+	if (window)
+	{
+		item(WindowColour, false, L"Shown as the window");
+	}
 }
 
 void TileMapView::BlendRect(int x, int y, int width, int height)
@@ -465,6 +605,28 @@ void TileMapView::BlendRect(int x, int y, int width, int height)
 			const uint32_t r = (((c >> 16) & 0xFF) * 184) >> 8;
 			const uint32_t g = (((c >> 8) & 0xFF) * 184) >> 8;
 			const uint32_t b = ((c & 0xFF) * 184) >> 8;
+			row[px] = (r << 16) | (g << 8) | b;
+		}
+	}
+}
+
+void TileMapView::LightenRect(int x, int y, int width, int height)
+{
+	const int left = (std::max)(0, x);
+	const int top = (std::max)(0, y);
+	const int right = (std::min)(m_BackWidth, x + width);
+	const int bottom = (std::min)(m_BackHeight, y + height);
+
+	for (int py = top; py < bottom; ++py)
+	{
+		uint32_t* row = m_BackPixels + py * m_BackWidth;
+		for (int px = left; px < right; ++px)
+		{
+			// Halfway to white
+			const uint32_t c = row[px];
+			const uint32_t r = (((c >> 16) & 0xFF) + 255) >> 1;
+			const uint32_t g = (((c >> 8) & 0xFF) + 255) >> 1;
+			const uint32_t b = ((c & 0xFF) + 255) >> 1;
 			row[px] = (r << 16) | (g << 8) | b;
 		}
 	}

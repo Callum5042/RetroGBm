@@ -289,7 +289,7 @@ void TileMapWindow::RenderMap()
 
 	const uint16_t address = MapAddress();
 	const bool background = address == TileMap::BackgroundMap(m_Snapshot.lcdc);
-	const bool window = address == TileMap::WindowMap(m_Snapshot.lcdc) && (m_Snapshot.lcdc & 0x20) != 0;
+	const bool window = address == TileMap::WindowMap(m_Snapshot.lcdc) && !TileMap::WindowOnMap(m_Snapshot.lcdc, m_Snapshot.wx, m_Snapshot.wy).IsEmpty();
 	std::wstring description;
 	if (background && window) description = L"background and window";
 	else if (background) description = L"background";
@@ -313,6 +313,27 @@ void TileMapWindow::RenderMap()
 	}
 
 	m_MapView.SetImage(pixels);
+
+	// What of this map is on screen: the screen and the part the window hides on the background map,
+	// and the part shown as the window on the window map
+	TileMapView::Overlay overlay;
+	if (background)
+	{
+		overlay.screen = TileMap::Viewport(m_Snapshot.scx, m_Snapshot.scy);
+
+		const TileMap::Rect covered = TileMap::WindowOnScreen(m_Snapshot.lcdc, m_Snapshot.wx, m_Snapshot.wy);
+		if (!covered.IsEmpty())
+		{
+			overlay.covered = { m_Snapshot.scx + covered.x, m_Snapshot.scy + covered.y, covered.width, covered.height };
+		}
+	}
+
+	if (window)
+	{
+		overlay.window = TileMap::WindowOnMap(m_Snapshot.lcdc, m_Snapshot.wx, m_Snapshot.wy);
+	}
+
+	m_MapView.SetOverlay(overlay);
 }
 
 bool TileMapWindow::HandleDialogMessage(MSG* msg)
@@ -415,8 +436,10 @@ void TileMapWindow::CreateControls()
 	}
 	ComboBox_SetCurSel(m_ComboZoom, 1);
 
-	// Grid
+	// Grid, and the screen and window outlines
 	m_CheckGrid = create(L"BUTTON", L"Grid", WS_TABSTOP | BS_AUTOCHECKBOX, m_ControlGridId, m_Font);
+	m_CheckOverlay = create(L"BUTTON", L"Screen", WS_TABSTOP | BS_AUTOCHECKBOX, m_ControlOverlayId, m_Font);
+	Button_SetCheck(m_CheckOverlay, BST_CHECKED);
 
 	// Pause updates, on the right
 	m_ButtonPause = create(L"BUTTON", L"Pause updates", WS_TABSTOP | BS_AUTOCHECKBOX | BS_PUSHLIKE, m_ControlPauseId, m_Font);
@@ -509,7 +532,11 @@ void TileMapWindow::Layout()
 	place(m_ComboZoom, x, combo_y, 56, 200);
 	x += 56 + group_gap;
 
-	place(m_CheckGrid, x, button_y, MeasureText(m_Font, GetText(m_CheckGrid)) + 24, button_height);
+	const int grid_width = MeasureText(m_Font, GetText(m_CheckGrid)) + 24;
+	place(m_CheckGrid, x, button_y, grid_width, button_height);
+	x += grid_width + 8;
+
+	place(m_CheckOverlay, x, button_y, MeasureText(m_Font, GetText(m_CheckOverlay)) + 24, button_height);
 
 	const int pause_width = MeasureText(m_Font, GetText(m_ButtonPause)) + 28;
 	place(m_ButtonPause, width - 12 - pause_width, button_y, pause_width, button_height);
@@ -626,7 +653,8 @@ LRESULT TileMapWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			HWND control = reinterpret_cast<HWND>(lParam);
 			SetBkMode(hdc, TRANSPARENT);
 
-			SetTextColor(hdc, control == m_CheckGrid ? GetSysColor(COLOR_WINDOWTEXT) : SecondaryTextColour);
+			const bool checkbox = control == m_CheckGrid || control == m_CheckOverlay;
+			SetTextColor(hdc, checkbox ? GetSysColor(COLOR_WINDOWTEXT) : SecondaryTextColour);
 			return reinterpret_cast<LRESULT>(GetSysColorBrush(COLOR_BTNFACE));
 		}
 
@@ -671,6 +699,12 @@ LRESULT TileMapWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			if (id == m_ControlGridId && code == BN_CLICKED)
 			{
 				m_MapView.SetGrid(Button_GetCheck(m_CheckGrid) == BST_CHECKED);
+				return 0;
+			}
+
+			if (id == m_ControlOverlayId && code == BN_CLICKED)
+			{
+				m_MapView.SetShowOverlay(Button_GetCheck(m_CheckOverlay) == BST_CHECKED);
 				return 0;
 			}
 

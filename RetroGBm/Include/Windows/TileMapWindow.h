@@ -102,6 +102,7 @@ private:
 	HWND m_LabelZoom = NULL;
 	HWND m_ComboZoom = NULL;
 	HWND m_CheckGrid = NULL;
+	HWND m_CheckOverlay = NULL;
 	HWND m_ButtonPause = NULL;
 
 	// Status bar: mode and live/paused on the left, the hovered entry on the right
@@ -114,4 +115,5 @@ private:
 	static const int m_ControlZoomId = 1004;
 	static const int m_ControlGridId = 1005;
 	static const int m_ControlMapViewId = 1006;
+	static const int m_ControlOverlayId = 1007;
 };
