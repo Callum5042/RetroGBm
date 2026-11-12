@@ -46,7 +46,7 @@ private:
 	void Layout();
 	void PaintBackground(HDC hdc);
 
-	// Fonts, released once the window and its controls are gone
+	// Fonts and brushes, released once the window and its controls are gone
 	void ReleaseResources();
 
 	// CGB has a second VRAM bank and 8 object palettes, picked by different attribute bits
@@ -86,20 +86,59 @@ private:
 	int PaletteOf(const Oam::Object& object) const;
 	std::wstring PaletteName(const Oam::Object& object) const;
 
+	// Object pixels as the views want them: 0xFFRRGGBB where drawn, 0 where transparent
+	std::vector<uint32_t> ObjectPixels(const Oam::Object& object, int height) const;
+
+	// Inspector: details of the selected object
+	bool m_InspectorHasObject = false;
+	bool m_InspectorHasWarning = false;
+	std::vector<uint32_t> m_PreviewPixels;
+	int m_PreviewHeight = 8;
+	std::array<uint32_t, 4> m_PreviewColours = {};
+	std::wstring m_PreviewPaletteName;
+	std::wstring m_WarningTitle;
+	std::wstring m_WarningText;
+	int m_WarningHeight = 0;
+	void UpdateInspector();
+	void DrawPreview(const DRAWITEMSTRUCT* item);
+	void DrawWarning(const DRAWITEMSTRUCT* item);
+
+	// Where the object is, or why it can't be seen
+	std::wstring PositionText(const Oam::Object& object, int index) const;
+
 	// Status bar: the object under the mouse
 	void UpdateHoverStatus();
+
+	// Opens the selected object's first tile in the Tile Data window
+	void OpenSelectedTile();
 
 	// Layout
 	static const int m_ClientWidth = 1000;
 	static const int m_ClientHeight = 720;
 	static const int m_CommandBarHeight = 48;
+	static const int m_InspectorWidth = 312;
 
 	HFONT m_Font = NULL;
+	HFONT m_BoldFont = NULL;
+	HFONT m_HeadingFont = NULL;
+	HFONT m_MonoFont = NULL;
+	HFONT m_MonoSmallFont = NULL;
+	HBRUSH m_InspectorBrush = NULL;
 
 	// Command bar
 	HWND m_LabelSize = NULL;
 	HWND m_ComboSize = NULL;
 	HWND m_ButtonPause = NULL;
+
+	// Inspector
+	HWND m_LabelHeading = NULL;
+	HWND m_LabelSubtitle = NULL;
+	HWND m_Preview = NULL;
+	std::array<HWND, 8> m_PropertyLabels = {};
+	std::array<HWND, 8> m_PropertyValues = {};
+	HWND m_Warning = NULL;
+	HWND m_ButtonOpenTile = NULL;
+	HWND m_LabelHint = NULL;
 
 	// Status bar: mode, object count and line limit on the left, the hovered object on the right
 	HWND m_StatusBar = NULL;
@@ -108,4 +147,7 @@ private:
 	static const int m_ControlStatusBarId = 1001;
 	static const int m_ControlSizeId = 1002;
 	static const int m_ControlGridId = 1003;
+	static const int m_ControlPreviewId = 1004;
+	static const int m_ControlWarningId = 1005;
+	static const int m_ControlOpenTileId = 1006;
 };

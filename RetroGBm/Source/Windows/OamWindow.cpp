@@ -62,11 +62,71 @@ namespace
 		return size.cx;
 	}
 
+	// Height of text wrapped to a width
+	int MeasureWrapped(HFONT font, const std::wstring& text, int width)
+	{
+		HDC hdc = GetDC(NULL);
+		HGDIOBJ previous = SelectObject(hdc, font);
+
+		RECT rect = { 0, 0, width, 0 };
+		DrawTextW(hdc, text.c_str(), -1, &rect, DT_CALCRECT | DT_WORDBREAK | DT_NOPREFIX);
+
+		SelectObject(hdc, previous);
+		ReleaseDC(NULL, hdc);
+		return rect.bottom;
+	}
+
 	std::wstring GetText(HWND control)
 	{
 		std::wstring text(static_cast<size_t>(GetWindowTextLength(control)), L'\0');
 		GetWindowText(control, text.data(), static_cast<int>(text.size()) + 1);
 		return text;
+	}
+
+	void SetTextIfChanged(HWND control, const std::wstring& text)
+	{
+		// Avoids repainting (and flickering) every frame
+		if (GetText(control) != text)
+		{
+			SetWindowText(control, text.c_str());
+		}
+	}
+
+	COLORREF ToColorRef(uint32_t colour)
+	{
+		return RGB((colour >> 16) & 0xFF, (colour >> 8) & 0xFF, colour & 0xFF);
+	}
+
+	void FillColour(HDC hdc, int x, int y, int width, int height, COLORREF colour)
+	{
+		RECT rect = { x, y, x + width, y + height };
+		SetDCBrushColor(hdc, colour);
+		FillRect(hdc, &rect, reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+	}
+
+	void FillChecker(HDC hdc, int x, int y, int width, int height, int square)
+	{
+		for (int py = 0; py < height; py += square)
+		{
+			for (int px = 0; px < width; px += square)
+			{
+				const bool dark = ((px / square) + (py / square)) % 2 == 1;
+				FillColour(hdc, x + px, y + py, (std::min)(square, width - px), (std::min)(square, height - py), dark ? RGB(230, 230, 230) : RGB(255, 255, 255));
+			}
+		}
+	}
+
+	void FillTriangle(HDC hdc, int x, int y, int size, COLORREF colour)
+	{
+		// Pointing up, with its top at x, y
+		const POINT points[] = { { x, y }, { x + size / 2 + 1, y + size }, { x - size / 2 - 1, y + size } };
+		SetDCBrushColor(hdc, colour);
+		SetDCPenColor(hdc, colour);
+		HGDIOBJ previous_brush = SelectObject(hdc, GetStockObject(DC_BRUSH));
+		HGDIOBJ previous_pen = SelectObject(hdc, GetStockObject(DC_PEN));
+		Polygon(hdc, points, 3);
+		SelectObject(hdc, previous_brush);
+		SelectObject(hdc, previous_pen);
 	}
 
 	// Display colours are 0xAABBGGRR, the views want 0x00RRGGBB
@@ -76,7 +136,8 @@ namespace
 	}
 
 	// "104-111, 120" from lines in order
-	std::wstring LineRanges(const std::vector<int>& lines)
+	template <typename T>
+	std::wstring LineRanges(const std::vector<T>& lines)
 	{
 		std::wstring text;
 		size_t i = 0;
@@ -100,8 +161,22 @@ namespace
 		return text;
 	}
 
+	// Inspector preview: the object in pixels of 8px, 64 x 128 at most, with the palette beside it
+	const int PreviewPixelSize = 8;
+	const int PreviewWidth = 8 * PreviewPixelSize;
+	const int PreviewHeight = 16 * PreviewPixelSize;
+
+	const wchar_t* NoObjectHint = L"Hover over an object to see its address, or click one to pin it here.";
+	const wchar_t* ObjectHint = L"Click an object to pin it here. The arrow keys move the selection, and double-click or Enter opens its tile in Tile Data.";
+
 	const COLORREF DividerColour = RGB(223, 223, 223);
+	const COLORREF InspectorColour = RGB(250, 250, 250);
 	const COLORREF SecondaryTextColour = RGB(92, 92, 92);
+	const COLORREF WarningColour = RGB(197, 90, 0);
+	const COLORREF WarningFillColour = RGB(255, 246, 234);
+	const COLORREF WarningBorderColour = RGB(240, 199, 143);
+	const COLORREF WarningTitleColour = RGB(122, 56, 0);
+	const COLORREF WarningTextColour = RGB(74, 42, 16);
 }
 
 OamWindow::OamWindow(Application* application) : m_Application(application)
@@ -125,7 +200,32 @@ void OamWindow::Create()
 		NONCLIENTMETRICS metrics = { sizeof(NONCLIENTMETRICS) };
 		SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(metrics), &metrics, 0);
 		m_Font = CreateFontIndirect(&metrics.lfMessageFont);
+
+		LOGFONT bold = metrics.lfMessageFont;
+		bold.lfWeight = FW_SEMIBOLD;
+		m_BoldFont = CreateFontIndirect(&bold);
+
+		HDC hdc = GetDC(NULL);
+		LOGFONT heading = metrics.lfMessageFont;
+		heading.lfWeight = FW_SEMIBOLD;
+		heading.lfHeight = -MulDiv(15, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+		m_HeadingFont = CreateFontIndirect(&heading);
+
+		// Consolas for addresses
+		LOGFONT mono = {};
+		mono.lfHeight = -MulDiv(9, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+		mono.lfWeight = FW_NORMAL;
+		mono.lfQuality = CLEARTYPE_QUALITY;
+		mono.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
+		wcscpy_s(mono.lfFaceName, L"Consolas");
+		m_MonoFont = CreateFontIndirect(&mono);
+
+		mono.lfHeight = -MulDiv(8, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+		m_MonoSmallFont = CreateFontIndirect(&mono);
+		ReleaseDC(NULL, hdc);
 	}
+
+	m_InspectorBrush = CreateSolidBrush(InspectorColour);
 
 	INITCOMMONCONTROLSEX icex = { sizeof(INITCOMMONCONTROLSEX), ICC_STANDARD_CLASSES | ICC_BAR_CLASSES };
 	InitCommonControlsEx(&icex);
@@ -165,13 +265,19 @@ void OamWindow::ReleaseResources()
 {
 	m_GridView.Destroy();
 
-	for (HFONT* font : { &m_Font })
+	for (HFONT* font : { &m_Font, &m_BoldFont, &m_HeadingFont, &m_MonoFont, &m_MonoSmallFont })
 	{
 		if (*font != NULL)
 		{
 			DeleteObject(*font);
 			*font = NULL;
 		}
+	}
+
+	if (m_InspectorBrush != NULL)
+	{
+		DeleteObject(m_InspectorBrush);
+		m_InspectorBrush = NULL;
 	}
 }
 
@@ -295,6 +401,23 @@ std::wstring OamWindow::PaletteName(const Oam::Object& object) const
 	return m_IsColour ? std::format(L"OBJ {}", PaletteOf(object)) : std::format(L"OBP{}", PaletteOf(object));
 }
 
+std::vector<uint32_t> OamWindow::ObjectPixels(const Oam::Object& object, int height) const
+{
+	const uint8_t* bank0 = m_Snapshot.tiles[0].data();
+	const uint8_t* bank1 = m_Snapshot.tiles[1].size() == TileData::BytesPerBank ? m_Snapshot.tiles[1].data() : nullptr;
+	const std::vector<uint8_t> image = Oam::DecodeImage(object, height, bank0, bank1);
+	const std::array<uint32_t, 4>& colours = m_Snapshot.colours[PaletteOf(object)];
+
+	std::vector<uint32_t> pixels(image.size());
+	for (size_t i = 0; i < image.size(); ++i)
+	{
+		// Colour 0 is transparent for objects
+		pixels[i] = image[i] == 0 ? 0 : (0xFF000000 | colours[image[i]]);
+	}
+
+	return pixels;
+}
+
 void OamWindow::RenderObjects()
 {
 	if (!m_HasSnapshot || m_Snapshot.tiles[0].size() != TileData::BytesPerBank)
@@ -302,12 +425,11 @@ void OamWindow::RenderObjects()
 		m_GridView.SetEmptyText(L"Load a game to see its objects.");
 		m_GridView.SetCells({});
 		m_LineScan = {};
+		UpdateInspector();
 		return;
 	}
 
 	const int height = ObjectHeight();
-	const uint8_t* bank0 = m_Snapshot.tiles[0].data();
-	const uint8_t* bank1 = m_Snapshot.tiles[1].size() == TileData::BytesPerBank ? m_Snapshot.tiles[1].data() : nullptr;
 	m_LineScan = Oam::ScanLines(m_Snapshot.oam.data(), height);
 
 	std::vector<OamGridView::Cell> cells;
@@ -315,18 +437,11 @@ void OamWindow::RenderObjects()
 	for (int index = 0; index < Oam::Count; ++index)
 	{
 		const Oam::Object object = Oam::Decode(m_Snapshot.oam.data(), index);
-		const std::vector<uint8_t> image = Oam::DecodeImage(object, height, bank0, bank1);
-		const std::array<uint32_t, 4>& colours = m_Snapshot.colours[PaletteOf(object)];
 
 		OamGridView::Cell cell;
 		cell.index = index;
 		cell.height = height;
-		cell.pixels.resize(image.size());
-		for (size_t i = 0; i < image.size(); ++i)
-		{
-			// Colour 0 is transparent for objects
-			cell.pixels[i] = image[i] == 0 ? 0 : (0xFF000000 | colours[image[i]]);
-		}
+		cell.pixels = ObjectPixels(object, height);
 
 		// "$0E · P4" on CGB, "$0E · OBP1" on DMG
 		const std::wstring palette = m_IsColour ? std::format(L"P{}", PaletteOf(object)) : PaletteName(object);
@@ -337,6 +452,244 @@ void OamWindow::RenderObjects()
 	}
 
 	m_GridView.SetCells(cells);
+	UpdateInspector();
+}
+
+std::wstring OamWindow::PositionText(const Oam::Object& object, int index) const
+{
+	const int height = ObjectHeight();
+	if (!Oam::IsOnLines(object, height))
+	{
+		return std::format(L"Hidden \x00B7 Y = ${:02X} is off the top or bottom", object.y);
+	}
+
+	if (!Oam::IsVisible(object, height))
+	{
+		return std::format(L"Hidden \x00B7 X = ${:02X}, but it still uses a slot on its lines", object.x);
+	}
+
+	std::wstring text = std::format(L"On screen at {}, {}", object.ScreenX(), object.ScreenY());
+	if (!m_LineScan.dropped[index].empty())
+	{
+		text += L" \x00B7 partly dropped";
+	}
+
+	return text;
+}
+
+void OamWindow::UpdateInspector()
+{
+	const int index = m_GridView.GetSelection();
+	const bool has_object = index >= 0 && m_HasSnapshot && m_Snapshot.tiles[0].size() == TileData::BytesPerBank;
+	const bool has_warning = has_object && !m_LineScan.dropped[index].empty();
+
+	// Show the details only while an object is selected, and the warning only when it's dropped
+	if (has_object != m_InspectorHasObject || has_warning != m_InspectorHasWarning)
+	{
+		m_InspectorHasObject = has_object;
+		m_InspectorHasWarning = has_warning;
+
+		std::vector<HWND> details = { m_LabelSubtitle, m_Preview, m_ButtonOpenTile };
+		details.insert(details.end(), m_PropertyLabels.begin(), m_PropertyLabels.end());
+		details.insert(details.end(), m_PropertyValues.begin(), m_PropertyValues.end());
+		for (HWND control : details)
+		{
+			ShowWindow(control, has_object ? SW_SHOWNA : SW_HIDE);
+		}
+
+		ShowWindow(m_Warning, has_warning ? SW_SHOWNA : SW_HIDE);
+		SetTextIfChanged(m_LabelHint, has_object ? ObjectHint : NoObjectHint);
+		Layout();
+	}
+
+	if (!has_object)
+	{
+		SetTextIfChanged(m_LabelHeading, L"No object selected");
+		return;
+	}
+
+	const Oam::Object object = Oam::Decode(m_Snapshot.oam.data(), index);
+	const Oam::Attributes attributes = Oam::DecodeAttributes(object.flags);
+	const int height = ObjectHeight();
+	const uint8_t first = Oam::FirstTile(object.tile, height);
+	const uint16_t data = Oam::TileAddress(object.tile, height);
+	const uint16_t address = Oam::ObjectAddress(index);
+
+	SetTextIfChanged(m_LabelHeading, std::format(L"Object {:02}", index));
+	SetTextIfChanged(m_LabelSubtitle, PositionText(object, index));
+
+	std::wstring flip = L"None";
+	if (attributes.flip_x && attributes.flip_y) flip = L"X and Y";
+	else if (attributes.flip_x) flip = L"X";
+	else if (attributes.flip_y) flip = L"Y";
+
+	const int data_end = data + TileData::BytesPerTile * (height / 8) - 1;
+	SetTextIfChanged(m_PropertyValues[0], std::format(L"${:04X}\x2013${:04X}", address, address + Oam::BytesPerObject - 1));
+	SetTextIfChanged(m_PropertyValues[1], std::format(L"X ${:02X} \x00B7 Y ${:02X}", object.x, object.y));
+	SetTextIfChanged(m_PropertyValues[2], height == 16 ? std::format(L"${:02X} + ${:02X}", first, first + 1) : std::format(L"${:02X}", first));
+	SetTextIfChanged(m_PropertyValues[3], m_IsColour
+		? std::format(L"${:04X}\x2013${:04X} \x00B7 bank {}", data, data_end, attributes.bank)
+		: std::format(L"${:04X}\x2013${:04X}", data, data_end));
+	SetTextIfChanged(m_PropertyValues[4], std::format(L"${:02X}", object.flags));
+	SetTextIfChanged(m_PropertyValues[5], PaletteName(object));
+	SetTextIfChanged(m_PropertyValues[6], flip);
+	SetTextIfChanged(m_PropertyValues[7], attributes.priority ? L"Behind BG colours 1\x2013" L"3" : L"Over background");
+
+	// Line limit
+	if (has_warning)
+	{
+		const std::vector<uint8_t>& dropped = m_LineScan.dropped[index];
+		int most = 0;
+		for (uint8_t line : dropped)
+		{
+			most = (std::max)(most, static_cast<int>(m_LineScan.objects[line]));
+		}
+
+		const std::wstring title = std::format(L"Not drawn on {} {}", dropped.size() == 1 ? L"line" : L"lines", LineRanges(dropped));
+		const std::wstring text = std::format(L"Up to {} objects share these lines. The PPU draws only the first {} it finds in OAM, so this one is skipped there.",
+			most, Oam::ObjectsPerLine);
+
+		if (title != m_WarningTitle || text != m_WarningText)
+		{
+			m_WarningTitle = title;
+			m_WarningText = text;
+			InvalidateRect(m_Warning, NULL, FALSE);
+
+			// Title, then the explanation wrapped beside the triangle
+			const int height = 30 + MeasureWrapped(m_Font, text, m_InspectorWidth - 33 - 44) + 10;
+			if (height != m_WarningHeight)
+			{
+				m_WarningHeight = height;
+				Layout();
+			}
+		}
+	}
+
+	// Preview
+	const std::vector<uint32_t> pixels = ObjectPixels(object, height);
+	const std::array<uint32_t, 4>& colours = m_Snapshot.colours[PaletteOf(object)];
+	const std::wstring palette_name = PaletteName(object);
+	if (pixels != m_PreviewPixels || colours != m_PreviewColours || palette_name != m_PreviewPaletteName)
+	{
+		m_PreviewPixels = pixels;
+		m_PreviewHeight = height;
+		m_PreviewColours = colours;
+		m_PreviewPaletteName = palette_name;
+		InvalidateRect(m_Preview, NULL, FALSE);
+	}
+}
+
+void OamWindow::DrawPreview(const DRAWITEMSTRUCT* item)
+{
+	const RECT& rect = item->rcItem;
+	const int width = rect.right - rect.left;
+	const int height = rect.bottom - rect.top;
+
+	// Draw off screen so the preview doesn't flicker when it changes every frame
+	HDC hdc = CreateCompatibleDC(item->hDC);
+	HBITMAP bitmap = CreateCompatibleBitmap(item->hDC, width, height);
+	HGDIOBJ previous_bitmap = SelectObject(hdc, bitmap);
+
+	FillColour(hdc, 0, 0, width, height, InspectorColour);
+
+	// The object on a checkerboard, so transparent pixels show as such
+	const int image_height = m_PreviewHeight * PreviewPixelSize;
+	FillChecker(hdc, 0, 0, PreviewWidth, image_height, PreviewPixelSize);
+
+	if (m_PreviewPixels.size() == static_cast<size_t>(8 * m_PreviewHeight))
+	{
+		for (int y = 0; y < m_PreviewHeight; ++y)
+		{
+			for (int x = 0; x < 8; ++x)
+			{
+				const uint32_t pixel = m_PreviewPixels[static_cast<size_t>(y) * 8 + x];
+				if ((pixel & 0xFF000000) != 0)
+				{
+					FillColour(hdc, x * PreviewPixelSize, y * PreviewPixelSize, PreviewPixelSize, PreviewPixelSize, ToColorRef(pixel));
+				}
+			}
+		}
+	}
+
+	RECT outline = { 0, 0, PreviewWidth, image_height };
+	SetDCBrushColor(hdc, RGB(200, 200, 200));
+	FrameRect(hdc, &outline, reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+
+	// Palette swatches, colour 0 shown as transparent
+	const int swatch_x = PreviewWidth + 16;
+	SetBkMode(hdc, TRANSPARENT);
+	SelectObject(hdc, m_Font);
+	SetTextColor(hdc, SecondaryTextColour);
+	RECT label = { swatch_x, 0, width, 18 };
+	const std::wstring title = L"Palette " + m_PreviewPaletteName;
+	DrawTextW(hdc, title.c_str(), -1, &label, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_NOPREFIX);
+
+	SelectObject(hdc, m_MonoSmallFont);
+	SetTextColor(hdc, GetSysColor(COLOR_WINDOWTEXT));
+	for (int i = 0; i < 4; ++i)
+	{
+		const int y = 24 + i * 26;
+		if (i == 0)
+		{
+			FillChecker(hdc, swatch_x, y, 20, 20, 5);
+		}
+		else
+		{
+			FillColour(hdc, swatch_x, y, 20, 20, ToColorRef(m_PreviewColours[i]));
+		}
+
+		RECT swatch = { swatch_x, y, swatch_x + 20, y + 20 };
+		SetDCBrushColor(hdc, RGB(200, 200, 200));
+		FrameRect(hdc, &swatch, reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+
+		const std::wstring text = i == 0 ? L"0  transparent" : std::format(L"{}  #{:06X}", i, m_PreviewColours[i] & 0xFFFFFF);
+		RECT text_rect = { swatch_x + 26, y, width, y + 20 };
+		DrawTextW(hdc, text.c_str(), -1, &text_rect, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+	}
+
+	BitBlt(item->hDC, rect.left, rect.top, width, height, hdc, 0, 0, SRCCOPY);
+
+	SelectObject(hdc, previous_bitmap);
+	DeleteObject(bitmap);
+	DeleteDC(hdc);
+}
+
+void OamWindow::DrawWarning(const DRAWITEMSTRUCT* item)
+{
+	RECT rect = item->rcItem;
+	HDC hdc = item->hDC;
+
+	FillColour(hdc, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, WarningFillColour);
+	SetDCBrushColor(hdc, WarningBorderColour);
+	FrameRect(hdc, &rect, reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+
+	FillTriangle(hdc, rect.left + 18, rect.top + 12, 12, WarningColour);
+
+	SetBkMode(hdc, TRANSPARENT);
+	const int text_left = rect.left + 34;
+
+	SelectObject(hdc, m_BoldFont);
+	SetTextColor(hdc, WarningTitleColour);
+	RECT title_rect = { text_left, rect.top + 10, rect.right - 10, rect.top + 28 };
+	DrawTextW(hdc, m_WarningTitle.c_str(), -1, &title_rect, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS);
+
+	SelectObject(hdc, m_Font);
+	SetTextColor(hdc, WarningTextColour);
+	RECT text_rect = { text_left, rect.top + 30, rect.right - 10, rect.bottom - 8 };
+	DrawTextW(hdc, m_WarningText.c_str(), -1, &text_rect, DT_LEFT | DT_TOP | DT_WORDBREAK | DT_NOPREFIX);
+}
+
+void OamWindow::OpenSelectedTile()
+{
+	const int index = m_GridView.GetSelection();
+	if (index < 0 || !m_HasSnapshot)
+	{
+		return;
+	}
+
+	const Oam::Object object = Oam::Decode(m_Snapshot.oam.data(), index);
+	const int bank = m_IsColour ? Oam::DecodeAttributes(object.flags).bank : 0;
+	m_Application->ShowTileInTileWindow(bank, Oam::FirstTile(object.tile, ObjectHeight()));
 }
 
 void OamWindow::UpdateHoverStatus()
@@ -436,6 +789,34 @@ void OamWindow::CreateControls()
 	// Objects
 	m_GridView.Create(m_Hwnd, m_ControlGridId);
 	m_GridView.HoverChanged = [this]() { UpdateHoverStatus(); };
+	m_GridView.SelectionChanged = [this]() { UpdateInspector(); };
+	m_GridView.ActivateRequested = [this]() { OpenSelectedTile(); };
+
+	// Inspector, with the details hidden until an object is selected
+	m_LabelHeading = create(L"STATIC", L"No object selected", SS_LEFT | SS_ENDELLIPSIS, 0, m_HeadingFont);
+	m_LabelSubtitle = create(L"STATIC", L"", SS_LEFT | SS_ENDELLIPSIS, 0, m_Font);
+	m_Preview = create(L"STATIC", L"", SS_OWNERDRAW, m_ControlPreviewId, m_Font);
+
+	const wchar_t* property_names[] = { L"OAM address", L"Position", L"Tile", L"Tile data", L"Attributes", L"Palette", L"Flip", L"Priority" };
+	for (size_t i = 0; i < m_PropertyLabels.size(); ++i)
+	{
+		m_PropertyLabels[i] = create(L"STATIC", property_names[i], SS_LEFT, 0, m_Font);
+		m_PropertyValues[i] = create(L"STATIC", L"", SS_LEFT | SS_ENDELLIPSIS, 0, m_MonoFont);
+	}
+
+	m_Warning = create(L"STATIC", L"", SS_OWNERDRAW, m_ControlWarningId, m_Font);
+	m_ButtonOpenTile = create(L"BUTTON", L"Open tile in Tile Data", WS_TABSTOP | BS_PUSHBUTTON, m_ControlOpenTileId, m_Font);
+	m_LabelHint = create(L"STATIC", NoObjectHint, SS_LEFT, 0, m_Font);
+
+	std::vector<HWND> details = { m_LabelSubtitle, m_Preview, m_Warning, m_ButtonOpenTile };
+	details.insert(details.end(), m_PropertyLabels.begin(), m_PropertyLabels.end());
+	details.insert(details.end(), m_PropertyValues.begin(), m_PropertyValues.end());
+	for (HWND control : details)
+	{
+		ShowWindow(control, SW_HIDE);
+	}
+	m_InspectorHasObject = false;
+	m_InspectorHasWarning = false;
 
 	// Status bar
 	m_StatusBar = CreateWindowExW(0, STATUSCLASSNAME, L"", WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP,
@@ -513,7 +894,7 @@ void OamWindow::Layout()
 	int parts[] = { width - 300 > 0 ? width - 300 : 0, -1 };
 	SendMessageW(m_StatusBar, SB_SETPARTS, 2, reinterpret_cast<LPARAM>(parts));
 
-	HDWP defer = BeginDeferWindowPos(8);
+	HDWP defer = BeginDeferWindowPos(32);
 	auto place = [&defer](HWND control, int x, int y, int w, int h)
 	{
 		defer = DeferWindowPos(defer, control, NULL, x, y, w, h, SWP_NOZORDER | SWP_NOACTIVATE);
@@ -533,10 +914,47 @@ void OamWindow::Layout()
 	const int pause_width = MeasureText(m_Font, GetText(m_ButtonPause)) + 28;
 	place(m_ButtonPause, width - 12 - pause_width, button_y, pause_width, button_height);
 
-	// Objects fill the rest
+	// Inspector
+	const int inspector_x = width - m_InspectorWidth + 1 + 16;
+	const int inspector_width = m_InspectorWidth - 1 - 32;
 	const int body_top = m_CommandBarHeight + 1;
+	int y = body_top + 16;
+	place(m_LabelHeading, inspector_x, y, inspector_width, 28);
+	y += 30;
+
+	if (m_InspectorHasObject)
+	{
+		place(m_LabelSubtitle, inspector_x, y, inspector_width, 20);
+		y += 28;
+
+		place(m_Preview, inspector_x, y, inspector_width, PreviewHeight);
+		y += PreviewHeight + 16;
+
+		const int property_label_width = 92;
+		for (size_t i = 0; i < m_PropertyLabels.size(); ++i)
+		{
+			place(m_PropertyLabels[i], inspector_x, y, property_label_width, 20);
+			place(m_PropertyValues[i], inspector_x + property_label_width + 4, y, inspector_width - property_label_width - 4, 20);
+			y += 22;
+		}
+		y += 10;
+
+		if (m_InspectorHasWarning)
+		{
+			place(m_Warning, inspector_x, y, inspector_width, m_WarningHeight);
+			y += m_WarningHeight + 12;
+		}
+
+		const int open_width = MeasureText(m_Font, GetText(m_ButtonOpenTile)) + 28;
+		place(m_ButtonOpenTile, inspector_x, y, open_width, button_height);
+		y += button_height + 16;
+	}
+
+	place(m_LabelHint, inspector_x, y, inspector_width, 64);
+
+	// Objects fill the rest, left of the inspector
 	const int body_height = client.bottom - status_height - body_top;
-	place(m_GridView.GetHwnd(), 0, body_top, width, body_height > 0 ? body_height : 0);
+	place(m_GridView.GetHwnd(), 0, body_top, width - m_InspectorWidth, body_height > 0 ? body_height : 0);
 
 	EndDeferWindowPos(defer);
 
@@ -548,6 +966,8 @@ void OamWindow::PaintBackground(HDC hdc)
 	RECT client;
 	GetClientRect(m_Hwnd, &client);
 
+	HBRUSH dc_brush = reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH));
+
 	// Grey command bar
 	RECT command_bar = client;
 	command_bar.bottom = m_CommandBarHeight;
@@ -558,7 +978,20 @@ void OamWindow::PaintBackground(HDC hdc)
 	divider.top = m_CommandBarHeight;
 	divider.bottom = divider.top + 1;
 	SetDCBrushColor(hdc, DividerColour);
-	FillRect(hdc, &divider, reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+	FillRect(hdc, &divider, dc_brush);
+
+	// 1px divider and the inspector, right of the objects
+	RECT inspector_divider = client;
+	inspector_divider.top = divider.bottom;
+	inspector_divider.left = client.right - m_InspectorWidth;
+	inspector_divider.right = inspector_divider.left + 1;
+	SetDCBrushColor(hdc, DividerColour);
+	FillRect(hdc, &inspector_divider, dc_brush);
+
+	RECT inspector = inspector_divider;
+	inspector.left = inspector_divider.right;
+	inspector.right = client.right;
+	FillRect(hdc, &inspector, m_InspectorBrush);
 }
 
 LRESULT OamWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -596,7 +1029,7 @@ LRESULT OamWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 		case WM_GETMINMAXINFO:
 		{
 			MINMAXINFO* info = reinterpret_cast<MINMAXINFO*>(lParam);
-			RECT minimum = { 0, 0, 640, 420 };
+			RECT minimum = { 0, 0, 760, 560 };
 			AdjustWindowRectEx(&minimum, WS_OVERLAPPEDWINDOW, FALSE, WS_EX_CONTROLPARENT);
 			info->ptMinTrackSize.x = minimum.right - minimum.left;
 			info->ptMinTrackSize.y = minimum.bottom - minimum.top;
@@ -622,10 +1055,38 @@ LRESULT OamWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 		case WM_CTLCOLORSTATIC:
 		{
 			HDC hdc = reinterpret_cast<HDC>(wParam);
+			HWND control = reinterpret_cast<HWND>(lParam);
 			SetBkMode(hdc, TRANSPARENT);
+
+			const bool secondary = control == m_LabelHint || control == m_LabelSubtitle ||
+				std::find(m_PropertyLabels.begin(), m_PropertyLabels.end(), control) != m_PropertyLabels.end();
+			const bool inspector = secondary || control == m_LabelHeading ||
+				std::find(m_PropertyValues.begin(), m_PropertyValues.end(), control) != m_PropertyValues.end();
+
+			if (inspector)
+			{
+				SetTextColor(hdc, secondary ? SecondaryTextColour : GetSysColor(COLOR_WINDOWTEXT));
+				return reinterpret_cast<LRESULT>(m_InspectorBrush);
+			}
+
 			SetTextColor(hdc, SecondaryTextColour);
 			return reinterpret_cast<LRESULT>(GetSysColorBrush(COLOR_BTNFACE));
 		}
+
+		case WM_DRAWITEM:
+			if (static_cast<int>(wParam) == m_ControlPreviewId)
+			{
+				DrawPreview(reinterpret_cast<const DRAWITEMSTRUCT*>(lParam));
+				return TRUE;
+			}
+
+			if (static_cast<int>(wParam) == m_ControlWarningId)
+			{
+				DrawWarning(reinterpret_cast<const DRAWITEMSTRUCT*>(lParam));
+				return TRUE;
+			}
+
+			break;
 
 		case WM_ERASEBKGND:
 			PaintBackground(reinterpret_cast<HDC>(wParam));
@@ -657,6 +1118,12 @@ LRESULT OamWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			{
 				RenderObjects();
 				UpdateStatus();
+				return 0;
+			}
+
+			if (id == m_ControlOpenTileId && code == BN_CLICKED)
+			{
+				OpenSelectedTile();
 				return 0;
 			}
 
