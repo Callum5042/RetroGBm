@@ -340,7 +340,7 @@ void OamWindow::UpdateTitle()
 	// Show the ROM file name without its extension, e.g. "Objects (OAM) - Pokemon Red (UE)".
 	// CurrentFilename is in the ANSI code page, which path converts back.
 	const std::wstring rom_name = std::filesystem::path(m_TitleFilename).stem().wstring();
-	const std::wstring title = rom_name.empty() ? WindowTitle : std::wstring(WindowTitle) + L" \x2014 " + rom_name;
+	const std::wstring title = rom_name.empty() ? WindowTitle : std::wstring(WindowTitle) + L" - " + rom_name;
 	SetWindowText(m_Hwnd, title.c_str());
 }
 

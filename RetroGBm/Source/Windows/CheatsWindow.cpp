@@ -143,7 +143,7 @@ void CheatsWindow::Create()
 		const std::wstring rom_name = std::filesystem::path(m_Application->CurrentFilename).stem().wstring();
 		if (!rom_name.empty())
 		{
-			SetWindowText(m_Hwnd, (L"Cheats \x2014 " + rom_name).c_str());
+			SetWindowText(m_Hwnd, (L"Cheats - " + rom_name).c_str());
 		}
 	}
 

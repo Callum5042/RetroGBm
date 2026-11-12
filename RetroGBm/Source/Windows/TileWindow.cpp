@@ -294,7 +294,7 @@ void TileWindow::UpdateTitle()
 	// Show the ROM file name without its extension, e.g. "Tile Data - Pokemon Red (UE)".
 	// CurrentFilename is in the ANSI code page, which path converts back.
 	const std::wstring rom_name = std::filesystem::path(m_TitleFilename).stem().wstring();
-	const std::wstring title = rom_name.empty() ? L"Tile Data" : L"Tile Data \x2014 " + rom_name;
+	const std::wstring title = rom_name.empty() ? L"Tile Data" : L"Tile Data - " + rom_name;
 	SetWindowText(m_Hwnd, title.c_str());
 }
 
