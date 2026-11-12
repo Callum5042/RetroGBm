@@ -294,7 +294,7 @@ void TileWindow::UpdateTitle()
 	// Show the ROM file name without its extension, e.g. "Tile Data - Pokemon Red (UE)".
 	// CurrentFilename is in the ANSI code page, which path converts back.
 	const std::wstring rom_name = std::filesystem::path(m_TitleFilename).stem().wstring();
-	const std::wstring title = rom_name.empty() ? L"Tile Data" : L"Tile Data \x2014 " + rom_name;
+	const std::wstring title = rom_name.empty() ? L"Tile Data" : L"Tile Data - " + rom_name;
 	SetWindowText(m_Hwnd, title.c_str());
 }
 
@@ -520,8 +520,8 @@ void TileWindow::UpdateInspector()
 	SetTextIfChanged(m_PropertyValues[0], std::format(L"${:04X}\x2013${:04X}", address, address + TileData::BytesPerTile - 1));
 	SetTextIfChanged(m_PropertyValues[1], m_IsColour ? std::to_wstring(selection.bank) : L"0 (DMG has one bank)");
 	SetTextIfChanged(m_PropertyValues[2], std::format(L"{}  ${:04X}\x2013${:04X}", block, block_start, block_start + 0x7FF));
-	SetTextIfChanged(m_PropertyValues[3], tile < 256 ? std::format(L"${:02X}", id) : L"\x2014  not reachable");
-	SetTextIfChanged(m_PropertyValues[4], tile >= 128 ? std::format(L"${:02X} ({})", id, signed_id) : L"\x2014  not reachable");
+	SetTextIfChanged(m_PropertyValues[3], tile < 256 ? std::format(L"${:02X}", id) : L"Not reachable");
+	SetTextIfChanged(m_PropertyValues[4], tile >= 128 ? std::format(L"${:02X} ({})", id, signed_id) : L"Not reachable");
 
 	// Bytes, two rows of the tile per line
 	const uint8_t* bytes = m_Vram[selection.bank].data() + tile * TileData::BytesPerTile;

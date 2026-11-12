@@ -173,6 +173,7 @@
     <ClInclude Include="Include\RetroGBm\HighTimer.h" />
     <ClInclude Include="Include\RetroGBm\Instructions.h" />
     <ClInclude Include="Include\RetroGBm\Joypad.h" />
+    <ClInclude Include="Include\RetroGBm\Oam.h" />
     <ClInclude Include="Include\RetroGBm\Pch.h" />
     <ClInclude Include="Include\RetroGBm\Ram.h" />
     <ClInclude Include="Include\RetroGBm\SaveStateHeader.h" />
@@ -213,6 +214,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">RetroGBm/Pch.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="Source\Oam.cpp" />
     <ClCompile Include="Source\Ppu.cpp" />
     <ClCompile Include="Source\Ram.cpp" />
     <ClCompile Include="Source\TileData.cpp" />

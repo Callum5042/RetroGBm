@@ -328,6 +328,12 @@ void Application::Run()
 				continue;
 			}
 
+			// Let the OAM window handle Tab and Esc
+			if (m_OamWindow != nullptr && m_OamWindow->HandleDialogMessage(&msg))
+			{
+				continue;
+			}
+
 			TranslateMessage(&msg);
 			DispatchMessageW(&msg);
 		}
@@ -362,6 +368,12 @@ void Application::Run()
 				if (m_TileMapWindow != nullptr)
 				{
 					m_TileMapWindow->Update();
+				}
+
+				// OAM window
+				if (m_OamWindow != nullptr)
+				{
+					m_OamWindow->Update();
 				}
 
 				// CPU register window
@@ -485,6 +497,28 @@ void Application::CreateTileMapWindow()
 void Application::CloseTileMapWindow()
 {
 	m_TileMapWindow.reset();
+}
+
+void Application::CreateOamWindow()
+{
+	if (m_OamWindow == nullptr)
+	{
+		m_OamWindow = std::make_unique<OamWindow>(this);
+	}
+
+	if (m_OamWindow->IsOpen())
+	{
+		m_OamWindow->Focus();
+	}
+	else
+	{
+		m_OamWindow->Create();
+	}
+}
+
+void Application::CloseOamWindow()
+{
+	m_OamWindow.reset();
 }
 
 void Application::ShowTileInTileWindow(int bank, int tile)

@@ -26,6 +26,8 @@ public:
     uint8_t ReadOam(uint16_t address) const;
     void WriteOam(uint16_t address, uint8_t value);
     void WriteOamDma(uint16_t address, uint8_t value);
+    // All of OAM for debug views, readable whatever mode the PPU is in
+    const std::array<uint8_t, 160>& GetOam() const { return m_Oam; }
     uint8_t GetVideoRamBank() const;
     void SetVideoRamBank(uint8_t value);
     bool ConsumeHBlank() { bool value = m_HBlank; m_HBlank = false; return value; }

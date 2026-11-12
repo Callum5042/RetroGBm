@@ -163,6 +163,9 @@
     <ClCompile Include="Source\Windows\NetworkConnectWindow.cpp" />
     <ClCompile Include="Source\Windows\TileExportDialog.cpp" />
     <ClCompile Include="Source\Windows\TileSheetView.cpp" />
+    <ClCompile Include="Source\Windows\OamGridView.cpp" />
+    <ClCompile Include="Source\Windows\OamScreenView.cpp" />
+    <ClCompile Include="Source\Windows\OamWindow.cpp" />
     <ClCompile Include="Source\Windows\TileMapView.cpp" />
     <ClCompile Include="Source\Windows\TileMapWindow.cpp" />
     <ClCompile Include="Source\Windows\TileWindow.cpp" />
@@ -189,6 +192,9 @@
     <ClInclude Include="Include\Windows\NetworkConnectWindow.h" />
     <ClInclude Include="Include\Windows\TileExportDialog.h" />
     <ClInclude Include="Include\Windows\TileSheetView.h" />
+    <ClInclude Include="Include\Windows\OamGridView.h" />
+    <ClInclude Include="Include\Windows\OamScreenView.h" />
+    <ClInclude Include="Include\Windows\OamWindow.h" />
     <ClInclude Include="Include\Windows\TileMapView.h" />
     <ClInclude Include="Include\Windows\TileMapWindow.h" />
     <ClInclude Include="Include\Windows\TileWindow.h" />
