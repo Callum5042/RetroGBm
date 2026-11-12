@@ -494,7 +494,7 @@ void CheatsWindow::UpdateFormState()
 
 		if (IsBlank(name))
 		{
-			status += L" \x2014 add a name to save";
+			status += L". Add a name to save";
 		}
 	}
 	else if (validation.error_line > 0)

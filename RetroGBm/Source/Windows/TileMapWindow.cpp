@@ -501,10 +501,10 @@ void TileMapWindow::UpdateInspector()
 	SetTextIfChanged(m_PropertyValues[2], colour
 		? std::format(L"${:04X}\x2013${:04X} \x00B7 bank {}", data, data + TileData::BytesPerTile - 1, attributes.bank)
 		: std::format(L"${:04X}\x2013${:04X}", data, data + TileData::BytesPerTile - 1));
-	SetTextIfChanged(m_PropertyValues[3], colour ? std::format(L"${:02X}", attribute_byte) : L"\x2014  none on DMG");
+	SetTextIfChanged(m_PropertyValues[3], colour ? std::format(L"${:02X}", attribute_byte) : L"None on DMG");
 	SetTextIfChanged(m_PropertyValues[4], colour ? std::format(L"BG {}", attributes.palette) : L"BGP");
-	SetTextIfChanged(m_PropertyValues[5], colour ? flip : L"\x2014");
-	SetTextIfChanged(m_PropertyValues[6], colour ? (attributes.priority ? L"Over objects" : L"Normal") : L"\x2014");
+	SetTextIfChanged(m_PropertyValues[5], colour ? flip : L"Not on DMG");
+	SetTextIfChanged(m_PropertyValues[6], colour ? (attributes.priority ? L"Over objects" : L"Normal") : L"Not on DMG");
 
 	// Preview pixels, flipped as the entry draws them
 	const std::vector<uint8_t>& bank = (colour && attributes.bank == 1) ? m_Snapshot.vram[1] : m_Snapshot.vram[0];
