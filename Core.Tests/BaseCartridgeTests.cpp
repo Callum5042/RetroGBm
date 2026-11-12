@@ -3,6 +3,7 @@
 #include <RetroGBm/Cartridge/BaseCartridge.h>
 #include <RetroGBm/Cartridge/CartridgeROM.h>
 #include <RetroGBm/Cartridge/CartridgeMBC1.h>
+#include <RetroGBm/Cartridge/CartridgeMBC2.h>
 #include <RetroGBm/Cartridge/CartridgeMBC3.h>
 #include <RetroGBm/Cartridge/CartridgeMBC5.h>
 
@@ -138,6 +139,36 @@ namespace CoreTests
 
 			// Assert
 			CartridgeMBC1* type = dynamic_cast<CartridgeMBC1*>(cartridge.get());
+			Assert::IsNotNull(type);
+		}
+
+		TEST_METHOD(LoadCartridgeFromMemory_CartrideTypeIsMBC2_ReturnsCartridgeMBC2)
+		{
+			// Arrange
+			std::vector<uint8_t> data;
+			data.resize(0x2000);
+			data[0x0147] = 0x05;
+
+			// Act
+			std::unique_ptr<BaseCartridge> cartridge = LoadCartridgeFromMemory(data);
+
+			// Assert
+			CartridgeMBC2* type = dynamic_cast<CartridgeMBC2*>(cartridge.get());
+			Assert::IsNotNull(type);
+		}
+
+		TEST_METHOD(LoadCartridgeFromMemory_CartrideTypeIsMBC2_BATTERY_ReturnsCartridgeMBC2)
+		{
+			// Arrange
+			std::vector<uint8_t> data;
+			data.resize(0x2000);
+			data[0x0147] = 0x06;
+
+			// Act
+			std::unique_ptr<BaseCartridge> cartridge = LoadCartridgeFromMemory(data);
+
+			// Assert
+			CartridgeMBC2* type = dynamic_cast<CartridgeMBC2*>(cartridge.get());
 			Assert::IsNotNull(type);
 		}
 

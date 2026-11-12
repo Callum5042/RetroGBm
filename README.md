@@ -6,7 +6,7 @@ A fast and lightweight Game Boy Color emulator written in C++ for Windows and An
 
 ### Features
 
-- Support for MBC1, MBC3, and MBC5 mappers
+- Support for MBC1, MBC2, MBC3, and MBC5 mappers
 - Battery-backed save support
 - Multiple save states with rotating quick saves
 - Adjustable emulation speed
