@@ -55,6 +55,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         JniLoader.cpp
 
         ${EmulatorCoreSrcDir}/Cartridge/BaseCartridge.cpp
+        ${EmulatorCoreSrcDir}/Cartridge/CartridgeHeader.cpp
         ${EmulatorCoreSrcDir}/Cartridge/CartridgeROM.cpp
         ${EmulatorCoreSrcDir}/Cartridge/CartridgeMBC1.cpp
         ${EmulatorCoreSrcDir}/Cartridge/CartridgeMBC2.cpp

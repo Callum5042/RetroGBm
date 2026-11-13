@@ -64,6 +64,15 @@ private:
 	static const UINT m_ListMenuId = 4001;
 	bool m_ListIsEmpty = false;
 
+	// ROM list right-click menu
+	static const UINT m_ListMenuPlay = 4101;
+	static const UINT m_ListMenuOpenLocation = 4102;
+	static const UINT m_ListMenuProperties = 4103;
+	void ShowRomListContextMenu(LPARAM lParam);
+	void ShowRomListProperties();
+	std::filesystem::path GetRomListItemPath(int row);
+	static LRESULT CALLBACK RomListSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, UINT_PTR id, DWORD_PTR data);
+
 	// Render window
 	void CreateRenderWindow();
 	void ComputeRenderWindowSize(int* width, int* height);
@@ -86,7 +95,7 @@ private:
 
 	HMENU m_ToolsMenuItem = NULL;
 	static const UINT m_MenuToolsTileData = 201;
-	static const UINT m_MenuToolsCartridgeInfo = 203;
+	static const UINT m_MenuToolsProperties = 203;
 	static const UINT m_MenuToolsCpuRegisters = 204;
 	static const UINT m_MenuToolsCheats = 205;
 	static const UINT m_MenuToolsExportAssembly = 206;

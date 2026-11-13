@@ -151,7 +151,7 @@
     <ClCompile Include="Source\Networking\WinNetworkOutput.cpp" />
     <ClCompile Include="Source\ProfileParser.cpp" />
     <ClCompile Include="Source\Render\DisplayOutput.cpp" />
-    <ClCompile Include="Source\Windows\CartridgeInfoWindow.cpp" />
+    <ClCompile Include="Source\Windows\PropertiesWindow.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Windows\CheatsWindow.cpp" />
     <ClCompile Include="Source\Windows\CpuRegistersWindow.cpp" />
@@ -181,7 +181,7 @@
     <ClInclude Include="Include\ProfileParser.h" />
     <ClInclude Include="Include\Render\DisplayOutput.h" />
     <ClInclude Include="Include\stb_image_write.h" />
-    <ClInclude Include="Include\Windows\CartridgeInfoWindow.h" />
+    <ClInclude Include="Include\Windows\PropertiesWindow.h" />
     <ClInclude Include="Include\Windows\CheatsWindow.h" />
     <ClInclude Include="Include\Windows\CpuRegistersWindow.h" />
     <ClInclude Include="Include\Windows\MainWindow.h" />

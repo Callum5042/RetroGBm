@@ -9,7 +9,7 @@
 #include "Windows/TileWindow.h"
 #include "Windows/TileMapWindow.h"
 #include "Windows/OamWindow.h"
-#include "Windows/CartridgeInfoWindow.h"
+#include "Windows/PropertiesWindow.h"
 #include "Windows/CpuRegistersWindow.h"
 #include "Windows/CheatsWindow.h"
 
@@ -54,11 +54,10 @@ public:
 	// Opens or focuses the Tile Data window with a tile pinned
 	void ShowTileInTileWindow(int bank, int tile);
 
-	void CreateCartridgeInfoWindow();
-	void ReleaseCartridgeInfoWindow();
+	// Opens the Properties window for a ROM file, or switches the open one to it
+	void ShowPropertiesWindow(const std::filesystem::path& rom_path);
 
 	inline MainWindow* GetMainWindow() const { return m_MainWindow.get(); }
-	inline CartridgeInfoWindow* GetCartridgeInfoWindow() const { return m_CartridgeInfoWindow.get(); }
 
 	void SaveState(const std::string& path);
 	void LoadState(const std::string& path);
@@ -105,8 +104,8 @@ private:
 	// OAM window
 	std::unique_ptr<OamWindow> m_OamWindow = nullptr;
 
-	// Cartridge window
-	std::unique_ptr<CartridgeInfoWindow> m_CartridgeInfoWindow = nullptr;
+	// Properties window
+	std::unique_ptr<PropertiesWindow> m_PropertiesWindow = nullptr;
 
 	// Emulator
 	std::unique_ptr<Emulator> m_Emulator;
@@ -114,4 +113,4 @@ private:
 
 	// Default codes
 	void SetDefaultCheatCodes();
-};
+};
