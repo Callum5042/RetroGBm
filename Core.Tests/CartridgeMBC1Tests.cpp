@@ -220,6 +220,23 @@ namespace CoreTests
 			Assert::AreEqual(0x61, static_cast<int>(cartridge.GetRomBank()));
 		}
 
+		TEST_METHOD(Write_RomBankUpperThenLower_KeepsUpperRomBankBits)
+		{
+			// Arrange
+			CartridgeDataV2 data;
+			data.cartridge_type = CartridgeTypeV2::MBC1_RAM;
+			data.data.resize(0x8000);
+
+			CartridgeMBC1 cartridge(data);
+
+			// Act
+			cartridge.Write(0x4000, 0x2); // Upper bits first
+			cartridge.Write(0x2000, 0x5); // Then lower bits
+
+			// Assert
+			Assert::AreEqual(0x45, static_cast<int>(cartridge.GetRomBank()));
+		}
+
 		TEST_METHOD(Write_BankModeValueIsBit0Is1_SetsBankModeToAdvance)
 		{
 			// Arrange
