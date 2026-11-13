@@ -4,6 +4,7 @@
 #include "RetroGBm/Instructions.h"
 #include "RetroGBm/Cartridge/BaseCartridge.h"
 
+#include <bit>
 #include <exception>
 #include <sstream>
 
@@ -378,25 +379,9 @@ void Cpu::HandleInterrupts()
 {
 	if (m_InterruptMasterFlag)
 	{
-		if (InterruptCheck(InterruptFlag::VBlank))
+		if (m_InterruptFlags & m_InterruptEnable & 0x1F)
 		{
-			InterruptHandle(InterruptFlag::VBlank, 0x40);
-		}
-		else if (InterruptCheck(InterruptFlag::STAT))
-		{
-			InterruptHandle(InterruptFlag::STAT, 0x48);
-		}
-		else if (InterruptCheck(InterruptFlag::Timer))
-		{
-			InterruptHandle(InterruptFlag::Timer, 0x50);
-		}
-		else if (InterruptCheck(InterruptFlag::Serial))
-		{
-			InterruptHandle(InterruptFlag::Serial, 0x58);
-		}
-		else if (InterruptCheck(InterruptFlag::Joypad))
-		{
-			InterruptHandle(InterruptFlag::Joypad, 0x60);
+			InterruptHandle();
 		}
 
 		m_EnablingInterrupts = false;
@@ -408,31 +393,45 @@ void Cpu::HandleInterrupts()
 	}
 }
 
-bool Cpu::InterruptCheck(InterruptFlag flag)
+// Interrupt dispatch takes 5 M-cycles: 2 wait cycles, push PC (high byte then low byte), then jump to the handler
+// https://gbdev.io/pandocs/Interrupts.html#interrupt-handling
+void Cpu::InterruptHandle()
 {
-	if (m_InterruptFlags & static_cast<int>(flag) && m_InterruptEnable & static_cast<int>(flag))
-	{
-		return true;
-	}
-
-	return false;
-}
-
-void Cpu::InterruptHandle(InterruptFlag flag, uint16_t address)
-{
+	// 2 wait cycles
 	Emulator::Instance->Cycle(2);
 
-	Emulator::Instance->StackPush16(ProgramCounter);
+	// Push the higher byte of the program counter onto the stack
+	// If SP was $0000 it wraps to $FFFF, which is the IE register, so this write overwrites IE
+	Emulator::Instance->StackPush(ProgramCounter >> 8);
+
+	// The CPU picks which interrupt to service here, after the high byte push, so it sees the IE value that
+	// push may have just written. Verified on hardware by Mooneye acceptance/interrupts/ie_push
+	uint8_t pending = m_InterruptFlags & m_InterruptEnable & 0x1F;
+
+	// Push the lower byte of the program counter onto the stack
+	// If SP was $0001 this write lands on IE instead, but the interrupt has already been picked so it doesn't affect this dispatch
+	Emulator::Instance->StackPush(ProgramCounter & 0xFF);
+
+	// The 2 cycles for the pushes above
 	Emulator::Instance->Cycle(2);
 
-	if (m_InterruptMasterFlag)
+	if (pending)
 	{
-		ProgramCounter = address;
+		// Lowest bit has the highest priority (VBlank is bit 0). Vectors are 8 bytes apart starting at $40:
+		// VBlank $40, STAT $48, Timer $50, Serial $58, Joypad $60
+		int bit = std::countr_zero(pending);
+		m_InterruptFlags &= ~(1 << bit);
+		ProgramCounter = 0x40 + bit * 8;
+	}
+	else
+	{
+		// The IE write above disabled every pending interrupt. The dispatch can't be undone at this point, so the CPU
+		// jumps to $0000 instead and no IF bit is cleared
+		ProgramCounter = 0x0000;
 	}
 
+	// Jump to the handler
 	Emulator::Instance->Cycle(1);
-
-	m_InterruptFlags &= ~static_cast<int>(flag);
 	Emulator::Instance->SetHalt(false);
 	m_InterruptMasterFlag = false;
 }

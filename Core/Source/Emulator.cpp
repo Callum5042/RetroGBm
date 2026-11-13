@@ -724,23 +724,9 @@ void Emulator::StackPush(uint8_t data)
 	WriteBus(m_Cpu->StackPointer, data);
 }
 
-void Emulator::StackPush16(uint16_t data)
-{
-	StackPush((data >> 8) & 0xFF);
-	StackPush(data & 0xFF);
-}
-
 uint8_t Emulator::StackPop()
 {
 	return this->ReadBus(m_Cpu->StackPointer++);
-}
-
-uint16_t Emulator::StackPop16()
-{
-	uint16_t lo = this->StackPop();
-	uint16_t hi = this->StackPop();
-
-	return (hi << 8) | lo;
 }
 
 bool Emulator::GetSaveStateDateCreated(const std::string& filepath, time_t* dateCreated, double* time_played)

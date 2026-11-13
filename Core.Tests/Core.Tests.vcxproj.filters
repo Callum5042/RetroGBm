@@ -42,6 +42,9 @@
     <ClCompile Include="InstructionsTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="InterruptTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="JoypadTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
