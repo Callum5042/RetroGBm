@@ -68,14 +68,12 @@ void CartridgeMBC3::Write(uint16_t address, uint8_t value)
 	}
 	else if (address >= 0x2000 && address <= 0x3FFF)
 	{
-		// Bank must be at least 1
-		if (value == 0)
-		{
-			value = 1;
-		}
-
-		// Sets RAM bank to lower 7 bits
+		// Only the lower 7 bits select the ROM bank, and bank 0 maps to bank 1
 		m_RomBank = value & 0x7F;
+		if (m_RomBank == 0)
+		{
+			m_RomBank = 1;
+		}
 	}
 
 	else if (address >= 0x4000 && address <= 0x5FFF)

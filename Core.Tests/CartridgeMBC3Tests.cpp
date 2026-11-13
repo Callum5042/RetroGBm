@@ -178,6 +178,40 @@ namespace CoreTests
 			Assert::AreEqual(1, static_cast<int>(cartridge.GetRomBank()));
 		}
 
+		TEST_METHOD(Write_RomBankAddressValueIs0x80_SetsRomBankTo1)
+		{
+			// Arrange
+			CartridgeDataV2 data;
+			data.cartridge_type = CartridgeTypeV2::MBC1_RAM;
+			data.data.resize(0x8000);
+
+			uint16_t address = 0x3FFF;
+
+			// Act
+			CartridgeMBC3 cartridge(data);
+			cartridge.Write(address, 0x80);
+
+			// Assert
+			Assert::AreEqual(1, static_cast<int>(cartridge.GetRomBank()));
+		}
+
+		TEST_METHOD(Write_RomBankAddressValueHasBit7Set_IgnoresBit7)
+		{
+			// Arrange
+			CartridgeDataV2 data;
+			data.cartridge_type = CartridgeTypeV2::MBC1_RAM;
+			data.data.resize(0x8000);
+
+			uint16_t address = 0x3FFF;
+
+			// Act
+			CartridgeMBC3 cartridge(data);
+			cartridge.Write(address, 0x85);
+
+			// Assert
+			Assert::AreEqual(5, static_cast<int>(cartridge.GetRomBank()));
+		}
+
 		TEST_METHOD(Write_RamBankAddress_SetRamBank)
 		{
 			// Arrange
