@@ -26,6 +26,9 @@
 #include <stdexcept>
 
 #include <RetroGBm\Logger.h>
+#include <CommCtrl.h>
+#include <windowsx.h>
+#include <shellapi.h>
 
 namespace
 {
@@ -196,6 +199,15 @@ LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 		case WM_SYSCHAR:
 			// Disable beeping when we ALT key combo is pressed
 			return 1;
+
+		case WM_CONTEXTMENU:
+			// Right-click, Shift+F10 or the menu key on the ROM list
+			if (reinterpret_cast<HWND>(wParam) == m_ListHwnd)
+			{
+				ShowRomListContextMenu(lParam);
+				return 0;
+			}
+			break;
 
 		case WM_SIZE:
 			OnResized(hwnd, msg, wParam, lParam);
@@ -740,6 +752,127 @@ void MainWindow::OpenDialogRomDirectory()
 void MainWindow::Refresh()
 {
 	this->RefreshRomList();
+}
+
+std::filesystem::path MainWindow::GetRomListItemPath(int row)
+{
+	WCHAR buf[MAX_PATH];
+	ListView_GetItemText(m_ListHwnd, row, 0, buf, MAX_PATH);
+
+	// The list is filled from the ROM directory in the profile
+	const std::string& directory = m_Application->ProfileDataList.options.rom_directories;
+	std::filesystem::path path = directory.empty() ? m_RomPath : std::filesystem::path(directory);
+	return path / buf;
+}
+
+void MainWindow::ShowRomListProperties()
+{
+	int row = ListView_GetNextItem(m_ListHwnd, -1, LVNI_SELECTED);
+	if (row != -1)
+	{
+		m_Application->ShowPropertiesWindow(GetRomListItemPath(row));
+	}
+}
+
+void MainWindow::ShowRomListContextMenu(LPARAM lParam)
+{
+	POINT point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+	int row = -1;
+
+	if (lParam == -1)
+	{
+		// From the keyboard: open below the selected row
+		row = ListView_GetNextItem(m_ListHwnd, -1, LVNI_SELECTED);
+		if (row == -1)
+		{
+			return;
+		}
+
+		RECT item;
+		ListView_GetItemRect(m_ListHwnd, row, &item, LVIR_LABEL);
+		point = { item.left + 16, item.bottom };
+		ClientToScreen(m_ListHwnd, &point);
+	}
+	else
+	{
+		// From the mouse: use the row under the cursor
+		LVHITTESTINFO hit = {};
+		hit.pt = point;
+		ScreenToClient(m_ListHwnd, &hit.pt);
+		row = ListView_HitTest(m_ListHwnd, &hit);
+		if (row == -1)
+		{
+			return;
+		}
+
+		ListView_SetItemState(m_ListHwnd, row, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+	}
+
+	HMENU menu = CreatePopupMenu();
+	AppendMenuW(menu, MF_STRING, m_ListMenuPlay, L"Play");
+	AppendMenuW(menu, MF_STRING, m_ListMenuOpenLocation, L"Open file location");
+	AppendMenuW(menu, MF_SEPARATOR, 0, NULL);
+	AppendMenuW(menu, MF_STRING, m_ListMenuProperties, L"Properties\tAlt+Enter");
+	SetMenuDefaultItem(menu, m_ListMenuPlay, FALSE);
+
+	UINT command = TrackPopupMenu(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON, point.x, point.y, 0, m_Hwnd, NULL);
+	DestroyMenu(menu);
+
+	switch (command)
+	{
+		case m_ListMenuPlay:
+		{
+			// Same as double-clicking the row
+			NMITEMACTIVATE activate = {};
+			activate.hdr.hwndFrom = m_ListHwnd;
+			activate.hdr.idFrom = m_ListMenuId;
+			activate.hdr.code = NM_DBLCLK;
+			activate.iItem = row;
+			SendMessage(m_Hwnd, WM_NOTIFY, m_ListMenuId, reinterpret_cast<LPARAM>(&activate));
+			break;
+		}
+		case m_ListMenuOpenLocation:
+		{
+			const std::wstring path = std::filesystem::absolute(GetRomListItemPath(row)).wstring();
+			const std::wstring args = L"/select,\"" + path + L"\"";
+			ShellExecuteW(m_Hwnd, L"open", L"explorer.exe", args.c_str(), NULL, SW_SHOWNORMAL);
+			break;
+		}
+		case m_ListMenuProperties:
+			m_Application->ShowPropertiesWindow(GetRomListItemPath(row));
+			break;
+	}
+}
+
+LRESULT CALLBACK MainWindow::RomListSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, UINT_PTR id, DWORD_PTR data)
+{
+	MainWindow* window = reinterpret_cast<MainWindow*>(data);
+
+	switch (msg)
+	{
+		case WM_SYSKEYDOWN:
+			// Alt+Enter opens Properties for the selected ROM
+			if (wParam == VK_RETURN)
+			{
+				window->ShowRomListProperties();
+				return 0;
+			}
+			break;
+
+		case WM_SYSCHAR:
+			// Stops the beep after Alt+Enter
+			if (wParam == VK_RETURN)
+			{
+				return 0;
+			}
+			break;
+
+		case WM_NCDESTROY:
+			RemoveWindowSubclass(hwnd, RomListSubclassProc, id);
+			break;
+	}
+
+	return DefSubclassProc(hwnd, msg, wParam, lParam);
 }
 
 void MainWindow::RefreshRomList()
@@ -1382,6 +1515,7 @@ void MainWindow::CreateRomListWindow()
 		}
 
 		ListView_SetExtendedListViewStyle(m_ListHwnd, LVS_EX_FULLROWSELECT);
+		SetWindowSubclass(m_ListHwnd, RomListSubclassProc, 1, reinterpret_cast<DWORD_PTR>(this));
 
 		ShowWindow(m_ListHwnd, SW_SHOW);
 		UpdateWindow(m_ListHwnd);
