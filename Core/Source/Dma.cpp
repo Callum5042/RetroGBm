@@ -68,7 +68,9 @@ void Dma::Tick()
 
 	if (context.start_delay)
 	{
+		// OAM locks on the M-cycle before the first byte copies, so the CPU's next access already sees it
 		context.start_delay--;
+		context.oam_locked |= context.start_delay == 0;
 		return;
 	}
 
@@ -76,6 +78,7 @@ void Dma::Tick()
 
 	context.byte++;
 	context.active = context.byte < 0xA0;
+	context.oam_locked = context.active;
 }
 
 void Dma::RunHDMA()
@@ -126,7 +129,7 @@ void Dma::RunGDMA(bool previous_active)
 
 bool Dma::IsTransferring() const
 {
-	return context.active;
+	return context.oam_locked;
 }
 
 void Dma::SetSource(uint16_t address, uint8_t value)
@@ -188,6 +191,10 @@ void Dma::LoadState(std::fstream* file)
 	VideoState::Read(*file, context.byte);
 	VideoState::Read(*file, context.value);
 	VideoState::Read(*file, context.start_delay);
+
+	// Not saved so existing savestates still load. Only a restart saved mid start-up delay comes back unlocked
+	// context.oam_locked = context.active && context.start_delay == 0;
+
 	int32_t stalls;
 	VideoState::Read(*file, stalls);
 	if (stalls < 0 || stalls > 2048) throw std::runtime_error("Invalid DMA state");
