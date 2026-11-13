@@ -99,10 +99,8 @@ public:
 
 	// Stack
 	void StackPush(uint8_t data);
-	void StackPush16(uint16_t data);
 
 	uint8_t StackPop();
-	uint16_t StackPop16();
 
 	EmulatorContext m_Context;
 

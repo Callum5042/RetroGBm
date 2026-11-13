@@ -45,7 +45,7 @@
 - [x] bits/mem_oam
 - [x] bits/reg_f
 - [x] instr/daa
-- [ ] interrupts/ie_push
+- [x] interrupts/ie_push
 - [x] oam_dma/basic
 - [x] oam_dma/reg_read
 - [x] ppu/intr_2_0_timing
