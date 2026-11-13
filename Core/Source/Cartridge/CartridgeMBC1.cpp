@@ -73,7 +73,7 @@ void CartridgeMBC1::Write(uint16_t address, uint8_t value)
 
 		// Only write to the lower 5 bits
 		m_RomBank &= ~0x1F;
-		m_RomBank = bank_number;
+		m_RomBank |= bank_number;
 	}
 	else if (address >= 0x4000 && address <= 0x5FFF)
 	{
