@@ -1,5 +1,4 @@
 #include "Windows/MainWindow.h"
-#include "Windows/CartridgeInfoWindow.h"
 #include "Application.h"
 #include "Utilities/Utilities.h"
 #include "../resource.h"
@@ -311,7 +310,7 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		case m_MenuFileCloseId:
 		{
 			m_Application->StopEmulator();
-			EnableMenuItem(m_ToolsMenuItem, m_MenuToolsCartridgeInfo, MF_DISABLED);
+			EnableMenuItem(m_ToolsMenuItem, m_MenuToolsProperties, MF_DISABLED);
 			EnableMenuItem(m_ToolsMenuItem, m_MenuToolsCheats, MF_DISABLED);
 			EnableMenuItem(m_ToolsMenuItem, m_MenuToolsExportAssembly, MF_DISABLED);
 			this->SetStatusBarTitle("");
@@ -575,14 +574,10 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 		case m_MenuToolsExportAssembly:
 			ExportAssembly();
 			break;
-		case m_MenuToolsCartridgeInfo:
-			if (m_Application->GetEmulator()->IsRunning())
+		case m_MenuToolsProperties:
+			if (m_Application->GetEmulator()->IsRunning() && !m_FilePath.empty())
 			{
-				UINT menu_state = GetMenuState(m_ToolsMenuItem, m_MenuToolsCartridgeInfo, MF_BYCOMMAND);
-				if (!(menu_state & MF_DISABLED))
-				{
-					m_Application->CreateCartridgeInfoWindow();
-				}
+				m_Application->ShowPropertiesWindow(m_FilePath);
 			}
 			break;
 		case m_MenuToolsCheats:
@@ -769,7 +764,7 @@ void MainWindow::LoadRom(const std::string& path)
 
 	m_FilePath = path;
 	m_Application->LoadRom(path);
-	EnableMenuItem(m_ToolsMenuItem, m_MenuToolsCartridgeInfo, MF_ENABLED);
+	EnableMenuItem(m_ToolsMenuItem, m_MenuToolsProperties, MF_ENABLED);
 	EnableMenuItem(m_ToolsMenuItem, m_MenuToolsCheats, MF_ENABLED);
 	EnableMenuItem(m_ToolsMenuItem, m_MenuToolsExportAssembly, MF_ENABLED);
 
@@ -777,13 +772,6 @@ void MainWindow::LoadRom(const std::string& path)
 
 	this->SetStatusBarTitle(filename);
 	this->SetStatusBarState("Playing");
-
-	// Reload cartridge info
-	CartridgeInfoWindow* cartridge_info_window = m_Application->GetCartridgeInfoWindow();
-	if (cartridge_info_window != nullptr)
-	{
-		cartridge_info_window->UpdateCartridgeInfo();
-	}
 
 	// Show savestate details
 	UpdateSaveStateDetails();
@@ -1234,13 +1222,13 @@ void MainWindow::CreateMenuBar()
 	// Tools menu
 	m_ToolsMenuItem = CreateMenu();
 	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsCheats, L"Cheats");
+	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsProperties, L"Properties");
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsCpuRegisters, L"CPU Registers");
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTileData, L"Tile Data");
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTileMap, L"Tile Map");
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsOam, L"Objects (OAM)");
-	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsCartridgeInfo, L"Cartridge Info");
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsExportAssembly, L"Export Assembly");
 	AppendMenuW(m_MenuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(m_ToolsMenuItem), L"Tools");

@@ -86,7 +86,7 @@ private:
 
 	HMENU m_ToolsMenuItem = NULL;
 	static const UINT m_MenuToolsTileData = 201;
-	static const UINT m_MenuToolsCartridgeInfo = 203;
+	static const UINT m_MenuToolsProperties = 203;
 	static const UINT m_MenuToolsCpuRegisters = 204;
 	static const UINT m_MenuToolsCheats = 205;
 	static const UINT m_MenuToolsExportAssembly = 206;

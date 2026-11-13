@@ -334,6 +334,12 @@ void Application::Run()
 				continue;
 			}
 
+			// Let the properties window handle Tab and Esc
+			if (m_PropertiesWindow != nullptr && m_PropertiesWindow->HandleDialogMessage(&msg))
+			{
+				continue;
+			}
+
 			TranslateMessage(&msg);
 			DispatchMessageW(&msg);
 		}
@@ -528,18 +534,14 @@ void Application::ShowTileInTileWindow(int bank, int tile)
 	m_TileWindow->SelectTile(bank, tile);
 }
 
-void Application::CreateCartridgeInfoWindow()
+void Application::ShowPropertiesWindow(const std::filesystem::path& rom_path)
 {
-	if (m_CartridgeInfoWindow == nullptr)
+	if (m_PropertiesWindow == nullptr)
 	{
-		m_CartridgeInfoWindow = std::make_unique<CartridgeInfoWindow>(this);
-		m_CartridgeInfoWindow->Create("Cartridge Info", 400, 300);
+		m_PropertiesWindow = std::make_unique<PropertiesWindow>(this);
 	}
-}
 
-void Application::ReleaseCartridgeInfoWindow()
-{
-	m_CartridgeInfoWindow.release();
+	m_PropertiesWindow->Show(rom_path);
 }
 
 void Application::SaveState(const std::string& path)

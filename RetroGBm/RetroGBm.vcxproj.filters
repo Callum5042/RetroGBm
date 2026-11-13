@@ -63,7 +63,7 @@
     <ClCompile Include="Source\Windows\TileWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Windows\CartridgeInfoWindow.cpp">
+    <ClCompile Include="Source\Windows\PropertiesWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Utilities\Utilities.cpp">
@@ -146,7 +146,7 @@
     <ClInclude Include="Include\Windows\TileWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Windows\CartridgeInfoWindow.h">
+    <ClInclude Include="Include\Windows\PropertiesWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\Utilities\Utilities.h">
