@@ -167,6 +167,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BaseCartridgeTests.cpp" />
+    <ClCompile Include="CartridgeHeaderTests.cpp" />
     <ClCompile Include="CartridgeMBC1Tests.cpp" />
     <ClCompile Include="CartridgeMBC2Tests.cpp" />
     <ClCompile Include="CartridgeMBC3Tests.cpp" />
