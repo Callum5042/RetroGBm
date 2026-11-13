@@ -32,7 +32,7 @@
 - [x] jp_timing
 - [x] ld_hl_sp_e_timing
 - [x] oam_dma_restart
-- [ ] oam_dma_start
+- [x] oam_dma_start
 - [x] oam_dma_timing
 - [x] pop_timing
 - [x] push_timing
