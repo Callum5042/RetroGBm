@@ -19,6 +19,22 @@ A fast and lightweight Game Boy Color emulator written in C++ for Windows and An
 - Gameshark cheat codes
 - SM83 assembly export
 
+### Tools
+
+The Windows app has tools for looking inside the game you're playing, opened from the **Tools** menu. The viewers update live as the game runs.
+
+- **Tile Data**: every tile in VRAM across both banks, with the address, palette and bytes of the selected tile, and PNG export
+- **Tile Map**: the background and window maps with the visible screen outlined, and the tile, palette and attributes of the selected entry
+- **Objects (OAM)**: all 40 sprites, including hidden ones, with the position, tile and palette of the selected object
+- **Cheats**: add GameShark codes per game and switch them on and off while playing
+- **Properties**: cartridge details from the ROM header, checksums and play time
+- **CPU Registers**: live values of PC, SP and the 8-bit registers
+- **Export Assembly**: saves the game's code as an `.asm` file
+
+| ![Tile Data](/Images/tool_tile_data.png) | ![Tile Map](/Images/tool_tile_map.png) | ![Objects (OAM)](/Images/tool_objects.png) |
+|----------|----------|----------|
+| ![Cheats](/Images/tool_cheats.png) | ![Properties](/Images/tool_properties.png) | |
+
 ## Screenshots
 
 | ![Pokemon Gold](/Images/pokemon_gold.png) | ![Zelda Link's Awakening DX](/Images/zelda_links_awakening_dx.png) | ![Dr Mario](/Images/dr_mario.png) |
