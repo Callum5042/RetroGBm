@@ -219,7 +219,7 @@ class CheatsActivity : ComponentActivity() {
                 .padding(16.dp)
         ) {
             Text(
-                text = "No cheats for this game yet.\nTap + to add one.",
+                text = "No cheats for this game yet\nTap + to add one",
                 modifier = Modifier.align(Alignment.Center),
                 color = Color.DarkGray,
                 textAlign = TextAlign.Center
