@@ -54,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -256,6 +257,27 @@ fun InputDialog(
     }
 }
 
+@Composable
+fun NoSaveStatesFound(saveStateType: SaveStateType) {
+    val text = when (saveStateType) {
+        SaveStateType.Save -> "No save states for this game yet.\nTap + to add a slot."
+        else -> "No save states for this game yet."
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.align(Alignment.Center),
+            color = Color.DarkGray,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Content(
@@ -313,7 +335,9 @@ fun Content(
                 .fillMaxSize() // Ensure system bars are handled properly
                 .padding(innerPadding)  // Adjust padding if needed
         ) {
-            LazyColumn(
+            if (saveStates.isEmpty()) {
+                NoSaveStatesFound(saveStateType)
+            } else LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
