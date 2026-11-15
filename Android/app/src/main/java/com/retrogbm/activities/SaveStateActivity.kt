@@ -260,8 +260,8 @@ fun InputDialog(
 @Composable
 fun NoSaveStatesFound(saveStateType: SaveStateType) {
     val text = when (saveStateType) {
-        SaveStateType.Save -> "No save states for this game yet.\nTap + to add a slot."
-        else -> "No save states for this game yet."
+        SaveStateType.Save -> "No save states for this game yet\nTap + to add a slot"
+        else -> "No save states for this game yet"
     }
 
     Box(
