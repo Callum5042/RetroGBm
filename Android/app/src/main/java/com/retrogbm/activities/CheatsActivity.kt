@@ -51,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.retrogbm.CheatCode
@@ -210,6 +211,22 @@ class CheatsActivity : ComponentActivity() {
         }
     }
 
+    @Composable
+    fun NoCheatsFound() {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "No cheats for this game yet.\nTap + to add one.",
+                modifier = Modifier.align(Alignment.Center),
+                color = Color.DarkGray,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
     @Composable
     fun Content() {
@@ -281,6 +298,11 @@ class CheatsActivity : ComponentActivity() {
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
+
+                if (cheats.isEmpty()) {
+                    NoCheatsFound()
+                    return@Column
+                }
 
                 LazyColumn(
                     modifier = Modifier
