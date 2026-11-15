@@ -150,11 +150,17 @@ class SaveStateActivity : ComponentActivity() {
         val saveStatePath = absolutePath?.let { "$it/SaveStates/$romFileName/" }
 
         val folder = saveStatePath?.let { File(it) }
-        val files = folder?.listFiles()
+        // Only regular .state files; ignore subfolders and anything else in the folder
+        val files = folder?.listFiles { file -> file.isFile && file.extension.equals("state", ignoreCase = true) }
 
         val saveStateData = mutableListOf<SaveStateData>()
         files?.forEach { file ->
-            val data = readSaveStateHeader(file)
+            val data = try {
+                readSaveStateHeader(file)
+            } catch (e: Exception) {
+                Log.w("Retro", "Skipping unreadable save state: ${file.name}", e)
+                return@forEach
+            }
 
             // Format the date modified
             val dateModifiedStr = formatDateModified(data.dateModified)
