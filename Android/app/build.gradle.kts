@@ -12,8 +12,9 @@ android {
         applicationId = "com.retrogbm"
         minSdk = 29
         targetSdk = 34
-        versionCode = 1
-        versionName = "26.9"
+        // Date-based versioning: versionName is YY.MM[.P], versionCode is YYMMP
+        versionCode = 26110
+        versionName = "26.11"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
