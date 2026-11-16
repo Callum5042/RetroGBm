@@ -51,6 +51,10 @@ public:
 	size_t GetSelectionStart() const;
 	size_t GetSelectionEnd() const;
 
+	// Selects first to last and scrolls to it, without raising SelectionChanged. The caret
+	// goes in the ASCII column when ascii is true, e.g. for text that was found.
+	void SelectRange(size_t first, size_t last, bool ascii);
+
 	// "FE00", or "01:4000" for a block with banks
 	std::wstring FormatAddress(size_t offset) const;
 
@@ -95,7 +99,7 @@ private:
 	// The byte under a point, clamped into the block. Sets whether it is in the ASCII column.
 	size_t HitTest(int x, int y, bool* ascii) const;
 	void MoveCaret(long long offset, bool extend);
-	void Select(long long anchor_offset, long long caret_offset);
+	void Select(long long anchor_offset, long long caret_offset, bool notify = true);
 	void EnsureVisible(size_t offset);
 	void ClampSelection(size_t size);
 	void OnKeyDown(WPARAM key);

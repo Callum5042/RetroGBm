@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <span>
 #include <string>
+#include <vector>
 
 class Application;
 
@@ -94,6 +95,28 @@ private:
 
 	void CreateCommandBar();
 	void LayoutCommandBar(int width);
+
+	// Go to and Find are borderless edits inside fields painted by the window: white, a light
+	// rounded border that turns blue while the edit has focus, and padding round the text
+	RECT m_GoToField = {};
+	RECT m_FindField = {};
+	void PaintField(HDC hdc, const RECT& field, HWND edit);
+	HWND FieldEditAt(POINT point) const;
+
+	// Go to and Find run when Enter is pressed in their boxes; problems show in the status bar
+	void GoTo();
+	void Find(bool backwards);
+
+	// "$C040", "C040", "0xC040" or "01:D040", to a block and an offset in it. Without a bank,
+	// VRAM and WRAMX use the bank currently mapped in, ROMX bank 1 and cartridge RAM bank 0.
+	bool ParseAddress(const std::wstring& text, Block* block, size_t* offset, std::wstring* error) const;
+
+	// "3E C4" or "3ec4" in hex mode, ASCII text in text mode
+	bool ParseFind(const std::wstring& text, bool hex, std::vector<uint8_t>* bytes, std::wstring* error) const;
+
+	// Left part of the status bar: the last Go to or Find result, until the selection moves
+	std::wstring m_StatusMessage;
+	void SetStatusMessage(const std::wstring& message);
 
 	// Block list: owner drawn, each row a colour strip, the block's name and its address range
 	HWND m_LabelBlocks = NULL;

@@ -14,8 +14,10 @@
 #include <RetroGBm/Cartridge/BaseCartridge.h>
 
 #include <algorithm>
+#include <cwctype>
 #include <filesystem>
 #include <format>
+#include <optional>
 #include <string>
 
 namespace
@@ -92,11 +94,83 @@ namespace
 		return size.cx;
 	}
 
+	int FontHeight(HFONT font)
+	{
+		HDC hdc = GetDC(NULL);
+		HGDIOBJ previous = SelectObject(hdc, font);
+
+		TEXTMETRIC metrics = {};
+		GetTextMetrics(hdc, &metrics);
+
+		SelectObject(hdc, previous);
+		ReleaseDC(NULL, hdc);
+		return metrics.tmHeight;
+	}
+
+	const COLORREF FieldBorderColour = RGB(209, 209, 209);
+	const COLORREF FieldFocusColour = RGB(0, 95, 184);
+	const COLORREF CommandLabelColour = RGB(74, 74, 74);
+
 	std::wstring GetText(HWND control)
 	{
 		std::wstring text(static_cast<size_t>(GetWindowTextLength(control)), L'\0');
 		GetWindowText(control, text.data(), static_cast<int>(text.size()) + 1);
 		return text;
+	}
+
+	int HexDigit(wchar_t c)
+	{
+		if (c >= L'0' && c <= L'9') return c - L'0';
+		if (c >= L'a' && c <= L'f') return c - L'a' + 10;
+		if (c >= L'A' && c <= L'F') return c - L'A' + 10;
+		return -1;
+	}
+
+	// Up to max_digits hex digits after an optional "$" or "0x"
+	bool ParseHex(std::wstring text, size_t max_digits, size_t* value)
+	{
+		if (text.starts_with(L"$"))
+		{
+			text.erase(0, 1);
+		}
+		else if (text.starts_with(L"0x") || text.starts_with(L"0X"))
+		{
+			text.erase(0, 2);
+		}
+
+		if (text.empty() || text.size() > max_digits)
+		{
+			return false;
+		}
+
+		size_t result = 0;
+		for (wchar_t c : text)
+		{
+			const int digit = HexDigit(c);
+			if (digit < 0)
+			{
+				return false;
+			}
+
+			result = result * 16 + digit;
+		}
+
+		*value = result;
+		return true;
+	}
+
+	std::wstring WithoutSpaces(const std::wstring& text)
+	{
+		std::wstring result;
+		for (wchar_t c : text)
+		{
+			if (!iswspace(c))
+			{
+				result += c;
+			}
+		}
+
+		return result;
 	}
 
 	const COLORREF InspectorLabelColour = RGB(92, 92, 92);
@@ -380,15 +454,341 @@ void MemoryWindow::UpdateStatus()
 {
 	Emulator* emulator = m_Application->GetEmulator();
 	const bool running = emulator != nullptr && emulator->IsRunning();
-	const std::wstring text = running ? L"Live, updates every frame" : L"No game loaded";
+	const std::wstring live = running ? L"Live, updates every frame" : L"No game loaded";
 
 	// Only set when changed, as this is called every frame
-	wchar_t current[128] = {};
-	SendMessageW(m_StatusBar, SB_GETTEXTW, 0, reinterpret_cast<LPARAM>(current));
-	if (text != current)
+	auto set_part = [this](int part, const std::wstring& text)
 	{
-		SendMessageW(m_StatusBar, SB_SETTEXTW, 0, reinterpret_cast<LPARAM>(text.c_str()));
+		wchar_t current[256] = {};
+		if (LOWORD(SendMessageW(m_StatusBar, SB_GETTEXTLENGTHW, part, 0)) < 256)
+		{
+			SendMessageW(m_StatusBar, SB_GETTEXTW, part, reinterpret_cast<LPARAM>(current));
+		}
+
+		if (text != current)
+		{
+			SendMessageW(m_StatusBar, SB_SETTEXTW, part, reinterpret_cast<LPARAM>(text.c_str()));
+		}
+	};
+
+	set_part(0, m_StatusMessage);
+	set_part(1, live);
+}
+
+void MemoryWindow::SetStatusMessage(const std::wstring& message)
+{
+	m_StatusMessage = message;
+	UpdateStatus();
+}
+
+bool MemoryWindow::ParseAddress(const std::wstring& text, Block* block, size_t* offset, std::wstring* error) const
+{
+	auto fail = [error](const std::wstring& message)
+	{
+		*error = message;
+		return false;
+	};
+
+	const std::wstring input = WithoutSpaces(text);
+	if (input.empty())
+	{
+		return fail(L"Type an address to go to, e.g. $C040 or 01:D040");
 	}
+
+	// An optional bank before a colon, as the address column shows it
+	size_t bank = 0;
+	bool has_bank = false;
+	size_t address = 0;
+
+	const size_t colon = input.find(L':');
+	if (colon != std::wstring::npos)
+	{
+		if (!ParseHex(input.substr(0, colon), 3, &bank))
+		{
+			return fail(std::format(L"\"{}\" is not a bank and address, e.g. 01:D040", text));
+		}
+
+		has_bank = true;
+	}
+
+	if (!ParseHex(colon == std::wstring::npos ? input : input.substr(colon + 1), 4, &address))
+	{
+		return fail(std::format(L"\"{}\" is not an address, e.g. $C040", text));
+	}
+
+	// Echo RAM mirrors work RAM
+	const bool echo = address >= 0xE000 && address <= 0xFDFF;
+	if (echo)
+	{
+		address -= 0x2000;
+	}
+
+	Emulator* emulator = m_Application->GetEmulator();
+	if (emulator == nullptr || !emulator->IsRunning())
+	{
+		return fail(L"No game loaded");
+	}
+
+	const bool colour = emulator->GetDisplay()->IsColour();
+
+	if (address <= 0x3FFF)
+	{
+		if (has_bank && bank != 0)
+		{
+			return fail(L"$0000-$3FFF is always ROM bank 00");
+		}
+
+		*block = Block::Rom;
+		*offset = address;
+	}
+	else if (address <= 0x7FFF)
+	{
+		const size_t rom_bank = has_bank ? bank : 1;
+		if (rom_bank == 0)
+		{
+			return fail(L"ROM bank 00 is at $0000-$3FFF, the switchable banks start at 01");
+		}
+
+		*block = Block::Rom;
+		*offset = rom_bank * 0x4000 + (address - 0x4000);
+	}
+	else if (address <= 0x9FFF)
+	{
+		const size_t vram_bank = has_bank ? bank : (colour ? (emulator->GetPpu()->GetVideoRamBank() & 1) : 0);
+		*block = Block::VideoRam;
+		*offset = vram_bank * 0x2000 + (address - 0x8000);
+	}
+	else if (address <= 0xBFFF)
+	{
+		*block = Block::CartridgeRam;
+		*offset = (has_bank ? bank : 0) * 0x2000 + (address - 0xA000);
+	}
+	else if (address <= 0xCFFF)
+	{
+		if (has_bank && bank != 0)
+		{
+			return fail(L"$C000-$CFFF is always work RAM bank 00");
+		}
+
+		*block = Block::WorkRam;
+		*offset = address - 0xC000;
+	}
+	else if (address <= 0xDFFF)
+	{
+		const size_t wram_bank = has_bank ? bank : emulator->GetRam()->GetWorkRamBank();
+		if (wram_bank == 0)
+		{
+			return fail(L"Work RAM bank 00 is at $C000-$CFFF, the switchable banks start at 01");
+		}
+
+		*block = Block::WorkRam;
+		*offset = wram_bank * 0x1000 + (address - 0xD000);
+	}
+	else if (address <= 0xFE9F)
+	{
+		if (has_bank)
+		{
+			return fail(L"OAM has no banks");
+		}
+
+		*block = Block::Oam;
+		*offset = address - 0xFE00;
+	}
+	else if (address <= 0xFEFF)
+	{
+		return fail(L"$FEA0-$FEFF is not usable memory");
+	}
+	else if (address <= 0xFF7F)
+	{
+		return fail(L"I/O registers are not shown in this window");
+	}
+	else if (address <= 0xFFFE)
+	{
+		if (has_bank)
+		{
+			return fail(L"High RAM has no banks");
+		}
+
+		*block = Block::HighRam;
+		*offset = address - 0xFF80;
+	}
+	else
+	{
+		return fail(L"The interrupt enable register is not shown in this window");
+	}
+
+	const std::span<const uint8_t> data = ReadBlock(*block);
+	const wchar_t* name = Blocks[static_cast<int>(*block)].name;
+	if (data.empty())
+	{
+		return fail(*block == Block::CartridgeRam ? L"This cartridge has no RAM" : std::format(L"{} is empty", name));
+	}
+
+	if (*offset >= data.size())
+	{
+		return fail(std::format(L"\"{}\" is past the end of {}", text, name));
+	}
+
+	// On success, a note for the status bar
+	*error = echo ? L"Echo RAM mirrors work RAM" : L"";
+	return true;
+}
+
+bool MemoryWindow::ParseFind(const std::wstring& text, bool hex, std::vector<uint8_t>* bytes, std::wstring* error) const
+{
+	bytes->clear();
+
+	if (hex)
+	{
+		// Spaces, commas and "$" are allowed between bytes
+		std::wstring digits;
+		for (wchar_t c : text)
+		{
+			if (!iswspace(c) && c != L',' && c != L'$')
+			{
+				digits += c;
+			}
+		}
+
+		if (digits.empty())
+		{
+			*error = L"Type the bytes to find, e.g. 3E C4";
+			return false;
+		}
+
+		for (wchar_t c : digits)
+		{
+			if (HexDigit(c) < 0)
+			{
+				*error = std::format(L"\"{}\" is not hex bytes. Choose Text to find text.", text);
+				return false;
+			}
+		}
+
+		if (digits.size() % 2 != 0)
+		{
+			*error = L"Each byte needs two hex digits, e.g. 3E C4";
+			return false;
+		}
+
+		for (size_t i = 0; i < digits.size(); i += 2)
+		{
+			bytes->push_back(static_cast<uint8_t>(HexDigit(digits[i]) * 16 + HexDigit(digits[i + 1])));
+		}
+
+		return true;
+	}
+
+	if (text.empty())
+	{
+		*error = L"Type the text to find";
+		return false;
+	}
+
+	for (wchar_t c : text)
+	{
+		if (c < 0x20 || c > 0x7E)
+		{
+			*error = L"Text can only use ASCII characters";
+			return false;
+		}
+
+		bytes->push_back(static_cast<uint8_t>(c));
+	}
+
+	return true;
+}
+
+void MemoryWindow::GoTo()
+{
+	Block block = m_Block;
+	size_t offset = 0;
+	std::wstring note;
+	if (!ParseAddress(GetText(m_EditGoTo), &block, &offset, &note))
+	{
+		SetStatusMessage(note);
+		return;
+	}
+
+	if (block != m_Block)
+	{
+		SelectBlock(block);
+	}
+
+	m_HexView.SelectRange(offset, offset, false);
+	UpdateInspector();
+
+	// Echo RAM says where it went instead
+	SetStatusMessage(note.empty() ? L"" : std::format(L"{}, showing {}", note, m_HexView.FormatAddress(offset)));
+	SetFocus(m_HexView.GetHwnd());
+}
+
+void MemoryWindow::Find(bool backwards)
+{
+	std::vector<uint8_t> needle;
+	std::wstring error;
+	const bool hex = Button_GetCheck(m_ButtonHex) == BST_CHECKED;
+	if (!ParseFind(GetText(m_EditFind), hex, &needle, &error))
+	{
+		SetStatusMessage(error);
+		return;
+	}
+
+	const std::span<const uint8_t> data = ReadBlock(m_Block);
+	const wchar_t* name = Blocks[static_cast<int>(m_Block)].name;
+	if (data.empty() || needle.size() > data.size())
+	{
+		SetStatusMessage(std::format(L"Not found in {}", name));
+		return;
+	}
+
+	// Positions in [from, to) where the bytes start: the first, or the last going backwards
+	const size_t last_start = data.size() - needle.size();
+	auto search = [&](size_t from, size_t to, bool last) -> std::optional<size_t>
+	{
+		to = (std::min)(to, last_start + 1);
+		if (from >= to)
+		{
+			return std::nullopt;
+		}
+
+		const auto begin = data.begin() + from;
+		const auto end = data.begin() + (to - 1 + needle.size());
+		const auto found = last ? std::find_end(begin, end, needle.begin(), needle.end()) : std::search(begin, end, needle.begin(), needle.end());
+		if (found == end)
+		{
+			return std::nullopt;
+		}
+
+		return static_cast<size_t>(found - data.begin());
+	};
+
+	// On from the selection, wrapping round the block
+	const size_t start = m_HexView.HasSelection() ? m_HexView.GetSelectionStart() : 0;
+	bool wrapped = false;
+	std::optional<size_t> found = backwards ? search(0, start, true) : search(start + 1, data.size(), false);
+	if (!found)
+	{
+		found = backwards ? search(start, data.size(), true) : search(0, start + 1, false);
+		wrapped = found.has_value();
+	}
+
+	if (!found)
+	{
+		SetStatusMessage(std::format(L"Not found in {}", name));
+		return;
+	}
+
+	m_HexView.SelectRange(*found, *found + needle.size() - 1, !hex);
+	UpdateInspector();
+
+	std::wstring message = std::format(L"Found at {}", m_HexView.FormatAddress(*found));
+	if (wrapped)
+	{
+		message += backwards ? L", wrapped round to the end" : L", wrapped round to the start";
+	}
+
+	SetStatusMessage(message);
 }
 
 bool MemoryWindow::HandleDialogMessage(MSG* msg)
@@ -469,7 +869,11 @@ void MemoryWindow::CreateControls()
 	}
 
 	m_HexView.Create(m_Hwnd, m_ControlHexViewId);
-	m_HexView.SelectionChanged = [this]() { UpdateInspector(); };
+	m_HexView.SelectionChanged = [this]()
+	{
+		UpdateInspector();
+		SetStatusMessage(L"");
+	};
 
 	CreateInspector();
 }
@@ -488,16 +892,22 @@ void MemoryWindow::CreateCommandBar()
 
 	// Go to an address, and find bytes or text
 	m_LabelGoTo = create(WC_STATICW, L"Go to", SS_CENTERIMAGE, 0, m_Font);
-	m_EditGoTo = create(WC_EDITW, L"", WS_TABSTOP | WS_BORDER | ES_AUTOHSCROLL | off, m_ControlGoToId, m_MonoFont);
+	m_EditGoTo = create(WC_EDITW, L"", WS_TABSTOP | ES_AUTOHSCROLL, m_ControlGoToId, m_MonoFont);
 	Edit_SetCueBannerText(m_EditGoTo, L"$C040");
 
 	m_LabelFind = create(WC_STATICW, L"Find", SS_CENTERIMAGE, 0, m_Font);
-	m_EditFind = create(WC_EDITW, L"", WS_TABSTOP | WS_BORDER | ES_AUTOHSCROLL | off, m_ControlFindId, m_Font);
+	m_EditFind = create(WC_EDITW, L"", WS_TABSTOP | ES_AUTOHSCROLL, m_ControlFindId, m_Font);
 	Edit_SetCueBannerText(m_EditFind, L"Hex bytes or text");
 
-	// Hex or text: push-like radio buttons act as a segmented control
-	m_ButtonHex = create(WC_BUTTONW, L"Hex", WS_TABSTOP | WS_GROUP | BS_AUTORADIOBUTTON | BS_PUSHLIKE | off, m_ControlHexId, m_Font);
-	m_ButtonText = create(WC_BUTTONW, L"Text", BS_AUTORADIOBUTTON | BS_PUSHLIKE | off, m_ControlTextId, m_Font);
+	// The field supplies the padding
+	for (HWND edit : { m_EditGoTo, m_EditFind })
+	{
+		SendMessageW(edit, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, 0);
+	}
+
+	// What Find looks for, hex bytes or text: push-like radio buttons act as a segmented control
+	m_ButtonHex = create(WC_BUTTONW, L"Hex", WS_TABSTOP | WS_GROUP | BS_AUTORADIOBUTTON | BS_PUSHLIKE, m_ControlHexId, m_Font);
+	m_ButtonText = create(WC_BUTTONW, L"Text", BS_AUTORADIOBUTTON | BS_PUSHLIKE, m_ControlTextId, m_Font);
 	Button_SetCheck(m_ButtonHex, BST_CHECKED);
 
 	// Bytes per row
@@ -525,20 +935,28 @@ void MemoryWindow::LayoutCommandBar(int width)
 	const int group_gap = 20;
 
 	int x = 12;
-	auto label = [&](HWND control)
+	auto label = [&](HWND control, int gap)
 	{
 		const int w = MeasureText(m_Font, GetText(control));
 		MoveWindow(control, x, button_y, w, button_height, TRUE);
-		x += w + 8;
+		x += w + gap;
 	};
 
-	label(m_LabelGoTo);
-	MoveWindow(m_EditGoTo, x, field_y, 96, field_height, TRUE);
-	x += 96 + group_gap;
+	// A field as tall as the buttons, its edit one line of text high in the middle
+	auto field = [&](HWND edit, HFONT font, int width, RECT* rect)
+	{
+		*rect = { x, button_y, x + width, button_y + button_height };
+		const int padding = 8;
+		const int text_height = FontHeight(font);
+		MoveWindow(edit, x + padding, button_y + (button_height - text_height) / 2, width - padding * 2, text_height, TRUE);
+		x += width + group_gap;
+	};
 
-	label(m_LabelFind);
-	MoveWindow(m_EditFind, x, field_y, 168, field_height, TRUE);
-	x += 168 + group_gap;
+	label(m_LabelGoTo, 6);
+	field(m_EditGoTo, m_MonoFont, 120, &m_GoToField);
+
+	label(m_LabelFind, 6);
+	field(m_EditFind, m_Font, 180, &m_FindField);
 
 	for (HWND button : { m_ButtonHex, m_ButtonText })
 	{
@@ -548,7 +966,7 @@ void MemoryWindow::LayoutCommandBar(int width)
 	}
 
 	x += group_gap;
-	label(m_LabelColumns);
+	label(m_LabelColumns, 8);
 	MoveWindow(m_ComboColumns, x, field_y, 56, 200, TRUE);
 	x += 56 + group_gap;
 
@@ -682,6 +1100,10 @@ void MemoryWindow::Layout()
 	GetWindowRect(m_StatusBar, &status);
 	const int status_height = status.bottom - status.top;
 
+	// Go to and Find results on the left, live or not on the right
+	int parts[] = { (std::max)(0, static_cast<int>(client.right) - 220), -1 };
+	SendMessageW(m_StatusBar, SB_SETPARTS, 2, reinterpret_cast<LPARAM>(parts));
+
 	// Between the command bar's divider and the status bar
 	const int top = m_CommandBarHeight + 1;
 	const int bottom = (std::max)(top, static_cast<int>(client.bottom) - status_height);
@@ -704,6 +1126,37 @@ void MemoryWindow::Layout()
 	InvalidateRect(m_Hwnd, NULL, TRUE);
 }
 
+void MemoryWindow::PaintField(HDC hdc, const RECT& field, HWND edit)
+{
+	if (IsRectEmpty(&field))
+	{
+		return;
+	}
+
+	const int saved = SaveDC(hdc);
+	SelectObject(hdc, GetStockObject(DC_BRUSH));
+	SelectObject(hdc, GetStockObject(DC_PEN));
+	SetDCBrushColor(hdc, GetSysColor(COLOR_WINDOW));
+	SetDCPenColor(hdc, GetFocus() == edit ? FieldFocusColour : FieldBorderColour);
+	RoundRect(hdc, field.left, field.top, field.right, field.bottom, 8, 8);
+	RestoreDC(hdc, saved);
+}
+
+HWND MemoryWindow::FieldEditAt(POINT point) const
+{
+	if (PtInRect(&m_GoToField, point))
+	{
+		return m_EditGoTo;
+	}
+
+	if (PtInRect(&m_FindField, point))
+	{
+		return m_EditFind;
+	}
+
+	return NULL;
+}
+
 void MemoryWindow::PaintBackground(HDC hdc)
 {
 	RECT client;
@@ -715,6 +1168,9 @@ void MemoryWindow::PaintBackground(HDC hdc)
 	RECT command_bar = client;
 	command_bar.bottom = m_CommandBarHeight;
 	FillRect(hdc, &command_bar, GetSysColorBrush(COLOR_BTNFACE));
+
+	PaintField(hdc, m_GoToField, m_EditGoTo);
+	PaintField(hdc, m_FindField, m_EditFind);
 
 	// 1px divider under the command bar
 	RECT divider = client;
@@ -800,6 +1256,35 @@ LRESULT MemoryWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 			PaintBackground(reinterpret_cast<HDC>(wParam));
 			return 1;
 
+		case WM_LBUTTONDOWN:
+		{
+			// A click in a field's padding focuses its edit
+			const POINT point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+			if (HWND edit = FieldEditAt(point))
+			{
+				SetFocus(edit);
+				return 0;
+			}
+
+			break;
+		}
+
+		case WM_SETCURSOR:
+			// Text cursor over a field's padding too
+			if (reinterpret_cast<HWND>(wParam) == hwnd && LOWORD(lParam) == HTCLIENT)
+			{
+				POINT point;
+				GetCursorPos(&point);
+				ScreenToClient(hwnd, &point);
+				if (FieldEditAt(point) != NULL)
+				{
+					SetCursor(LoadCursor(NULL, IDC_IBEAM));
+					return TRUE;
+				}
+			}
+
+			break;
+
 		case WM_MEASUREITEM:
 		{
 			// Sent while the list is being created, before m_BlockList is set
@@ -852,7 +1337,7 @@ LRESULT MemoryWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 			{
 				HDC hdc = reinterpret_cast<HDC>(wParam);
 				SetBkMode(hdc, TRANSPARENT);
-				SetTextColor(hdc, control == m_CheckHighlight ? GetSysColor(COLOR_WINDOWTEXT) : InspectorLabelColour);
+				SetTextColor(hdc, control == m_CheckHighlight ? GetSysColor(COLOR_WINDOWTEXT) : CommandLabelColour);
 				return reinterpret_cast<LRESULT>(GetSysColorBrush(COLOR_BTNFACE));
 			}
 
@@ -877,12 +1362,38 @@ LRESULT MemoryWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 				return 0;
 			}
 
+			// A field's border turns blue while its edit has focus
+			if ((LOWORD(wParam) == m_ControlGoToId || LOWORD(wParam) == m_ControlFindId) &&
+				(HIWORD(wParam) == EN_SETFOCUS || HIWORD(wParam) == EN_KILLFOCUS))
+			{
+				InvalidateRect(hwnd, LOWORD(wParam) == m_ControlGoToId ? &m_GoToField : &m_FindField, TRUE);
+				return 0;
+			}
+
+			// Enter: the dialog manager sends IDOK, as there is no default button
+			if (LOWORD(wParam) == IDOK)
+			{
+				HWND focus = GetFocus();
+				if (focus == m_EditGoTo)
+				{
+					GoTo();
+				}
+				else if (focus == m_EditFind)
+				{
+					// Shift+Enter finds the previous match
+					Find((GetKeyState(VK_SHIFT) & 0x8000) != 0);
+				}
+
+				return 0;
+			}
+
 			if (LOWORD(wParam) == m_ControlBlockListId && HIWORD(wParam) == LBN_SELCHANGE)
 			{
 				const LRESULT index = SendMessageW(m_BlockList, LB_GETCURSEL, 0, 0);
 				if (index >= 0 && index < static_cast<LRESULT>(Block::Count))
 				{
 					SelectBlock(static_cast<Block>(index));
+					SetStatusMessage(L"");
 				}
 
 				return 0;

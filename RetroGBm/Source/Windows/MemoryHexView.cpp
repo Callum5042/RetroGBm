@@ -243,7 +243,29 @@ void MemoryHexView::MoveCaret(long long offset, bool extend)
 	Select(extend ? static_cast<long long>(m_Anchor) : offset, offset);
 }
 
-void MemoryHexView::Select(long long anchor_offset, long long caret_offset)
+void MemoryHexView::SelectRange(size_t first, size_t last, bool ascii)
+{
+	if (m_CaretInAscii != ascii)
+	{
+		m_CaretInAscii = ascii;
+		InvalidateRect(m_Hwnd, NULL, FALSE);
+	}
+
+	// Off screen: bring it a third of the way down, so the rows before it show too
+	const size_t row = first / m_BytesPerRow;
+	const size_t visible = static_cast<size_t>(VisibleRows());
+	if (row < m_TopRow || row >= m_TopRow + visible)
+	{
+		ScrollTo(static_cast<long long>(row) - static_cast<long long>(visible / 3));
+	}
+
+	Select(static_cast<long long>(first), static_cast<long long>(last), false);
+
+	// A long match can run past the bottom: show where it starts
+	EnsureVisible(first);
+}
+
+void MemoryHexView::Select(long long anchor_offset, long long caret_offset, bool notify)
 {
 	const size_t size = ReadSource().size();
 	if (size == 0)
@@ -265,7 +287,7 @@ void MemoryHexView::Select(long long anchor_offset, long long caret_offset)
 	m_Anchor = anchor;
 	InvalidateRect(m_Hwnd, NULL, FALSE);
 
-	if (SelectionChanged)
+	if (notify && SelectionChanged)
 	{
 		SelectionChanged();
 	}
