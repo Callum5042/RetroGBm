@@ -73,7 +73,7 @@ private:
 	static const int m_ClientWidth = 1280;
 	static const int m_ClientHeight = 780;
 	static const int m_CommandBarHeight = 48;
-	static const int m_BlockListWidth = 180;
+	static const int m_BlockListWidth = 236;
 	static const int m_InspectorWidth = 300;
 
 	HFONT m_Font = NULL;
@@ -95,7 +95,11 @@ private:
 	void CreateCommandBar();
 	void LayoutCommandBar(int width);
 
+	// Block list: owner drawn, each row a colour strip, the block's name and its address range
+	HWND m_LabelBlocks = NULL;
 	HWND m_BlockList = NULL;
+	void DrawBlockItem(const DRAWITEMSTRUCT* item);
+
 	MemoryHexView m_HexView;
 
 	// Inspector: what is selected, and how the byte at the start of the selection reads

@@ -57,18 +57,27 @@ namespace
 	{
 		const wchar_t* name;
 		MemoryHexView::Addressing addressing;
+
+		// Where the CPU sees it, and its strip in the block list
+		const wchar_t* range;
+		COLORREF colour;
 	};
 
 	// Same order as MemoryWindow::Block
 	const BlockInfo Blocks[] =
 	{
-		{ L"ROM", { 0x0000, 0x4000, true } },
-		{ L"Video RAM", { 0x8000, 0x2000, false } },
-		{ L"Cartridge RAM", { 0xA000, 0x2000, false } },
-		{ L"Work RAM", { 0xC000, 0x1000, true } },
-		{ L"OAM", { 0xFE00, 0, false } },
-		{ L"High RAM", { 0xFF80, 0, false } },
+		{ L"ROM", { 0x0000, 0x4000, true }, L"0000-7FFF", RGB(138, 109, 59) },
+		{ L"Video RAM", { 0x8000, 0x2000, false }, L"8000-9FFF", RGB(46, 125, 50) },
+		{ L"Cartridge RAM", { 0xA000, 0x2000, false }, L"A000-BFFF", RGB(122, 122, 122) },
+		{ L"Work RAM", { 0xC000, 0x1000, true }, L"C000-DFFF", RGB(0, 95, 184) },
+		{ L"OAM", { 0xFE00, 0, false }, L"FE00-FE9F", RGB(194, 24, 91) },
+		{ L"High RAM", { 0xFF80, 0, false }, L"FF80-FFFE", RGB(111, 63, 181) },
 	};
+
+	const int BlockItemHeight = 30;
+	const COLORREF BlockSelectionColour = RGB(204, 228, 247);
+	const COLORREF BlockFocusColour = RGB(109, 166, 224);
+	const COLORREF BlockRangeColour = RGB(95, 95, 95);
 
 	int MeasureText(HFONT font, const std::wstring& text)
 	{
@@ -444,8 +453,13 @@ void MemoryWindow::CreateControls()
 
 	CreateCommandBar();
 
-	// Block list on the left
-	m_BlockList = CreateWindowExW(0, WC_LISTBOXW, L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT,
+	// Block list on the left, under its heading
+	m_LabelBlocks = CreateWindowExW(0, WC_STATICW, L"Memory blocks", WS_CHILD | WS_VISIBLE | SS_LEFT | SS_NOPREFIX,
+		0, 0, 0, 0, m_Hwnd, nullptr, nullptr, nullptr);
+	SendMessageW(m_LabelBlocks, WM_SETFONT, reinterpret_cast<WPARAM>(m_Font), TRUE);
+
+	// The names are kept as strings too, for screen readers
+	m_BlockList = CreateWindowExW(0, WC_LISTBOXW, L"Memory blocks", WS_CHILD | WS_VISIBLE | WS_TABSTOP | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | LBS_OWNERDRAWFIXED | LBS_HASSTRINGS,
 		0, 0, 0, 0, m_Hwnd, reinterpret_cast<HMENU>(static_cast<INT_PTR>(m_ControlBlockListId)), nullptr, nullptr);
 	SendMessageW(m_BlockList, WM_SETFONT, reinterpret_cast<WPARAM>(m_Font), TRUE);
 
@@ -453,10 +467,6 @@ void MemoryWindow::CreateControls()
 	{
 		SendMessageW(m_BlockList, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(block.name));
 	}
-
-	// Roomier rows than the default
-	const LRESULT item_height = SendMessageW(m_BlockList, LB_GETITEMHEIGHT, 0, 0);
-	SendMessageW(m_BlockList, LB_SETITEMHEIGHT, 0, item_height + 8);
 
 	m_HexView.Create(m_Hwnd, m_ControlHexViewId);
 	m_HexView.SelectionChanged = [this]() { UpdateInspector(); };
@@ -550,6 +560,62 @@ void MemoryWindow::LayoutCommandBar(int width)
 	MoveWindow(m_ButtonPause, width - 12 - export_width - 8 - pause_width, button_y, pause_width, button_height, TRUE);
 }
 
+void MemoryWindow::DrawBlockItem(const DRAWITEMSTRUCT* item)
+{
+	if (item->itemID >= static_cast<UINT>(Block::Count))
+	{
+		return;
+	}
+
+	const BlockInfo& block = Blocks[item->itemID];
+	const bool selected = (item->itemState & ODS_SELECTED) != 0;
+	const bool focused = (item->itemState & ODS_FOCUS) != 0;
+
+	// The list's DC: put back the pen, brush and font chosen here once drawn
+	HDC hdc = item->hDC;
+	const int saved = SaveDC(hdc);
+
+	RECT rect = item->rcItem;
+	FillRect(hdc, &rect, m_InspectorBrush);
+
+	// Selected: a rounded light blue row, outlined while the list has focus
+	if (selected || focused)
+	{
+		SelectObject(hdc, GetStockObject(DC_BRUSH));
+		SelectObject(hdc, GetStockObject(DC_PEN));
+		SetDCBrushColor(hdc, selected ? BlockSelectionColour : InspectorColour);
+		SetDCPenColor(hdc, focused ? BlockFocusColour : BlockSelectionColour);
+		RoundRect(hdc, rect.left, rect.top + 1, rect.right, rect.bottom - 1, 8, 8);
+	}
+
+	// Colour strip
+	const int strip_height = 18;
+	const int strip_top = rect.top + (rect.bottom - rect.top - strip_height) / 2;
+	SelectObject(hdc, GetStockObject(DC_BRUSH));
+	SelectObject(hdc, GetStockObject(NULL_PEN));
+	SetDCBrushColor(hdc, block.colour);
+	RoundRect(hdc, rect.left + 10, strip_top, rect.left + 15, strip_top + strip_height + 1, 4, 4);
+
+	SetBkMode(hdc, TRANSPARENT);
+
+	// Address range on the right, then the name in what is left
+	RECT range_rect = rect;
+	range_rect.right -= 10;
+	SelectObject(hdc, m_MonoFont);
+	SetTextColor(hdc, BlockRangeColour);
+	DrawTextW(hdc, block.range, -1, &range_rect, DT_RIGHT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+	const int range_width = MeasureText(m_MonoFont, block.range);
+
+	RECT name_rect = rect;
+	name_rect.left += 22;
+	name_rect.right = range_rect.right - range_width - 8;
+	SelectObject(hdc, selected ? m_BoldFont : m_Font);
+	SetTextColor(hdc, InspectorTextColour);
+	DrawTextW(hdc, block.name, -1, &name_rect, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS);
+
+	RestoreDC(hdc, saved);
+}
+
 void MemoryWindow::CreateInspector()
 {
 	auto create_static = [this](int id, const wchar_t* text, HFONT font)
@@ -620,9 +686,13 @@ void MemoryWindow::Layout()
 	const int top = m_CommandBarHeight + 1;
 	const int bottom = (std::max)(top, static_cast<int>(client.bottom) - status_height);
 
-	// Block list, then a 1px divider, then the hex view up to the inspector's divider
+	// Block list under its heading, then a 1px divider, then the hex view up to the inspector's divider
 	const int padding = 8;
-	MoveWindow(m_BlockList, padding, top + padding, m_BlockListWidth - padding * 2, (std::max)(0, bottom - top - padding * 2), TRUE);
+	const int heading_height = 22;
+	MoveWindow(m_LabelBlocks, padding + 10, top + 10, m_BlockListWidth - padding * 2 - 10, 16, TRUE);
+
+	const int list_top = top + 10 + heading_height;
+	MoveWindow(m_BlockList, padding, list_top, m_BlockListWidth - padding * 2, (std::max)(0, bottom - list_top - padding), TRUE);
 
 	const int hex_left = m_BlockListWidth + 1;
 	const int hex_right = (std::max)(hex_left, static_cast<int>(client.right) - m_InspectorWidth);
@@ -730,6 +800,31 @@ LRESULT MemoryWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 			PaintBackground(reinterpret_cast<HDC>(wParam));
 			return 1;
 
+		case WM_MEASUREITEM:
+		{
+			// Sent while the list is being created, before m_BlockList is set
+			MEASUREITEMSTRUCT* measure = reinterpret_cast<MEASUREITEMSTRUCT*>(lParam);
+			if (measure->CtlID == static_cast<UINT>(m_ControlBlockListId))
+			{
+				measure->itemHeight = BlockItemHeight;
+				return TRUE;
+			}
+
+			break;
+		}
+
+		case WM_DRAWITEM:
+		{
+			const DRAWITEMSTRUCT* draw = reinterpret_cast<const DRAWITEMSTRUCT*>(lParam);
+			if (draw->CtlID == static_cast<UINT>(m_ControlBlockListId))
+			{
+				DrawBlockItem(draw);
+				return TRUE;
+			}
+
+			break;
+		}
+
 		case WM_CTLCOLORSTATIC:
 		{
 			// Inspector text sits on the inspector's colour, with the labels in grey
@@ -743,8 +838,16 @@ LRESULT MemoryWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 				return reinterpret_cast<LRESULT>(m_InspectorBrush);
 			}
 
-			// Command bar labels and the checkbox sit on the bar's grey
 			HWND control = reinterpret_cast<HWND>(lParam);
+			if (control == m_LabelBlocks)
+			{
+				HDC hdc = reinterpret_cast<HDC>(wParam);
+				SetTextColor(hdc, InspectorLabelColour);
+				SetBkColor(hdc, InspectorColour);
+				return reinterpret_cast<LRESULT>(m_InspectorBrush);
+			}
+
+			// Command bar labels and the checkbox sit on the bar's grey
 			if (control == m_LabelGoTo || control == m_LabelFind || control == m_LabelColumns || control == m_CheckHighlight)
 			{
 				HDC hdc = reinterpret_cast<HDC>(wParam);
