@@ -967,7 +967,8 @@ void MemoryWindow::CreateCommandBar()
 	Button_SetCheck(m_ButtonHex, BST_CHECKED);
 
 	// WS_GROUP ends the Hex/Text radio group
-	m_CheckHighlight = create(WC_BUTTONW, L"Highlight changes", WS_TABSTOP | WS_GROUP | BS_AUTOCHECKBOX | off, m_ControlHighlightId, m_Font);
+	m_CheckHighlight = create(WC_BUTTONW, L"Highlight changes", WS_TABSTOP | WS_GROUP | BS_AUTOCHECKBOX, m_ControlHighlightId, m_Font);
+	Button_SetCheck(m_CheckHighlight, BST_CHECKED);
 
 	// Pause updates and export, on the right
 	m_ButtonPause = create(WC_BUTTONW, L"Pause updates", WS_TABSTOP | BS_AUTOCHECKBOX | BS_PUSHLIKE | off, m_ControlPauseId, m_Font);
@@ -1401,6 +1402,12 @@ LRESULT MemoryWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 			if (LOWORD(wParam) == IDCANCEL)
 			{
 				DestroyWindow(hwnd);
+				return 0;
+			}
+
+			if (LOWORD(wParam) == m_ControlHighlightId && HIWORD(wParam) == BN_CLICKED)
+			{
+				m_HexView.SetHighlightChanges(Button_GetCheck(m_CheckHighlight) == BST_CHECKED);
 				return 0;
 			}
 

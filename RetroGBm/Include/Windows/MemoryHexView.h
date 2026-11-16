@@ -43,8 +43,11 @@ public:
 	// Shown in the middle of the view when the block is empty
 	void SetEmptyText(const std::wstring& text);
 
-	// Called every frame: repaints only when a byte in view has changed
+	// Called every frame: repaints only when a byte in view has changed, or a highlight is fading
 	void Refresh();
+
+	// Bytes in view that change get an orange background that fades out over half a second
+	void SetHighlightChanges(bool highlight);
 
 	// Selection as block offsets, first to last inclusive. Empty when the block is.
 	inline bool HasSelection() const { return !ReadSource().empty(); }
@@ -121,6 +124,23 @@ private:
 	void UpdateScrollBar();
 	void ScrollTo(long long row);
 	void OnScroll(WORD request);
+
+	// Highlighting changes: the bytes in view last frame, and when each one last changed (ms).
+	// Only what is in view is tracked, so scrolling starts afresh.
+	bool m_HighlightChanges = true;
+	std::vector<uint8_t> m_Snapshot;
+	std::vector<uint64_t> m_ChangedAt;
+	size_t m_SnapshotTopRow = 0;
+	size_t m_SnapshotSize = 0;
+	void UpdateChanges(uint64_t now);
+	void ResetChanges();
+
+	// The last paint drew a highlight, so the next frame repaints to fade it further or clear it
+	bool m_PaintedHighlight = false;
+
+	// How strongly a byte in view is highlighted, 1 just changed to 0 faded out
+	float HighlightStrength(size_t offset, uint64_t now) const;
+	void PaintHighlight(HDC hdc, size_t row, int y, size_t size, uint64_t now);
 
 	// The bytes last painted, so Refresh can tell when something in view changed
 	std::vector<uint8_t> m_Painted;

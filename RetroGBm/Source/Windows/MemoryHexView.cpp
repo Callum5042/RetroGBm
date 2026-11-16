@@ -19,6 +19,17 @@ namespace
 	const COLORREF SelectionColour = RGB(204, 228, 247);
 	const COLORREF InactiveSelectionColour = RGB(229, 229, 229);
 	const COLORREF CaretColour = RGB(0, 95, 184);
+	const COLORREF ChangedColour = RGB(255, 217, 184);
+	const COLORREF ChangedTextColour = RGB(122, 46, 0);
+
+	// How long a changed byte stays highlighted
+	const uint64_t ChangeFadeMs = 500;
+
+	COLORREF Blend(COLORREF from, COLORREF to, float amount)
+	{
+		auto channel = [amount](int a, int b) { return static_cast<int>(a + (b - a) * amount + 0.5f); };
+		return RGB(channel(GetRValue(from), GetRValue(to)), channel(GetGValue(from), GetGValue(to)), channel(GetBValue(from), GetBValue(to)));
+	}
 
 	static LRESULT CALLBACK HexViewWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
@@ -159,6 +170,7 @@ void MemoryHexView::SetBlock(const Addressing& addressing, std::function<std::sp
 	m_Caret = 0;
 	m_CaretInAscii = false;
 	m_LowNibble = false;
+	ResetChanges();
 	UpdateBankDigits(ReadSource().size());
 
 	UpdateScrollBar();
@@ -425,13 +437,108 @@ void MemoryHexView::Refresh()
 		ClampSelection(size);
 		UpdateBankDigits(size);
 		UpdateScrollBar();
+		ResetChanges();
 		InvalidateRect(m_Hwnd, NULL, FALSE);
 		return;
 	}
 
-	if (ViewChanged())
+	if (m_HighlightChanges)
+	{
+		UpdateChanges(GetTickCount64());
+	}
+
+	if (ViewChanged() || m_PaintedHighlight)
 	{
 		InvalidateRect(m_Hwnd, NULL, FALSE);
+	}
+}
+
+void MemoryHexView::SetHighlightChanges(bool highlight)
+{
+	if (highlight == m_HighlightChanges)
+	{
+		return;
+	}
+
+	m_HighlightChanges = highlight;
+	ResetChanges();
+	InvalidateRect(m_Hwnd, NULL, FALSE);
+}
+
+void MemoryHexView::ResetChanges()
+{
+	m_Snapshot.clear();
+	m_ChangedAt.clear();
+	m_SnapshotTopRow = 0;
+	m_SnapshotSize = 0;
+}
+
+void MemoryHexView::UpdateChanges(uint64_t now)
+{
+	// The rows Paint draws, including the partly visible one at the bottom
+	const std::span<const uint8_t> data = ReadSource();
+	const size_t first = (std::min)(m_TopRow * m_BytesPerRow, data.size());
+	const size_t rows = static_cast<size_t>(VisibleRows()) + 1;
+	const size_t count = (std::min)(rows * m_BytesPerRow, data.size() - first);
+
+	// Scrolled, resized or a new block: start again from what is there now
+	if (m_SnapshotTopRow != m_TopRow || m_SnapshotSize != data.size() || m_Snapshot.size() != count)
+	{
+		m_Snapshot.assign(data.begin() + first, data.begin() + first + count);
+		m_ChangedAt.assign(count, 0);
+		m_SnapshotTopRow = m_TopRow;
+		m_SnapshotSize = data.size();
+		return;
+	}
+
+	for (size_t i = 0; i < count; ++i)
+	{
+		if (data[first + i] != m_Snapshot[i])
+		{
+			m_Snapshot[i] = data[first + i];
+			m_ChangedAt[i] = now;
+		}
+	}
+}
+
+float MemoryHexView::HighlightStrength(size_t offset, uint64_t now) const
+{
+	if (!m_HighlightChanges || m_SnapshotTopRow != m_TopRow)
+	{
+		return 0.0f;
+	}
+
+	const size_t first = m_TopRow * m_BytesPerRow;
+	if (offset < first || offset - first >= m_ChangedAt.size())
+	{
+		return 0.0f;
+	}
+
+	const uint64_t changed_at = m_ChangedAt[offset - first];
+	if (changed_at == 0 || now - changed_at >= ChangeFadeMs)
+	{
+		return 0.0f;
+	}
+
+	return 1.0f - static_cast<float>(now - changed_at) / ChangeFadeMs;
+}
+
+void MemoryHexView::PaintHighlight(HDC hdc, size_t row, int y, size_t size, uint64_t now)
+{
+	const size_t row_first = row * m_BytesPerRow;
+	for (int column = 0; column < m_BytesPerRow && row_first + column < size; ++column)
+	{
+		const float strength = HighlightStrength(row_first + column, now);
+		if (strength <= 0.0f)
+		{
+			continue;
+		}
+
+		// Orange fading to the background, behind the byte and its character
+		const COLORREF colour = Blend(BackgroundColour, ChangedColour, strength);
+		FillColour(hdc, HexX(column) - m_CharWidth / 2, y, m_CharWidth * 3, m_RowHeight, colour);
+		FillColour(hdc, AsciiX(column), y, m_CharWidth, m_RowHeight, colour);
+		m_PaintedHighlight = true;
 	}
 }
 
@@ -601,6 +708,9 @@ void MemoryHexView::Paint(HDC hdc)
 	EnsureBackBuffer(hdc, width, height);
 	HDC dc = m_BackDC;
 
+	const uint64_t now = GetTickCount64();
+	m_PaintedHighlight = false;
+
 	FillColour(dc, 0, 0, width, height, BackgroundColour);
 	SetBkMode(dc, TRANSPARENT);
 
@@ -650,6 +760,8 @@ void MemoryHexView::Paint(HDC hdc)
 			FillColour(dc, 0, y, width, 1, BankLineColour);
 		}
 
+		// Changed bytes, with the selection drawn over them
+		PaintHighlight(dc, row, y, data.size(), now);
 		PaintSelection(dc, row, y, data.size());
 
 		DrawTextAt(dc, m_PaddingX, y + text_offset, FormatAddress(offset), AddressColour);
@@ -662,13 +774,16 @@ void MemoryHexView::Paint(HDC hdc)
 				break;
 			}
 
-			// Zero bytes are dimmed so the rest stand out
+			// Zero bytes are dimmed so the rest stand out, and fresh changes are dark orange
 			const uint8_t value = data[index];
-			DrawTextAt(dc, HexX(column), y + text_offset, std::format(L"{:02X}", value), value == 0 ? ZeroColour : TextColour);
+			const bool changed = HighlightStrength(index, now) > 0.35f;
+			const COLORREF hex_colour = changed ? ChangedTextColour : (value == 0 ? ZeroColour : TextColour);
+			DrawTextAt(dc, HexX(column), y + text_offset, std::format(L"{:02X}", value), hex_colour);
 
 			const bool printable = value >= 0x20 && value < 0x7F;
 			const wchar_t character = printable ? static_cast<wchar_t>(value) : L'.';
-			DrawTextAt(dc, AsciiX(column), y + text_offset, std::wstring(1, character), printable ? TextColour : ZeroColour);
+			const COLORREF ascii_colour = changed ? ChangedTextColour : (printable ? TextColour : ZeroColour);
+			DrawTextAt(dc, AsciiX(column), y + text_offset, std::wstring(1, character), ascii_colour);
 		}
 	}
 
