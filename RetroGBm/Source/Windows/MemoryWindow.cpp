@@ -243,7 +243,9 @@ void MemoryWindow::Create()
 
 	this->WindowCreate(m_ClientWidth, m_ClientHeight);
 
-	// A new window starts with the plain title
+	// A new window starts live, with the plain title
+	m_Paused = false;
+	m_PausedData.clear();
 	m_TitleFilename.clear();
 	this->UpdateTitle();
 	this->CreateControls();
@@ -324,9 +326,56 @@ void MemoryWindow::SelectBlock(Block block)
 	m_Block = block;
 	SendMessageW(m_BlockList, LB_SETCURSEL, static_cast<WPARAM>(block), 0);
 
-	m_HexView.SetBlock(Blocks[static_cast<int>(block)].addressing, [this, block]() { return ReadBlock(block); });
+	// Paused: the new block is frozen as it is now
+	if (m_Paused)
+	{
+		TakeSnapshot();
+	}
+
+	m_HexView.SetBlock(Blocks[static_cast<int>(block)].addressing, [this, block]() { return ViewBlock(block); });
 	UpdateEmptyText();
 	UpdateInspector();
+}
+
+void MemoryWindow::SetPaused(bool paused)
+{
+	m_Paused = paused;
+	if (paused)
+	{
+		TakeSnapshot();
+	}
+	else
+	{
+		// A whole ROM can be several MiB
+		m_PausedData.clear();
+		m_PausedData.shrink_to_fit();
+	}
+
+	m_HexView.Refresh();
+	UpdateInspector();
+	UpdateStatus();
+}
+
+void MemoryWindow::TakeSnapshot()
+{
+	const std::span<const uint8_t> live = ReadBlock(m_Block);
+	m_PausedData.assign(live.begin(), live.end());
+}
+
+std::span<const uint8_t> MemoryWindow::ViewBlock(Block block) const
+{
+	if (!m_Paused || block != m_Block)
+	{
+		return ReadBlock(block);
+	}
+
+	// Nothing to show once the game has gone
+	if (ReadBlock(block).empty())
+	{
+		return {};
+	}
+
+	return m_PausedData;
 }
 
 void MemoryWindow::SetInspectorValue(Field field, const std::wstring& text)
@@ -342,7 +391,7 @@ void MemoryWindow::SetInspectorValue(Field field, const std::wstring& text)
 
 void MemoryWindow::UpdateInspector()
 {
-	const std::span<const uint8_t> data = ReadBlock(m_Block);
+	const std::span<const uint8_t> data = ViewBlock(m_Block);
 	if (data.empty() || !m_HexView.HasSelection())
 	{
 		for (int i = 0; i < m_FieldCount; ++i)
@@ -453,6 +502,12 @@ bool MemoryWindow::WriteBlock(Block block, size_t offset, uint8_t value)
 			return false;
 	}
 
+	// Paused, the copy on screen takes the edit too
+	if (m_Paused && block == m_Block && offset < m_PausedData.size())
+	{
+		m_PausedData[offset] = value;
+	}
+
 	UpdateInspector();
 	return true;
 }
@@ -490,13 +545,19 @@ void MemoryWindow::UpdateTitle()
 	const std::wstring rom_name = std::filesystem::path(m_TitleFilename).stem().wstring();
 	const std::wstring title = rom_name.empty() ? L"Memory" : L"Memory - " + rom_name;
 	SetWindowText(m_Hwnd, title.c_str());
+
+	// Another game while paused: freeze that one instead
+	if (m_Paused)
+	{
+		TakeSnapshot();
+	}
 }
 
 void MemoryWindow::UpdateStatus()
 {
 	Emulator* emulator = m_Application->GetEmulator();
 	const bool running = emulator != nullptr && emulator->IsRunning();
-	const std::wstring live = running ? L"Live, updates every frame" : L"No game loaded";
+	const std::wstring live = !running ? L"No game loaded" : (m_Paused ? L"Paused" : L"Live, updates every frame");
 
 	// Only set when changed, as this is called every frame
 	auto set_part = [this](int part, const std::wstring& text)
@@ -515,7 +576,7 @@ void MemoryWindow::UpdateStatus()
 
 	// With no Go to or Find result to show, say whether typing writes
 	std::wstring message = m_StatusMessage;
-	if (message.empty() && running && !ReadBlock(m_Block).empty())
+	if (message.empty() && running && !ViewBlock(m_Block).empty())
 	{
 		message = m_Block == Block::Rom
 			? L"Type over a byte to write it. Edits change the loaded ROM, not the file."
@@ -668,7 +729,7 @@ bool MemoryWindow::ParseAddress(const std::wstring& text, Block* block, size_t* 
 		return fail(L"The interrupt enable register is not shown in this window");
 	}
 
-	const std::span<const uint8_t> data = ReadBlock(*block);
+	const std::span<const uint8_t> data = ViewBlock(*block);
 	const wchar_t* name = Blocks[static_cast<int>(*block)].name;
 	if (data.empty())
 	{
@@ -785,7 +846,7 @@ void MemoryWindow::Find(bool backwards)
 		return;
 	}
 
-	const std::span<const uint8_t> data = ReadBlock(m_Block);
+	const std::span<const uint8_t> data = ViewBlock(m_Block);
 	const wchar_t* name = Blocks[static_cast<int>(m_Block)].name;
 	if (data.empty() || needle.size() > data.size())
 	{
@@ -971,7 +1032,7 @@ void MemoryWindow::CreateCommandBar()
 	Button_SetCheck(m_CheckHighlight, BST_CHECKED);
 
 	// Pause updates and export, on the right
-	m_ButtonPause = create(WC_BUTTONW, L"Pause updates", WS_TABSTOP | BS_AUTOCHECKBOX | BS_PUSHLIKE | off, m_ControlPauseId, m_Font);
+	m_ButtonPause = create(WC_BUTTONW, L"Pause updates", WS_TABSTOP | BS_AUTOCHECKBOX | BS_PUSHLIKE, m_ControlPauseId, m_Font);
 	m_ButtonExport = create(WC_BUTTONW, L"Export range\x2026", WS_TABSTOP | BS_PUSHBUTTON | off, m_ControlExportId, m_Font);
 }
 
@@ -1408,6 +1469,12 @@ LRESULT MemoryWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 			if (LOWORD(wParam) == m_ControlHighlightId && HIWORD(wParam) == BN_CLICKED)
 			{
 				m_HexView.SetHighlightChanges(Button_GetCheck(m_CheckHighlight) == BST_CHECKED);
+				return 0;
+			}
+
+			if (LOWORD(wParam) == m_ControlPauseId && HIWORD(wParam) == BN_CLICKED)
+			{
+				SetPaused(Button_GetCheck(m_ButtonPause) == BST_CHECKED);
 				return 0;
 			}
 

@@ -69,6 +69,16 @@ private:
 	void SelectBlock(Block block);
 	std::span<const uint8_t> ReadBlock(Block block) const;
 
+	// Pause updates: the view, inspector and Find use a copy of the block taken on pausing, or
+	// on picking another block or loading another game while paused. The game keeps running.
+	bool m_Paused = false;
+	std::vector<uint8_t> m_PausedData;
+	void SetPaused(bool paused);
+	void TakeSnapshot();
+
+	// What the window shows of a block: live, or the paused copy of the current one
+	std::span<const uint8_t> ViewBlock(Block block) const;
+
 	// Sets a byte straight into the memory behind a block. ROM edits patch the loaded copy only.
 	bool WriteBlock(Block block, size_t offset, uint8_t value);
 	void UpdateEmptyText();
