@@ -175,27 +175,18 @@ namespace
 
 	const COLORREF InspectorLabelColour = RGB(92, 92, 92);
 	const COLORREF InspectorTextColour = RGB(26, 26, 26);
-
-	const wchar_t* InspectorHeadings[] = { L"Selection", L"8-bit value" };
-
-	struct FieldInfo
-	{
-		const wchar_t* label;
-		int section;
-	};
+	const COLORREF InspectorKeyColour = RGB(74, 74, 74);
+	const COLORREF InspectorRowLineColour = RGB(236, 236, 236);
 
 	// Same order as MemoryWindow::Field
-	const FieldInfo Fields[] =
-	{
-		{ L"Start", 0 },
-		{ L"End", 0 },
-		{ L"Length", 0 },
-		{ L"Hex", 1 },
-		{ L"Unsigned", 1 },
-		{ L"Signed", 1 },
-		{ L"Binary", 1 },
-		{ L"ASCII", 1 },
-	};
+	const wchar_t* FieldLabels[] = { L"u8", L"s8", L"Binary", L"ASCII" };
+
+	// The legend: what the hex view's colours mean, matching MemoryHexView's
+	const wchar_t* LegendLabels[] = { L"Changed in the last half second", L"Selection", L"Zero bytes are dimmed" };
+	const COLORREF LegendChangedColour = RGB(255, 217, 184);
+	const COLORREF LegendSelectionColour = RGB(204, 228, 247);
+	const COLORREF LegendSelectionOutline = RGB(109, 166, 224);
+	const COLORREF LegendZeroColour = RGB(176, 176, 176);
 }
 
 MemoryWindow::MemoryWindow(Application* application) : m_Application(application)
@@ -233,6 +224,11 @@ void MemoryWindow::Create()
 		mono.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
 		wcscpy_s(mono.lfFaceName, L"Consolas");
 		m_MonoFont = CreateFontIndirect(&mono);
+
+		// The inspector's heading: the selected range, 20px semibold
+		mono.lfHeight = -MulDiv(15, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+		mono.lfWeight = FW_SEMIBOLD;
+		m_TitleFont = CreateFontIndirect(&mono);
 		ReleaseDC(NULL, hdc);
 	}
 
@@ -270,7 +266,7 @@ void MemoryWindow::Destroy()
 
 void MemoryWindow::ReleaseResources()
 {
-	for (HFONT* font : { &m_Font, &m_BoldFont, &m_MonoFont })
+	for (HFONT* font : { &m_Font, &m_BoldFont, &m_MonoFont, &m_TitleFont })
 	{
 		if (*font != NULL)
 		{
@@ -284,6 +280,9 @@ void MemoryWindow::ReleaseResources()
 	{
 		text.clear();
 	}
+
+	m_InspectorTitleText.clear();
+	m_InspectorSubtitleText.clear();
 
 	if (m_InspectorBrush != NULL)
 	{
@@ -391,9 +390,21 @@ void MemoryWindow::SetInspectorValue(Field field, const std::wstring& text)
 
 void MemoryWindow::UpdateInspector()
 {
+	// Only set when changed, as this is called every frame
+	auto set_text = [](HWND control, std::wstring* current, const std::wstring& text)
+	{
+		if (*current != text)
+		{
+			*current = text;
+			SetWindowTextW(control, text.c_str());
+		}
+	};
+
 	const std::span<const uint8_t> data = ViewBlock(m_Block);
 	if (data.empty() || !m_HexView.HasSelection())
 	{
+		set_text(m_InspectorTitle, &m_InspectorTitleText, L"");
+		set_text(m_InspectorSubtitle, &m_InspectorSubtitleText, L"");
 		for (int i = 0; i < m_FieldCount; ++i)
 		{
 			SetInspectorValue(static_cast<Field>(i), L"");
@@ -402,24 +413,25 @@ void MemoryWindow::UpdateInspector()
 		return;
 	}
 
-	// Selection
+	// Heading: the range, then its length and the block, e.g. "16 bytes selected · Work RAM"
 	const size_t start = (std::min)(m_HexView.GetSelectionStart(), data.size() - 1);
 	const size_t end = (std::min)(m_HexView.GetSelectionEnd(), data.size() - 1);
 	const size_t length = end - start + 1;
 
-	SetInspectorValue(Field::Start, m_HexView.FormatAddress(start));
-	SetInspectorValue(Field::End, m_HexView.FormatAddress(end));
-	SetInspectorValue(Field::Length, length == 1 ? L"1 byte" : std::format(L"{} bytes", length));
+	const std::wstring range = start == end ? m_HexView.FormatAddress(start) : m_HexView.FormatAddress(start) + L"-" + m_HexView.FormatAddress(end);
+	const std::wstring selected = length == 1 ? L"1 byte selected" : std::format(L"{} bytes selected", length);
+	set_text(m_InspectorTitle, &m_InspectorTitleText, range);
+	set_text(m_InspectorSubtitle, &m_InspectorSubtitleText, std::format(L"{} \x00B7 {}", selected, Blocks[static_cast<int>(m_Block)].name));
 
 	// The byte at the start of the selection
 	const uint8_t value = data[start];
+	const int8_t signed_value = static_cast<int8_t>(value);
 	const bool printable = value >= 0x20 && value < 0x7F;
 
-	SetInspectorValue(Field::Hex8, std::format(L"${:02X}", value));
-	SetInspectorValue(Field::Unsigned8, std::format(L"{}", value));
-	SetInspectorValue(Field::Signed8, std::format(L"{}", static_cast<int8_t>(value)));
-	SetInspectorValue(Field::Binary8, std::format(L"{:04b} {:04b}", value >> 4, value & 0x0F));
-	SetInspectorValue(Field::Ascii8, printable ? std::format(L"'{}'", static_cast<wchar_t>(value)) : L"Not printable");
+	SetInspectorValue(Field::Unsigned, std::format(L"{}  (${:02X})", value, value));
+	SetInspectorValue(Field::Signed, signed_value > 0 ? std::format(L"+{}", signed_value) : std::format(L"{}", signed_value));
+	SetInspectorValue(Field::Binary, std::format(L"{:04b} {:04b}", value >> 4, value & 0x0F));
+	SetInspectorValue(Field::Ascii, printable ? std::format(L"'{}'", static_cast<wchar_t>(value)) : L"Not printable");
 }
 
 std::span<const uint8_t> MemoryWindow::ReadBlock(Block block) const
@@ -1142,46 +1154,90 @@ void MemoryWindow::CreateInspector()
 		return hwnd;
 	};
 
-	for (int i = 0; i < m_InspectorSectionCount; ++i)
-	{
-		m_InspectorHeadings[i] = create_static(m_ControlInspectorHeadingId + i, InspectorHeadings[i], m_BoldFont);
-	}
+	m_InspectorTitle = create_static(m_ControlInspectorTitleId, L"", m_TitleFont);
+	m_InspectorSubtitle = create_static(m_ControlInspectorSubtitleId, L"", m_Font);
 
 	for (int i = 0; i < m_FieldCount; ++i)
 	{
-		m_InspectorLabels[i] = create_static(m_ControlInspectorLabelId + i, Fields[i].label, m_Font);
+		m_InspectorLabels[i] = create_static(m_ControlInspectorLabelId + i, FieldLabels[i], m_Font);
 		m_InspectorValues[i] = create_static(m_ControlInspectorValueId + i, L"", m_MonoFont);
+	}
+
+	m_LegendHeading = create_static(m_ControlLegendHeadingId, L"Legend", m_BoldFont);
+	for (int i = 0; i < m_LegendCount; ++i)
+	{
+		m_LegendLabels[i] = create_static(m_ControlLegendLabelId + i, LegendLabels[i], m_Font);
 	}
 }
 
 void MemoryWindow::LayoutInspector(int left, int top)
 {
 	const int width = m_InspectorWidth - 32;
-	const int label_width = 80;
-	const int heading_height = 26;
-	const int row_height = 22;
+	const int key_width = 110;
+	const int row_height = 26;
+	const int text_height = 18;
 	const int section_gap = 16;
 
+	// Heading and the line under it
 	int y = top;
-	for (int section = 0; section < m_InspectorSectionCount; ++section)
+	MoveWindow(m_InspectorTitle, left, y, width, 26, TRUE);
+	y += 28;
+	MoveWindow(m_InspectorSubtitle, left, y, width, text_height, TRUE);
+	y += text_height + section_gap;
+
+	// Table rows, each with a line along its bottom
+	for (int i = 0; i < m_FieldCount; ++i)
 	{
-		MoveWindow(m_InspectorHeadings[section], left, y, width, 20, TRUE);
-		y += heading_height;
-
-		for (int i = 0; i < m_FieldCount; ++i)
-		{
-			if (Fields[i].section != section)
-			{
-				continue;
-			}
-
-			MoveWindow(m_InspectorLabels[i], left, y + 1, label_width, 20, TRUE);
-			MoveWindow(m_InspectorValues[i], left + label_width, y, width - label_width, 20, TRUE);
-			y += row_height;
-		}
-
-		y += section_gap;
+		const int text_y = y + (row_height - text_height) / 2;
+		MoveWindow(m_InspectorLabels[i], left, text_y, key_width, text_height, TRUE);
+		MoveWindow(m_InspectorValues[i], left + key_width, text_y, width - key_width, text_height, TRUE);
+		m_InspectorRowLines[i] = { left, y + row_height - 1, left + width, y + row_height };
+		y += row_height;
 	}
+
+	y += section_gap;
+
+	// Legend: a swatch and what it means
+	MoveWindow(m_LegendHeading, left, y, width, text_height, TRUE);
+	y += text_height + 6;
+
+	for (int i = 0; i < m_LegendCount; ++i)
+	{
+		m_LegendSwatches[i] = { left, y + 2, left + 18, y + 16 };
+		MoveWindow(m_LegendLabels[i], left + 26, y, width - 26, text_height, TRUE);
+		y += 22;
+	}
+}
+
+void MemoryWindow::PaintInspector(HDC hdc)
+{
+	HBRUSH dc_brush = reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH));
+
+	for (const RECT& line : m_InspectorRowLines)
+	{
+		SetDCBrushColor(hdc, InspectorRowLineColour);
+		FillRect(hdc, &line, dc_brush);
+	}
+
+	// Changed, as the hex view's highlight
+	SetDCBrushColor(hdc, LegendChangedColour);
+	FillRect(hdc, &m_LegendSwatches[0], dc_brush);
+
+	// Selection, with the design's outline
+	SetDCBrushColor(hdc, LegendSelectionColour);
+	FillRect(hdc, &m_LegendSwatches[1], dc_brush);
+	SetDCBrushColor(hdc, LegendSelectionOutline);
+	FrameRect(hdc, &m_LegendSwatches[1], dc_brush);
+
+	// A dimmed "00"
+	RECT zero = m_LegendSwatches[2];
+	zero.right += 4;
+	const int saved = SaveDC(hdc);
+	SelectObject(hdc, m_MonoFont);
+	SetBkMode(hdc, TRANSPARENT);
+	SetTextColor(hdc, LegendZeroColour);
+	DrawTextW(hdc, L"00", -1, &zero, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+	RestoreDC(hdc, saved);
 }
 
 void MemoryWindow::Layout()
@@ -1307,6 +1363,8 @@ void MemoryWindow::PaintBackground(HDC hdc)
 	inspector.left = inspector_divider.right;
 	inspector.right = client.right;
 	FillRect(hdc, &inspector, m_InspectorBrush);
+
+	PaintInspector(hdc);
 }
 
 LRESULT MemoryWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -1410,13 +1468,23 @@ LRESULT MemoryWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 
 		case WM_CTLCOLORSTATIC:
 		{
-			// Inspector text sits on the inspector's colour, with the labels in grey
+			// Inspector text sits on the inspector's colour: the subtitle grey, keys and legend dark grey
 			const int id = GetDlgCtrlID(reinterpret_cast<HWND>(lParam));
-			if (id >= m_ControlInspectorHeadingId && id < m_ControlInspectorValueId + m_FieldCount)
+			if (id >= m_ControlInspectorTitleId && id < m_ControlInspectorValueId + m_FieldCount)
 			{
-				const bool label = id >= m_ControlInspectorLabelId && id < m_ControlInspectorValueId;
+				COLORREF colour = InspectorTextColour;
+				if (id == m_ControlInspectorSubtitleId)
+				{
+					colour = InspectorLabelColour;
+				}
+				else if ((id >= m_ControlLegendLabelId && id < m_ControlLegendLabelId + m_LegendCount) ||
+					(id >= m_ControlInspectorLabelId && id < m_ControlInspectorLabelId + m_FieldCount))
+				{
+					colour = InspectorKeyColour;
+				}
+
 				HDC hdc = reinterpret_cast<HDC>(wParam);
-				SetTextColor(hdc, label ? InspectorLabelColour : InspectorTextColour);
+				SetTextColor(hdc, colour);
 				SetBkColor(hdc, InspectorColour);
 				return reinterpret_cast<LRESULT>(m_InspectorBrush);
 			}

@@ -136,30 +136,40 @@ private:
 
 	MemoryHexView m_HexView;
 
-	// Inspector: what is selected, and how the byte at the start of the selection reads
+	// Inspector, as in the design: the selected range as a heading, its length and block under
+	// it, a table of how the byte at the start of the selection reads, then a legend
 	enum class Field
 	{
-		Start,
-		End,
-		Length,
-		Hex8,
-		Unsigned8,
-		Signed8,
-		Binary8,
-		Ascii8,
+		Unsigned,
+		Signed,
+		Binary,
+		Ascii,
 		Count
 	};
 
-	static const int m_InspectorSectionCount = 2;
 	static const int m_FieldCount = static_cast<int>(Field::Count);
+	static const int m_LegendCount = 3;
 
 	HFONT m_BoldFont = NULL;
 	HFONT m_MonoFont = NULL;
+	HFONT m_TitleFont = NULL;
 
-	HWND m_InspectorHeadings[m_InspectorSectionCount] = {};
+	HWND m_InspectorTitle = NULL;
+	HWND m_InspectorSubtitle = NULL;
 	HWND m_InspectorLabels[m_FieldCount] = {};
 	HWND m_InspectorValues[m_FieldCount] = {};
+	HWND m_LegendHeading = NULL;
+	HWND m_LegendLabels[m_LegendCount] = {};
+
+	// Text last set on the title, subtitle and values, as they are updated every frame
+	std::wstring m_InspectorTitleText;
+	std::wstring m_InspectorSubtitleText;
 	std::wstring m_InspectorText[m_FieldCount];
+
+	// Painted by the window: a line under each table row, and the legend's swatches
+	RECT m_InspectorRowLines[m_FieldCount] = {};
+	RECT m_LegendSwatches[m_LegendCount] = {};
+	void PaintInspector(HDC hdc);
 
 	void CreateInspector();
 	void LayoutInspector(int left, int top);
@@ -178,7 +188,10 @@ private:
 	static const int m_ControlTextId = 1006;
 	static const int m_ControlHighlightId = 1008;
 	static const int m_ControlPauseId = 1009;
-	static const int m_ControlInspectorHeadingId = 1100;
+	static const int m_ControlInspectorTitleId = 1100;
+	static const int m_ControlInspectorSubtitleId = 1101;
+	static const int m_ControlLegendHeadingId = 1102;
+	static const int m_ControlLegendLabelId = 1110;
 	static const int m_ControlInspectorLabelId = 1200;
 	static const int m_ControlInspectorValueId = 1300;
 };
