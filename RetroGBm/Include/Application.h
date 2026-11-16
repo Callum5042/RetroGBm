@@ -9,6 +9,7 @@
 #include "Windows/TileWindow.h"
 #include "Windows/TileMapWindow.h"
 #include "Windows/OamWindow.h"
+#include "Windows/MemoryWindow.h"
 #include "Windows/PropertiesWindow.h"
 #include "Windows/CpuRegistersWindow.h"
 #include "Windows/CheatsWindow.h"
@@ -50,6 +51,9 @@ public:
 
 	void CreateOamWindow();
 	void CloseOamWindow();
+
+	void CreateMemoryWindow();
+	void CloseMemoryWindow();
 
 	// Opens or focuses the Tile Data window with a tile pinned
 	void ShowTileInTileWindow(int bank, int tile);
@@ -103,6 +107,9 @@ private:
 
 	// OAM window
 	std::unique_ptr<OamWindow> m_OamWindow = nullptr;
+
+	// Memory window
+	std::unique_ptr<MemoryWindow> m_MemoryWindow = nullptr;
 
 	// Properties window
 	std::unique_ptr<PropertiesWindow> m_PropertiesWindow = nullptr;

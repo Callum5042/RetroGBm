@@ -32,6 +32,7 @@ public:
 	void ToggleTileWindowMenuItem(bool checked);
 	void ToggleTileMapWindowMenuItem(bool checked);
 	void ToggleOamWindowMenuItem(bool checked);
+	void ToggleMemoryWindowMenuItem(bool checked);
 	void ToggleCpuRegistersWindowMenuItem(bool checked);
 
 	void SetStatusBarTitle(const std::string& text);
@@ -101,6 +102,7 @@ private:
 	static const UINT m_MenuToolsExportAssembly = 206;
 	static const UINT m_MenuToolsTileMap = 207;
 	static const UINT m_MenuToolsOam = 208;
+	static const UINT m_MenuToolsMemory = 209;
 
 	HMENU m_EmulationMenuItem = NULL;
 	static const UINT m_MenuEmulationPausePlay = 301;
