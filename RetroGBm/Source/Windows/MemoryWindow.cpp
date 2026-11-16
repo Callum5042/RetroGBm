@@ -415,6 +415,48 @@ std::span<const uint8_t> MemoryWindow::ReadBlock(Block block) const
 	return {};
 }
 
+bool MemoryWindow::WriteBlock(Block block, size_t offset, uint8_t value)
+{
+	Emulator* emulator = m_Application->GetEmulator();
+	if (emulator == nullptr || !emulator->IsRunning() || emulator->GetCartridge() == nullptr)
+	{
+		return false;
+	}
+
+	switch (block)
+	{
+		case Block::Rom:
+			emulator->GetCartridge()->PokeRom(offset, value);
+			break;
+
+		case Block::VideoRam:
+			emulator->GetPpu()->PokeVideoRam(offset, value);
+			break;
+
+		case Block::CartridgeRam:
+			emulator->GetCartridge()->PokeExternalRam(offset, value);
+			break;
+
+		case Block::WorkRam:
+			emulator->GetRam()->PokeWorkRam(offset, value);
+			break;
+
+		case Block::Oam:
+			emulator->GetPpu()->PokeOam(offset, value);
+			break;
+
+		case Block::HighRam:
+			emulator->GetRam()->PokeHighRam(offset, value);
+			break;
+
+		default:
+			return false;
+	}
+
+	UpdateInspector();
+	return true;
+}
+
 void MemoryWindow::UpdateEmptyText()
 {
 	Emulator* emulator = m_Application->GetEmulator();
@@ -471,7 +513,16 @@ void MemoryWindow::UpdateStatus()
 		}
 	};
 
-	set_part(0, m_StatusMessage);
+	// With no Go to or Find result to show, say whether typing writes
+	std::wstring message = m_StatusMessage;
+	if (message.empty() && running && !ReadBlock(m_Block).empty())
+	{
+		message = m_Block == Block::Rom
+			? L"Type over a byte to write it. Edits change the loaded ROM, not the file."
+			: L"Type over a byte to write it";
+	}
+
+	set_part(0, message);
 	set_part(1, live);
 }
 
@@ -873,6 +924,11 @@ void MemoryWindow::CreateControls()
 	{
 		UpdateInspector();
 		SetStatusMessage(L"");
+	};
+
+	m_HexView.WriteRequested = [this](size_t offset, uint8_t value)
+	{
+		return WriteBlock(m_Block, offset, value);
 	};
 
 	CreateInspector();

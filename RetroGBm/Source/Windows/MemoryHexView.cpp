@@ -49,6 +49,14 @@ namespace
 		FillRect(hdc, &rect, reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
 	}
 
+	int HexDigit(wchar_t c)
+	{
+		if (c >= L'0' && c <= L'9') return c - L'0';
+		if (c >= L'a' && c <= L'f') return c - L'a' + 10;
+		if (c >= L'A' && c <= L'F') return c - L'A' + 10;
+		return -1;
+	}
+
 	void DrawTextAt(HDC hdc, int x, int y, const std::wstring& text, COLORREF colour)
 	{
 		SetTextColor(hdc, colour);
@@ -150,6 +158,7 @@ void MemoryHexView::SetBlock(const Addressing& addressing, std::function<std::sp
 	m_Anchor = 0;
 	m_Caret = 0;
 	m_CaretInAscii = false;
+	m_LowNibble = false;
 	UpdateBankDigits(ReadSource().size());
 
 	UpdateScrollBar();
@@ -285,12 +294,73 @@ void MemoryHexView::Select(long long anchor_offset, long long caret_offset, bool
 
 	m_Caret = caret;
 	m_Anchor = anchor;
+	m_LowNibble = false;
 	InvalidateRect(m_Hwnd, NULL, FALSE);
 
 	if (notify && SelectionChanged)
 	{
 		SelectionChanged();
 	}
+}
+
+void MemoryHexView::OnChar(wchar_t character)
+{
+	const std::span<const uint8_t> data = ReadSource();
+	if (data.empty() || !WriteRequested || m_Caret >= data.size())
+	{
+		return;
+	}
+
+	if (m_CaretInAscii)
+	{
+		if (character < 0x20 || character > 0x7E)
+		{
+			return;
+		}
+
+		if (WriteRequested(m_Caret, static_cast<uint8_t>(character)))
+		{
+			AdvanceAfterWrite();
+		}
+
+		return;
+	}
+
+	const int digit = HexDigit(character);
+	if (digit < 0)
+	{
+		return;
+	}
+
+	const uint8_t old_value = data[m_Caret];
+	const uint8_t value = m_LowNibble
+		? static_cast<uint8_t>((old_value & 0xF0) | digit)
+		: static_cast<uint8_t>((digit << 4) | (old_value & 0x0F));
+
+	if (!WriteRequested(m_Caret, value))
+	{
+		return;
+	}
+
+	if (m_LowNibble)
+	{
+		AdvanceAfterWrite();
+		return;
+	}
+
+	// Typing works on the caret's byte alone, then waits for the low nibble
+	Select(static_cast<long long>(m_Caret), static_cast<long long>(m_Caret));
+	m_LowNibble = true;
+	InvalidateRect(m_Hwnd, NULL, FALSE);
+}
+
+void MemoryHexView::AdvanceAfterWrite()
+{
+	// On to the next byte, or stay on the last one
+	const long long next = static_cast<long long>(m_Caret) + 1;
+	m_LowNibble = false;
+	Select(next, next);
+	InvalidateRect(m_Hwnd, NULL, FALSE);
 }
 
 void MemoryHexView::OnKeyDown(WPARAM key)
@@ -635,9 +705,12 @@ void MemoryHexView::PaintSelection(HDC hdc, size_t row, int y, size_t size)
 	if (focused && m_Caret >= row_first && m_Caret <= row_last)
 	{
 		const int column = static_cast<int>(m_Caret - row_first);
+		// Halfway through typing a byte, just the low digit
 		RECT caret = m_CaretInAscii
 			? RECT{ AsciiX(column), y, AsciiX(column) + m_CharWidth, y + m_RowHeight }
-			: RECT{ HexX(column) - m_CharWidth / 2, y, HexX(column) + m_CharWidth * 2 + m_CharWidth / 2, y + m_RowHeight };
+			: m_LowNibble
+				? RECT{ HexX(column) + m_CharWidth, y, HexX(column) + m_CharWidth * 2 + m_CharWidth / 2, y + m_RowHeight }
+				: RECT{ HexX(column) - m_CharWidth / 2, y, HexX(column) + m_CharWidth * 2 + m_CharWidth / 2, y + m_RowHeight };
 
 		SetDCBrushColor(hdc, CaretColour);
 		FrameRect(hdc, &caret, reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
@@ -739,11 +812,16 @@ LRESULT MemoryHexView::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			return 0;
 
 		case WM_GETDLGCODE:
-			// Keep the arrow keys rather than letting the dialog manager move focus with them
-			return DLGC_WANTARROWS;
+			// Keep the arrow keys rather than letting the dialog manager move focus with them,
+			// and characters for typing over bytes
+			return DLGC_WANTARROWS | DLGC_WANTCHARS;
 
 		case WM_KEYDOWN:
 			OnKeyDown(wParam);
+			return 0;
+
+		case WM_CHAR:
+			OnChar(static_cast<wchar_t>(wParam));
 			return 0;
 
 		case WM_DESTROY:

@@ -129,5 +129,45 @@ namespace CoreTests
 			// Assert
 			Assert::AreEqual(0xAA, static_cast<int>(result));
 		}
+
+		TEST_METHOD(PokeWorkRam_SetsABankThatIsNotMappedIn)
+		{
+			// Arrange
+			Ram ram;
+			ram.SetWorkRamBank(1);
+
+			// Act: bank 3, $D010
+			ram.PokeWorkRam(3 * 0x1000 + 0x10, 0x5A);
+			ram.SetWorkRamBank(3);
+
+			// Assert
+			Assert::AreEqual(0x5A, static_cast<int>(ram.ReadWorkRam(0xD010)));
+		}
+
+		TEST_METHOD(PokeHighRam_SetsTheByteAtTheOffset)
+		{
+			// Arrange
+			Ram ram;
+
+			// Act
+			ram.PokeHighRam(0x05, 0x5A);
+
+			// Assert
+			Assert::AreEqual(0x5A, static_cast<int>(ram.ReadHighRam(0xFF85)));
+		}
+
+		TEST_METHOD(Poke_PastTheEnd_IsIgnored)
+		{
+			// Arrange
+			Ram ram;
+
+			// Act
+			ram.PokeWorkRam(ram.GetWorkRam().size(), 0x5A);
+			ram.PokeHighRam(ram.GetHighRam().size(), 0x5A);
+
+			// Assert
+			Assert::AreEqual(size_t(0x8000), ram.GetWorkRam().size());
+			Assert::AreEqual(size_t(0x80), ram.GetHighRam().size());
+		}
 	};
 }

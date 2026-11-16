@@ -83,6 +83,14 @@ public:
 	virtual void SetExternalRam(std::vector<uint8_t>&& ram_data);
 	virtual const std::vector<uint8_t>& GetExternalRam();
 
+	// Debug views: sets a byte of cartridge RAM, an offset into all its banks, whatever bank or
+	// enable state the mapper is in. Offsets past the end are ignored.
+	void PokeExternalRam(size_t offset, uint8_t value);
+
+	// Debug views: patches a byte of the loaded ROM, an offset into all its banks. The file on
+	// disk is not changed. Offsets past the end are ignored.
+	void PokeRom(size_t offset, uint8_t value);
+
 	void SetWriteRamCallback(std::function<void()> writeram_callback);
 
 	bool HasRAM() const;

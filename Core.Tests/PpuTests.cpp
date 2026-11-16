@@ -52,6 +52,15 @@ public:
         f.ppu.WriteVideoRamDma(0x8000, 56); f.Off(); Assert::AreEqual(56, int(f.ppu.ReadVideoRam(0x8000)));
         Assert::AreEqual(16, int(f.ppu.ReadOam(0xFE00)));
     }
+    TEST_METHOD(PokeWritesVramAndOamWhileTheyAreLocked)
+    {
+        // Line 0, dot 80: pixel transfer, when the CPU can reach neither
+        Fixture f; f.Dots(80);
+        Assert::AreEqual(3, int(f.display.GetLcdMode()));
+        f.ppu.PokeVideoRam(0x2000 + 0x10, 0x5A); f.ppu.PokeOam(4, 0x6B);
+        f.ppu.PokeVideoRam(0x4000, 0x7C); f.ppu.PokeOam(160, 0x7C);
+        Assert::AreEqual(0x5A, int(f.ppu.ReadVideoRam(0x8010, 1))); Assert::AreEqual(0x6B, int(f.ppu.GetOam()[4]));
+    }
     TEST_METHOD(CgbAttributesBankFlipAndPalette)
     {
         Fixture f; f.Off(); f.Tile(0, 0x80, 0, 1); f.Palette(false, 2, 1, 31);

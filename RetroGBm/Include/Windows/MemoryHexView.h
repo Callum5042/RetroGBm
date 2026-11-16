@@ -61,6 +61,10 @@ public:
 	// Clicks, drags and keys that move the selection
 	std::function<void()> SelectionChanged;
 
+	// Typing over bytes at the caret: hex digits in the hex column, printable characters in the
+	// ASCII column. Return false when the byte can't be written, e.g. ROM, and nothing moves.
+	std::function<bool(size_t offset, uint8_t value)> WriteRequested;
+
 	LRESULT HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 private:
@@ -103,6 +107,12 @@ private:
 	void EnsureVisible(size_t offset);
 	void ClampSelection(size_t size);
 	void OnKeyDown(WPARAM key);
+
+	// In the hex column the first digit typed sets the high nibble, the second the low nibble,
+	// then the caret moves on. Moving the caret starts again at the high nibble.
+	bool m_LowNibble = false;
+	void OnChar(wchar_t character);
+	void AdvanceAfterWrite();
 
 	// Scrolling, in rows
 	size_t m_TopRow = 0;

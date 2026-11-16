@@ -68,6 +68,9 @@ private:
 	Block m_Block = Block::Rom;
 	void SelectBlock(Block block);
 	std::span<const uint8_t> ReadBlock(Block block) const;
+
+	// Sets a byte straight into the memory behind a block. ROM edits patch the loaded copy only.
+	bool WriteBlock(Block block, size_t offset, uint8_t value);
 	void UpdateEmptyText();
 
 	// Layout
@@ -114,7 +117,8 @@ private:
 	// "3E C4" or "3ec4" in hex mode, ASCII text in text mode
 	bool ParseFind(const std::wstring& text, bool hex, std::vector<uint8_t>* bytes, std::wstring* error) const;
 
-	// Left part of the status bar: the last Go to or Find result, until the selection moves
+	// Left part of the status bar: the last Go to or Find result, until the selection moves.
+	// Otherwise a hint on typing over bytes.
 	std::wstring m_StatusMessage;
 	void SetStatusMessage(const std::wstring& message);
 
