@@ -1,25 +1,61 @@
 ﻿# RetroGBm
 
-A fast and lightweight Game Boy Color emulator written in C++ for Windows and Android.
+A free, open source Game Boy and Game Boy Color emulator for Windows and Android. No ads, link play between a phone and a PC, and live tools for looking inside the game you're playing.
 
-![Build](https://github.com/Callum5042/RetroGBm/actions/workflows/msbuild.yml/badge.svg)
+**[Download for Windows](https://github.com/Callum5042/RetroGBm/releases/latest/download/RetroGBm-Win32.zip)** &nbsp;-&nbsp; 
+**[Download for Android](https://github.com/Callum5042/RetroGBm/releases/latest/download/RetroGBm-Android.zip)** &nbsp;-&nbsp; 
+[Website](https://retrogbm.com) &nbsp;-&nbsp; 
+[All releases](https://github.com/Callum5042/RetroGBm/releases)
 
-### Features
+[![Latest release](https://img.shields.io/github/v/release/Callum5042/RetroGBm?label=latest%20release)](https://github.com/Callum5042/RetroGBm/releases/latest)
+[![Build](https://github.com/Callum5042/RetroGBm/actions/workflows/msbuild.yml/badge.svg)](https://github.com/Callum5042/RetroGBm/actions/workflows/msbuild.yml)
+[![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](/LICENSE)
 
-- Support for MBC1, MBC2, MBC3, and MBC5 mappers
-- Battery-backed save support
-- Multiple save states with rotating quick saves
+| ![Zelda - Oracle of Ages running on Windows](/Images/zelda_oracle_ages.png) | ![Tile Map viewer showing a game's background map](/Images/tool_tile_map.png) |
+|----------|----------|
+
+## Why RetroGBm
+
+- **Free, with no ads**: on both Windows and Android, and open source under GPLv3.
+- **Link play between devices**: trade and battle between a Windows PC and an Android phone, or between two PCs.
+- **Live inspection tools**: tile data, tile map and object viewers that update as the game runs, plus assembly export, for romhackers and homebrew developers.
+- **Fast and lightweight**: a small native app on each platform, written in C++.
+
+## Install
+
+**Windows**: download [RetroGBm-Win32.zip](https://github.com/Callum5042/RetroGBm/releases/latest/download/RetroGBm-Win32.zip), unzip it and run `RetroGBm.exe`. Requires Windows 10 or later.
+
+**Android**: download [RetroGBm-Android.zip](https://github.com/Callum5042/RetroGBm/releases/latest/download/RetroGBm-Android.zip), unzip it and install the APK. Requires Android 10 or later. Android will ask you to allow installing apps from your browser or file manager.
+
+RetroGBm does not come with any games. Use ROM files dumped from cartridges you own.
+
+## Features
+
+- Plays Game Boy and Game Boy Color games, with sound
+- Multiple save states with rotating quick saves, plus battery-backed in-game saves
+- Link cable support over the network
+- GameShark cheat codes, saved per game
+- Controller support on Windows and Android, and keyboard remapping on Windows
 - Adjustable emulation speed
-- Real-Time Clock (RTC) emulation
-- Dot-based PPU timing with variable pixel transfer and STAT interrupts
-- Audio emulation
-- CGB colours for DMG games, enabled by default, with a grayscale option on Windows and Android
 - Play time tracking
-- Link cable support
-- Gameshark cheat codes
+- CGB colours for DMG games, enabled by default, with a grayscale option
+- Real-Time Clock (RTC) emulation
+- Support for MBC1, MBC2, MBC3, and MBC5 mappers
+- Dot-based PPU timing with variable pixel transfer and STAT interrupts
 - SM83 assembly export
 
-### Tools
+See the [compatibility list](/Compatibility.md) for the games tested so far.
+
+### Link play
+
+One Windows PC hosts and the other device connects to it using the host's IP address.
+
+- **Host**: on Windows, choose **Options > Network Host**.
+- **Connect**: on Windows, choose **Options > Network Connect**. On Android, open the options and choose **Connect**.
+
+Hosting from Android is not available yet.
+
+## Tools
 
 The Windows app has tools for looking inside the game you're playing, opened from the **Tools** menu. The viewers update live as the game runs.
 
@@ -47,9 +83,9 @@ The Windows app has tools for looking inside the game you're playing, opened fro
 
 ## Build
 
-**Windows**: Install Visual Studios 2026 and build from the solution file `RetroGBm.sln`.
+**Windows**: Install Visual Studio 2026 and build from the solution file `RetroGBm.sln`.
 
-**Android**: Install Android Studios and open the `android` folder, then build with Android Studios.
+**Android**: Install Android Studio and open the `android` folder, then build with Android Studio.
 
 ## Compatibility
 
@@ -58,3 +94,7 @@ The Windows app has tools for looking inside the game you're playing, opened fro
 ## Test roms
 
 [Testing ROMS](/Testing.md)
+
+## License
+
+RetroGBm is released under the [GNU General Public License v3.0](/LICENSE).
