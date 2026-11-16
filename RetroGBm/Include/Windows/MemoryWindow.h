@@ -82,10 +82,43 @@ private:
 	HWND m_BlockList = NULL;
 	MemoryHexView m_HexView;
 
+	// Inspector: what is selected, and how the byte at the start of the selection reads
+	enum class Field
+	{
+		Start,
+		End,
+		Length,
+		Hex8,
+		Unsigned8,
+		Signed8,
+		Binary8,
+		Ascii8,
+		Count
+	};
+
+	static const int m_InspectorSectionCount = 2;
+	static const int m_FieldCount = static_cast<int>(Field::Count);
+
+	HFONT m_BoldFont = NULL;
+	HFONT m_MonoFont = NULL;
+
+	HWND m_InspectorHeadings[m_InspectorSectionCount] = {};
+	HWND m_InspectorLabels[m_FieldCount] = {};
+	HWND m_InspectorValues[m_FieldCount] = {};
+	std::wstring m_InspectorText[m_FieldCount];
+
+	void CreateInspector();
+	void LayoutInspector(int left, int top);
+	void UpdateInspector();
+	void SetInspectorValue(Field field, const std::wstring& text);
+
 	// Status bar: what is shown on the left, live or paused on the right
 	HWND m_StatusBar = NULL;
 
 	static const int m_ControlStatusBarId = 1000;
 	static const int m_ControlBlockListId = 1001;
 	static const int m_ControlHexViewId = 1002;
+	static const int m_ControlInspectorHeadingId = 1100;
+	static const int m_ControlInspectorLabelId = 1200;
+	static const int m_ControlInspectorValueId = 1300;
 };

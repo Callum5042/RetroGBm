@@ -11,6 +11,7 @@
 
 // Read-only hex dump of one block of memory: an address column, 16 bytes per row and their
 // ASCII. Only the rows in view are read, so a block can be as large as a whole ROM.
+// A range of bytes can be selected with the mouse or keyboard; the caret is the end that moves.
 class MemoryHexView
 {
 public:
@@ -45,6 +46,17 @@ public:
 	// Called every frame: repaints only when a byte in view has changed
 	void Refresh();
 
+	// Selection as block offsets, first to last inclusive. Empty when the block is.
+	inline bool HasSelection() const { return !ReadSource().empty(); }
+	size_t GetSelectionStart() const;
+	size_t GetSelectionEnd() const;
+
+	// "FE00", or "01:4000" for a block with banks
+	std::wstring FormatAddress(size_t offset) const;
+
+	// Clicks, drags and keys that move the selection
+	std::function<void()> SelectionChanged;
+
 	LRESULT HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 private:
@@ -69,10 +81,24 @@ private:
 	int AddressWidth() const;
 	int HexX(int column) const;
 	int AsciiX(int column) const;
-	std::wstring FormatAddress(size_t offset) const;
 
 	// Bank digits in the address column, enough for the block's highest bank
-	int m_BankDigits = 0;
+	int m_BankDigits = 2;
+	void UpdateBankDigits(size_t size);
+
+	// Selection: the anchor stays put while Shift+click, Shift+arrows or a drag move the caret
+	size_t m_Anchor = 0;
+	size_t m_Caret = 0;
+	bool m_CaretInAscii = false;
+	bool m_Dragging = false;
+
+	// The byte under a point, clamped into the block. Sets whether it is in the ASCII column.
+	size_t HitTest(int x, int y, bool* ascii) const;
+	void MoveCaret(long long offset, bool extend);
+	void Select(long long anchor_offset, long long caret_offset);
+	void EnsureVisible(size_t offset);
+	void ClampSelection(size_t size);
+	void OnKeyDown(WPARAM key);
 
 	// Scrolling, in rows
 	size_t m_TopRow = 0;
@@ -99,4 +125,5 @@ private:
 
 	void MeasureFont();
 	void Paint(HDC hdc);
+	void PaintSelection(HDC hdc, size_t row, int y, size_t size);
 };

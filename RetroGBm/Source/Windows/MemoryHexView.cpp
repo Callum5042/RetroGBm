@@ -16,6 +16,9 @@ namespace
 	const COLORREF HeaderColour = RGB(92, 92, 92);
 	const COLORREF DividerColour = RGB(223, 223, 223);
 	const COLORREF BankLineColour = RGB(236, 236, 236);
+	const COLORREF SelectionColour = RGB(204, 228, 247);
+	const COLORREF InactiveSelectionColour = RGB(229, 229, 229);
+	const COLORREF CaretColour = RGB(0, 95, 184);
 
 	static LRESULT CALLBACK HexViewWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
@@ -143,8 +146,161 @@ void MemoryHexView::SetBlock(const Addressing& addressing, std::function<std::sp
 	m_TopRow = 0;
 	m_Painted.clear();
 
+	// A new block starts with its first byte selected
+	m_Anchor = 0;
+	m_Caret = 0;
+	m_CaretInAscii = false;
+	UpdateBankDigits(ReadSource().size());
+
 	UpdateScrollBar();
 	InvalidateRect(m_Hwnd, NULL, FALSE);
+}
+
+size_t MemoryHexView::GetSelectionStart() const
+{
+	return (std::min)(m_Anchor, m_Caret);
+}
+
+size_t MemoryHexView::GetSelectionEnd() const
+{
+	return (std::max)(m_Anchor, m_Caret);
+}
+
+void MemoryHexView::ClampSelection(size_t size)
+{
+	const size_t last = size == 0 ? 0 : size - 1;
+	m_Anchor = (std::min)(m_Anchor, last);
+	m_Caret = (std::min)(m_Caret, last);
+}
+
+void MemoryHexView::UpdateBankDigits(size_t size)
+{
+	// At least two, more for a ROM with over 256 banks
+	m_BankDigits = 2;
+	if (m_Addressing.bank_size != 0 && size != 0)
+	{
+		for (size_t bank = (size - 1) / m_Addressing.bank_size; bank > 0xFF; bank >>= 4)
+		{
+			++m_BankDigits;
+		}
+	}
+}
+
+size_t MemoryHexView::HitTest(int x, int y, bool* ascii) const
+{
+	const size_t size = ReadSource().size();
+	if (size == 0)
+	{
+		return 0;
+	}
+
+	// Above the first row or below the last counts as the row just outside, so a drag can extend past the view
+	const long long row = static_cast<long long>(m_TopRow) + (y < m_HeaderHeight ? -1 : (y - m_HeaderHeight) / m_RowHeight);
+
+	// Halfway between the hex and ASCII columns splits them
+	int column = 0;
+	*ascii = x >= AsciiX(0) - m_CharWidth * 2;
+	if (*ascii)
+	{
+		column = (x - AsciiX(0)) / m_CharWidth;
+	}
+	else
+	{
+		// Each byte owns its two digits and half the space either side
+		column = m_BytesPerRow - 1;
+		for (int c = 0; c < m_BytesPerRow - 1; ++c)
+		{
+			if (x < (HexX(c) + HexX(c + 1) + m_CharWidth * 2) / 2)
+			{
+				column = c;
+				break;
+			}
+		}
+	}
+
+	column = std::clamp(column, 0, m_BytesPerRow - 1);
+	const long long offset = row * m_BytesPerRow + column;
+	return static_cast<size_t>(std::clamp(offset, 0LL, static_cast<long long>(size) - 1));
+}
+
+void MemoryHexView::EnsureVisible(size_t offset)
+{
+	const size_t row = offset / m_BytesPerRow;
+	const size_t visible = static_cast<size_t>(VisibleRows());
+
+	if (row < m_TopRow)
+	{
+		ScrollTo(static_cast<long long>(row));
+	}
+	else if (row >= m_TopRow + visible)
+	{
+		ScrollTo(static_cast<long long>(row - visible + 1));
+	}
+}
+
+void MemoryHexView::MoveCaret(long long offset, bool extend)
+{
+	Select(extend ? static_cast<long long>(m_Anchor) : offset, offset);
+}
+
+void MemoryHexView::Select(long long anchor_offset, long long caret_offset)
+{
+	const size_t size = ReadSource().size();
+	if (size == 0)
+	{
+		return;
+	}
+
+	const long long last = static_cast<long long>(size) - 1;
+	const size_t caret = static_cast<size_t>(std::clamp(caret_offset, 0LL, last));
+	const size_t anchor = static_cast<size_t>(std::clamp(anchor_offset, 0LL, last));
+	EnsureVisible(caret);
+
+	if (caret == m_Caret && anchor == m_Anchor)
+	{
+		return;
+	}
+
+	m_Caret = caret;
+	m_Anchor = anchor;
+	InvalidateRect(m_Hwnd, NULL, FALSE);
+
+	if (SelectionChanged)
+	{
+		SelectionChanged();
+	}
+}
+
+void MemoryHexView::OnKeyDown(WPARAM key)
+{
+	const bool shift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+	const bool control = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+	const long long caret = static_cast<long long>(m_Caret);
+	const long long page = static_cast<long long>(VisibleRows()) * m_BytesPerRow;
+	const long long row_start = caret - caret % m_BytesPerRow;
+
+	switch (key)
+	{
+		case VK_LEFT: MoveCaret(caret - 1, shift); break;
+		case VK_RIGHT: MoveCaret(caret + 1, shift); break;
+		case VK_UP: MoveCaret(caret - m_BytesPerRow, shift); break;
+		case VK_DOWN: MoveCaret(caret + m_BytesPerRow, shift); break;
+		case VK_PRIOR: MoveCaret(caret - page, shift); break;
+		case VK_NEXT: MoveCaret(caret + page, shift); break;
+
+		// Start and end of the row, or of the block with Ctrl
+		case VK_HOME: MoveCaret(control ? 0 : row_start, shift); break;
+		case VK_END: MoveCaret(control ? static_cast<long long>(ReadSource().size()) : row_start + m_BytesPerRow - 1, shift); break;
+
+		case 'A':
+			if (control)
+			{
+				// Select the whole block, with the caret at the end
+				Select(0, static_cast<long long>(ReadSource().size()));
+			}
+
+			break;
+	}
 }
 
 void MemoryHexView::SetEmptyText(const std::wstring& text)
@@ -171,8 +327,11 @@ void MemoryHexView::Refresh()
 	}
 
 	// The block can grow or shrink, e.g. a new game with a different amount of cartridge RAM
-	if (ReadSource().size() != m_PaintedSize)
+	const size_t size = ReadSource().size();
+	if (size != m_PaintedSize)
 	{
+		ClampSelection(size);
+		UpdateBankDigits(size);
 		UpdateScrollBar();
 		InvalidateRect(m_Hwnd, NULL, FALSE);
 		return;
@@ -370,15 +529,8 @@ void MemoryHexView::Paint(HDC hdc)
 		return;
 	}
 
-	// Enough bank digits for the highest bank, at least two
-	m_BankDigits = 2;
-	if (m_Addressing.bank_size != 0)
-	{
-		for (size_t bank = (data.size() - 1) / m_Addressing.bank_size; bank > 0xFF; bank >>= 4)
-		{
-			++m_BankDigits;
-		}
-	}
+	ClampSelection(data.size());
+	UpdateBankDigits(data.size());
 
 	HGDIOBJ previous = SelectObject(dc, m_MonoFont);
 	const int text_offset = 2;
@@ -405,6 +557,8 @@ void MemoryHexView::Paint(HDC hdc)
 		{
 			FillColour(dc, 0, y, width, 1, BankLineColour);
 		}
+
+		PaintSelection(dc, row, y, data.size());
 
 		DrawTextAt(dc, m_PaddingX, y + text_offset, FormatAddress(offset), AddressColour);
 
@@ -434,6 +588,38 @@ void MemoryHexView::Paint(HDC hdc)
 	m_Painted.assign(data.begin() + first, data.begin() + last);
 
 	BitBlt(hdc, 0, 0, width, height, dc, 0, 0, SRCCOPY);
+}
+
+void MemoryHexView::PaintSelection(HDC hdc, size_t row, int y, size_t size)
+{
+	const size_t row_first = row * m_BytesPerRow;
+	const size_t row_last = (std::min)(row_first + m_BytesPerRow, size) - 1;
+	const size_t first = (std::max)(GetSelectionStart(), row_first);
+	const size_t last = (std::min)(GetSelectionEnd(), row_last);
+
+	// Greyed out while another control has focus
+	const bool focused = GetFocus() == m_Hwnd;
+	const COLORREF colour = focused ? SelectionColour : InactiveSelectionColour;
+
+	// Each hex byte fills its three character cell, so a run of bytes joins up
+	for (size_t index = first; index <= last && first <= last; ++index)
+	{
+		const int column = static_cast<int>(index - row_first);
+		FillColour(hdc, HexX(column) - m_CharWidth / 2, y, m_CharWidth * 3, m_RowHeight, colour);
+		FillColour(hdc, AsciiX(column), y, m_CharWidth, m_RowHeight, colour);
+	}
+
+	// Outline the caret in the column it was placed in
+	if (focused && m_Caret >= row_first && m_Caret <= row_last)
+	{
+		const int column = static_cast<int>(m_Caret - row_first);
+		RECT caret = m_CaretInAscii
+			? RECT{ AsciiX(column), y, AsciiX(column) + m_CharWidth, y + m_RowHeight }
+			: RECT{ HexX(column) - m_CharWidth / 2, y, HexX(column) + m_CharWidth * 2 + m_CharWidth / 2, y + m_RowHeight };
+
+		SetDCBrushColor(hdc, CaretColour);
+		FrameRect(hdc, &caret, reinterpret_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+	}
 }
 
 LRESULT MemoryHexView::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -470,7 +656,64 @@ LRESULT MemoryHexView::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 		}
 
 		case WM_LBUTTONDOWN:
+		{
 			SetFocus(hwnd);
+
+			// Click selects a byte, Shift+click extends from the anchor, and dragging extends as it goes
+			bool ascii = false;
+			const size_t offset = HitTest(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), &ascii);
+			const bool extend = (wParam & MK_SHIFT) != 0;
+			if (m_CaretInAscii != ascii)
+			{
+				m_CaretInAscii = ascii;
+				InvalidateRect(hwnd, NULL, FALSE);
+			}
+
+			MoveCaret(static_cast<long long>(offset), extend);
+
+			m_Dragging = true;
+			SetCapture(hwnd);
+			return 0;
+		}
+
+		case WM_MOUSEMOVE:
+			if (m_Dragging)
+			{
+				// Past the top or bottom scrolls a row at a time
+				RECT client;
+				GetClientRect(hwnd, &client);
+				const int y = GET_Y_LPARAM(lParam);
+				if (y < m_HeaderHeight)
+				{
+					ScrollTo(static_cast<long long>(m_TopRow) - 1);
+				}
+				else if (y >= client.bottom)
+				{
+					ScrollTo(static_cast<long long>(m_TopRow) + 1);
+				}
+
+				bool ascii = false;
+				MoveCaret(static_cast<long long>(HitTest(GET_X_LPARAM(lParam), y, &ascii)), true);
+			}
+
+			return 0;
+
+		case WM_LBUTTONUP:
+			if (m_Dragging)
+			{
+				ReleaseCapture();
+			}
+
+			return 0;
+
+		case WM_CAPTURECHANGED:
+			m_Dragging = false;
+			return 0;
+
+		case WM_SETFOCUS:
+		case WM_KILLFOCUS:
+			// The selection colour and caret depend on focus
+			InvalidateRect(hwnd, NULL, FALSE);
 			return 0;
 
 		case WM_GETDLGCODE:
@@ -478,25 +721,12 @@ LRESULT MemoryHexView::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			return DLGC_WANTARROWS;
 
 		case WM_KEYDOWN:
-		{
-			const long long top = static_cast<long long>(m_TopRow);
-			const bool control = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-
-			switch (wParam)
-			{
-				case VK_UP: ScrollTo(top - 1); return 0;
-				case VK_DOWN: ScrollTo(top + 1); return 0;
-				case VK_PRIOR: ScrollTo(top - VisibleRows()); return 0;
-				case VK_NEXT: ScrollTo(top + VisibleRows()); return 0;
-				case VK_HOME: if (control) { ScrollTo(0); } return 0;
-				case VK_END: if (control) { ScrollTo(static_cast<long long>(RowCount())); } return 0;
-			}
-
-			break;
-		}
+			OnKeyDown(wParam);
+			return 0;
 
 		case WM_DESTROY:
 			m_Hwnd = NULL;
+			m_Dragging = false;
 			return 0;
 	}
 

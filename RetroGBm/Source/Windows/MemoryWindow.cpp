@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <format>
 #include <string>
 
 namespace
@@ -67,6 +68,30 @@ namespace
 		{ L"OAM", { 0xFE00, 0, false } },
 		{ L"High RAM", { 0xFF80, 0, false } },
 	};
+
+	const COLORREF InspectorLabelColour = RGB(92, 92, 92);
+	const COLORREF InspectorTextColour = RGB(26, 26, 26);
+
+	const wchar_t* InspectorHeadings[] = { L"Selection", L"8-bit value" };
+
+	struct FieldInfo
+	{
+		const wchar_t* label;
+		int section;
+	};
+
+	// Same order as MemoryWindow::Field
+	const FieldInfo Fields[] =
+	{
+		{ L"Start", 0 },
+		{ L"End", 0 },
+		{ L"Length", 0 },
+		{ L"Hex", 1 },
+		{ L"Unsigned", 1 },
+		{ L"Signed", 1 },
+		{ L"Binary", 1 },
+		{ L"ASCII", 1 },
+	};
 }
 
 MemoryWindow::MemoryWindow(Application* application) : m_Application(application)
@@ -89,6 +114,23 @@ void MemoryWindow::Create()
 	NONCLIENTMETRICS metrics = { sizeof(NONCLIENTMETRICS) };
 	SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(metrics), &metrics, 0);
 	m_Font = CreateFontIndirect(&metrics.lfMessageFont);
+
+	LOGFONT bold = metrics.lfMessageFont;
+	bold.lfWeight = FW_SEMIBOLD;
+	m_BoldFont = CreateFontIndirect(&bold);
+
+	// Consolas for the inspector's values, the same as the hex view
+	{
+		HDC hdc = GetDC(NULL);
+		LOGFONT mono = {};
+		mono.lfHeight = -MulDiv(10, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+		mono.lfWeight = FW_NORMAL;
+		mono.lfQuality = CLEARTYPE_QUALITY;
+		mono.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
+		wcscpy_s(mono.lfFaceName, L"Consolas");
+		m_MonoFont = CreateFontIndirect(&mono);
+		ReleaseDC(NULL, hdc);
+	}
 
 	m_InspectorBrush = CreateSolidBrush(InspectorColour);
 
@@ -122,10 +164,19 @@ void MemoryWindow::Destroy()
 
 void MemoryWindow::ReleaseResources()
 {
-	if (m_Font != NULL)
+	for (HFONT* font : { &m_Font, &m_BoldFont, &m_MonoFont })
 	{
-		DeleteObject(m_Font);
-		m_Font = NULL;
+		if (*font != NULL)
+		{
+			DeleteObject(*font);
+			*font = NULL;
+		}
+	}
+
+	// The inspector's controls went with the window
+	for (std::wstring& text : m_InspectorText)
+	{
+		text.clear();
 	}
 
 	if (m_InspectorBrush != NULL)
@@ -159,6 +210,9 @@ void MemoryWindow::Update()
 	this->UpdateStatus();
 	this->UpdateEmptyText();
 	m_HexView.Refresh();
+
+	// The selected bytes can change under the selection
+	this->UpdateInspector();
 }
 
 void MemoryWindow::SelectBlock(Block block)
@@ -168,6 +222,51 @@ void MemoryWindow::SelectBlock(Block block)
 
 	m_HexView.SetBlock(Blocks[static_cast<int>(block)].addressing, [this, block]() { return ReadBlock(block); });
 	UpdateEmptyText();
+	UpdateInspector();
+}
+
+void MemoryWindow::SetInspectorValue(Field field, const std::wstring& text)
+{
+	// Only set when changed, as this is called every frame
+	const int index = static_cast<int>(field);
+	if (m_InspectorText[index] != text)
+	{
+		m_InspectorText[index] = text;
+		SetWindowTextW(m_InspectorValues[index], text.c_str());
+	}
+}
+
+void MemoryWindow::UpdateInspector()
+{
+	const std::span<const uint8_t> data = ReadBlock(m_Block);
+	if (data.empty() || !m_HexView.HasSelection())
+	{
+		for (int i = 0; i < m_FieldCount; ++i)
+		{
+			SetInspectorValue(static_cast<Field>(i), L"");
+		}
+
+		return;
+	}
+
+	// Selection
+	const size_t start = (std::min)(m_HexView.GetSelectionStart(), data.size() - 1);
+	const size_t end = (std::min)(m_HexView.GetSelectionEnd(), data.size() - 1);
+	const size_t length = end - start + 1;
+
+	SetInspectorValue(Field::Start, m_HexView.FormatAddress(start));
+	SetInspectorValue(Field::End, m_HexView.FormatAddress(end));
+	SetInspectorValue(Field::Length, length == 1 ? L"1 byte" : std::format(L"{} bytes", length));
+
+	// The byte at the start of the selection
+	const uint8_t value = data[start];
+	const bool printable = value >= 0x20 && value < 0x7F;
+
+	SetInspectorValue(Field::Hex8, std::format(L"${:02X}", value));
+	SetInspectorValue(Field::Unsigned8, std::format(L"{}", value));
+	SetInspectorValue(Field::Signed8, std::format(L"{}", static_cast<int8_t>(value)));
+	SetInspectorValue(Field::Binary8, std::format(L"{:04b} {:04b}", value >> 4, value & 0x0F));
+	SetInspectorValue(Field::Ascii8, printable ? std::format(L"'{}'", static_cast<wchar_t>(value)) : L"Not printable");
 }
 
 std::span<const uint8_t> MemoryWindow::ReadBlock(Block block) const
@@ -337,6 +436,61 @@ void MemoryWindow::CreateControls()
 	SendMessageW(m_BlockList, LB_SETITEMHEIGHT, 0, item_height + 8);
 
 	m_HexView.Create(m_Hwnd, m_ControlHexViewId);
+	m_HexView.SelectionChanged = [this]() { UpdateInspector(); };
+
+	CreateInspector();
+}
+
+void MemoryWindow::CreateInspector()
+{
+	auto create_static = [this](int id, const wchar_t* text, HFONT font)
+	{
+		HWND hwnd = CreateWindowExW(0, WC_STATICW, text, WS_CHILD | WS_VISIBLE | SS_LEFT | SS_NOPREFIX | SS_ENDELLIPSIS,
+			0, 0, 0, 0, m_Hwnd, reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)), nullptr, nullptr);
+		SendMessageW(hwnd, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
+		return hwnd;
+	};
+
+	for (int i = 0; i < m_InspectorSectionCount; ++i)
+	{
+		m_InspectorHeadings[i] = create_static(m_ControlInspectorHeadingId + i, InspectorHeadings[i], m_BoldFont);
+	}
+
+	for (int i = 0; i < m_FieldCount; ++i)
+	{
+		m_InspectorLabels[i] = create_static(m_ControlInspectorLabelId + i, Fields[i].label, m_Font);
+		m_InspectorValues[i] = create_static(m_ControlInspectorValueId + i, L"", m_MonoFont);
+	}
+}
+
+void MemoryWindow::LayoutInspector(int left, int top)
+{
+	const int width = m_InspectorWidth - 32;
+	const int label_width = 80;
+	const int heading_height = 26;
+	const int row_height = 22;
+	const int section_gap = 16;
+
+	int y = top;
+	for (int section = 0; section < m_InspectorSectionCount; ++section)
+	{
+		MoveWindow(m_InspectorHeadings[section], left, y, width, 20, TRUE);
+		y += heading_height;
+
+		for (int i = 0; i < m_FieldCount; ++i)
+		{
+			if (Fields[i].section != section)
+			{
+				continue;
+			}
+
+			MoveWindow(m_InspectorLabels[i], left, y + 1, label_width, 20, TRUE);
+			MoveWindow(m_InspectorValues[i], left + label_width, y, width - label_width, 20, TRUE);
+			y += row_height;
+		}
+
+		y += section_gap;
+	}
 }
 
 void MemoryWindow::Layout()
@@ -362,6 +516,9 @@ void MemoryWindow::Layout()
 	const int hex_left = m_BlockListWidth + 1;
 	const int hex_right = (std::max)(hex_left, static_cast<int>(client.right) - m_InspectorWidth);
 	MoveWindow(m_HexView.GetHwnd(), hex_left, top, hex_right - hex_left, bottom - top, TRUE);
+
+	// Inspector, right of its 1px divider
+	LayoutInspector(hex_right + 1 + 16, top + 16);
 
 	InvalidateRect(m_Hwnd, NULL, TRUE);
 }
@@ -461,6 +618,22 @@ LRESULT MemoryWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 		case WM_ERASEBKGND:
 			PaintBackground(reinterpret_cast<HDC>(wParam));
 			return 1;
+
+		case WM_CTLCOLORSTATIC:
+		{
+			// Inspector text sits on the inspector's colour, with the labels in grey
+			const int id = GetDlgCtrlID(reinterpret_cast<HWND>(lParam));
+			if (id >= m_ControlInspectorHeadingId && id < m_ControlInspectorValueId + m_FieldCount)
+			{
+				const bool label = id >= m_ControlInspectorLabelId && id < m_ControlInspectorValueId;
+				HDC hdc = reinterpret_cast<HDC>(wParam);
+				SetTextColor(hdc, label ? InspectorLabelColour : InspectorTextColour);
+				SetBkColor(hdc, InspectorColour);
+				return reinterpret_cast<LRESULT>(m_InspectorBrush);
+			}
+
+			break;
+		}
 
 		case WM_CTLCOLORLISTBOX:
 			// The block list sits on the panel's colour
