@@ -7,7 +7,12 @@
 #pragma comment(lib, "comctl32.lib")
 
 #include <RetroGBm/Emulator.h>
+#include <RetroGBm/Display.h>
+#include <RetroGBm/Ppu.h>
+#include <RetroGBm/Ram.h>
+#include <RetroGBm/Cartridge/BaseCartridge.h>
 
+#include <algorithm>
 #include <filesystem>
 #include <string>
 
@@ -45,6 +50,23 @@ namespace
 
 	const COLORREF DividerColour = RGB(223, 223, 223);
 	const COLORREF InspectorColour = RGB(250, 250, 250);
+
+	struct BlockInfo
+	{
+		const wchar_t* name;
+		MemoryHexView::Addressing addressing;
+	};
+
+	// Same order as MemoryWindow::Block
+	const BlockInfo Blocks[] =
+	{
+		{ L"ROM", { 0x0000, 0x4000, true } },
+		{ L"Video RAM", { 0x8000, 0x2000, false } },
+		{ L"Cartridge RAM", { 0xA000, 0x2000, false } },
+		{ L"Work RAM", { 0xC000, 0x1000, true } },
+		{ L"OAM", { 0xFE00, 0, false } },
+		{ L"High RAM", { 0xFF80, 0, false } },
+	};
 }
 
 MemoryWindow::MemoryWindow(Application* application) : m_Application(application)
@@ -81,6 +103,7 @@ void MemoryWindow::Create()
 	this->CreateControls();
 	this->Layout();
 	this->UpdateStatus();
+	this->SelectBlock(m_Block);
 
 	ShowWindow(m_Hwnd, SW_SHOWNORMAL);
 }
@@ -110,6 +133,9 @@ void MemoryWindow::ReleaseResources()
 		DeleteObject(m_InspectorBrush);
 		m_InspectorBrush = NULL;
 	}
+
+	// Its window has gone with this one, this frees its fonts and back buffer
+	m_HexView.Destroy();
 }
 
 void MemoryWindow::Focus()
@@ -131,6 +157,78 @@ void MemoryWindow::Update()
 
 	this->UpdateTitle();
 	this->UpdateStatus();
+	this->UpdateEmptyText();
+	m_HexView.Refresh();
+}
+
+void MemoryWindow::SelectBlock(Block block)
+{
+	m_Block = block;
+	SendMessageW(m_BlockList, LB_SETCURSEL, static_cast<WPARAM>(block), 0);
+
+	m_HexView.SetBlock(Blocks[static_cast<int>(block)].addressing, [this, block]() { return ReadBlock(block); });
+	UpdateEmptyText();
+}
+
+std::span<const uint8_t> MemoryWindow::ReadBlock(Block block) const
+{
+	Emulator* emulator = m_Application->GetEmulator();
+	if (emulator == nullptr || !emulator->IsRunning() || emulator->GetCartridge() == nullptr)
+	{
+		return {};
+	}
+
+	// Only the first VRAM and WRAM banks exist on a DMG
+	const bool colour = emulator->GetDisplay()->IsColour();
+
+	switch (block)
+	{
+		case Block::Rom:
+			return emulator->GetCartridge()->GetCartridgeData().data;
+
+		case Block::VideoRam:
+			return std::span<const uint8_t>(emulator->GetPpu()->GetVideoRam()).first(colour ? 0x4000 : 0x2000);
+
+		case Block::CartridgeRam:
+			return emulator->GetCartridge()->GetExternalRam();
+
+		case Block::WorkRam:
+		{
+			const std::vector<uint8_t>& work_ram = emulator->GetRam()->GetWorkRam();
+			return std::span<const uint8_t>(work_ram).first((std::min)(work_ram.size(), size_t(colour ? 0x8000 : 0x2000)));
+		}
+
+		case Block::Oam:
+			return emulator->GetPpu()->GetOam();
+
+		case Block::HighRam:
+		{
+			// $FF80-$FFFE
+			const std::vector<uint8_t>& high_ram = emulator->GetRam()->GetHighRam();
+			return std::span<const uint8_t>(high_ram).first((std::min)(high_ram.size(), size_t(0x7F)));
+		}
+	}
+
+	return {};
+}
+
+void MemoryWindow::UpdateEmptyText()
+{
+	Emulator* emulator = m_Application->GetEmulator();
+	const bool running = emulator != nullptr && emulator->IsRunning();
+
+	if (!running)
+	{
+		m_HexView.SetEmptyText(L"No game loaded");
+	}
+	else if (m_Block == Block::CartridgeRam)
+	{
+		m_HexView.SetEmptyText(L"This cartridge has no RAM");
+	}
+	else
+	{
+		m_HexView.SetEmptyText(L"");
+	}
 }
 
 void MemoryWindow::UpdateTitle()
@@ -223,12 +321,47 @@ void MemoryWindow::CreateControls()
 	m_StatusBar = CreateWindowExW(0, STATUSCLASSNAME, L"", WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, 
 		0, 0, 0, 0, m_Hwnd, reinterpret_cast<HMENU>(static_cast<INT_PTR>(m_ControlStatusBarId)), nullptr, nullptr);
 	SendMessageW(m_StatusBar, WM_SETFONT, reinterpret_cast<WPARAM>(m_Font), TRUE);
+
+	// Block list on the left
+	m_BlockList = CreateWindowExW(0, WC_LISTBOXW, L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT,
+		0, 0, 0, 0, m_Hwnd, reinterpret_cast<HMENU>(static_cast<INT_PTR>(m_ControlBlockListId)), nullptr, nullptr);
+	SendMessageW(m_BlockList, WM_SETFONT, reinterpret_cast<WPARAM>(m_Font), TRUE);
+
+	for (const BlockInfo& block : Blocks)
+	{
+		SendMessageW(m_BlockList, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(block.name));
+	}
+
+	// Roomier rows than the default
+	const LRESULT item_height = SendMessageW(m_BlockList, LB_GETITEMHEIGHT, 0, 0);
+	SendMessageW(m_BlockList, LB_SETITEMHEIGHT, 0, item_height + 8);
+
+	m_HexView.Create(m_Hwnd, m_ControlHexViewId);
 }
 
 void MemoryWindow::Layout()
 {
 	// Status bar sizes itself to the bottom of the window
 	SendMessageW(m_StatusBar, WM_SIZE, 0, 0);
+
+	RECT client;
+	GetClientRect(m_Hwnd, &client);
+
+	RECT status = {};
+	GetWindowRect(m_StatusBar, &status);
+	const int status_height = status.bottom - status.top;
+
+	// Between the command bar's divider and the status bar
+	const int top = m_CommandBarHeight + 1;
+	const int bottom = (std::max)(top, static_cast<int>(client.bottom) - status_height);
+
+	// Block list, then a 1px divider, then the hex view up to the inspector's divider
+	const int padding = 8;
+	MoveWindow(m_BlockList, padding, top + padding, m_BlockListWidth - padding * 2, (std::max)(0, bottom - top - padding * 2), TRUE);
+
+	const int hex_left = m_BlockListWidth + 1;
+	const int hex_right = (std::max)(hex_left, static_cast<int>(client.right) - m_InspectorWidth);
+	MoveWindow(m_HexView.GetHwnd(), hex_left, top, hex_right - hex_left, bottom - top, TRUE);
 
 	InvalidateRect(m_Hwnd, NULL, TRUE);
 }
@@ -252,9 +385,22 @@ void MemoryWindow::PaintBackground(HDC hdc)
 	SetDCBrushColor(hdc, DividerColour);
 	FillRect(hdc, &divider, dc_brush);
 
+	// Block list panel and its divider
+	RECT block_panel = client;
+	block_panel.top = divider.bottom;
+	block_panel.right = m_BlockListWidth;
+	FillRect(hdc, &block_panel, m_InspectorBrush);
+
+	RECT block_divider = block_panel;
+	block_divider.left = block_panel.right;
+	block_divider.right = block_divider.left + 1;
+	SetDCBrushColor(hdc, DividerColour);
+	FillRect(hdc, &block_divider, dc_brush);
+
 	// White memory area
 	RECT body = client;
 	body.top = divider.bottom;
+	body.left = block_divider.right;
 	body.right = client.right - m_InspectorWidth;
 	FillRect(hdc, &body, GetSysColorBrush(COLOR_WINDOW));
 
@@ -316,11 +462,32 @@ LRESULT MemoryWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 			PaintBackground(reinterpret_cast<HDC>(wParam));
 			return 1;
 
+		case WM_CTLCOLORLISTBOX:
+			// The block list sits on the panel's colour
+			if (reinterpret_cast<HWND>(lParam) == m_BlockList)
+			{
+				SetBkColor(reinterpret_cast<HDC>(wParam), InspectorColour);
+				return reinterpret_cast<LRESULT>(m_InspectorBrush);
+			}
+
+			break;
+
 		case WM_COMMAND:
 			// Esc closes the window, as in the other tool windows
 			if (LOWORD(wParam) == IDCANCEL)
 			{
 				DestroyWindow(hwnd);
+				return 0;
+			}
+
+			if (LOWORD(wParam) == m_ControlBlockListId && HIWORD(wParam) == LBN_SELCHANGE)
+			{
+				const LRESULT index = SendMessageW(m_BlockList, LB_GETCURSEL, 0, 0);
+				if (index >= 0 && index < static_cast<LRESULT>(Block::Count))
+				{
+					SelectBlock(static_cast<Block>(index));
+				}
+
 				return 0;
 			}
 

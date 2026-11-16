@@ -3,11 +3,16 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
+#include "Windows/MemoryHexView.h"
+
+#include <cstdint>
+#include <span>
 #include <string>
 
 class Application;
 
-// Tools > Memory: a live hex view of the Game Boy's 64 KiB address space
+// Tools > Memory: a live, read-only hex view of the Game Boy's memory, one block at a time,
+// read straight from the memory behind it rather than through the CPU bus
 class MemoryWindow
 {
 public:
@@ -47,17 +52,40 @@ private:
 
 	void UpdateStatus();
 
+	// Memory blocks, in the order the block list shows them
+	enum class Block
+	{
+		Rom,
+		VideoRam,
+		CartridgeRam,
+		WorkRam,
+		Oam,
+		HighRam,
+		Count
+	};
+
+	Block m_Block = Block::Rom;
+	void SelectBlock(Block block);
+	std::span<const uint8_t> ReadBlock(Block block) const;
+	void UpdateEmptyText();
+
 	// Layout
 	static const int m_ClientWidth = 1280;
 	static const int m_ClientHeight = 780;
 	static const int m_CommandBarHeight = 48;
+	static const int m_BlockListWidth = 180;
 	static const int m_InspectorWidth = 300;
 
 	HFONT m_Font = NULL;
 	HBRUSH m_InspectorBrush = NULL;
 
+	HWND m_BlockList = NULL;
+	MemoryHexView m_HexView;
+
 	// Status bar: what is shown on the left, live or paused on the right
 	HWND m_StatusBar = NULL;
 
 	static const int m_ControlStatusBarId = 1000;
+	static const int m_ControlBlockListId = 1001;
+	static const int m_ControlHexViewId = 1002;
 };

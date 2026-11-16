@@ -167,6 +167,7 @@
     <ClCompile Include="Source\Windows\OamScreenView.cpp" />
     <ClCompile Include="Source\Windows\OamWindow.cpp" />
     <ClCompile Include="Source\Windows\MemoryWindow.cpp" />
+    <ClCompile Include="Source\Windows\MemoryHexView.cpp" />
     <ClCompile Include="Source\Windows\TileMapView.cpp" />
     <ClCompile Include="Source\Windows\TileMapWindow.cpp" />
     <ClCompile Include="Source\Windows\TileWindow.cpp" />
@@ -197,6 +198,7 @@
     <ClInclude Include="Include\Windows\OamScreenView.h" />
     <ClInclude Include="Include\Windows\OamWindow.h" />
     <ClInclude Include="Include\Windows\MemoryWindow.h" />
+    <ClInclude Include="Include\Windows\MemoryHexView.h" />
     <ClInclude Include="Include\Windows\TileMapView.h" />
     <ClInclude Include="Include\Windows\TileMapWindow.h" />
     <ClInclude Include="Include\Windows\TileWindow.h" />

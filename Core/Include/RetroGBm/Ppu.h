@@ -28,6 +28,8 @@ public:
     void WriteOamDma(uint16_t address, uint8_t value);
     // All of OAM for debug views, readable whatever mode the PPU is in
     const std::array<uint8_t, 160>& GetOam() const { return m_Oam; }
+    // Both VRAM banks, 8 KiB each, for debug views
+    const std::array<uint8_t, 0x4000>& GetVideoRam() const { return m_Vram; }
     uint8_t GetVideoRamBank() const;
     void SetVideoRamBank(uint8_t value);
     bool ConsumeHBlank() { bool value = m_HBlank; m_HBlank = false; return value; }

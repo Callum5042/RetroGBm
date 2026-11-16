@@ -66,6 +66,9 @@
     <ClCompile Include="Source\Windows\MemoryWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Windows\MemoryHexView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Windows\PropertiesWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -150,6 +153,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\Windows\MemoryWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Windows\MemoryHexView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\Windows\PropertiesWindow.h">

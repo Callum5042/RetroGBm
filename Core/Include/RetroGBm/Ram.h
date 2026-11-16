@@ -26,8 +26,9 @@ public:
 	void SaveState(std::fstream* file);
 	void LoadState(std::fstream* file);
 
-	// Only used to verify tests
-	inline const std::vector<uint8_t>& GetWorkRam() { return m_WorkRam; }
+	// All 8 work RAM banks, 4 KiB each, and the 127 bytes of high RAM, for the memory view and tests
+	inline const std::vector<uint8_t>& GetWorkRam() const { return m_WorkRam; }
+	inline const std::vector<uint8_t>& GetHighRam() const { return m_HighRam; }
 
 private:
 	std::vector<uint8_t> m_WorkRam;
