@@ -966,16 +966,8 @@ void MemoryWindow::CreateCommandBar()
 	m_ButtonText = create(WC_BUTTONW, L"Text", BS_AUTORADIOBUTTON | BS_PUSHLIKE, m_ControlTextId, m_Font);
 	Button_SetCheck(m_ButtonHex, BST_CHECKED);
 
-	// Bytes per row
-	m_LabelColumns = create(WC_STATICW, L"Columns", SS_CENTERIMAGE | WS_GROUP, 0, m_Font);
-	m_ComboColumns = create(WC_COMBOBOXW, L"", WS_TABSTOP | CBS_DROPDOWNLIST | off, m_ControlColumnsId, m_Font);
-	for (const wchar_t* columns : { L"8", L"16", L"32" })
-	{
-		ComboBox_AddString(m_ComboColumns, columns);
-	}
-	ComboBox_SetCurSel(m_ComboColumns, 1);
-
-	m_CheckHighlight = create(WC_BUTTONW, L"Highlight changes", WS_TABSTOP | BS_AUTOCHECKBOX | off, m_ControlHighlightId, m_Font);
+	// WS_GROUP ends the Hex/Text radio group
+	m_CheckHighlight = create(WC_BUTTONW, L"Highlight changes", WS_TABSTOP | WS_GROUP | BS_AUTOCHECKBOX | off, m_ControlHighlightId, m_Font);
 
 	// Pause updates and export, on the right
 	m_ButtonPause = create(WC_BUTTONW, L"Pause updates", WS_TABSTOP | BS_AUTOCHECKBOX | BS_PUSHLIKE | off, m_ControlPauseId, m_Font);
@@ -986,8 +978,6 @@ void MemoryWindow::LayoutCommandBar(int width)
 {
 	const int button_height = 26;
 	const int button_y = (m_CommandBarHeight - button_height) / 2;
-	const int field_height = 23;
-	const int field_y = (m_CommandBarHeight - field_height) / 2;
 	const int group_gap = 20;
 
 	int x = 12;
@@ -1022,10 +1012,6 @@ void MemoryWindow::LayoutCommandBar(int width)
 	}
 
 	x += group_gap;
-	label(m_LabelColumns, 8);
-	MoveWindow(m_ComboColumns, x, field_y, 56, 200, TRUE);
-	x += 56 + group_gap;
-
 	MoveWindow(m_CheckHighlight, x, button_y, MeasureText(m_Font, GetText(m_CheckHighlight)) + 24, button_height, TRUE);
 
 	const int export_width = MeasureText(m_Font, GetText(m_ButtonExport)) + 28;
@@ -1389,7 +1375,7 @@ LRESULT MemoryWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 			}
 
 			// Command bar labels and the checkbox sit on the bar's grey
-			if (control == m_LabelGoTo || control == m_LabelFind || control == m_LabelColumns || control == m_CheckHighlight)
+			if (control == m_LabelGoTo || control == m_LabelFind || control == m_CheckHighlight)
 			{
 				HDC hdc = reinterpret_cast<HDC>(wParam);
 				SetBkMode(hdc, TRANSPARENT);

@@ -90,8 +90,6 @@ private:
 	HWND m_EditFind = NULL;
 	HWND m_ButtonHex = NULL;
 	HWND m_ButtonText = NULL;
-	HWND m_LabelColumns = NULL;
-	HWND m_ComboColumns = NULL;
 	HWND m_CheckHighlight = NULL;
 	HWND m_ButtonPause = NULL;
 	HWND m_ButtonExport = NULL;
@@ -169,7 +167,6 @@ private:
 	static const int m_ControlFindId = 1004;
 	static const int m_ControlHexId = 1005;
 	static const int m_ControlTextId = 1006;
-	static const int m_ControlColumnsId = 1007;
 	static const int m_ControlHighlightId = 1008;
 	static const int m_ControlPauseId = 1009;
 	static const int m_ControlExportId = 1010;
