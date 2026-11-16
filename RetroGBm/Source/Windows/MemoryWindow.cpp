@@ -4,6 +4,7 @@
 #include "../resource.h"
 
 #include <CommCtrl.h>
+#include <windowsx.h>
 #pragma comment(lib, "comctl32.lib")
 
 #include <RetroGBm/Emulator.h>
@@ -68,6 +69,26 @@ namespace
 		{ L"OAM", { 0xFE00, 0, false } },
 		{ L"High RAM", { 0xFF80, 0, false } },
 	};
+
+	int MeasureText(HFONT font, const std::wstring& text)
+	{
+		HDC hdc = GetDC(NULL);
+		HGDIOBJ previous = SelectObject(hdc, font);
+
+		SIZE size = {};
+		GetTextExtentPoint32W(hdc, text.c_str(), static_cast<int>(text.size()), &size);
+
+		SelectObject(hdc, previous);
+		ReleaseDC(NULL, hdc);
+		return size.cx;
+	}
+
+	std::wstring GetText(HWND control)
+	{
+		std::wstring text(static_cast<size_t>(GetWindowTextLength(control)), L'\0');
+		GetWindowText(control, text.data(), static_cast<int>(text.size()) + 1);
+		return text;
+	}
 
 	const COLORREF InspectorLabelColour = RGB(92, 92, 92);
 	const COLORREF InspectorTextColour = RGB(26, 26, 26);
@@ -421,6 +442,8 @@ void MemoryWindow::CreateControls()
 		0, 0, 0, 0, m_Hwnd, reinterpret_cast<HMENU>(static_cast<INT_PTR>(m_ControlStatusBarId)), nullptr, nullptr);
 	SendMessageW(m_StatusBar, WM_SETFONT, reinterpret_cast<WPARAM>(m_Font), TRUE);
 
+	CreateCommandBar();
+
 	// Block list on the left
 	m_BlockList = CreateWindowExW(0, WC_LISTBOXW, L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT,
 		0, 0, 0, 0, m_Hwnd, reinterpret_cast<HMENU>(static_cast<INT_PTR>(m_ControlBlockListId)), nullptr, nullptr);
@@ -439,6 +462,92 @@ void MemoryWindow::CreateControls()
 	m_HexView.SelectionChanged = [this]() { UpdateInspector(); };
 
 	CreateInspector();
+}
+
+void MemoryWindow::CreateCommandBar()
+{
+	auto create = [this](const wchar_t* type, const wchar_t* text, DWORD style, int id, HFONT font)
+	{
+		HWND control = CreateWindowW(type, text, WS_CHILD | WS_VISIBLE | style, 0, 0, 0, 0, m_Hwnd, reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)), nullptr, nullptr);
+		SendMessageW(control, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
+		return control;
+	};
+
+	// Disabled until each feature is built
+	const DWORD off = WS_DISABLED;
+
+	// Go to an address, and find bytes or text
+	m_LabelGoTo = create(WC_STATICW, L"Go to", SS_CENTERIMAGE, 0, m_Font);
+	m_EditGoTo = create(WC_EDITW, L"", WS_TABSTOP | WS_BORDER | ES_AUTOHSCROLL | off, m_ControlGoToId, m_MonoFont);
+	Edit_SetCueBannerText(m_EditGoTo, L"$C040");
+
+	m_LabelFind = create(WC_STATICW, L"Find", SS_CENTERIMAGE, 0, m_Font);
+	m_EditFind = create(WC_EDITW, L"", WS_TABSTOP | WS_BORDER | ES_AUTOHSCROLL | off, m_ControlFindId, m_Font);
+	Edit_SetCueBannerText(m_EditFind, L"Hex bytes or text");
+
+	// Hex or text: push-like radio buttons act as a segmented control
+	m_ButtonHex = create(WC_BUTTONW, L"Hex", WS_TABSTOP | WS_GROUP | BS_AUTORADIOBUTTON | BS_PUSHLIKE | off, m_ControlHexId, m_Font);
+	m_ButtonText = create(WC_BUTTONW, L"Text", BS_AUTORADIOBUTTON | BS_PUSHLIKE | off, m_ControlTextId, m_Font);
+	Button_SetCheck(m_ButtonHex, BST_CHECKED);
+
+	// Bytes per row
+	m_LabelColumns = create(WC_STATICW, L"Columns", SS_CENTERIMAGE | WS_GROUP, 0, m_Font);
+	m_ComboColumns = create(WC_COMBOBOXW, L"", WS_TABSTOP | CBS_DROPDOWNLIST | off, m_ControlColumnsId, m_Font);
+	for (const wchar_t* columns : { L"8", L"16", L"32" })
+	{
+		ComboBox_AddString(m_ComboColumns, columns);
+	}
+	ComboBox_SetCurSel(m_ComboColumns, 1);
+
+	m_CheckHighlight = create(WC_BUTTONW, L"Highlight changes", WS_TABSTOP | BS_AUTOCHECKBOX | off, m_ControlHighlightId, m_Font);
+
+	// Pause updates and export, on the right
+	m_ButtonPause = create(WC_BUTTONW, L"Pause updates", WS_TABSTOP | BS_AUTOCHECKBOX | BS_PUSHLIKE | off, m_ControlPauseId, m_Font);
+	m_ButtonExport = create(WC_BUTTONW, L"Export range\x2026", WS_TABSTOP | BS_PUSHBUTTON | off, m_ControlExportId, m_Font);
+}
+
+void MemoryWindow::LayoutCommandBar(int width)
+{
+	const int button_height = 26;
+	const int button_y = (m_CommandBarHeight - button_height) / 2;
+	const int field_height = 23;
+	const int field_y = (m_CommandBarHeight - field_height) / 2;
+	const int group_gap = 20;
+
+	int x = 12;
+	auto label = [&](HWND control)
+	{
+		const int w = MeasureText(m_Font, GetText(control));
+		MoveWindow(control, x, button_y, w, button_height, TRUE);
+		x += w + 8;
+	};
+
+	label(m_LabelGoTo);
+	MoveWindow(m_EditGoTo, x, field_y, 96, field_height, TRUE);
+	x += 96 + group_gap;
+
+	label(m_LabelFind);
+	MoveWindow(m_EditFind, x, field_y, 168, field_height, TRUE);
+	x += 168 + group_gap;
+
+	for (HWND button : { m_ButtonHex, m_ButtonText })
+	{
+		const int w = MeasureText(m_Font, GetText(button)) + 24;
+		MoveWindow(button, x, button_y, w, button_height, TRUE);
+		x += w + 2;
+	}
+
+	x += group_gap;
+	label(m_LabelColumns);
+	MoveWindow(m_ComboColumns, x, field_y, 56, 200, TRUE);
+	x += 56 + group_gap;
+
+	MoveWindow(m_CheckHighlight, x, button_y, MeasureText(m_Font, GetText(m_CheckHighlight)) + 24, button_height, TRUE);
+
+	const int export_width = MeasureText(m_Font, GetText(m_ButtonExport)) + 28;
+	const int pause_width = MeasureText(m_Font, GetText(m_ButtonPause)) + 28;
+	MoveWindow(m_ButtonExport, width - 12 - export_width, button_y, export_width, button_height, TRUE);
+	MoveWindow(m_ButtonPause, width - 12 - export_width - 8 - pause_width, button_y, pause_width, button_height, TRUE);
 }
 
 void MemoryWindow::CreateInspector()
@@ -500,6 +609,8 @@ void MemoryWindow::Layout()
 
 	RECT client;
 	GetClientRect(m_Hwnd, &client);
+
+	LayoutCommandBar(client.right);
 
 	RECT status = {};
 	GetWindowRect(m_StatusBar, &status);
@@ -630,6 +741,16 @@ LRESULT MemoryWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 				SetTextColor(hdc, label ? InspectorLabelColour : InspectorTextColour);
 				SetBkColor(hdc, InspectorColour);
 				return reinterpret_cast<LRESULT>(m_InspectorBrush);
+			}
+
+			// Command bar labels and the checkbox sit on the bar's grey
+			HWND control = reinterpret_cast<HWND>(lParam);
+			if (control == m_LabelGoTo || control == m_LabelFind || control == m_LabelColumns || control == m_CheckHighlight)
+			{
+				HDC hdc = reinterpret_cast<HDC>(wParam);
+				SetBkMode(hdc, TRANSPARENT);
+				SetTextColor(hdc, control == m_CheckHighlight ? GetSysColor(COLOR_WINDOWTEXT) : InspectorLabelColour);
+				return reinterpret_cast<LRESULT>(GetSysColorBrush(COLOR_BTNFACE));
 			}
 
 			break;
