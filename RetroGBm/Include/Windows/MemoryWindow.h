@@ -93,7 +93,7 @@ private:
 	HFONT m_Font = NULL;
 	HBRUSH m_InspectorBrush = NULL;
 
-	// Command bar, laid out as in the design. Each control stays disabled until its feature is built.
+	// Command bar, laid out as in the design
 	HWND m_LabelGoTo = NULL;
 	HWND m_EditGoTo = NULL;
 	HWND m_LabelFind = NULL;
@@ -102,7 +102,6 @@ private:
 	HWND m_ButtonText = NULL;
 	HWND m_CheckHighlight = NULL;
 	HWND m_ButtonPause = NULL;
-	HWND m_ButtonExport = NULL;
 
 	void CreateCommandBar();
 	void LayoutCommandBar(int width);
@@ -179,7 +178,6 @@ private:
 	static const int m_ControlTextId = 1006;
 	static const int m_ControlHighlightId = 1008;
 	static const int m_ControlPauseId = 1009;
-	static const int m_ControlExportId = 1010;
 	static const int m_ControlInspectorHeadingId = 1100;
 	static const int m_ControlInspectorLabelId = 1200;
 	static const int m_ControlInspectorValueId = 1300;

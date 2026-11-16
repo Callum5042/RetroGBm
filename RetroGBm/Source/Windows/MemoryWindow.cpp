@@ -1004,9 +1004,6 @@ void MemoryWindow::CreateCommandBar()
 		return control;
 	};
 
-	// Disabled until each feature is built
-	const DWORD off = WS_DISABLED;
-
 	// Go to an address, and find bytes or text
 	m_LabelGoTo = create(WC_STATICW, L"Go to", SS_CENTERIMAGE, 0, m_Font);
 	m_EditGoTo = create(WC_EDITW, L"", WS_TABSTOP | ES_AUTOHSCROLL, m_ControlGoToId, m_MonoFont);
@@ -1031,9 +1028,8 @@ void MemoryWindow::CreateCommandBar()
 	m_CheckHighlight = create(WC_BUTTONW, L"Highlight changes", WS_TABSTOP | WS_GROUP | BS_AUTOCHECKBOX, m_ControlHighlightId, m_Font);
 	Button_SetCheck(m_CheckHighlight, BST_CHECKED);
 
-	// Pause updates and export, on the right
+	// Pause updates, on the right
 	m_ButtonPause = create(WC_BUTTONW, L"Pause updates", WS_TABSTOP | BS_AUTOCHECKBOX | BS_PUSHLIKE, m_ControlPauseId, m_Font);
-	m_ButtonExport = create(WC_BUTTONW, L"Export range\x2026", WS_TABSTOP | BS_PUSHBUTTON | off, m_ControlExportId, m_Font);
 }
 
 void MemoryWindow::LayoutCommandBar(int width)
@@ -1076,10 +1072,8 @@ void MemoryWindow::LayoutCommandBar(int width)
 	x += group_gap;
 	MoveWindow(m_CheckHighlight, x, button_y, MeasureText(m_Font, GetText(m_CheckHighlight)) + 24, button_height, TRUE);
 
-	const int export_width = MeasureText(m_Font, GetText(m_ButtonExport)) + 28;
 	const int pause_width = MeasureText(m_Font, GetText(m_ButtonPause)) + 28;
-	MoveWindow(m_ButtonExport, width - 12 - export_width, button_y, export_width, button_height, TRUE);
-	MoveWindow(m_ButtonPause, width - 12 - export_width - 8 - pause_width, button_y, pause_width, button_height, TRUE);
+	MoveWindow(m_ButtonPause, width - 12 - pause_width, button_y, pause_width, button_height, TRUE);
 }
 
 void MemoryWindow::DrawBlockItem(const DRAWITEMSTRUCT* item)
