@@ -375,6 +375,82 @@ void MemoryHexView::AdvanceAfterWrite()
 	InvalidateRect(m_Hwnd, NULL, FALSE);
 }
 
+void MemoryHexView::OnRightButtonDown(int x, int y)
+{
+	SetFocus(m_Hwnd);
+
+	if (ReadSource().empty())
+	{
+		return;
+	}
+
+	// Right-clicking inside the selection keeps it, so it can be copied
+	bool ascii = false;
+	const size_t offset = HitTest(x, y, &ascii);
+	if (offset >= GetSelectionStart() && offset <= GetSelectionEnd())
+	{
+		return;
+	}
+
+	if (m_CaretInAscii != ascii)
+	{
+		m_CaretInAscii = ascii;
+		InvalidateRect(m_Hwnd, NULL, FALSE);
+	}
+
+	MoveCaret(static_cast<long long>(offset), false);
+}
+
+void MemoryHexView::ShowContextMenu(int screen_x, int screen_y)
+{
+	const bool has_data = !ReadSource().empty();
+
+	// From the keyboard: under the caret, or the top left if it is scrolled away
+	if (screen_x == -1 && screen_y == -1)
+	{
+		const size_t row = m_Caret / m_BytesPerRow;
+		POINT point = { HexX(0), m_HeaderHeight };
+		if (row >= m_TopRow && row < m_TopRow + static_cast<size_t>(VisibleRows()))
+		{
+			const int column = static_cast<int>(m_Caret % m_BytesPerRow);
+			point.x = m_CaretInAscii ? AsciiX(column) : HexX(column);
+			point.y = m_HeaderHeight + static_cast<int>(row - m_TopRow + 1) * m_RowHeight;
+		}
+
+		ClientToScreen(m_Hwnd, &point);
+		screen_x = point.x;
+		screen_y = point.y;
+	}
+
+	enum { CopyHex = 1, CopyText, SelectAll };
+
+	HMENU menu = CreatePopupMenu();
+	const UINT enabled = has_data ? MF_ENABLED : MF_GRAYED;
+	AppendMenuW(menu, MF_STRING | enabled, CopyHex, m_CaretInAscii ? L"Copy as hex" : L"Copy as hex\tCtrl+C");
+	AppendMenuW(menu, MF_STRING | enabled, CopyText, m_CaretInAscii ? L"Copy as text\tCtrl+C" : L"Copy as text");
+	AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+	AppendMenuW(menu, MF_STRING | enabled, SelectAll, L"Select all\tCtrl+A");
+
+	const int command = TrackPopupMenu(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON | TPM_NONOTIFY, screen_x, screen_y, 0, m_Hwnd, nullptr);
+	DestroyMenu(menu);
+
+	switch (command)
+	{
+		case CopyHex:
+		case CopyText:
+			if (CopyRequested)
+			{
+				CopyRequested(command == CopyText);
+			}
+
+			break;
+
+		case SelectAll:
+			Select(0, static_cast<long long>(ReadSource().size()));
+			break;
+	}
+}
+
 void MemoryHexView::OnKeyDown(WPARAM key)
 {
 	const bool shift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
@@ -401,6 +477,14 @@ void MemoryHexView::OnKeyDown(WPARAM key)
 			{
 				// Select the whole block, with the caret at the end
 				Select(0, static_cast<long long>(ReadSource().size()));
+			}
+
+			break;
+
+		case 'C':
+			if (control && CopyRequested && !ReadSource().empty())
+			{
+				CopyRequested(m_CaretInAscii);
 			}
 
 			break;
@@ -914,6 +998,15 @@ LRESULT MemoryHexView::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 				ReleaseCapture();
 			}
 
+			return 0;
+
+		case WM_RBUTTONDOWN:
+			OnRightButtonDown(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+			return 0;
+
+		case WM_CONTEXTMENU:
+			// Right-click, Shift+F10 or the menu key
+			ShowContextMenu(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 			return 0;
 
 		case WM_CAPTURECHANGED:

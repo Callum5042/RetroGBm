@@ -159,6 +159,38 @@ namespace
 		return true;
 	}
 
+	bool SetClipboardText(HWND owner, const std::wstring& text)
+	{
+		if (!OpenClipboard(owner))
+		{
+			return false;
+		}
+
+		bool copied = false;
+		EmptyClipboard();
+
+		const size_t bytes = (text.size() + 1) * sizeof(wchar_t);
+		if (HGLOBAL memory = GlobalAlloc(GMEM_MOVEABLE, bytes))
+		{
+			if (void* destination = GlobalLock(memory))
+			{
+				memcpy(destination, text.c_str(), bytes);
+				GlobalUnlock(memory);
+
+				// The clipboard owns the memory once this succeeds
+				copied = SetClipboardData(CF_UNICODETEXT, memory) != NULL;
+			}
+
+			if (!copied)
+			{
+				GlobalFree(memory);
+			}
+		}
+
+		CloseClipboard();
+		return copied;
+	}
+
 	std::wstring WithoutSpaces(const std::wstring& text)
 	{
 		std::wstring result;
@@ -522,6 +554,55 @@ bool MemoryWindow::WriteBlock(Block block, size_t offset, uint8_t value)
 
 	UpdateInspector();
 	return true;
+}
+
+void MemoryWindow::CopySelection(bool as_text)
+{
+	const std::span<const uint8_t> data = ViewBlock(m_Block);
+	if (data.empty() || !m_HexView.HasSelection())
+	{
+		return;
+	}
+
+	const size_t start = (std::min)(m_HexView.GetSelectionStart(), data.size() - 1);
+	const size_t end = (std::min)(m_HexView.GetSelectionEnd(), data.size() - 1);
+	const size_t length = end - start + 1;
+
+	std::wstring text;
+	if (as_text)
+	{
+		text.reserve(length);
+		for (size_t i = start; i <= end; ++i)
+		{
+			const uint8_t value = data[i];
+			text += (value >= 0x20 && value < 0x7F) ? static_cast<wchar_t>(value) : L'.';
+		}
+	}
+	else
+	{
+		// Spaced the way Find takes them, so a copy can be pasted straight back in
+		const wchar_t* digits = L"0123456789ABCDEF";
+		text.reserve(length * 3);
+		for (size_t i = start; i <= end; ++i)
+		{
+			if (i != start)
+			{
+				text += L' ';
+			}
+
+			text += digits[data[i] >> 4];
+			text += digits[data[i] & 0x0F];
+		}
+	}
+
+	if (!SetClipboardText(m_Hwnd, text))
+	{
+		SetStatusMessage(L"Couldn't copy to the clipboard");
+		return;
+	}
+
+	const std::wstring bytes = length == 1 ? L"1 byte" : std::format(L"{} bytes", length);
+	SetStatusMessage(std::format(L"Copied {} as {}", bytes, as_text ? L"text" : L"hex"));
 }
 
 void MemoryWindow::UpdateEmptyText()
@@ -1002,6 +1083,11 @@ void MemoryWindow::CreateControls()
 	m_HexView.WriteRequested = [this](size_t offset, uint8_t value)
 	{
 		return WriteBlock(m_Block, offset, value);
+	};
+
+	m_HexView.CopyRequested = [this](bool as_text)
+	{
+		CopySelection(as_text);
 	};
 
 	CreateInspector();

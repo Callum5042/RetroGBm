@@ -81,6 +81,9 @@ private:
 
 	// Sets a byte straight into the memory behind a block. ROM edits patch the loaded copy only.
 	bool WriteBlock(Block block, size_t offset, uint8_t value);
+
+	// Puts the selected bytes on the clipboard as "3E C4 0A", or as their ASCII with "." for the rest
+	void CopySelection(bool as_text);
 	void UpdateEmptyText();
 
 	// Layout

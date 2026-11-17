@@ -68,6 +68,10 @@ public:
 	// ASCII column. Return false when the byte can't be written, e.g. ROM, and nothing moves.
 	std::function<bool(size_t offset, uint8_t value)> WriteRequested;
 
+	// Ctrl+C copies the selection as hex, or as text with the caret in the ASCII column. The
+	// right-click menu offers both. The owner does the copying.
+	std::function<void(bool as_text)> CopyRequested;
+
 	LRESULT HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 private:
@@ -116,6 +120,11 @@ private:
 	bool m_LowNibble = false;
 	void OnChar(wchar_t character);
 	void AdvanceAfterWrite();
+
+	// Right-click: a byte outside the selection is selected first. From the keyboard
+	// (Shift+F10 or the menu key) the menu opens at the caret.
+	void OnRightButtonDown(int x, int y);
+	void ShowContextMenu(int screen_x, int screen_y);
 
 	// Scrolling, in rows
 	size_t m_TopRow = 0;
