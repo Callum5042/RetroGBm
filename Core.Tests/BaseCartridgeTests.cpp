@@ -321,5 +321,41 @@ namespace CoreTests
 			std::vector<uint8_t> result = cartridge.GetExternalRam();
 			Assert::AreEqual(0xAB, static_cast<int>(result[0]));
 		}
+
+		TEST_METHOD(PokeExternalRam_SetsAnyBankAndIgnoresPastTheEnd)
+		{
+			// Arrange
+			CartridgeDataV2 cartridge_data;
+			cartridge_data.cartridge_type = CartridgeTypeV2::ROM_RAM;
+
+			TestCartridge cartridge(cartridge_data);
+			cartridge.SetExternalRam(std::vector<uint8_t>(0x8000, 0));
+
+			// Act
+			cartridge.PokeExternalRam(0x6123, 0x5A);
+			cartridge.PokeExternalRam(0x8000, 0x77);
+
+			// Assert
+			Assert::AreEqual(0x5A, static_cast<int>(cartridge.GetExternalRam()[0x6123]));
+			Assert::AreEqual(size_t(0x8000), cartridge.GetExternalRam().size());
+		}
+
+		TEST_METHOD(PokeRom_PatchesAnyBankAndIgnoresPastTheEnd)
+		{
+			// Arrange: four 16 KiB banks
+			CartridgeDataV2 cartridge_data;
+			cartridge_data.cartridge_type = CartridgeTypeV2::ROM_ONLY;
+			cartridge_data.data.assign(0x10000, 0);
+
+			TestCartridge cartridge(cartridge_data);
+
+			// Act: bank 3, $4123
+			cartridge.PokeRom(3 * 0x4000 + 0x123, 0x5A);
+			cartridge.PokeRom(0x10000, 0x77);
+
+			// Assert
+			Assert::AreEqual(0x5A, static_cast<int>(cartridge.GetCartridgeData().data[3 * 0x4000 + 0x123]));
+			Assert::AreEqual(size_t(0x10000), cartridge.GetCartridgeData().data.size());
+		}
 	};
 }

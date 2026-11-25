@@ -28,6 +28,12 @@ public:
     void WriteOamDma(uint16_t address, uint8_t value);
     // All of OAM for debug views, readable whatever mode the PPU is in
     const std::array<uint8_t, 160>& GetOam() const { return m_Oam; }
+    // Both VRAM banks, 8 KiB each, for debug views
+    const std::array<uint8_t, 0x4000>& GetVideoRam() const { return m_Vram; }
+    // Debug views: set a byte of VRAM (an offset into both banks) or OAM, whatever mode the
+    // PPU is in or OAM DMA is doing. Offsets past the end are ignored.
+    void PokeVideoRam(size_t offset, uint8_t value) { if (offset < m_Vram.size()) m_Vram[offset] = value; }
+    void PokeOam(size_t offset, uint8_t value) { if (offset < m_Oam.size()) m_Oam[offset] = value; }
     uint8_t GetVideoRamBank() const;
     void SetVideoRamBank(uint8_t value);
     bool ConsumeHBlank() { bool value = m_HBlank; m_HBlank = false; return value; }

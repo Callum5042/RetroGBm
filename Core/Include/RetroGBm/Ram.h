@@ -26,8 +26,14 @@ public:
 	void SaveState(std::fstream* file);
 	void LoadState(std::fstream* file);
 
-	// Only used to verify tests
-	inline const std::vector<uint8_t>& GetWorkRam() { return m_WorkRam; }
+	// All 8 work RAM banks, 4 KiB each, and the 127 bytes of high RAM, for the memory view and tests
+	inline const std::vector<uint8_t>& GetWorkRam() const { return m_WorkRam; }
+	inline const std::vector<uint8_t>& GetHighRam() const { return m_HighRam; }
+
+	// Debug views: set a byte by its offset into the vectors above, whatever bank is mapped in.
+	// Offsets past the end are ignored.
+	inline void PokeWorkRam(size_t offset, uint8_t value) { if (offset < m_WorkRam.size()) m_WorkRam[offset] = value; }
+	inline void PokeHighRam(size_t offset, uint8_t value) { if (offset < m_HighRam.size()) m_HighRam[offset] = value; }
 
 private:
 	std::vector<uint8_t> m_WorkRam;

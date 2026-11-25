@@ -583,6 +583,20 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 		}
+		case m_MenuToolsMemory:
+		{
+			const bool checked = (GetMenuState(m_ToolsMenuItem, m_MenuToolsMemory, MF_BYCOMMAND) & MF_CHECKED) != 0;
+			ToggleMemoryWindowMenuItem(!checked);
+			if (checked)
+			{
+				m_Application->CloseMemoryWindow();
+			}
+			else
+			{
+				m_Application->CreateMemoryWindow();
+			}
+			break;
+		}
 		case m_MenuToolsExportAssembly:
 			ExportAssembly();
 			break;
@@ -713,6 +727,11 @@ void MainWindow::ToggleTileMapWindowMenuItem(bool checked)
 void MainWindow::ToggleOamWindowMenuItem(bool checked)
 {
 	CheckMenuItem(m_ToolsMenuItem, m_MenuToolsOam, MF_BYCOMMAND | (checked ? MF_CHECKED : MF_UNCHECKED));
+}
+
+void MainWindow::ToggleMemoryWindowMenuItem(bool checked)
+{
+	CheckMenuItem(m_ToolsMenuItem, m_MenuToolsMemory, MF_BYCOMMAND | (checked ? MF_CHECKED : MF_UNCHECKED));
 }
 
 void MainWindow::ToggleCpuRegistersWindowMenuItem(bool checked)
@@ -1358,6 +1377,7 @@ void MainWindow::CreateMenuBar()
 	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsProperties, L"Properties");
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsCpuRegisters, L"CPU Registers");
+	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsMemory, L"Memory");
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTileData, L"Tile Data");
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsTileMap, L"Tile Map");

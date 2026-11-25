@@ -37,6 +37,22 @@ const std::vector<uint8_t>& BaseCartridge::GetExternalRam()
 	return m_ExternalRam;
 }
 
+void BaseCartridge::PokeExternalRam(size_t offset, uint8_t value)
+{
+	if (offset < m_ExternalRam.size())
+	{
+		m_ExternalRam[offset] = value;
+	}
+}
+
+void BaseCartridge::PokeRom(size_t offset, uint8_t value)
+{
+	if (offset < m_CartridgeData.data.size())
+	{
+		m_CartridgeData.data[offset] = value;
+	}
+}
+
 void BaseCartridge::SetWriteRamCallback(std::function<void()> writeram_callback)
 {
 	m_WriteRamCallback = writeram_callback;

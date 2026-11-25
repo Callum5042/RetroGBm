@@ -334,6 +334,12 @@ void Application::Run()
 				continue;
 			}
 
+			// Let the memory window handle Tab and Esc
+			if (m_MemoryWindow != nullptr && m_MemoryWindow->HandleDialogMessage(&msg))
+			{
+				continue;
+			}
+
 			// Let the properties window handle Tab and Esc
 			if (m_PropertiesWindow != nullptr && m_PropertiesWindow->HandleDialogMessage(&msg))
 			{
@@ -380,6 +386,12 @@ void Application::Run()
 				if (m_OamWindow != nullptr)
 				{
 					m_OamWindow->Update();
+				}
+
+				// Memory window
+				if (m_MemoryWindow != nullptr)
+				{
+					m_MemoryWindow->Update();
 				}
 
 				// CPU register window
@@ -525,6 +537,28 @@ void Application::CreateOamWindow()
 void Application::CloseOamWindow()
 {
 	m_OamWindow.reset();
+}
+
+void Application::CreateMemoryWindow()
+{
+	if (m_MemoryWindow == nullptr)
+	{
+		m_MemoryWindow = std::make_unique<MemoryWindow>(this);
+	}
+
+	if (m_MemoryWindow->IsOpen())
+	{
+		m_MemoryWindow->Focus();
+	}
+	else
+	{
+		m_MemoryWindow->Create();
+	}
+}
+
+void Application::CloseMemoryWindow()
+{
+	m_MemoryWindow.reset();
 }
 
 void Application::ShowTileInTileWindow(int bank, int tile)
