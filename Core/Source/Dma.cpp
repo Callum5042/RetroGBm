@@ -74,7 +74,8 @@ void Dma::Tick()
 		return;
 	}
 
-	m_Ppu->WriteOamDma(context.byte, m_Bus->ReadBus((context.value * 0x100) + context.byte));
+	uint8_t data = Emulator::Instance->ReadBusDirect((context.value * 0x100) + context.byte);
+	m_Ppu->WriteOamDma(context.byte, data);
 
 	context.byte++;
 	context.active = context.byte < 0xA0;
@@ -130,6 +131,36 @@ void Dma::RunGDMA(bool previous_active)
 bool Dma::IsTransferring() const
 {
 	return context.oam_locked;
+}
+
+namespace
+{
+	// CGB memory buses: 0 cartridge (ROM and external RAM), 1 VRAM, 2 WRAM, -1 none
+	int MemoryBus(uint16_t address)
+	{
+		if (address < 0x8000 || (address >= 0xA000 && address < 0xC000)) return 0;
+		if (address < 0xA000) return 1;
+		if (address < 0xFE00) return 2;
+		return -1;
+	}
+}
+
+bool Dma::GetBusConflict(uint16_t address, uint16_t* source) const
+{
+	if (!context.oam_locked || context.byte >= 0xA0)
+	{
+		return false;
+	}
+
+	uint16_t current = uint16_t(context.value * 0x100 + context.byte);
+	int bus = MemoryBus(address);
+	if (bus < 0 || bus != MemoryBus(current >= 0xE000 ? uint16_t(current - 0x2000) : current))
+	{
+		return false;
+	}
+
+	*source = current;
+	return true;
 }
 
 void Dma::SetSource(uint16_t address, uint8_t value)

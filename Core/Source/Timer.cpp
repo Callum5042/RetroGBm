@@ -12,9 +12,9 @@ Timer::Timer(Cpu* cpu) : m_Cpu(cpu)
 {
 }
 
-void Timer::Init()
+void Timer::Init(uint16_t div)
 {
-	m_Context.div = 0xAC00;
+	m_Context.div = div;
 	m_Context.tima = 0x0;
 	m_Context.tma = 0x0;
 	m_Context.tac = 0xF8;
