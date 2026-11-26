@@ -105,8 +105,9 @@
 
 - [x] dmg-acid2
 - [x] cgb-acid2
+- [x] cgb-acid-hell
 
-| dmg-acid2 | cgb-acid2 |
-| :---: | :---: |
-|  ![dmg-acid2](./Images/dmg_acid2.png) | ![cgb-acid2](./Images/cgb_acid2.png) |
+| dmg-acid2 | cgb-acid2 | cgb-acid-hell |
+| :---: | :---: | :---: |
+|  ![dmg-acid2](./Images/dmg_acid2.png) | ![cgb-acid2](./Images/cgb_acid2.png) | ![cgb-acid-hell](./Images/cgb_acid_hell.png) |
 
