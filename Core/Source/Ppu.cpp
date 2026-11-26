@@ -63,6 +63,19 @@ void Ppu::Init()
 	ResetClock();
 }
 
+void Ppu::LcdcWritten(uint8_t previous, uint8_t value)
+{
+	// CGB: clearing LCDC bit 4 while the fetcher is reading a tile's high byte makes it
+	// latch the tile number instead of the tile data. Here that is the dot between the
+	// high byte read (phase 4) and the push (phase 5).
+	if (m_Display->IsColour() && m_Display->GetLcdMode() == LcdMode::PixelTransfer &&
+		m_FetchPhase == 5 && !m_ObjectStall && m_BackgroundFifo.size() <= 8 &&
+		(previous & 0x10) && !(value & 0x10))
+	{
+		m_High = m_Tile;
+	}
+}
+
 void Ppu::LcdEnableChanged()
 {
 	m_Dot = 0;

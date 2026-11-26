@@ -67,6 +67,19 @@ public:
         f.ppu.SetVideoRamBank(1); f.ppu.WriteVideoRam(0x9800, 0x2A); f.ppu.SetVideoRamBank(0);
         f.On(); f.Dots(456 * 144); Assert::AreEqual(0xFF0000FFu, f.Pixel(7)); Assert::AreEqual(0xFFFFFFFFu, f.Pixel(0));
     }
+    TEST_METHOD(ClearingTileDataSelectDuringHighByteFetchLatchesTileNumber)
+    {
+        // Line 1's first tile is fetched over dots 80-85: high byte read at 84, pushed at 85.
+        // Clearing LCDC bit 4 in that gap makes the high byte the tile number ($55).
+        for (int dots : { 84, 85 })
+        {
+            Fixture f; f.Off(); f.Tile(0x55, 0xFF, 0x00); f.ppu.WriteVideoRam(0x9800, 0x55);
+            f.Palette(false, 0, 1, 31); f.Palette(false, 0, 3, 31 << 10);
+            f.On(0x91); f.Dots(456 + dots); f.display.Write(0xFF40, 0x81); f.Dots(456 * 143);
+            Assert::AreEqual(0xFF0000FFu, f.Pixel(0, 1));
+            Assert::AreEqual(dots == 85 ? 0xFFFF0000u : 0xFF0000FFu, f.Pixel(1, 1));
+        }
+    }
     TEST_METHOD(WindowAndSignedTiles)
     {
         Fixture f(false); f.Off(); f.display.Write(0xFF47, 0xE4);
