@@ -33,6 +33,9 @@
     <ClCompile Include="TileMapTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AdvanceTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="BusTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

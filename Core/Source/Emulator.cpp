@@ -266,7 +266,38 @@ int Emulator::GetFPS()
 
 void Emulator::Pause(bool pause)
 {
-	m_Paused = pause;
+	{
+		std::lock_guard<std::mutex> lock(m_PauseMutex);
+		m_Paused = pause;
+		m_Advance = AdvanceMode::None;
+	}
+
+	m_PauseCondition.notify_all();
+}
+
+void Emulator::StepAdvance()
+{
+	RequestAdvance(AdvanceMode::Step);
+}
+
+void Emulator::FrameAdvance()
+{
+	RequestAdvance(AdvanceMode::Frame);
+}
+
+void Emulator::RequestAdvance(AdvanceMode mode)
+{
+	{
+		std::lock_guard<std::mutex> lock(m_PauseMutex);
+		if (!m_Paused || m_Advance != AdvanceMode::None)
+		{
+			return;
+		}
+
+		m_Advance = mode;
+	}
+
+	m_PauseCondition.notify_all();
 }
 
 void Emulator::Restart()
@@ -302,14 +333,36 @@ void Emulator::Restart()
 
 void Emulator::Tick()
 {
-	// Sleep outside the lock so the UI thread isn't blocked while paused
+	// Wait outside the lock so the UI thread isn't blocked while paused
+	// A frame/step advance request or unpausing wakes the wait early
+	AdvanceMode advance = AdvanceMode::None;
 	if (m_Paused)
 	{
-		std::this_thread::sleep_for(100ms);
-		return;
+		std::unique_lock<std::mutex> pause_lock(m_PauseMutex);
+		m_PauseCondition.wait_for(pause_lock, 100ms, [this] { return !m_Paused || m_Advance != AdvanceMode::None; });
+
+		advance = m_Advance;
+		if (m_Paused && advance == AdvanceMode::None)
+		{
+			return;
+		}
 	}
 
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
+
+	if (advance == AdvanceMode::Frame)
+	{
+		if (!m_FrameAdvancing)
+		{
+			m_FrameAdvancing = true;
+			m_FrameAdvanceDone = false;
+			m_FrameAdvanceCycles = 0;
+		}
+	}
+	else
+	{
+		m_FrameAdvancing = false;
+	}
 
 	// Fetch
 	const uint8_t opcode = this->ReadBus(m_Cpu->ProgramCounter);
@@ -345,6 +398,32 @@ void Emulator::Tick()
 
 	// Check flag
 	m_Cpu->HandleInterrupts();
+
+	// Finish the advance: a step is one pass of this loop. A frame ends at the start of VBlank, or
+	// after a frame's worth of cycles when the LCD is off and no frame is drawn.
+	if (advance == AdvanceMode::Frame)
+	{
+		const int frame_cycles = (70224 / 4) * (IsDoubleSpeedMode() ? 2 : 1);
+		if (m_FrameAdvanceDone || m_FrameAdvanceCycles >= frame_cycles)
+		{
+			m_FrameAdvancing = false;
+			FinishAdvance(advance);
+		}
+	}
+	else if (advance == AdvanceMode::Step)
+	{
+		FinishAdvance(advance);
+	}
+}
+
+void Emulator::FinishAdvance(AdvanceMode mode)
+{
+	// Leave it alone if Pause() was called meanwhile, which already cleared it
+	std::lock_guard<std::mutex> lock(m_PauseMutex);
+	if (m_Advance == mode)
+	{
+		m_Advance = AdvanceMode::None;
+	}
 }
 
 void Emulator::Cycle(int machine_cycles)
@@ -370,6 +449,8 @@ void Emulator::Cycle(int machine_cycles)
 
 				if (m_Ppu->ConsumeFrame())
 				{
+					m_FrameAdvanceDone = m_FrameAdvancing;
+
 					// Gameshark codes are applied once per frame at the start of VBlank
 					ApplyCheats();
 					if (m_FramePacingEnabled)
@@ -383,6 +464,11 @@ void Emulator::Cycle(int machine_cycles)
 		}
 
 		m_Dma->Tick();
+
+		if (m_FrameAdvancing)
+		{
+			++m_FrameAdvanceCycles;
+		}
 
 		// DMA owns pending bus time. Advance devices iteratively, never from inside Ppu::Tick.
 		machine_cycles += m_Dma->TakeStallCycles();
