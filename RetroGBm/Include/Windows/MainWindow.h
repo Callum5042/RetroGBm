@@ -103,6 +103,8 @@ private:
 	static const UINT m_MenuToolsTileMap = 207;
 	static const UINT m_MenuToolsOam = 208;
 	static const UINT m_MenuToolsMemory = 209;
+	static const UINT m_MenuToolsFrameAdvance = 210;
+	static const UINT m_MenuToolsStepAdvance = 211;
 
 	HMENU m_EmulationMenuItem = NULL;
 	static const UINT m_MenuEmulationPausePlay = 301;

@@ -8,6 +8,7 @@
 #include <fstream>
 #include <mutex>
 #include <atomic>
+#include <condition_variable>
 #include <ctime>
 #include <chrono>
 #include <map>
@@ -83,6 +84,9 @@ public:
 	void Pause(bool pause);
 	inline bool IsPaused() const { return m_Paused; }
 
+	void StepAdvance();
+	void FrameAdvance();
+
 	void Restart();
 
 	void SetEmulationSpeedMultipler(float multipler);
@@ -153,6 +157,19 @@ private:
 	bool m_DmgColourisation = true;
 	mutable std::mutex m_EmulatorMutex;
 	std::atomic<bool> m_Paused = false;
+
+	// Frame/step advance while paused
+	enum class AdvanceMode { None, Step, Frame };
+	std::atomic<AdvanceMode> m_Advance = AdvanceMode::None;
+	std::mutex m_PauseMutex;
+	std::condition_variable m_PauseCondition;
+	void RequestAdvance(AdvanceMode mode);
+	void FinishAdvance(AdvanceMode mode);
+
+	// Frame advance progress - must be used with m_EmulatorMutex held
+	bool m_FrameAdvancing = false;
+	bool m_FrameAdvanceDone = false;
+	int m_FrameAdvanceCycles = 0;
 
 	// Cheat codes - must be called with m_EmulatorMutex held
 	void ApplyCheats();

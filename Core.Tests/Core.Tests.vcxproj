@@ -166,6 +166,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AdvanceTests.cpp" />
     <ClCompile Include="BaseCartridgeTests.cpp" />
     <ClCompile Include="BusTests.cpp" />
     <ClCompile Include="CartridgeHeaderTests.cpp" />

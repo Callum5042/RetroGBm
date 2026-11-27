@@ -222,6 +222,19 @@ LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 			HandleMenu(msg, wParam, lParam);
 			break;
 
+		case WM_INITMENUPOPUP:
+		{
+			// Frame/step advance only work while the game is paused
+			if (reinterpret_cast<HMENU>(wParam) == m_ToolsMenuItem)
+			{
+				Emulator* emulator = m_Application->GetEmulator();
+				UINT state = (emulator->IsRunning() && emulator->IsPaused()) ? MF_ENABLED : MF_DISABLED;
+				EnableMenuItem(m_ToolsMenuItem, m_MenuToolsFrameAdvance, MF_BYCOMMAND | state);
+				EnableMenuItem(m_ToolsMenuItem, m_MenuToolsStepAdvance, MF_BYCOMMAND | state);
+			}
+			break;
+		}
+
 		case WM_GETMINMAXINFO:
 		{
 			LPMINMAXINFO info = reinterpret_cast<LPMINMAXINFO>(lParam);
@@ -349,6 +362,20 @@ void MainWindow::HandleMenu(UINT msg, WPARAM wParam, LPARAM lParam)
 			// Emulation Menu
 		case m_MenuEmulationPausePlay:
 			ToggleEmulationPaused();
+			break;
+
+		// Tools Menu
+		case m_MenuToolsFrameAdvance:
+			if (m_Application->GetEmulator()->IsRunning())
+			{
+				m_Application->GetEmulator()->FrameAdvance();
+			}
+			break;
+		case m_MenuToolsStepAdvance:
+			if (m_Application->GetEmulator()->IsRunning())
+			{
+				m_Application->GetEmulator()->StepAdvance();
+			}
 			break;
 		case m_MenuEmulationSaveState:
 			// m_Application->SaveState();
@@ -1375,6 +1402,9 @@ void MainWindow::CreateMenuBar()
 	m_ToolsMenuItem = CreateMenu();
 	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsCheats, L"Cheats");
 	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsProperties, L"Properties");
+	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
+	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsFrameAdvance, L"Frame Advance");
+	AppendMenuW(m_ToolsMenuItem, MF_STRING | MF_DISABLED, m_MenuToolsStepAdvance, L"Step Advance");
 	AppendMenuW(m_ToolsMenuItem, MF_SEPARATOR, NULL, NULL);
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsCpuRegisters, L"CPU Registers");
 	AppendMenuW(m_ToolsMenuItem, MF_UNCHECKED, m_MenuToolsMemory, L"Memory");
