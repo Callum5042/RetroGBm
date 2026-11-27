@@ -34,6 +34,11 @@ public:
 	void Reset();
 
 	bool IsTransferring() const;
+
+	// OAM DMA bus conflicts: while it runs, a CPU read on the bus DMA is reading from gets the
+	// byte DMA is transferring instead. Returns true and that byte's source address if so.
+	bool GetBusConflict(uint16_t address, uint16_t* source) const;
+
 	uint8_t GetHDMA5() const;
 
 	// Gameboy colour

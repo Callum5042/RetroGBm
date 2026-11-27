@@ -33,6 +33,14 @@
 using namespace std::chrono_literals;
 using namespace std::chrono;
 
+namespace
+{
+	uint16_t BootDiv(BaseCartridge* cartridge)
+	{
+		return cartridge && !cartridge->IsColourModeDMG() ? 0x1E2C : 0x2678;
+	}
+}
+
 Emulator* Emulator::Instance = nullptr;
 
 Emulator::Emulator(IDisplayOutput* display_output, ISoundOutput* sound_output, INetworkOutput* network_output)
@@ -107,6 +115,7 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 	m_HaltBug = false;
 	m_HaltNoJump = false;
 	m_MapBootRom = true;
+	m_UndocumentedRegisters = {};
 
 	// Allocate memory
 	m_Cartridge = LoadCartridgeFromMemory(filedata);
@@ -125,7 +134,7 @@ bool Emulator::LoadRom(const std::vector<uint8_t>& filedata)
 
 	// Initialise subsystems
 	m_Cpu->Init();
-	m_Timer->Init();
+	m_Timer->Init(BootDiv(m_Cartridge.get()));
 	m_Display->Init(m_EnableBootRom);
 	m_Display->SetDmgColourisation(m_DmgColourisation);
 	m_Ppu->Init();
@@ -266,7 +275,7 @@ void Emulator::Restart()
 	std::lock_guard<std::mutex> lock(m_EmulatorMutex);
 
 	m_Cpu->Init();
-	m_Timer->Init();
+	m_Timer->Init(BootDiv(m_Cartridge.get()));
 
 	// m_Cartridge->Init(); // Do we want to reset the RAM?
 	m_DoubleSpeedMode = 0;
@@ -274,6 +283,7 @@ void Emulator::Restart()
 	m_HaltBug = false;
 	m_HaltNoJump = false;
 	m_MapBootRom = true;
+	m_UndocumentedRegisters = {};
 
 	m_Display->Init(m_EnableBootRom);
 	m_Ppu->Init();
@@ -454,6 +464,15 @@ uint8_t Emulator::ReadIO(uint16_t address)
 	{
 		return m_Ram->GetWorkRamBank();
 	}
+	else if (address >= 0xFF72 && address <= 0xFF75)
+	{
+		// $FF72/$FF73 are read/write on CGB hardware in either mode, $FF74 only in CGB mode,
+		// and $FF75 has only bits 4-6 writable
+		uint8_t value = m_UndocumentedRegisters[address - 0xFF72];
+		if (address == 0xFF74 && !m_Display->IsColour()) return 0xFF;
+		if (address == 0xFF75) return uint8_t(0x8F | value);
+		return value;
+	}
 
 	std::stringstream ss;
 	ss << "Unsupported ReadIO: 0x" << std::hex << address;
@@ -556,6 +575,12 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 		m_Ram->SetWorkRamBank(value);
 		return;
 	}
+	else if (address >= 0xFF72 && address <= 0xFF75)
+	{
+		if (address == 0xFF74 && !m_Display->IsColour()) return;
+		m_UndocumentedRegisters[address - 0xFF72] = address == 0xFF75 ? uint8_t(value & 0x70) : value;
+		return;
+	}
 
 	std::stringstream ss;
 	ss << "Unsupported WriteIO: 0x" << std::hex << address;
@@ -563,6 +588,17 @@ void Emulator::WriteIO(uint16_t address, uint8_t value)
 }
 
 uint8_t Emulator::ReadBus(uint16_t address)
+{
+	uint16_t source = 0;
+	if (m_Dma->GetBusConflict(address, &source))
+	{
+		return ReadBusDirect(source);
+	}
+
+	return ReadBusDirect(address);
+}
+
+uint8_t Emulator::ReadBusDirect(uint16_t address)
 {
 	if (address >= 0x0000 && address <= 0x7FFF)
 	{
@@ -801,6 +837,10 @@ void Emulator::SaveState(const std::string& filepath)
 	VideoState::Write(file, m_HaltBug);
 	VideoState::Write(file, m_HaltNoJump);
 	VideoState::Write(file, m_MapBootRom);
+	for (auto value : m_UndocumentedRegisters)
+	{
+		VideoState::Write(file, value);
+	}
 
 	// Store timestamp data
 	m_StateTimestamps[filepath] = std::chrono::high_resolution_clock::now();
@@ -849,6 +889,16 @@ void Emulator::LoadState(const std::string& filepath)
 	VideoState::Read(file, m_HaltBug);
 	VideoState::Read(file, m_HaltNoJump);
 	VideoState::Read(file, m_MapBootRom);
+
+	// Appended after the original version 2 layout; states saved before have none
+	m_UndocumentedRegisters = {};
+	if (file.peek() != std::char_traits<char>::eof())
+	{
+		for (auto& value : m_UndocumentedRegisters)
+		{
+			VideoState::Read(file, value);
+		}
+	}
 	m_DmgColourisation = m_Display->GetDmgColourisation();
 
 	// Store current savestate start time

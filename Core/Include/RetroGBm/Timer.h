@@ -21,7 +21,8 @@ public:
 	Timer(Cpu* cpu);
 	virtual ~Timer() = default;
 
-	void Init();
+	// div is the internal counter at $0100, after the boot ROM; the DIV register is its upper byte
+	void Init(uint16_t div = 0xAC00);
 	void Tick();
 
 	uint8_t Read(uint16_t address);

@@ -119,6 +119,32 @@ namespace CoreTests
 			Assert::AreEqual(0xF8, static_cast<int>(timer.GetContext()->tac));
 		}
 
+		TEST_METHOD(LoadRom_SkippedBootRom_DivMatchesCgbBootForCartridgeType)
+		{
+			// Arrange - ROM only cartridges; header $0143 = $80 marks a CGB game
+			for (bool cgb : { false, true })
+			{
+				std::vector<uint8_t> rom(0x8000, 0x00);
+				rom[0x0143] = cgb ? 0x80 : 0x00;
+
+				NullDisplayOutput display_output;
+				NullSoundOutput sound_output;
+				NullNetworkOutput network_output;
+				Emulator emulator(&display_output, &sound_output, &network_output);
+				emulator.SetFramePacingEnabled(false);
+
+				// Act
+				emulator.LoadRom(rom);
+				uint8_t loaded = emulator.ReadIO(0xFF04);
+				emulator.Cycle(1000);
+				emulator.Restart();
+
+				// Assert - the CGB boot ROM finishes later for DMG games ($2678) than CGB games ($1E2C)
+				Assert::AreEqual(cgb ? 0x1E : 0x26, static_cast<int>(loaded));
+				Assert::AreEqual(cgb ? 0x1E : 0x26, static_cast<int>(emulator.ReadIO(0xFF04)));
+			}
+		}
+
 		TEST_METHOD(Write_WriteToDiv_DivAlways0)
 		{
 			// Arrange

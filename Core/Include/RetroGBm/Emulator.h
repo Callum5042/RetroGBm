@@ -92,6 +92,8 @@ public:
 
 	// Bus
 	uint8_t ReadBus(uint16_t address) override;
+	uint8_t ReadBusDirect(uint16_t address);
+
 	void WriteBus(uint16_t address, uint8_t value) override;
 
 	uint8_t ReadIO(uint16_t address);
@@ -189,4 +191,7 @@ private:
 	// Boot ROM
 	bool m_EnableBootRom = false;
 	bool m_MapBootRom = true;
+
+	// Undocumented CGB registers $FF72-$FF75 (only bits 4-6 of $FF75 are stored)
+	std::array<uint8_t, 4> m_UndocumentedRegisters{};
 };

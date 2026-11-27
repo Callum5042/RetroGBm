@@ -81,10 +81,12 @@ void Display::Write(uint16_t address, uint8_t value)
 			value = uint8_t(0x80 | (value & 0x78) | (m_Registers[1] & 7));
 		}
 
+		uint8_t previous = m_Registers[address - 0xFF40];
 		m_Registers[address - 0xFF40] = value;
 
 		if (m_Ppu)
 		{
+			if (address == 0xFF40) m_Ppu->LcdcWritten(previous, value);
 			if (address == 0xFF40 && enabled != IsLcdEnabled()) m_Ppu->LcdEnableChanged();
 			if (address == 0xFF41 || address == 0xFF45) m_Ppu->UpdateStat();
 		}
